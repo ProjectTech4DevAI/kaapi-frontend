@@ -129,17 +129,25 @@ export default function SimplifiedEval() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-gray-50">
+    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
       {/* Header */}
-      <div className="bg-white border-b p-4">
+      <div className="border-b p-4" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Simplified Evaluation Pipeline</h1>
-            <p className="text-sm text-gray-500 mt-1">A Tech4Dev Product</p>
+            <h1 className="text-2xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Simplified Evaluation Pipeline</h1>
+            <p className="text-sm mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>A Tech4Dev Product</p>
           </div>
           <button
             onClick={handleBackToWorkflow}
-            className="px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-md transition-colors text-sm font-medium"
+            className="px-4 py-2 rounded-md transition-colors text-sm font-medium"
+            style={{ 
+              borderWidth: '1px',
+              borderColor: 'hsl(0, 0%, 85%)',
+              backgroundColor: 'hsl(0, 0%, 100%)',
+              color: 'hsl(330, 3%, 19%)'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
           >
             ← Back to Workflow
           </button>
@@ -147,25 +155,25 @@ export default function SimplifiedEval() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b">
+      <div className="border-b" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
         <div className="max-w-7xl mx-auto flex">
           <button
             onClick={() => setActiveTab('upload')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'upload'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className="px-6 py-3 text-sm font-medium border-b-2 transition-colors"
+            style={{
+              borderBottomColor: activeTab === 'upload' ? 'hsl(167, 59%, 22%)' : 'transparent',
+              color: activeTab === 'upload' ? 'hsl(167, 59%, 22%)' : 'hsl(330, 3%, 49%)'
+            }}
           >
             1. Upload & Run
           </button>
           <button
             onClick={() => setActiveTab('results')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'results'
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className="px-6 py-3 text-sm font-medium border-b-2 transition-colors"
+            style={{
+              borderBottomColor: activeTab === 'results' ? 'hsl(167, 59%, 22%)' : 'transparent',
+              color: activeTab === 'results' ? 'hsl(167, 59%, 22%)' : 'hsl(330, 3%, 49%)'
+            }}
           >
             2. Results
           </button>
@@ -211,9 +219,9 @@ function UploadTab({
   return (
     <div className="space-y-6">
       {/* Instructions Card */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">How it works</h2>
-        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-600">
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: 'hsl(330, 3%, 19%)' }}>How it works</h2>
+        <ol className="list-decimal list-inside space-y-2 text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
           <li>Upload your QnA dataset (CSV format with columns: question, expected_answer)</li>
           <li>Click "Run Evaluation" to start the pipeline</li>
           <li>Wait for processing to complete (automatic redirect to results)</li>
@@ -222,12 +230,12 @@ function UploadTab({
       </div>
 
       {/* Upload Card */}
-      <div className="bg-white border rounded-lg p-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload QnA Dataset</h2>
+      <div className="border rounded-lg p-8" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>Upload QnA Dataset</h2>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-gray-400 transition-colors">
+        <div className="border-2 border-dashed rounded-lg p-12 text-center transition-colors" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
           <div className="space-y-4">
-            <div className="text-gray-400">
+            <div style={{ color: 'hsl(330, 3%, 49%)' }}>
               <svg
                 className="mx-auto h-12 w-12"
                 fill="none"
@@ -245,7 +253,8 @@ function UploadTab({
             <div>
               <label
                 htmlFor="file-upload"
-                className="cursor-pointer bg-gray-900 text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-colors inline-block text-sm font-medium"
+                className="cursor-pointer px-6 py-2 rounded-md transition-colors inline-block text-sm font-medium"
+                style={{ backgroundColor: 'hsl(167, 59%, 22%)', color: 'hsl(0, 0%, 100%)' }}
               >
                 Choose File
               </label>
@@ -258,8 +267,8 @@ function UploadTab({
               />
             </div>
             {uploadedFile && (
-              <div className="text-sm text-gray-600">
-                Selected: <span className="font-medium text-gray-900">{uploadedFile.name}</span>
+              <div className="text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                Selected: <span className="font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{uploadedFile.name}</span>
               </div>
             )}
           </div>
@@ -270,11 +279,14 @@ function UploadTab({
           <button
             onClick={onRunEvaluation}
             disabled={!uploadedFile || isEvaluating}
-            className={`w-full py-3 rounded-md font-medium text-sm transition-all ${
-              !uploadedFile || isEvaluating
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                : 'bg-gray-900 text-white hover:bg-gray-800'
-            }`}
+            className="w-full py-3 rounded-md font-medium text-sm transition-all"
+            style={{
+              backgroundColor: !uploadedFile || isEvaluating ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
+              color: !uploadedFile || isEvaluating ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
+              cursor: !uploadedFile || isEvaluating ? 'not-allowed' : 'pointer',
+              borderWidth: !uploadedFile || isEvaluating ? '1px' : '0',
+              borderColor: !uploadedFile || isEvaluating ? 'hsl(0, 0%, 85%)' : 'transparent'
+            }}
           >
             {isEvaluating ? 'Evaluating...' : 'Run Evaluation'}
           </button>
@@ -283,17 +295,17 @@ function UploadTab({
         {/* Progress Bar */}
         {isEvaluating && (
           <div className="mt-6">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <div className="flex justify-between text-sm mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
               <span>Processing pipeline...</span>
               <span className="font-medium">{progress}%</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'hsl(0, 0%, 91%)' }}>
               <div
-                className="bg-gray-900 h-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
+                className="h-full transition-all duration-300"
+                style={{ width: `${progress}%`, backgroundColor: 'hsl(167, 59%, 22%)' }}
               />
             </div>
-            <div className="mt-3 text-sm text-gray-500 text-center">
+            <div className="mt-3 text-sm text-center" style={{ color: 'hsl(330, 3%, 49%)' }}>
               {progress < 30 && '📂 Loading dataset...'}
               {progress >= 30 && progress < 60 && '🤖 Running LLM evaluation...'}
               {progress >= 60 && progress < 90 && '📊 Calculating metrics...'}
@@ -304,9 +316,9 @@ function UploadTab({
       </div>
 
       {/* Sample CSV Format */}
-      <div className="bg-white border rounded-lg p-6">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Expected CSV Format:</h3>
-        <pre className="text-xs bg-gray-50 p-4 rounded-md border overflow-x-auto font-mono text-gray-700">
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'hsl(330, 3%, 19%)' }}>Expected CSV Format:</h3>
+        <pre className="text-xs p-4 rounded-md border overflow-x-auto font-mono" style={{ backgroundColor: 'hsl(0, 0%, 96.5%)', borderColor: 'hsl(0, 0%, 85%)', color: 'hsl(330, 3%, 19%)' }}>
 {`question,expected_answer
 "What is the capital of France?","Paris"
 "Explain photosynthesis","Process by which plants convert light into energy"`}
@@ -347,8 +359,8 @@ function ResultsTab({ results }: ResultsTabProps) {
       </div>
 
       {/* Dataset Info */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Evaluation Summary</h2>
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>Evaluation Summary</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <InfoItem label="Dataset" value={results.dataset.name} />
           <InfoItem label="Total Rows" value={results.dataset.totalRows.toString()} />
@@ -358,8 +370,8 @@ function ResultsTab({ results }: ResultsTabProps) {
       </div>
 
       {/* Detailed Logs */}
-      <div className="bg-white border rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Detailed Evaluation Logs</h2>
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>Detailed Evaluation Logs</h2>
         <div className="space-y-3">
           {results.logs.map((log) => (
             <LogItem key={log.id} log={log} />
@@ -368,16 +380,35 @@ function ResultsTab({ results }: ResultsTabProps) {
       </div>
 
       {/* Export Actions */}
-      <div className="bg-white border rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Results</h3>
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>Export Results</h3>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium">
+          <button 
+            className="px-4 py-2 rounded-md transition-colors text-sm font-medium"
+            style={{ backgroundColor: 'hsl(167, 59%, 22%)', color: 'hsl(0, 0%, 100%)' }}
+          >
             📥 Download CSV
           </button>
-          <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium">
+          <button 
+            className="px-4 py-2 rounded-md transition-colors text-sm font-medium"
+            style={{ 
+              borderWidth: '1px',
+              borderColor: 'hsl(0, 0%, 85%)',
+              backgroundColor: 'hsl(0, 0%, 100%)',
+              color: 'hsl(330, 3%, 19%)'
+            }}
+          >
             📋 Copy to Clipboard
           </button>
-          <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium">
+          <button 
+            className="px-4 py-2 rounded-md transition-colors text-sm font-medium"
+            style={{ 
+              borderWidth: '1px',
+              borderColor: 'hsl(0, 0%, 85%)',
+              backgroundColor: 'hsl(0, 0%, 100%)',
+              color: 'hsl(330, 3%, 19%)'
+            }}
+          >
             📤 Export to Langfuse
           </button>
         </div>
@@ -396,25 +427,19 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, icon, color }: MetricCardProps) {
   const colorClasses = {
-    blue: 'border-gray-200 bg-white',
-    green: 'border-green-200 bg-green-50',
-    purple: 'border-gray-200 bg-white',
-  };
-
-  const textColor = {
-    blue: 'text-gray-900',
-    green: 'text-green-900',
-    purple: 'text-gray-900',
+    blue: { bg: 'hsl(0, 0%, 100%)', border: 'hsl(0, 0%, 85%)', text: 'hsl(330, 3%, 19%)' },
+    green: { bg: 'hsl(134, 61%, 95%)', border: 'hsl(134, 61%, 70%)', text: 'hsl(134, 61%, 25%)' },
+    purple: { bg: 'hsl(0, 0%, 100%)', border: 'hsl(0, 0%, 85%)', text: 'hsl(330, 3%, 19%)' },
   };
 
   return (
-    <div className={`border ${colorClasses[color]} rounded-lg p-6`}>
+    <div className="border rounded-lg p-6" style={{ backgroundColor: colorClasses[color].bg, borderColor: colorClasses[color].border }}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-2xl">{icon}</span>
-        <span className="text-xs text-gray-500 font-medium">Live</span>
+        <span className="text-xs font-medium" style={{ color: 'hsl(330, 3%, 49%)' }}>Live</span>
       </div>
-      <div className={`text-3xl font-semibold ${textColor[color]}`}>{value}</div>
-      <div className="text-sm text-gray-600 mt-2">{title}</div>
+      <div className="text-3xl font-semibold" style={{ color: colorClasses[color].text }}>{value}</div>
+      <div className="text-sm mt-2" style={{ color: 'hsl(330, 3%, 49%)' }}>{title}</div>
     </div>
   );
 }
@@ -427,8 +452,8 @@ interface InfoItemProps {
 function InfoItem({ label, value }: InfoItemProps) {
   return (
     <div>
-      <div className="text-xs text-gray-500 uppercase font-semibold">{label}</div>
-      <div className="text-lg font-medium text-gray-900 mt-1">{value}</div>
+      <div className="text-xs uppercase font-semibold" style={{ color: 'hsl(330, 3%, 49%)' }}>{label}</div>
+      <div className="text-lg font-medium mt-1" style={{ color: 'hsl(330, 3%, 19%)' }}>{value}</div>
     </div>
   );
 }
@@ -439,26 +464,20 @@ interface LogItemProps {
 
 function LogItem({ log }: LogItemProps) {
   const statusColors = {
-    pass: 'bg-green-50 border-green-200',
-    warning: 'bg-yellow-50 border-yellow-200',
-    fail: 'bg-red-50 border-red-200',
-  };
-
-  const textColors = {
-    pass: 'text-green-900',
-    warning: 'text-yellow-900',
-    fail: 'text-red-900',
+    pass: { bg: 'hsl(134, 61%, 95%)', border: 'hsl(134, 61%, 70%)', text: 'hsl(134, 61%, 25%)' },
+    warning: { bg: 'hsl(46, 100%, 95%)', border: 'hsl(46, 100%, 80%)', text: 'hsl(46, 100%, 25%)' },
+    fail: { bg: 'hsl(8, 86%, 95%)', border: 'hsl(8, 86%, 80%)', text: 'hsl(8, 86%, 40%)' },
   };
 
   return (
-    <div className={`border rounded-lg p-4 ${statusColors[log.status]}`}>
+    <div className="border rounded-lg p-4" style={{ backgroundColor: statusColors[log.status].bg, borderColor: statusColors[log.status].border }}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <div className={`font-semibold text-sm mb-1 ${textColors[log.status]}`}>Question #{log.id}</div>
-          <div className="text-sm text-gray-700">{log.question}</div>
+          <div className="font-semibold text-sm mb-1" style={{ color: statusColors[log.status].text }}>Question #{log.id}</div>
+          <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>{log.question}</div>
         </div>
         <div className="ml-4 flex items-center gap-2">
-          <span className={`text-lg font-semibold ${textColors[log.status]}`}>{(log.score * 100).toFixed(0)}%</span>
+          <span className="text-lg font-semibold" style={{ color: statusColors[log.status].text }}>{(log.score * 100).toFixed(0)}%</span>
           <span className="text-xl">
             {log.status === 'pass' ? '✅' : log.status === 'warning' ? '⚠️' : '❌'}
           </span>
@@ -466,12 +485,12 @@ function LogItem({ log }: LogItemProps) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-sm">
         <div>
-          <div className="font-medium text-gray-600 mb-1">Expected:</div>
-          <div className="text-gray-700">{log.expected}</div>
+          <div className="font-medium mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Expected:</div>
+          <div style={{ color: 'hsl(330, 3%, 19%)' }}>{log.expected}</div>
         </div>
         <div>
-          <div className="font-medium text-gray-600 mb-1">Actual:</div>
-          <div className="text-gray-700">{log.actual}</div>
+          <div className="font-medium mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Actual:</div>
+          <div style={{ color: 'hsl(330, 3%, 19%)' }}>{log.actual}</div>
         </div>
       </div>
     </div>

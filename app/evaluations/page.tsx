@@ -59,22 +59,36 @@ export default function SimplifiedEval() {
     }
   }, []);
 
-  // Load stored datasets from localStorage
-  const loadStoredDatasets = () => {
-    const stored = localStorage.getItem(DATASETS_STORAGE_KEY);
-    if (stored) {
-      try {
-        const datasets = JSON.parse(stored);
-        setStoredDatasets(datasets);
-      } catch (e) {
-        console.error('Failed to load datasets:', e);
+  // Fetch datasets from backend
+  const loadStoredDatasets = async () => {
+    if (!apiKeys.length) return;
+
+    try {
+      const response = await fetch('/api/evaluations/datasets', {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': apiKeys[0].key,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch datasets:', response.status);
+        return;
       }
+
+      const data = await response.json();
+      const datasetList = Array.isArray(data) ? data : (data.data || []);
+      setStoredDatasets(datasetList);
+    } catch (e) {
+      console.error('Failed to load datasets:', e);
     }
   };
 
   useEffect(() => {
-    loadStoredDatasets();
-  }, []);
+    if (apiKeys.length > 0) {
+      loadStoredDatasets();
+    }
+  }, [apiKeys]);
 
   const handleStoredDatasetSelect = (datasetId: string) => {
     setSelectedDatasetId(datasetId);
@@ -107,33 +121,47 @@ export default function SimplifiedEval() {
       return;
     }
 
+    if (apiKeys.length === 0) {
+      alert('No API key found');
+      return;
+    }
+
     setIsUploading(true);
 
     try {
-      const fileContent = await uploadedFile.text();
-      const lines = fileContent.trim().split('\n');
-      const rowCount = Math.max(0, lines.length - 1);
+      // Prepare FormData for upload
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+      formData.append('dataset_name', datasetName.trim());
 
-      const newDataset: Dataset = {
-        id: Date.now().toString(),
-        name: datasetName.trim(),
-        fileName: uploadedFile.name,
-        fileSize: uploadedFile.size,
-        rowCount: rowCount,
-        uploadedAt: new Date().toISOString(),
-        csvContent: fileContent,
-        duplicationFactor: duplicationFactor && parseInt(duplicationFactor) > 1 ? parseInt(duplicationFactor) : undefined,
-      };
+      if (duplicationFactor && parseInt(duplicationFactor) > 1) {
+        formData.append('duplication_factor', duplicationFactor);
+      }
 
-      // Add to datasets list in localStorage
-      const updatedDatasets = [newDataset, ...storedDatasets];
-      localStorage.setItem(DATASETS_STORAGE_KEY, JSON.stringify(updatedDatasets));
+      // Upload to backend
+      const response = await fetch('/api/evaluations/datasets', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-API-KEY': apiKeys[0].key,
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Upload failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Dataset uploaded successfully:', data);
 
       // Refresh the datasets list
-      loadStoredDatasets();
+      await loadStoredDatasets();
 
       // Auto-select the newly uploaded dataset
-      setSelectedDatasetId(newDataset.id);
+      if (data.dataset_id) {
+        setSelectedDatasetId(data.dataset_id.toString());
+      }
 
       // Reset form and close modal
       setUploadedFile(null);
@@ -166,68 +194,20 @@ export default function SimplifiedEval() {
       return;
     }
 
-    // Get the selected API key and dataset
+    // Get the selected API key
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) {
       alert('Selected API key not found');
       return;
     }
 
-    const storedDataset = storedDatasets.find(d => d.id === selectedDatasetId);
-    if (!storedDataset) {
-      alert('Selected dataset not found');
-      return;
-    }
-
     setIsEvaluating(true);
 
-    let backendDatasetId: string;
-
-    // First, upload the dataset to the backend to get a dataset_id
-    try {
-      const blob = new Blob([storedDataset.csvContent], { type: 'text/csv' });
-      const file = new File([blob], storedDataset.fileName, { type: 'text/csv' });
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('dataset_name', storedDataset.name);
-
-      // Add duplication factor if it exists and is greater than 1
-      if (storedDataset.duplicationFactor && storedDataset.duplicationFactor > 1) {
-        formData.append('duplication_factor', storedDataset.duplicationFactor.toString());
-      }
-
-      const response = await fetch('/api/evaluations/datasets', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-API-KEY': selectedKey.key,
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Upload failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.dataset_id) {
-        backendDatasetId = data.dataset_id;
-      } else {
-        throw new Error('No dataset_id returned from upload');
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setIsEvaluating(false);
-      return;
-    }
-
-    // Now create the evaluation job
+    // Create the evaluation job using the selected dataset_id
     try {
       // Build the request payload
       const payload: any = {
-        dataset_id: parseInt(backendDatasetId),
+        dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
       };
 
@@ -531,7 +511,7 @@ function UploadTab({
   onRunEvaluation,
 }: UploadTabProps) {
   const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
-  const selectedDataset = storedDatasets.find(d => d.id === selectedDatasetId);
+  const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
 
   const [showHowItWorksTooltip, setShowHowItWorksTooltip] = useState(false);
   const [showCsvFormatTooltip, setShowCsvFormatTooltip] = useState(false);
@@ -689,8 +669,8 @@ function UploadTab({
             >
               <option value="">-- Select a Dataset --</option>
               {storedDatasets.map((dataset) => (
-                <option key={dataset.id} value={dataset.id}>
-                  {dataset.name} ({dataset.rowCount} rows)
+                <option key={dataset.dataset_id} value={dataset.dataset_id}>
+                  {dataset.dataset_name} ({dataset.total_items} items)
                 </option>
               ))}
             </select>
@@ -742,10 +722,10 @@ function UploadTab({
                 </svg>
                 <div>
                   <p className="text-sm font-medium" style={{ color: 'hsl(134, 61%, 25%)' }}>
-                    Selected: <span className="font-semibold">{selectedDataset.name}</span>
+                    Selected: <span className="font-semibold">{selectedDataset.dataset_name}</span>
                   </p>
                   <p className="text-xs mt-1" style={{ color: 'hsl(134, 61%, 30%)' }}>
-                    File: {selectedDataset.fileName} | Rows: {selectedDataset.rowCount} | Size: {(selectedDataset.fileSize / 1024).toFixed(2)} KB
+                    Dataset ID: {selectedDataset.dataset_id} | Total Items: {selectedDataset.total_items} | Duplication: ×{selectedDataset.duplication_factor}
                   </p>
                 </div>
               </div>
@@ -757,7 +737,47 @@ function UploadTab({
       {/* Evaluation Configuration Card */}
       {selectedDatasetId && (
         <div className="border rounded-lg p-8" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-          <h2 className="text-xl font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>Evaluation Configuration</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Evaluation Configuration</h2>
+
+            {/* Play Button */}
+            <button
+              onClick={onRunEvaluation}
+              disabled={!selectedDatasetId || !experimentName.trim() || isEvaluating}
+              className="rounded-full p-4 transition-all shadow-md hover:shadow-lg"
+              style={{
+                backgroundColor: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
+                color: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
+                cursor: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'not-allowed' : 'pointer',
+                borderWidth: !selectedDatasetId || !experimentName.trim() || isEvaluating ? '1px' : '0',
+                borderColor: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'hsl(0, 0%, 85%)' : 'transparent',
+                transform: isEvaluating ? 'scale(0.95)' : 'scale(1)'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedDatasetId && experimentName.trim() && !isEvaluating) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedDatasetId && experimentName.trim() && !isEvaluating) {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)';
+                }
+              }}
+              title={!selectedDatasetId ? 'Select a dataset first' : !experimentName.trim() ? 'Enter an experiment name' : isEvaluating ? 'Creating evaluation job...' : 'Run Evaluation'}
+            >
+              {isEvaluating ? (
+                <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
 
           <div className="space-y-4">
             {/* Experiment Name - Required */}
@@ -872,46 +892,22 @@ function UploadTab({
               </div>
             </div>
           </div>
+
+          {/* Status Messages */}
+          {isEvaluating && (
+            <div className="mt-4 border rounded-lg p-3 animate-fadeIn" style={{ backgroundColor: 'hsl(202, 100%, 95%)', borderColor: 'hsl(202, 100%, 80%)' }}>
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(202, 100%, 35%)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <p className="text-sm" style={{ color: 'hsl(202, 100%, 30%)' }}>
+                  Uploading dataset and creating evaluation job...
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Run Evaluation Section */}
-      <div className="border rounded-lg p-8" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-        <h2 className="text-xl font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>Run Evaluation</h2>
-
-        {/* Run Button */}
-        <div className="mt-6">
-          <button
-            onClick={onRunEvaluation}
-            disabled={!selectedDatasetId || !experimentName.trim() || isEvaluating}
-            className="w-full py-3 rounded-md font-medium text-sm transition-all"
-            style={{
-              backgroundColor: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
-              color: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
-              cursor: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'not-allowed' : 'pointer',
-              borderWidth: !selectedDatasetId || !experimentName.trim() || isEvaluating ? '1px' : '0',
-              borderColor: !selectedDatasetId || !experimentName.trim() || isEvaluating ? 'hsl(0, 0%, 85%)' : 'transparent'
-            }}
-          >
-            {isEvaluating ? 'Creating Evaluation Job...' : 'Run Evaluation'}
-          </button>
-          {!selectedDatasetId && (
-            <p className="text-xs mt-2 text-center" style={{ color: 'hsl(8, 86%, 40%)' }}>
-              Please select a dataset first
-            </p>
-          )}
-          {selectedDatasetId && !experimentName.trim() && (
-            <p className="text-xs mt-2 text-center" style={{ color: 'hsl(8, 86%, 40%)' }}>
-              Please enter an experiment name
-            </p>
-          )}
-          {isEvaluating && (
-            <p className="text-xs mt-2 text-center" style={{ color: 'hsl(330, 3%, 49%)' }}>
-              Uploading dataset and creating evaluation job...
-            </p>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,24 +1,26 @@
 /**
  * Datasets.tsx - Dataset Management Interface
  *
- * Allows users to upload CSV datasets and manage them in local storage
+ * Allows users to upload CSV datasets and manage them via backend API
  */
 
 "use client"
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'
+import { APIKey, STORAGE_KEY } from '../keystore/page';
 
+// Backend response interface
 export interface Dataset {
-  id: string;
-  name: string;
-  fileName: string;
-  fileSize: number;
-  rowCount: number;
-  uploadedAt: string;
-  csvContent: string; // Store the actual CSV content
-  duplicationFactor?: number; // Optional duplication factor
+  dataset_id: number;
+  dataset_name: string;
+  total_items: number;
+  original_items: number;
+  duplication_factor: number;
+  langfuse_dataset_id: string;
+  object_store_url: string;
 }
 
+// Keep for backward compatibility with evaluations page
 export const DATASETS_STORAGE_KEY = 'kaapi_datasets';
 
 export default function Datasets() {
@@ -30,28 +32,68 @@ export default function Datasets() {
   const [datasetName, setDatasetName] = useState('');
   const [duplicationFactor, setDuplicationFactor] = useState('1');
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<APIKey | null>(null);
 
-  // Load datasets from localStorage on mount
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  // Load API key from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(DATASETS_STORAGE_KEY);
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        const parsedDatasets = JSON.parse(stored);
-        setDatasets(parsedDatasets);
+        const keys = JSON.parse(stored);
+        if (keys.length > 0) {
+          setApiKey(keys[0]);
+        }
       } catch (e) {
-        console.error('Failed to load datasets:', e);
+        console.error('Failed to load API key:', e);
       }
     }
   }, []);
 
-  // Save datasets to localStorage whenever they change
+  // Fetch datasets from backend when API key is available
   useEffect(() => {
-    if (datasets.length > 0) {
-      localStorage.setItem(DATASETS_STORAGE_KEY, JSON.stringify(datasets));
-    } else {
-      localStorage.removeItem(DATASETS_STORAGE_KEY);
+    if (apiKey) {
+      fetchDatasets();
     }
-  }, [datasets]);
+  }, [apiKey]);
+
+  const fetchDatasets = async () => {
+    if (!apiKey) {
+      setError('No API key found. Please add an API key in the Keystore.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/evaluations/datasets', {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': apiKey.key,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Failed to fetch datasets: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const datasetList = Array.isArray(data) ? data : (data.data || []);
+      setDatasets(datasetList);
+    } catch (err: any) {
+      console.error('Failed to fetch datasets:', err);
+      setError(err.message || 'Failed to fetch datasets');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -80,30 +122,42 @@ export default function Datasets() {
       return;
     }
 
+    if (!apiKey) {
+      alert('No API key found. Please add an API key in the Keystore.');
+      return;
+    }
+
     setIsUploading(true);
 
     try {
-      // Read the CSV file content
-      const fileContent = await selectedFile.text();
+      // Prepare FormData for upload
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('dataset_name', datasetName.trim());
 
-      // Parse CSV to count rows (simple count of newlines)
-      const lines = fileContent.trim().split('\n');
-      const rowCount = Math.max(0, lines.length - 1); // Subtract header row
+      if (duplicationFactor && parseInt(duplicationFactor) > 1) {
+        formData.append('duplication_factor', duplicationFactor);
+      }
 
-      // Create dataset object
-      const newDataset: Dataset = {
-        id: Date.now().toString(),
-        name: datasetName.trim(),
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        rowCount: rowCount,
-        uploadedAt: new Date().toISOString(),
-        csvContent: fileContent,
-        duplicationFactor: duplicationFactor && parseInt(duplicationFactor) > 1 ? parseInt(duplicationFactor) : undefined,
-      };
+      // Upload to backend
+      const response = await fetch('/api/evaluations/datasets', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-API-KEY': apiKey.key,
+        }
+      });
 
-      // Add to datasets list
-      setDatasets([newDataset, ...datasets]);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Upload failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Dataset uploaded successfully:', data);
+
+      // Refresh datasets list
+      await fetchDatasets();
 
       // Reset form
       setSelectedFile(null);
@@ -122,38 +176,45 @@ export default function Datasets() {
     }
   };
 
-  const handleDeleteDataset = (id: string) => {
-    if (confirm('Are you sure you want to delete this dataset?')) {
-      setDatasets(datasets.filter(ds => ds.id !== id));
+  const handleDeleteDataset = async (datasetId: number) => {
+    if (!apiKey) {
+      alert('No API key found');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this dataset?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/evaluations/datasets/${datasetId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-API-KEY': apiKey.key,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Delete failed with status ${response.status}`);
+      }
+
+      // Refresh datasets list
+      await fetchDatasets();
+      alert('Dataset deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert(`Failed to delete dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
-  const handleDownloadDataset = (dataset: Dataset) => {
-    // Create a blob from the CSV content
-    const blob = new Blob([dataset.csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
+  // Pagination calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDatasets = datasets.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(datasets.length / itemsPerPage);
 
-    // Create a temporary link and click it to download
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = dataset.fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleString();
-  };
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
@@ -272,12 +333,15 @@ export default function Datasets() {
           <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
             <div className="max-w-6xl mx-auto space-y-6 page-transition">
               <DatasetListing
-                datasets={datasets}
+                datasets={currentDatasets}
                 onDelete={handleDeleteDataset}
-                onDownload={handleDownloadDataset}
                 onUploadNew={() => setIsModalOpen(true)}
-                formatFileSize={formatFileSize}
-                formatDate={formatDate}
+                isLoading={isLoading}
+                error={error}
+                apiKey={apiKey}
+                totalPages={totalPages}
+                currentPage={currentPage}
+                onPageChange={paginate}
               />
             </div>
           </div>
@@ -310,20 +374,26 @@ export default function Datasets() {
 // ============ DATASET LISTING COMPONENT ============
 interface DatasetListingProps {
   datasets: Dataset[];
-  onDelete: (id: string) => void;
-  onDownload: (dataset: Dataset) => void;
+  onDelete: (datasetId: number) => void;
   onUploadNew: () => void;
-  formatFileSize: (bytes: number) => string;
-  formatDate: (dateString: string) => string;
+  isLoading: boolean;
+  error: string | null;
+  apiKey: APIKey | null;
+  totalPages: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
 }
 
 function DatasetListing({
   datasets,
   onDelete,
-  onDownload,
   onUploadNew,
-  formatFileSize,
-  formatDate,
+  isLoading,
+  error,
+  apiKey,
+  totalPages,
+  currentPage,
+  onPageChange,
 }: DatasetListingProps) {
   return (
     <>
@@ -348,8 +418,44 @@ function DatasetListing({
           </button>
         </div>
 
-        {/* Datasets List */}
-        {datasets.length === 0 ? (
+        {/* Loading State */}
+        {isLoading && datasets.length === 0 ? (
+          <div className="text-center py-12" style={{ color: 'hsl(330, 3%, 49%)' }}>
+            <svg className="w-12 h-12 mx-auto mb-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <p className="text-sm">Loading datasets...</p>
+          </div>
+        ) : !apiKey ? (
+          <div className="text-center py-12" style={{ color: 'hsl(330, 3%, 49%)' }}>
+            <svg
+              className="mx-auto h-12 w-12 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            <p className="font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>No API key found</p>
+            <p className="text-sm mb-4">Please add an API key in the Keystore to manage datasets</p>
+            <a
+              href="/keystore"
+              className="inline-block px-6 py-2 rounded-md text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: 'hsl(167, 59%, 22%)',
+                color: 'hsl(0, 0%, 100%)'
+              }}
+            >
+              Go to Keystore
+            </a>
+          </div>
+        ) : error ? (
+          <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(8, 86%, 95%)', borderColor: 'hsl(8, 86%, 80%)' }}>
+            <p className="text-sm font-medium" style={{ color: 'hsl(8, 86%, 40%)' }}>
+              Error: {error}
+            </p>
+          </div>
+        ) : datasets.length === 0 ? (
           <div className="text-center py-12" style={{ color: 'hsl(330, 3%, 49%)' }}>
             <svg
               className="mx-auto h-12 w-12 mb-4"
@@ -364,7 +470,7 @@ function DatasetListing({
                 d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
               />
             </svg>
-            <p className="font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>No datasets stored yet</p>
+            <p className="font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>No datasets found</p>
             <p className="text-sm mb-4">Upload your first CSV dataset to get started with evaluations</p>
             <button
               onClick={onUploadNew}
@@ -383,7 +489,7 @@ function DatasetListing({
           <div className="space-y-3">
           {datasets.map((dataset) => (
             <div
-              key={dataset.id}
+              key={dataset.dataset_id}
               className="border rounded-lg p-4"
               style={{
                 backgroundColor: 'hsl(0, 0%, 96.5%)',
@@ -397,48 +503,31 @@ function DatasetListing({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                      {dataset.name}
+                      {dataset.dataset_name}
                     </h3>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>File Name</div>
-                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{dataset.fileName}</div>
+                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Dataset ID</div>
+                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{dataset.dataset_id}</div>
                     </div>
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>File Size</div>
-                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatFileSize(dataset.fileSize)}</div>
+                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Total Items</div>
+                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{dataset.total_items}</div>
                     </div>
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Rows</div>
-                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{dataset.rowCount}</div>
+                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Original Items</div>
+                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{dataset.original_items}</div>
                     </div>
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Uploaded</div>
-                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatDate(dataset.uploadedAt)}</div>
+                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Duplication Factor</div>
+                      <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>×{dataset.duplication_factor}</div>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-4">
                   <button
-                    onClick={() => onDownload(dataset)}
-                    className="p-2 rounded-md transition-colors"
-                    style={{
-                      borderWidth: '1px',
-                      borderColor: 'hsl(0, 0%, 85%)',
-                      backgroundColor: 'hsl(0, 0%, 100%)',
-                      color: 'hsl(330, 3%, 19%)'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
-                    title="Download CSV"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => onDelete(dataset.id)}
+                    onClick={() => onDelete(dataset.dataset_id)}
                     className="p-2 rounded-md transition-colors"
                     style={{
                       borderWidth: '1px',
@@ -464,6 +553,45 @@ function DatasetListing({
           ))}
         </div>
         )}
+
+        {/* Pagination */}
+        {!isLoading && !error && apiKey && datasets.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+            <p className="text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
+              Page {currentPage} of {totalPages}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: currentPage === 1 ? 'hsl(0, 0%, 95%)' : 'hsl(0, 0%, 100%)',
+                  color: currentPage === 1 ? 'hsl(330, 3%, 70%)' : 'hsl(330, 3%, 19%)',
+                  borderWidth: '1px',
+                  borderColor: 'hsl(0, 0%, 85%)',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: currentPage === totalPages ? 'hsl(0, 0%, 95%)' : 'hsl(0, 0%, 100%)',
+                  color: currentPage === totalPages ? 'hsl(330, 3%, 70%)' : 'hsl(330, 3%, 19%)',
+                  borderWidth: '1px',
+                  borderColor: 'hsl(0, 0%, 85%)',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Info Card */}
@@ -477,7 +605,7 @@ function DatasetListing({
               Storage Note
             </p>
             <p className="text-sm mt-1" style={{ color: 'hsl(202, 100%, 30%)' }}>
-              Datasets are stored in your browser's local storage. For production use, consider implementing server-side storage with a database.
+              Datasets are stored on the server and synced with Langfuse for evaluation tracking.
             </p>
           </div>
         </div>

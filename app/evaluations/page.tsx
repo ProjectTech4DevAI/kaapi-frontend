@@ -230,6 +230,7 @@ export default function SimplifiedEval() {
           if (instructions) {
             payload.config.instructions = instructions;
           }
+      
 
           // Add tools if vector store IDs are provided
           if (vectorStoreIds) {
@@ -1045,6 +1046,7 @@ interface EvalJob {
     instructions?: string;
     tools?: any[];
     include?: string[];
+    temperature?: number;
   };
   assistant_id?: string;
   organization_id: number;
@@ -1453,14 +1455,22 @@ interface ResultsModalProps {
 function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
   if (!job) return null;
 
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+
   // Handle ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (isConfigModalOpen) {
+          setIsConfigModalOpen(false);
+        } else {
+          onClose();
+        }
+      }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+  }, [onClose, isConfigModalOpen]);
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -1476,7 +1486,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
 
     // Header row
     csvContent += 'Job ID,Run Name,Dataset,Model,Assistant ID,Assistant Name,Temperature,Status,Total Items,';
-    csvContent += 'Average Similarity,Standard Deviation,Total Pairs,';
+    csvContent += 'Average Similarity,Standard Deviation,Total Q&A Pairs,';
     csvContent += 'Trace ID,Item Similarity Score\n';
 
     // Data rows - one row per item
@@ -1582,20 +1592,36 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 </div>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-md transition-colors"
-              style={{
-                color: 'hsl(330, 3%, 49%)',
-                backgroundColor: 'transparent'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsConfigModalOpen(true)}
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'hsl(0, 0%, 100%)',
+                  borderWidth: '1px',
+                  borderColor: 'hsl(167, 59%, 70%)',
+                  color: 'hsl(167, 59%, 22%)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 95%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+              >
+                View Config
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-md transition-colors"
+                style={{
+                  color: 'hsl(330, 3%, 49%)',
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Scrollable Content */}
@@ -1619,19 +1645,15 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 )}
               </div>
               <div className="border rounded-lg p-4" style={{ backgroundColor: 'hsl(0, 0%, 98%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Job ID</div>
-                    <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.id}</div>
-                  </div>
+                <div className="flex justify-between  gap-4">
                   <div>
                     <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Dataset</div>
                     <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.dataset_name}</div>
                   </div>
-                  <div>
-                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Model</div>
-                    <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{assistantConfig?.model || job.config?.model || 'N/A'}</div>
-                  </div>
+                   {/* <div>
+                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Total Q&A Pairs</div>
+                    <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.total_items}</div>
+                  </div> */}
                   <div>
                     <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Status</div>
                     <div
@@ -1646,28 +1668,15 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                       {job.status.toUpperCase()}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Total Items</div>
-                    <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.total_items}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Batch Job ID</div>
-                    <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.batch_job_id}</div>
-                  </div>
-                  {job.assistant_id && (
-                    <div>
-                      <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant ID</div>
-                      <div className="text-sm font-medium font-mono" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.assistant_id}</div>
-                    </div>
-                  )}
+                 
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+                <div className="flex justify-between gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
                   <div>
-                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Created</div>
+                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Started At</div>
                     <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatDate(job.inserted_at)}</div>
                   </div>
                   <div>
-                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Last Updated</div>
+                    <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Last Updated At</div>
                     <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatDate(job.updated_at)}</div>
                   </div>
                 </div>
@@ -1694,7 +1703,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                       <div className="text-3xl font-bold" style={{ color: 'hsl(330, 3%, 49%)' }}>±{stdScore}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Total Pairs</div>
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Total Q&A Pairs</div>
                       <div className="text-3xl font-bold" style={{ color: 'hsl(330, 3%, 19%)' }}>{totalPairs}</div>
                     </div>
                   </div>
@@ -1789,73 +1798,6 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
               </div>
             )}
 
-            {/* Configuration Section */}
-            {(assistantConfig || (job.config && (job.config.instructions || job.config.tools))) && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Configuration</h3>
-                </div>
-                <div className="border rounded-lg p-4 space-y-3" style={{ backgroundColor: 'hsl(0, 0%, 98%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-                  {assistantConfig ? (
-                    <>
-                      {assistantConfig.instructions && (
-                        <div>
-                          <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Instructions</div>
-                          <div className="text-sm p-3 rounded-md font-mono whitespace-pre-wrap" style={{
-                            backgroundColor: 'hsl(0, 0%, 100%)',
-                            color: 'hsl(330, 3%, 19%)',
-                            maxHeight: '200px',
-                            overflowY: 'auto'
-                          }}>
-                            {assistantConfig.instructions}
-                          </div>
-                        </div>
-                      )}
-                      {assistantConfig.temperature !== undefined && (
-                        <div>
-                          <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Temperature</div>
-                          <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{assistantConfig.temperature}</div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {job.config.instructions && (
-                        <div>
-                          <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Instructions</div>
-                          <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.config.instructions}</div>
-                        </div>
-                      )}
-                      {job.config.tools && job.config.tools.length > 0 && (
-                        <div>
-                          <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Tools</div>
-                          <div className="flex flex-wrap gap-2">
-                            {job.config.tools.map((tool, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 rounded text-xs font-medium"
-                                style={{
-                                  backgroundColor: 'hsl(167, 59%, 95%)',
-                                  borderWidth: '1px',
-                                  borderColor: 'hsl(167, 59%, 70%)',
-                                  color: 'hsl(167, 59%, 22%)'
-                                }}
-                              >
-                                {tool.type}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Footer */}
@@ -1895,6 +1837,183 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
           </div>
         </div>
       </div>
+
+      {/* Config Modal */}
+      {isConfigModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-modalBackdrop"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setIsConfigModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-lg shadow-2xl animate-modalContent"
+            style={{ backgroundColor: 'hsl(0, 0%, 100%)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Detailed Configuration</h3>
+              </div>
+              <button
+                onClick={() => setIsConfigModalOpen(false)}
+                className="p-2 rounded-md transition-colors"
+                style={{
+                  color: 'hsl(330, 3%, 49%)',
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto p-6 space-y-4" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+              {assistantConfig && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant Name</div>
+                  <div className="text-sm font-medium mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>{assistantConfig.name}</div>
+                </div>
+              )}
+
+              {job.assistant_id && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant ID</div>
+                  <div className="text-sm font-mono mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.assistant_id}</div>
+                </div>
+              )}
+
+              <div>
+                <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Model</div>
+                <div className="text-sm font-medium mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                  {assistantConfig?.model || job.config?.model || 'N/A'}
+                </div>
+              </div>
+
+              {(assistantConfig?.temperature !== undefined || job.config?.temperature !== undefined) && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Temperature</div>
+                  <div className="text-sm font-medium mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                    {assistantConfig?.temperature !== undefined ? assistantConfig.temperature : job.config?.temperature}
+                  </div>
+                </div>
+              )}
+
+              {(assistantConfig?.instructions || job.config?.instructions) && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Instructions</div>
+                  <div className="text-sm p-3 rounded-md font-mono whitespace-pre-wrap border" style={{
+                    backgroundColor: 'hsl(0, 0%, 98%)',
+                    borderColor: 'hsl(0, 0%, 85%)',
+                    color: 'hsl(330, 3%, 19%)',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}>
+                    {assistantConfig?.instructions || job.config?.instructions}
+                  </div>
+                </div>
+              )}
+
+              {job.config?.tools && job.config.tools.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Tools</div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.config.tools.map((tool, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 rounded text-sm font-medium"
+                        style={{
+                          backgroundColor: 'hsl(167, 59%, 95%)',
+                          borderWidth: '1px',
+                          borderColor: 'hsl(167, 59%, 70%)',
+                          color: 'hsl(167, 59%, 22%)'
+                        }}
+                      >
+                        {tool.type}
+                      </span>
+                    ))}
+                  </div>
+                  {job.config.tools.map((tool, idx) => (
+                    tool.vector_store_ids && tool.vector_store_ids.length > 0 && (
+                      <div key={`vs-${idx}`} className="mb-4">
+                        <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                          Vector Store IDs ({tool.type})
+                        </div>
+                        <div className="text-sm font-mono p-3 rounded-md border" style={{
+                          backgroundColor: 'hsl(0, 0%, 98%)',
+                          borderColor: 'hsl(0, 0%, 85%)',
+                          color: 'hsl(330, 3%, 19%)'
+                        }}>
+                          {tool.vector_store_ids.join(', ')}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+
+              {assistantConfig?.vector_store_ids && assistantConfig.vector_store_ids.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Vector Store IDs</div>
+                  <div className="text-sm font-mono p-3 rounded-md border" style={{
+                    backgroundColor: 'hsl(0, 0%, 98%)',
+                    borderColor: 'hsl(0, 0%, 85%)',
+                    color: 'hsl(330, 3%, 19%)'
+                  }}>
+                    {assistantConfig.vector_store_ids.join(', ')}
+                  </div>
+                </div>
+              )}
+
+              {job.config?.include && job.config.include.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Include</div>
+                  <div className="flex flex-wrap gap-2">
+                    {job.config.include.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 rounded text-xs font-medium"
+                        style={{
+                          backgroundColor: 'hsl(0, 0%, 95%)',
+                          borderWidth: '1px',
+                          borderColor: 'hsl(0, 0%, 85%)',
+                          color: 'hsl(330, 3%, 19%)'
+                        }}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t flex justify-end" style={{ borderColor: 'hsl(0, 0%, 85%)', backgroundColor: 'hsl(0, 0%, 98%)' }}>
+              <button
+                onClick={() => setIsConfigModalOpen(false)}
+                className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'hsl(167, 59%, 22%)',
+                  color: 'hsl(0, 0%, 100%)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1908,6 +2027,7 @@ interface EvalJobCardProps {
 function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -1969,15 +2089,15 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
               <h3 className="font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
                 {job.run_name}
               </h3>
-              <span className="text-xs" style={{ color: 'hsl(330, 3%, 49%)' }}>
+              {/* <span className="text-xs" style={{ color: 'hsl(330, 3%, 49%)' }}>
                 ID: {job.id}
-              </span>
+              </span> */}
             </div>
             <div className="flex items-center gap-4 mt-2 text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
-              <span>{job.dataset_name}</span>
+              {/* <span>{job.dataset_name}</span>
               <span>•</span>
               <span>{job.total_items} items</span>
-              <span>•</span>
+              <span>•</span> */}
               <ScoreDisplay score={job.score} errorMessage={job.error_message} />
             </div>
           </div>
@@ -2000,96 +2120,45 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
       {/* Expanded Content */}
       {isExpanded && (
         <div className="px-4 pb-4 border-t" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-          {/* Job Details Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 mb-4">
+          {/* Timestamps */}
+          <div className="flex items-center justify-between text-xs mt-4 mb-4" style={{ color: 'hsl(330, 3%, 49%)' }}>
             <div>
-              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Dataset</div>
-              <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.dataset_name}</div>
+              <span className="font-medium">Started At:</span> {formatDate(job.inserted_at)}
             </div>
             <div>
-              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Batch Job ID</div>
-              <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.batch_job_id}</div>
+              <span className="font-medium">Last Updated At:</span> {formatDate(job.updated_at)}
             </div>
-            <div>
-              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Model</div>
-              <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                {assistantConfig?.model || job.config?.model || 'N/A'}
-              </div>
-            </div>
-            {job.assistant_id && (
-              <div>
-                <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant ID</div>
-                <div className="text-sm font-medium font-mono" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  {job.assistant_id}
-                </div>
-              </div>
-            )}
           </div>
-
-          {/* Assistant Config Details (if available) */}
-          {assistantConfig && (
-            <div className="border-t pt-4 mb-4" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant Configuration</div>
-              <div className="text-sm mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                <span className="font-medium">Name:</span> {assistantConfig.name}
-              </div>
-              {assistantConfig.instructions && (
-                <div className="text-sm mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  <span className="font-medium">Instructions:</span> {assistantConfig.instructions.substring(0, 100)}{assistantConfig.instructions.length > 100 ? '...' : ''}
-                </div>
-              )}
-              {assistantConfig.temperature !== undefined && (
-                <div className="text-sm mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  <span className="font-medium">Temperature:</span> {assistantConfig.temperature}
-                </div>
-              )}
-              {assistantConfig.vector_store_ids && assistantConfig.vector_store_ids.length > 0 && (
-                <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  <span className="font-medium">Vector Stores:</span> {assistantConfig.vector_store_ids.length} attached
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Regular Config Details (if available and no assistant config) */}
-          {!assistantConfig && job.config && (job.config.instructions || job.config.tools) && (
-            <div className="border-t pt-4 mb-4" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Configuration</div>
-              {job.config.instructions && (
-                <div className="text-sm mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  <span className="font-medium">Instructions:</span> {job.config.instructions}
-                </div>
-              )}
-              {job.config.tools && job.config.tools.length > 0 && (
-                <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  <span className="font-medium">Tools:</span> {job.config.tools.map(t => t.type).join(', ')}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Error message (if failed) */}
           {job.error_message && (
-            <div className="border-t pt-4 mb-4" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(8, 86%, 40%)' }}>Error</div>
+            <div className="border rounded-lg p-3 mb-4" style={{ backgroundColor: 'hsl(8, 86%, 95%)', borderColor: 'hsl(8, 86%, 80%)' }}>
+              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(8, 86%, 40%)' }}>Error</div>
               <div className="text-sm" style={{ color: 'hsl(8, 86%, 40%)' }}>
                 {job.error_message}
               </div>
             </div>
           )}
 
-          {/* Timestamps */}
-          <div className="border-t pt-4 flex items-center justify-between text-xs" style={{ borderColor: 'hsl(0, 0%, 85%)', color: 'hsl(330, 3%, 49%)' }}>
-            <div>
-              <span className="font-medium">Created:</span> {formatDate(job.inserted_at)}
-            </div>
-            <div>
-              <span className="font-medium">Updated:</span> {formatDate(job.updated_at)}
-            </div>
-          </div>
-
           {/* Actions */}
-          <div className="border-t pt-4 mt-4" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsConfigModalOpen(true);
+              }}
+              className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: 'hsl(0, 0%, 100%)',
+                borderWidth: '1px',
+                borderColor: 'hsl(167, 59%, 70%)',
+                color: 'hsl(167, 59%, 22%)'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 95%)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+            >
+              View Config
+            </button>
             <button
               onClick={() => setIsModalOpen(true)}
               className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -2109,6 +2178,183 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
       {/* Results Modal */}
       {isModalOpen && (
         <ResultsModal job={job} assistantConfig={assistantConfig} onClose={() => setIsModalOpen(false)} />
+      )}
+
+      {/* Config Modal */}
+      {isConfigModalOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-modalBackdrop"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setIsConfigModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-lg shadow-2xl animate-modalContent"
+            style={{ backgroundColor: 'hsl(0, 0%, 100%)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Detailed Configuration</h3>
+              </div>
+              <button
+                onClick={() => setIsConfigModalOpen(false)}
+                className="p-2 rounded-md transition-colors"
+                style={{
+                  color: 'hsl(330, 3%, 49%)',
+                  backgroundColor: 'transparent'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto p-6 space-y-4" style={{ maxHeight: 'calc(80vh - 140px)' }}>
+              {assistantConfig && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant Name</div>
+                  <div className="text-sm font-medium mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>{assistantConfig.name}</div>
+                </div>
+              )}
+
+              {job.assistant_id && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Assistant ID</div>
+                  <div className="text-sm font-mono mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.assistant_id}</div>
+                </div>
+              )}
+
+              <div>
+                <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Model</div>
+                <div className="text-sm font-medium mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                  {assistantConfig?.model || job.config?.model || 'N/A'}
+                </div>
+              </div>
+
+              {(assistantConfig?.temperature !== undefined || job.config?.temperature !== undefined) && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Temperature</div>
+                  <div className="text-sm font-medium mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                    {assistantConfig?.temperature !== undefined ? assistantConfig.temperature : job.config?.temperature}
+                  </div>
+                </div>
+              )}
+
+              {(assistantConfig?.instructions || job.config?.instructions) && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Instructions</div>
+                  <div className="text-sm p-3 rounded-md font-mono whitespace-pre-wrap border" style={{
+                    backgroundColor: 'hsl(0, 0%, 98%)',
+                    borderColor: 'hsl(0, 0%, 85%)',
+                    color: 'hsl(330, 3%, 19%)',
+                    maxHeight: '300px',
+                    overflowY: 'auto'
+                  }}>
+                    {assistantConfig?.instructions || job.config?.instructions}
+                  </div>
+                </div>
+              )}
+
+              {job.config?.tools && job.config.tools.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Tools</div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.config.tools.map((tool, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 rounded text-sm font-medium"
+                        style={{
+                          backgroundColor: 'hsl(167, 59%, 95%)',
+                          borderWidth: '1px',
+                          borderColor: 'hsl(167, 59%, 70%)',
+                          color: 'hsl(167, 59%, 22%)'
+                        }}
+                      >
+                        {tool.type}
+                      </span>
+                    ))}
+                  </div>
+                  {job.config.tools.map((tool, idx) => (
+                    tool.vector_store_ids && tool.vector_store_ids.length > 0 && (
+                      <div key={`vs-${idx}`} className="mb-4">
+                        <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                          Vector Store IDs ({tool.type})
+                        </div>
+                        <div className="text-sm font-mono p-3 rounded-md border" style={{
+                          backgroundColor: 'hsl(0, 0%, 98%)',
+                          borderColor: 'hsl(0, 0%, 85%)',
+                          color: 'hsl(330, 3%, 19%)'
+                        }}>
+                          {tool.vector_store_ids.join(', ')}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+
+              {assistantConfig?.vector_store_ids && assistantConfig.vector_store_ids.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Vector Store IDs</div>
+                  <div className="text-sm font-mono p-3 rounded-md border" style={{
+                    backgroundColor: 'hsl(0, 0%, 98%)',
+                    borderColor: 'hsl(0, 0%, 85%)',
+                    color: 'hsl(330, 3%, 19%)'
+                  }}>
+                    {assistantConfig.vector_store_ids.join(', ')}
+                  </div>
+                </div>
+              )}
+
+              {job.config?.include && job.config.include.length > 0 && (
+                <div>
+                  <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Include</div>
+                  <div className="flex flex-wrap gap-2">
+                    {job.config.include.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 rounded text-xs font-medium"
+                        style={{
+                          backgroundColor: 'hsl(0, 0%, 95%)',
+                          borderWidth: '1px',
+                          borderColor: 'hsl(0, 0%, 85%)',
+                          color: 'hsl(330, 3%, 19%)'
+                        }}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t flex justify-end" style={{ borderColor: 'hsl(0, 0%, 85%)', backgroundColor: 'hsl(0, 0%, 98%)' }}>
+              <button
+                onClick={() => setIsConfigModalOpen(false)}
+                className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: 'hsl(167, 59%, 22%)',
+                  color: 'hsl(0, 0%, 100%)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1315,6 +1315,29 @@ function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps) {
   }
 
   const { cosine_similarity } = score;
+
+  // Defensive check: ensure cosine_similarity and per_item_scores exist
+  if (!cosine_similarity ||
+      !Array.isArray(cosine_similarity.per_item_scores) ||
+      typeof cosine_similarity.avg !== 'number' ||
+      typeof cosine_similarity.std !== 'number' ||
+      typeof cosine_similarity.total_pairs !== 'number') {
+    return (
+      <div
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
+        style={{
+          backgroundColor: 'hsl(0, 0%, 95%)',
+          borderWidth: '1px',
+          borderColor: 'hsl(0, 0%, 85%)',
+          color: 'hsl(330, 3%, 49%)'
+        }}
+      >
+        <span className="font-medium">Similarity Score:</span>
+        <span>Invalid Data</span>
+      </div>
+    );
+  }
+
   const avgScore = cosine_similarity.avg.toFixed(2);
   const stdScore = cosine_similarity.std.toFixed(2);
 
@@ -1400,6 +1423,11 @@ function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps) {
             }}
           >
             {cosine_similarity.per_item_scores.map((item, index) => {
+              // Defensive null check for item properties
+              if (!item || typeof item.cosine_similarity !== 'number') {
+                return null;
+              }
+
               const itemScore = item.cosine_similarity.toFixed(2);
               const itemColors = getScoreColor(item.cosine_similarity);
 
@@ -1508,8 +1536,12 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
 
   // Export to CSV
   const handleExportCSV = () => {
-    if (!job.score || !job.score.cosine_similarity) {
-      alert('No data available to export');
+    if (!job.score ||
+        !job.score.cosine_similarity ||
+        !Array.isArray(job.score.cosine_similarity.per_item_scores) ||
+        typeof job.score.cosine_similarity.avg !== 'number' ||
+        typeof job.score.cosine_similarity.std !== 'number') {
+      alert('No valid data available to export');
       return;
     }
 
@@ -1524,7 +1556,12 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
     csvContent += 'Trace ID,Item Similarity Score\n';
 
     // Data rows - one row per item
-    cosine_similarity.per_item_scores.forEach((item, index) => {
+    cosine_similarity.per_item_scores.forEach((item) => {
+      // Skip items with invalid data
+      if (!item || typeof item.cosine_similarity !== 'number') {
+        return;
+      }
+
       const row = [
         job.id,
         `"${job.run_name}"`,
@@ -1538,7 +1575,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
         cosine_similarity.avg.toFixed(2),
         cosine_similarity.std.toFixed(2),
         cosine_similarity.total_pairs,
-        item.trace_id,
+        item.trace_id || 'N/A',
         item.cosine_similarity.toFixed(2)
       ].join(',');
 
@@ -1586,9 +1623,9 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
   const formatDate = (dateString: string) => new Date(dateString).toLocaleString();
 
   const hasScore = job.score && job.score.cosine_similarity;
-  const avgScore = hasScore ? job.score.cosine_similarity.avg.toFixed(2) : 'N/A';
-  const stdScore = hasScore ? job.score.cosine_similarity.std.toFixed(2) : 'N/A';
-  const totalPairs = hasScore ? job.score.cosine_similarity.total_pairs : 0;
+  const avgScore = (hasScore && typeof job.score.cosine_similarity.avg === 'number') ? job.score.cosine_similarity.avg.toFixed(2) : 'N/A';
+  const stdScore = (hasScore && typeof job.score.cosine_similarity.std === 'number') ? job.score.cosine_similarity.std.toFixed(2) : 'N/A';
+  const totalPairs = (hasScore && typeof job.score.cosine_similarity.total_pairs === 'number') ? job.score.cosine_similarity.total_pairs : 0;
 
   return (
     <>
@@ -1757,7 +1794,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
             )}
 
             {/* Detailed Results Section */}
-            {hasScore && job.score.cosine_similarity.per_item_scores.length > 0 && (
+            {hasScore && Array.isArray(job.score.cosine_similarity?.per_item_scores) && job.score.cosine_similarity.per_item_scores.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
@@ -1771,6 +1808,11 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
                   <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
                     {job.score.cosine_similarity.per_item_scores.map((item, index) => {
+                      // Defensive null check for item properties
+                      if (!item || typeof item.cosine_similarity !== 'number') {
+                        return null;
+                      }
+
                       const itemScore = item.cosine_similarity.toFixed(2);
                       const itemColors = getScoreColor(item.cosine_similarity);
 
@@ -1956,7 +1998,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 </div>
               )}
 
-              {job.config?.tools && job.config.tools.length > 0 && (
+              {Array.isArray(job.config?.tools) && job.config.tools.length > 0 && (
                 <div>
                   <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Tools</div>
                   <div className="flex flex-wrap gap-2 mb-4">
@@ -1976,7 +2018,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                     ))}
                   </div>
                   {job.config.tools.map((tool, idx) => (
-                    tool.vector_store_ids && tool.vector_store_ids.length > 0 && (
+                    Array.isArray(tool.vector_store_ids) && tool.vector_store_ids.length > 0 && (
                       <div key={`vs-${idx}`} className="mb-4">
                         <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
                           Vector Store IDs ({tool.type})
@@ -1994,7 +2036,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 </div>
               )}
 
-              {assistantConfig?.vector_store_ids && assistantConfig.vector_store_ids.length > 0 && (
+              {Array.isArray(assistantConfig?.vector_store_ids) && assistantConfig.vector_store_ids.length > 0 && (
                 <div>
                   <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Vector Store IDs</div>
                   <div className="text-sm font-mono p-3 rounded-md border" style={{
@@ -2007,7 +2049,7 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 </div>
               )}
 
-              {job.config?.include && job.config.include.length > 0 && (
+              {Array.isArray(job.config?.include) && job.config.include.length > 0 && (
                 <div>
                   <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Include</div>
                   <div className="flex flex-wrap gap-2">
@@ -2298,7 +2340,7 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
                 </div>
               )}
 
-              {job.config?.tools && job.config.tools.length > 0 && (
+              {Array.isArray(job.config?.tools) && job.config.tools.length > 0 && (
                 <div>
                   <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Tools</div>
                   <div className="flex flex-wrap gap-2 mb-4">
@@ -2318,7 +2360,7 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
                     ))}
                   </div>
                   {job.config.tools.map((tool, idx) => (
-                    tool.vector_store_ids && tool.vector_store_ids.length > 0 && (
+                    Array.isArray(tool.vector_store_ids) && tool.vector_store_ids.length > 0 && (
                       <div key={`vs-${idx}`} className="mb-4">
                         <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
                           Vector Store IDs ({tool.type})
@@ -2336,7 +2378,7 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
                 </div>
               )}
 
-              {assistantConfig?.vector_store_ids && assistantConfig.vector_store_ids.length > 0 && (
+              {Array.isArray(assistantConfig?.vector_store_ids) && assistantConfig.vector_store_ids.length > 0 && (
                 <div>
                   <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Vector Store IDs</div>
                   <div className="text-sm font-mono p-3 rounded-md border" style={{
@@ -2349,7 +2391,7 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
                 </div>
               )}
 
-              {job.config?.include && job.config.include.length > 0 && (
+              {Array.isArray(job.config?.include) && job.config.include.length > 0 && (
                 <div>
                   <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Include</div>
                   <div className="flex flex-wrap gap-2">

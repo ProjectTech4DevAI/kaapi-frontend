@@ -4,9 +4,9 @@
  */
 
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScoreObject } from './types';
-import { getScoreColor } from './utils';
+import { getScoreColor, calculateDynamicThresholds } from './utils';
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;
@@ -83,7 +83,16 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
 
   const avgScore = cosine_similarity.avg.toFixed(2);
   const stdScore = cosine_similarity.std.toFixed(2);
-  const avgColors = getScoreColor(cosine_similarity.avg);
+
+  // Calculate dynamic thresholds based on the score distribution
+  const dynamicThresholds = useMemo(() => {
+    const scores = cosine_similarity.per_item_scores
+      .filter(item => item && typeof item.cosine_similarity === 'number')
+      .map(item => item.cosine_similarity);
+    return calculateDynamicThresholds(scores);
+  }, [cosine_similarity.per_item_scores]);
+
+  const avgColors = getScoreColor(cosine_similarity.avg, dynamicThresholds);
 
   return (
     <div
@@ -154,14 +163,21 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
               maxHeight: '300px'
             }}
           >
-            {cosine_similarity.per_item_scores.map((item, index) => {
+            {[...cosine_similarity.per_item_scores]
+              .sort((a, b) => {
+                // Sort in descending order by cosine_similarity
+                if (!a || typeof a.cosine_similarity !== 'number') return 1;
+                if (!b || typeof b.cosine_similarity !== 'number') return -1;
+                return b.cosine_similarity - a.cosine_similarity;
+              })
+              .map((item, index) => {
               // Defensive null check for item properties
               if (!item || typeof item.cosine_similarity !== 'number') {
                 return null;
               }
 
               const itemScore = item.cosine_similarity.toFixed(2);
-              const itemColors = getScoreColor(item.cosine_similarity);
+              const itemColors = getScoreColor(item.cosine_similarity, dynamicThresholds);
 
               return (
                 <div

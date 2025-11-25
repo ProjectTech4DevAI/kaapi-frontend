@@ -7,14 +7,14 @@
  */
 
 "use client"
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {format, toZonedTime} from "date-fns-tz"
 import { useRouter } from 'next/navigation'
 import { APIKey } from '../keystore/page';
 import { STORAGE_KEY } from '../keystore/page';
 import { Dataset, DATASETS_STORAGE_KEY, UploadDatasetModal } from '../datasets/page';
 import { EvalJob, AssistantConfig, ScoreObject } from '../components/types';
-import { formatDate, getStatusColor, getScoreColor } from '../components/utils';
+import { formatDate, getStatusColor, getScoreColor, calculateDynamicThresholds } from '../components/utils';
 import ConfigModal from '../components/ConfigModal';
 import StatusBadge from '../components/StatusBadge';
 import ScoreDisplay from '../components/ScoreDisplay';
@@ -1225,6 +1225,17 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
   const stdScore = (hasScore && typeof job.score.cosine_similarity.std === 'number') ? job.score.cosine_similarity.std.toFixed(2) : 'N/A';
   const totalPairs = (hasScore && typeof job.score.cosine_similarity.total_pairs === 'number') ? job.score.cosine_similarity.total_pairs : 0;
 
+  // Calculate dynamic thresholds based on the score distribution
+  const dynamicThresholds = useMemo(() => {
+    if (!hasScore || !Array.isArray(job.score.cosine_similarity.per_item_scores)) {
+      return { highThreshold: 0.7, mediumThreshold: 0.5 };
+    }
+    const scores = job.score.cosine_similarity.per_item_scores
+      .filter(item => item && typeof item.cosine_similarity === 'number')
+      .map(item => item.cosine_similarity);
+    return calculateDynamicThresholds(scores);
+  }, [hasScore, job.score]);
+
   return (
     <>
       {/* Backdrop */}
@@ -1405,14 +1416,21 @@ function ResultsModal({ job, assistantConfig, onClose }: ResultsModalProps) {
                 </div>
                 <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
                   <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
-                    {job.score.cosine_similarity.per_item_scores.map((item, index) => {
+                    {[...job.score.cosine_similarity.per_item_scores]
+                      .sort((a, b) => {
+                        // Sort in descending order by cosine_similarity
+                        if (!a || typeof a.cosine_similarity !== 'number') return 1;
+                        if (!b || typeof b.cosine_similarity !== 'number') return -1;
+                        return b.cosine_similarity - a.cosine_similarity;
+                      })
+                      .map((item, index) => {
                       // Defensive null check for item properties
                       if (!item || typeof item.cosine_similarity !== 'number') {
                         return null;
                       }
 
                       const itemScore = item.cosine_similarity.toFixed(2);
-                      const itemColors = getScoreColor(item.cosine_similarity);
+                      const itemColors = getScoreColor(item.cosine_similarity, dynamicThresholds);
 
                       return (
                         <div

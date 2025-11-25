@@ -38,15 +38,46 @@ export const getStatusColor = (status: string): { bg: string; border: string; te
 };
 
 /**
- * Returns color scheme based on similarity score
+ * Calculates dynamic thresholds for color coding based on score distribution
+ * @param scores - Array of similarity scores
+ * @returns Object with high and medium threshold values (percentile-based)
+ */
+export const calculateDynamicThresholds = (scores: number[]): { highThreshold: number; mediumThreshold: number } => {
+  if (scores.length === 0) {
+    return { highThreshold: 0.7, mediumThreshold: 0.5 };
+  }
+
+  // Sort scores in ascending order
+  const sortedScores = [...scores].sort((a, b) => a - b);
+
+  // Calculate 33rd and 67th percentiles
+  const lowPercentileIndex = Math.floor(sortedScores.length * 0.33);
+  const highPercentileIndex = Math.floor(sortedScores.length * 0.67);
+
+  const mediumThreshold = sortedScores[lowPercentileIndex];
+  const highThreshold = sortedScores[highPercentileIndex];
+
+  return { highThreshold, mediumThreshold };
+};
+
+/**
+ * Returns color scheme based on similarity score with dynamic or fixed thresholds
  * @param similarity - Cosine similarity score (0-1)
+ * @param thresholds - Optional dynamic thresholds { highThreshold, mediumThreshold }
  * @returns Object with bg, border, and text HSL color values
  */
-export const getScoreColor = (similarity: number): { bg: string; border: string; text: string } => {
-  if (similarity >= 0.7) {
+export const getScoreColor = (
+  similarity: number,
+  thresholds?: { highThreshold: number; mediumThreshold: number }
+): { bg: string; border: string; text: string } => {
+  // Use dynamic thresholds if provided, otherwise use fixed thresholds
+  const highThreshold = thresholds?.highThreshold ?? 0.7;
+  const mediumThreshold = thresholds?.mediumThreshold ?? 0.5;
+
+  if (similarity >= highThreshold) {
     return { bg: 'hsl(134, 61%, 95%)', border: 'hsl(134, 61%, 70%)', text: 'hsl(134, 61%, 25%)' };
-  } else if (similarity >= 0.5) {
-    return { bg: 'hsl(46, 100%, 95%)', border: 'hsl(46, 100%, 80%)', text: 'hsl(46, 100%, 25%)' };
+  } else if (similarity >= mediumThreshold) {
+    return { bg: 'hsl(45, 100%, 92%)', border: 'hsl(45, 100%, 60%)', text: 'hsl(45, 100%, 30%)' };
   } else {
     return { bg: 'hsl(8, 86%, 95%)', border: 'hsl(8, 86%, 80%)', text: 'hsl(8, 86%, 40%)' };
   }

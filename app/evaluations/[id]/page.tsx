@@ -139,21 +139,25 @@ export default function EvaluationReport() {
         return;
       }
 
+      console.log(`Exporting ${individual_scores.length} rows to CSV`);
+
       // Build CSV content
-      let csvContent = 'data:text/csv;charset=utf-8,';
+      let csvContent = '';
 
       // Get all score names for header
       const firstItem = individual_scores[0];
       const scoreNames = firstItem?.trace_scores?.map(s => s.name) || [];
 
-      // Header row
-      csvContent += 'Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,';
+      // Header row - Added Counter column
+      csvContent += 'Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,';
       csvContent += 'Question,Answer,Ground Truth,';
       csvContent += scoreNames.map(name => `${name},${name} (comment)`).join(',') + '\n';
 
       // Data rows
-      individual_scores.forEach((item) => {
+      let rowCount = 0;
+      individual_scores.forEach((item, index) => {
         const row = [
+          index + 1, // Counter starting from 1
           item.trace_id || 'N/A',
           job.id,
           `"${job.run_name.replace(/"/g, '""')}"`,
@@ -174,16 +178,23 @@ export default function EvaluationReport() {
         ].join(',');
 
         csvContent += row + '\n';
+        rowCount++;
       });
 
-      // Create download link
-      const encodedUri = encodeURI(csvContent);
+      console.log(`Successfully created CSV with ${rowCount} data rows`);
+
+      // Create download link using Blob (more reliable than encodeURI for large files)
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
+      link.setAttribute('href', url);
       link.setAttribute('download', `evaluation_${job.id}_${job.run_name.replace(/[^a-z0-9]/gi, '_')}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      alert(`CSV exported successfully with ${rowCount} rows`);
     } catch (error) {
       console.error('Error exporting CSV:', error);
       alert('Failed to export CSV. Please check the console for details.');

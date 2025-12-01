@@ -54,7 +54,7 @@ export async function GET(
     // Build URL with default query parameters
     const url = new URL(`${backendUrl}/api/v1/evaluations/${id}`);
     url.searchParams.set('get_trace_info', 'true');
-    url.searchParams.set('resync_score', 'false');
+    url.searchParams.set('resync_score', 'true');
 
     console.log(`[REAL BACKEND] Fetching evaluation ${id} from ${url.toString()}`);
 

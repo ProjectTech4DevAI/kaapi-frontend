@@ -78,7 +78,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
         </svg>
       ),
       submenu: [
-        { name: 'Magic Canvas', route: '/configurations/prompt-editor', comingSoon: true },
+        { name: 'Prompt Editor', route: '/configurations/prompt-editor', comingSoon: false },
       ]
     },
     {

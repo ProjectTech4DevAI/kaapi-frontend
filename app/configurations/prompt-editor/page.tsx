@@ -1,5 +1,5 @@
 /**
- * Magic Canvas - Git-based Version Controlled Prompt Editor
+ * Prompt Editor - Git-based Version Controlled Prompt Editor
  *
  * A WYSIWYG editor for managing prompts with git-like version control.
  * Features: store, edit, merge, compare prompts in a versioned manner.
@@ -414,7 +414,7 @@ export default function MagicCanvasPage() {
                   </svg>
                 </button>
                 <div>
-                  <h1 className="text-2xl font-semibold" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>Magic Canvas</h1>
+                  <h1 className="text-2xl font-semibold" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>Prompt Editor</h1>
                   <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>Version-controlled prompt editor</p>
                 </div>
               </div>

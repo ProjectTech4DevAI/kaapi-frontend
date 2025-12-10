@@ -5,6 +5,7 @@
 
 "use client"
 import { useRouter } from 'next/navigation';
+import { colors } from '@/app/lib/colors';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -48,42 +49,45 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
     <aside
       className="border-r transition-all duration-300 ease-in-out h-full flex-shrink-0"
       style={{
-        width: collapsed ? '0px' : '240px',
-        backgroundColor: 'hsl(0, 0%, 100%)',
-        borderColor: 'hsl(0, 0%, 85%)',
+        width: collapsed ? '0px' : '220px',
+        backgroundColor: colors.bg.secondary,
+        borderColor: colors.border,
         overflow: 'hidden',
       }}
     >
-      <div className="px-6 py-4" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-        <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Kaapi Konsole</h2>
-        <p className="text-sm mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>A Tech4Dev Product</p>
+      <div className="px-5 py-6" style={{ borderBottom: `1px solid ${colors.border}` }}>
+        <h2 className="text-sm font-semibold" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>Kaapi Konsole</h2>
+        <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>Tech4Dev</p>
       </div>
-      <nav className="p-4 space-y-2 h-full" style={{ width: '240px' }}>
+      <nav className="p-3 space-y-0.5" style={{ width: '220px' }}>
         {navItems.map((item) => {
           const isActive = activeRoute === item.route;
           return (
             <button
               key={item.route}
               onClick={() => router.push(item.route)}
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
+              className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-2.5"
               style={{
-                backgroundColor: isActive ? 'hsl(167, 59%, 22%)' : 'transparent',
-                color: isActive ? 'hsl(0, 0%, 100%)' : 'hsl(330, 3%, 49%)'
+                backgroundColor: isActive ? colors.bg.primary : 'transparent',
+                color: isActive ? colors.text.primary : colors.text.secondary,
+                fontWeight: isActive ? 500 : 400,
+                transition: 'all 0.15s ease',
+                border: isActive ? `1px solid ${colors.border}` : '1px solid transparent'
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 96.5%)';
-                  e.currentTarget.style.color = 'hsl(330, 3%, 19%)';
+                  e.currentTarget.style.backgroundColor = colors.bg.primary;
+                  e.currentTarget.style.color = colors.text.primary;
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'hsl(330, 3%, 49%)';
+                  e.currentTarget.style.color = colors.text.secondary;
                 }
               }}
             >
-              {item.icon}
+              <span style={{ opacity: isActive ? 1 : 0.7 }}>{item.icon}</span>
               {item.name}
             </button>
           );

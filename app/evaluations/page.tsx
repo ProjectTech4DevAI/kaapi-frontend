@@ -300,7 +300,7 @@ function SimplifiedEvalContent() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: '#fafafa' }}>
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Full Height */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
@@ -308,36 +308,52 @@ function SimplifiedEvalContent() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Title Section with Collapse Button */}
-          <div className="border-b px-6 py-4" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-            <div className="flex items-center gap-4">
+          <div className="border-b px-6 py-4" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-md transition-colors flex-shrink-0"
+                className="p-1.5 rounded flex-shrink-0"
                 style={{
                   borderWidth: '1px',
-                  borderColor: 'hsl(0, 0%, 85%)',
-                  backgroundColor: 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: '#e5e5e5',
+                  backgroundColor: '#ffffff',
+                  color: '#737373',
+                  transition: 'all 0.15s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#fafafa';
+                  e.currentTarget.style.color = '#171717';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                  e.currentTarget.style.color = '#737373';
+                }}
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-4 h-4"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                  {sidebarCollapsed ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                    />
+                  )}
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Evaluations</h1>
+                <h1 className="text-2xl font-semibold" style={{ color: '#171717', letterSpacing: '-0.01em' }}>Evaluations</h1>
               </div>
             </div>
           </div>
@@ -353,8 +369,8 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
-            <div className="max-w-7xl mx-auto page-transition">
+          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: '#fafafa' }}>
+            <div className="max-w-7xl mx-auto space-y-6 page-transition">
               {activeTab === 'upload' ? (
                 <UploadTab
                   isEvaluating={isEvaluating}
@@ -478,17 +494,21 @@ function UploadTab({
   return (
     <div className="space-y-6">
       {/* API Key Selection Card */}
-      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+      <div className="border rounded-lg p-6" style={{
+        backgroundColor: '#ffffff',
+        borderColor: '#e5e5e5'
+      }}>
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Select API Key</h2>
+          <h2 className="text-xl font-semibold" style={{ color: '#171717' }}>Select API Key</h2>
           <div className="relative">
             <button
               onMouseEnter={() => setShowHowItWorksTooltip(true)}
               onMouseLeave={() => setShowHowItWorksTooltip(false)}
-              className="p-1 rounded-full transition-colors"
+              className="p-1 rounded-full"
               style={{
-                color: 'hsl(330, 3%, 49%)',
-                backgroundColor: showHowItWorksTooltip ? 'hsl(0, 0%, 95%)' : 'transparent'
+                color: '#737373',
+                backgroundColor: showHowItWorksTooltip ? '#fafafa' : 'transparent',
+                transition: 'all 0.15s ease'
               }}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -497,14 +517,14 @@ function UploadTab({
             </button>
             {showHowItWorksTooltip && (
               <div
-                className="absolute left-0 top-full mt-2 w-96 border rounded-lg p-4 shadow-lg z-50 animate-fadeIn"
+                className="absolute left-0 top-full mt-2 w-96 border rounded-lg p-4 z-50 animate-fadeIn"
                 style={{
-                  backgroundColor: 'hsl(0, 0%, 100%)',
-                  borderColor: 'hsl(0, 0%, 85%)'
+                  backgroundColor: '#ffffff',
+                  borderColor: '#e5e5e5'
                 }}
               >
-                <h3 className="text-sm font-semibold mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>How it works</h3>
-                <ol className="list-decimal list-inside space-y-1.5 text-xs" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: '#171717' }}>How it works</h3>
+                <ol className="list-decimal list-inside space-y-1.5 text-xs" style={{ color: '#737373' }}>
                   <li>Select an API key from your keystore</li>
                   <li>Select a stored dataset or upload a new CSV file (format: question,answer columns)</li>
                   <li>Configure evaluation settings (experiment name required, other fields optional)</li>
@@ -518,8 +538,8 @@ function UploadTab({
         </div>
 
         {apiKeys.length === 0 ? (
-          <div className="border-2 border-dashed rounded-lg p-8 text-center" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-            <div style={{ color: 'hsl(330, 3%, 49%)' }}>
+          <div className="border-2 border-dashed rounded-lg p-8 text-center" style={{ borderColor: '#e5e5e5' }}>
+            <div style={{ color: '#737373' }}>
               <svg
                 className="mx-auto h-12 w-12 mb-3"
                 fill="none"
@@ -533,41 +553,63 @@ function UploadTab({
                   d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
                 />
               </svg>
-              <p className="font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>No API key found</p>
+              <p className="font-medium mb-2" style={{ color: '#171717' }}>No API key found</p>
               <p className="text-sm mb-4">You need to add an API key before running evaluations</p>
               <a
                 href="/keystore"
-                className="inline-block px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                style={{ backgroundColor: 'hsl(167, 59%, 22%)', color: 'hsl(0, 0%, 100%)' }}
+                className="inline-block px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: '#171717',
+                  color: '#ffffff',
+                  transition: 'all 0.15s ease',
+                  border: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#404040';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#171717';
+                }}
               >
                 Go to Keystore
               </a>
             </div>
           </div>
         ) : selectedKey ? (
-          <div className="border rounded-lg p-4" style={{ backgroundColor: 'hsl(134, 61%, 95%)', borderColor: 'hsl(134, 61%, 70%)' }}>
+          <div className="border rounded-lg p-6" style={{
+            backgroundColor: '#f0fdf4',
+            borderColor: '#86efac',
+            transition: 'all 0.15s ease'
+          }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(134, 61%, 25%)' }}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#16a34a' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium" style={{ color: 'hsl(134, 61%, 25%)' }}>
+                  <p className="text-sm font-medium" style={{ color: '#16a34a' }}>
                     <span className="font-semibold">{selectedKey.provider} - {selectedKey.label}</span>
                   </p>
-                  <p className="text-xs mt-1" style={{ color: 'hsl(134, 61%, 30%)' }}>
+                  <p className="text-xs mt-1" style={{ color: '#16a34a' }}>
                     Key: {selectedKey.key.substring(0, 8)}...{selectedKey.key.substring(selectedKey.key.length - 4)}
                   </p>
                 </div>
               </div>
               <a
                 href="/keystore"
-                className="px-3 py-2 rounded-md text-xs font-medium transition-colors"
+                className="px-3 py-2 rounded-md text-xs font-medium"
                 style={{
                   borderWidth: '1px',
-                  borderColor: 'hsl(134, 61%, 40%)',
+                  borderColor: '#86efac',
                   backgroundColor: 'transparent',
-                  color: 'hsl(134, 61%, 25%)'
+                  color: '#16a34a',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#dcfce7';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
                 Manage
@@ -578,17 +620,21 @@ function UploadTab({
       </div>
 
       {/* Dataset Selection Card */}
-      <div className="border rounded-lg p-8" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+      <div className="border rounded-lg p-8" style={{
+        backgroundColor: '#ffffff',
+        borderColor: '#e5e5e5'
+      }}>
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Select QnA Dataset</h2>
+          <h2 className="text-xl font-semibold" style={{ color: '#171717' }}>Select QnA Dataset</h2>
           <div className="relative">
             <button
               onMouseEnter={() => setShowCsvFormatTooltip(true)}
               onMouseLeave={() => setShowCsvFormatTooltip(false)}
-              className="p-1 rounded-full transition-colors"
+              className="p-1 rounded-full"
               style={{
-                color: 'hsl(330, 3%, 49%)',
-                backgroundColor: showCsvFormatTooltip ? 'hsl(0, 0%, 95%)' : 'transparent'
+                color: '#737373',
+                backgroundColor: showCsvFormatTooltip ? '#fafafa' : 'transparent',
+                transition: 'all 0.15s ease'
               }}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -597,14 +643,18 @@ function UploadTab({
             </button>
             {showCsvFormatTooltip && (
               <div
-                className="absolute left-0 top-full mt-2 w-80 border rounded-lg p-4 shadow-lg z-50 animate-fadeIn"
+                className="absolute left-0 top-full mt-2 w-80 border rounded-lg p-4 z-50 animate-fadeIn"
                 style={{
-                  backgroundColor: 'hsl(0, 0%, 100%)',
-                  borderColor: 'hsl(0, 0%, 85%)'
+                  backgroundColor: '#ffffff',
+                  borderColor: '#e5e5e5'
                 }}
               >
-                <h3 className="text-sm font-semibold mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>Expected CSV Format</h3>
-                <pre className="text-xs p-3 rounded-md border overflow-x-auto font-mono" style={{ backgroundColor: 'hsl(0, 0%, 96.5%)', borderColor: 'hsl(0, 0%, 85%)', color: 'hsl(330, 3%, 19%)' }}>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: '#171717' }}>Expected CSV Format</h3>
+                <pre className="text-xs p-3 rounded-md border overflow-x-auto font-mono" style={{
+                  backgroundColor: '#fafafa',
+                  borderColor: '#e5e5e5',
+                  color: '#171717'
+                }}>
 {`question,answer
 "What is X?","Answer Y"
 "Explain Z","Description of Z"`}
@@ -619,11 +669,12 @@ function UploadTab({
             <select
               value={selectedDatasetId}
               onChange={(e) => onStoredDatasetSelect(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-md border focus:outline-none focus:ring-2 text-sm"
+              className="flex-1 px-4 py-3 rounded-md border focus:outline-none text-sm"
               style={{
-                borderColor: selectedDatasetId ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
-                backgroundColor: 'hsl(0, 0%, 100%)',
-                color: 'hsl(330, 3%, 19%)'
+                borderColor: selectedDatasetId ? '#171717' : '#e5e5e5',
+                backgroundColor: '#ffffff',
+                color: '#171717',
+                transition: 'all 0.15s ease'
               }}
             >
               <option value="">-- Select a Dataset --</option>
@@ -635,14 +686,19 @@ function UploadTab({
             </select>
             <button
               onClick={onOpenUploadModal}
-              className="px-4 py-3 rounded-md border text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-3 rounded-md text-sm font-medium flex items-center gap-2"
               style={{
-                borderColor: 'hsl(167, 59%, 22%)',
-                backgroundColor: 'hsl(167, 59%, 22%)',
-                color: 'hsl(0, 0%, 100%)'
+                backgroundColor: '#171717',
+                color: '#ffffff',
+                border: 'none',
+                transition: 'all 0.15s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#171717';
+              }}
               title="Upload New Dataset"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -652,8 +708,8 @@ function UploadTab({
           </div>
 
           {storedDatasets.length === 0 && (
-            <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-              <div style={{ color: 'hsl(330, 3%, 49%)' }}>
+            <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: '#e5e5e5' }}>
+              <div style={{ color: '#737373' }}>
                 <svg
                   className="mx-auto h-8 w-8 mb-2"
                   fill="none"
@@ -667,23 +723,27 @@ function UploadTab({
                     d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
                   />
                 </svg>
-                <p className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>No datasets found</p>
+                <p className="text-sm font-medium" style={{ color: '#171717' }}>No datasets found</p>
                 <p className="text-xs mt-1">Click the + button above to upload your first dataset</p>
               </div>
             </div>
           )}
 
           {selectedDataset && (
-            <div className="border rounded-lg p-4" style={{ backgroundColor: 'hsl(134, 61%, 95%)', borderColor: 'hsl(134, 61%, 70%)' }}>
+            <div className="border rounded-lg p-6" style={{
+              backgroundColor: 'hsl(142, 76%, 96%)',
+              borderColor: 'hsl(142, 76%, 75%)',
+              transition: 'all 0.15s ease'
+            }}>
               <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(134, 61%, 25%)' }}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#16a34a' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium" style={{ color: 'hsl(134, 61%, 25%)' }}>
+                  <p className="text-sm font-medium" style={{ color: '#16a34a' }}>
                     Selected: <span className="font-semibold">{selectedDataset.dataset_name}</span>
                   </p>
-                  <p className="text-xs mt-1" style={{ color: 'hsl(134, 61%, 30%)' }}>
+                  <p className="text-xs mt-1" style={{ color: '#16a34a' }}>
                     Dataset ID: {selectedDataset.dataset_id} | Total Items: {selectedDataset.total_items} | Duplication: ×{selectedDataset.duplication_factor}
                   </p>
                 </div>
@@ -695,33 +755,40 @@ function UploadTab({
 
       {/* Evaluation Configuration Card */}
       {selectedDatasetId && (
-        <div className="border rounded-lg p-8" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+        <div className="border rounded-lg p-8" style={{
+          backgroundColor: '#ffffff',
+          borderColor: '#e5e5e5',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+          transition: 'all 0.15s ease'
+        }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Evaluation Configuration</h2>
+            <h2 className="text-lg font-semibold" style={{ color: '#171717' }}>Evaluation Configuration</h2>
 
             {/* Play Button */}
             <button
               onClick={onRunEvaluation}
               disabled={!selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim())}
-              className="rounded-full p-4 transition-all shadow-md hover:shadow-lg"
+              className="rounded-full p-4"
               style={{
-                backgroundColor: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
-                color: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
+                background: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim())
+                  ? '#fafafa'
+                  : '#171717',
+                color: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? '#737373' : '#ffffff',
                 cursor: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? 'not-allowed' : 'pointer',
                 borderWidth: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? '1px' : '0',
-                borderColor: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? 'hsl(0, 0%, 85%)' : 'transparent',
-                transform: isEvaluating ? 'scale(0.95)' : 'scale(1)'
+                borderColor: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? '#e5e5e5' : 'transparent',
+                transform: isEvaluating ? 'scale(0.95)' : 'scale(1)',
+                transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
                 if (selectedDatasetId && experimentName.trim() && !isEvaluating && ((useAssistantId && assistantId.trim()) || (!useAssistantId && modelName.trim() && instructions.trim()))) {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)';
+                  e.currentTarget.style.background = '#404040';
                 }
               }}
               onMouseLeave={(e) => {
                 if (selectedDatasetId && experimentName.trim() && !isEvaluating && ((useAssistantId && assistantId.trim()) || (!useAssistantId && modelName.trim() && instructions.trim()))) {
                   e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)';
+                  e.currentTarget.style.background = '#171717';
                 }
               }}
               title={!selectedDatasetId ? 'Select a dataset first' : !experimentName.trim() ? 'Enter an experiment name' : useAssistantId && !assistantId.trim() ? 'Enter assistant ID' : !useAssistantId && !modelName.trim() ? 'Enter model name' : !useAssistantId && !instructions.trim() ? 'Enter instructions' : isEvaluating ? 'Creating evaluation job...' : 'Run Evaluation'}
@@ -741,8 +808,8 @@ function UploadTab({
           <div className="space-y-4">
             {/* Experiment Name - Required */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                Experiment Name <span style={{ color: 'hsl(8, 86%, 40%)' }}>*</span>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+                Experiment Name <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
               </label>
               <input
                 type="text"
@@ -750,18 +817,19 @@ function UploadTab({
                 onChange={(e) => onExperimentNameChange(e.target.value)}
                 placeholder="e.g., test_run_1"
                 disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
+                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
                 style={{
-                  borderColor: experimentName ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
-                  backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: experimentName ? '#171717' : '#e5e5e5',
+                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
+                  color: '#171717',
+                  transition: 'all 0.15s ease'
                 }}
               />
             </div>
 
             {/* Configuration Mode Toggle */}
-            <div className="border-t border-b py-4" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-              <label className="block text-sm font-semibold mb-3" style={{ color: 'hsl(330, 3%, 19%)' }}>
+            <div className="border-t border-b py-4" style={{ borderColor: '#e5e5e5' }}>
+              <label className="block text-sm font-semibold mb-3" style={{ color: '#171717' }}>
                 Configuration Mode
               </label>
               <div className="flex gap-4">
@@ -772,9 +840,9 @@ function UploadTab({
                     onChange={() => onUseAssistantIdChange(false)}
                     disabled={isEvaluating}
                     className="w-4 h-4"
-                    style={{ accentColor: 'hsl(167, 59%, 22%)' }}
+                    style={{ accentColor: '#171717' }}
                   />
-                  <span className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                  <span className="text-sm" style={{ color: '#171717' }}>
                     Use Config (Model, Instructions, Tools)
                   </span>
                 </label>
@@ -785,9 +853,9 @@ function UploadTab({
                     onChange={() => onUseAssistantIdChange(true)}
                     disabled={isEvaluating}
                     className="w-4 h-4"
-                    style={{ accentColor: 'hsl(167, 59%, 22%)' }}
+                    style={{ accentColor: '#171717' }}
                   />
-                  <span className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                  <span className="text-sm" style={{ color: '#171717' }}>
                     Use Assistant ID
                   </span>
                 </label>
@@ -797,8 +865,8 @@ function UploadTab({
             {/* Assistant ID Field - Shown when useAssistantId is true */}
             {useAssistantId ? (
               <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                  Assistant ID <span style={{ color: 'hsl(8, 86%, 40%)' }}>*</span>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+                  Assistant ID <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -806,14 +874,15 @@ function UploadTab({
                   onChange={(e) => onAssistantIdChange(e.target.value)}
                   placeholder="e.g., asst_xyz"
                   disabled={isEvaluating}
-                  className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
+                  className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
                   style={{
-                    borderColor: assistantId ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
-                    backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                    color: 'hsl(330, 3%, 19%)'
+                    borderColor: assistantId ? '#171717' : '#e5e5e5',
+                    backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
+                    color: '#171717',
+                    transition: 'all 0.15s ease'
                   }}
                 />
-                <p className="text-xs mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                <p className="text-xs mt-1" style={{ color: '#737373' }}>
                   Configuration will be fetched from the assistant in the database
                 </p>
               </div>
@@ -821,8 +890,8 @@ function UploadTab({
               <>
                 {/* Model Name - Required */}
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                    Model <span style={{ color: 'hsl(8, 86%, 40%)' }}>*</span>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+                    Model <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
                   </label>
               <input
                 type="text"
@@ -830,19 +899,20 @@ function UploadTab({
                 onChange={(e) => onModelNameChange(e.target.value)}
                 placeholder="e.g., gpt-4"
                 disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
+                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
                 style={{
-                  borderColor: modelName ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
-                  backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: modelName ? '#171717' : '#e5e5e5',
+                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
+                  color: '#171717',
+                  transition: 'all 0.15s ease'
                 }}
               />
             </div>
 
             {/* Instructions - Required */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                Instructions <span style={{ color: 'hsl(8, 86%, 40%)' }}>*</span>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+                Instructions <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
               </label>
               <textarea
                 value={instructions}
@@ -850,11 +920,12 @@ function UploadTab({
                 placeholder="System instructions for the model"
                 rows={3}
                 disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
+                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
                 style={{
-                  borderColor: instructions ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
-                  backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: instructions ? '#171717' : '#e5e5e5',
+                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
+                  color: '#171717',
+                  transition: 'all 0.15s ease'
                 }}
               />
             </div>
@@ -884,14 +955,14 @@ function UploadTab({
             </div> */}
 
             {/* Vector Store Configuration */}
-            <div className="border-t pt-4" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-              <h3 className="text-sm font-semibold mb-3" style={{ color: 'hsl(330, 3%, 19%)' }}>
+            <div className="border-t pt-4" style={{ borderColor: '#e5e5e5' }}>
+              <h3 className="text-sm font-semibold mb-3" style={{ color: '#171717' }}>
                 File Search Configuration (Optional)
               </h3>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
                     Vector Store IDs
                   </label>
                   <input
@@ -900,14 +971,15 @@ function UploadTab({
                     onChange={(e) => onVectorStoreIdsChange(e.target.value)}
                     placeholder="e.g., vs_12345, vs_67890"
                     disabled={isEvaluating}
-                    className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
+                    className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
                     style={{
-                      borderColor: 'hsl(0, 0%, 85%)',
-                      backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                      color: 'hsl(330, 3%, 19%)'
+                      borderColor: vectorStoreIds ? '#171717' : '#e5e5e5',
+                      backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
+                      color: '#171717',
+                      transition: 'all 0.15s ease'
                     }}
                   />
-                  <p className="text-xs mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                  <p className="text-xs mt-1" style={{ color: '#737373' }}>
                     Comma-separated list of vector store IDs for file search
                   </p>
                 </div>
@@ -940,12 +1012,15 @@ function UploadTab({
 
           {/* Status Messages */}
           {isEvaluating && (
-            <div className="mt-4 border rounded-lg p-3 animate-fadeIn" style={{ backgroundColor: 'hsl(202, 100%, 95%)', borderColor: 'hsl(202, 100%, 80%)' }}>
+            <div className="mt-4 border rounded-lg p-3 animate-fadeIn" style={{
+              backgroundColor: '#fafafa',
+              borderColor: '#e5e5e5'
+            }}>
               <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(202, 100%, 35%)' }}>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#171717' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <p className="text-sm" style={{ color: 'hsl(202, 100%, 30%)' }}>
+                <p className="text-sm" style={{ color: '#171717' }}>
                   Uploading dataset and creating evaluation job...
                 </p>
               </div>
@@ -1079,17 +1154,29 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
     <div className="space-y-6">
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
+        <h2 className="text-2xl font-semibold" style={{ color: '#171717' }}>
           Evaluation Jobs
         </h2>
         <button
           onClick={fetchEvaluations}
           disabled={isLoading}
-          className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          className="px-4 py-2 rounded-md text-sm font-medium"
           style={{
-            backgroundColor: isLoading ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
-            color: isLoading ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
-            cursor: isLoading ? 'not-allowed' : 'pointer'
+            background: isLoading ? '#fafafa' : '#171717',
+            color: isLoading ? '#737373' : '#ffffff',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.15s ease',
+            border: 'none'
+          }}
+          onMouseEnter={(e) => {
+            if (!isLoading) {
+              e.currentTarget.style.background = '#404040';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isLoading) {
+              e.currentTarget.style.background = '#171717';
+            }
           }}
         >
           {isLoading ? 'Refreshing...' : '🔄 Refresh'}
@@ -1098,15 +1185,22 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
 
       {/* Loading State */}
       {isLoading && evalJobs.length === 0 && (
-        <div className="border rounded-lg p-8 text-center" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-          <p style={{ color: 'hsl(330, 3%, 49%)' }}>Loading evaluation jobs...</p>
+        <div className="border rounded-lg p-8 text-center" style={{
+          backgroundColor: '#ffffff',
+          borderColor: '#e5e5e5',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
+        }}>
+          <p style={{ color: '#737373' }}>Loading evaluation jobs...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(8, 86%, 95%)', borderColor: 'hsl(8, 86%, 80%)' }}>
-          <p className="text-sm font-medium" style={{ color: 'hsl(8, 86%, 40%)' }}>
+        <div className="border rounded-lg p-6" style={{
+          backgroundColor: 'hsl(0, 84%, 96%)',
+          borderColor: 'hsl(0, 84%, 80%)'
+        }}>
+          <p className="text-sm font-medium" style={{ color: 'hsl(0, 84%, 50%)' }}>
             Error: {error}
           </p>
         </div>
@@ -1114,8 +1208,12 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
 
       {/* No Jobs Yet */}
       {!isLoading && evalJobs.length === 0 && !error && (
-        <div className="border rounded-lg p-8 text-center" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-          <p style={{ color: 'hsl(330, 3%, 49%)' }}>No evaluation jobs found. Create one from the Upload tab!</p>
+        <div className="border rounded-lg p-8 text-center" style={{
+          backgroundColor: '#ffffff',
+          borderColor: '#e5e5e5',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
+        }}>
+          <p style={{ color: '#737373' }}>No evaluation jobs found. Create one from the Upload tab!</p>
         </div>
       )}
 
@@ -1149,16 +1247,22 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
   // Using imported utility functions
   const statusColors = getStatusColor(job.status);
   return (
-    <div className="border rounded-lg" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+    <div className="border rounded-lg" style={{
+      backgroundColor: '#ffffff',
+      borderColor: '#e5e5e5',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+      transition: 'all 0.15s ease'
+    }}>
       {/* Header - Always Visible (Clickable) */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center justify-between transition-colors"
+        className="w-full p-4 flex items-center justify-between"
         style={{
-          backgroundColor: isExpanded ? 'hsl(0, 0%, 96.5%)' : 'transparent',
+          backgroundColor: isExpanded ? '#fafafa' : 'transparent',
+          transition: 'all 0.15s ease'
         }}
         onMouseEnter={(e) => {
-          if (!isExpanded) e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 98%)';
+          if (!isExpanded) e.currentTarget.style.backgroundColor = '#fafafa';
         }}
         onMouseLeave={(e) => {
           if (!isExpanded) e.currentTarget.style.backgroundColor = 'transparent';
@@ -1167,10 +1271,11 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
         <div className="flex items-center gap-4 flex-1">
           {/* Expand/Collapse Icon */}
           <svg
-            className="w-5 h-5 flex-shrink-0 transition-transform"
+            className="w-5 h-5 flex-shrink-0"
             style={{
-              color: 'hsl(330, 3%, 49%)',
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+              color: '#737373',
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.15s ease'
             }}
             fill="none"
             viewBox="0 0 24 24"
@@ -1182,14 +1287,14 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
           {/* Job Info */}
           <div className="flex-1 text-left">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
+              <h3 className="font-semibold" style={{ color: '#171717' }}>
                 {job.run_name}
               </h3>
-              {/* <span className="text-xs" style={{ color: 'hsl(330, 3%, 49%)' }}>
+              {/* <span className="text-xs" style={{ color: '#737373' }}>
                 ID: {job.id}
               </span> */}
             </div>
-            <div className="flex items-center gap-4 mt-2 text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
+            <div className="flex items-center gap-4 mt-2 text-sm" style={{ color: '#737373' }}>
               {/* <span>{job.dataset_name}</span>
               <span>•</span>
               <span>{job.total_items} items</span>
@@ -1215,9 +1320,9 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="px-4 pb-4 border-t" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+        <div className="px-4 pb-4 border-t" style={{ borderColor: '#e5e5e5' }}>
           {/* Timestamps */}
-          <div className="flex items-center justify-between text-xs mt-4 mb-4" style={{ color: 'hsl(330, 3%, 49%)' }}>
+          <div className="flex items-center justify-between text-xs mt-4 mb-4" style={{ color: '#737373' }}>
             <div>
               <span className="font-medium">Started At:</span> {formatDate(job.inserted_at)}
             </div>
@@ -1228,9 +1333,12 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
 
           {/* Error message (if failed) */}
           {job.error_message && (
-            <div className="border rounded-lg p-3 mb-4" style={{ backgroundColor: 'hsl(8, 86%, 95%)', borderColor: 'hsl(8, 86%, 80%)' }}>
-              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(8, 86%, 40%)' }}>Error</div>
-              <div className="text-sm" style={{ color: 'hsl(8, 86%, 40%)' }}>
+            <div className="border rounded-lg p-3 mb-4" style={{
+              backgroundColor: 'hsl(0, 84%, 96%)',
+              borderColor: 'hsl(0, 84%, 80%)'
+            }}>
+              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(0, 84%, 50%)' }}>Error</div>
+              <div className="text-sm" style={{ color: 'hsl(0, 84%, 50%)' }}>
                 {job.error_message}
               </div>
             </div>
@@ -1243,27 +1351,38 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
                 e.stopPropagation();
                 setIsConfigModalOpen(true);
               }}
-              className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="px-3 py-2 rounded-md text-sm font-medium"
               style={{
-                backgroundColor: 'hsl(0, 0%, 100%)',
+                backgroundColor: '#ffffff',
                 borderWidth: '1px',
-                borderColor: 'hsl(167, 59%, 70%)',
-                color: 'hsl(167, 59%, 22%)'
+                borderColor: '#e5e5e5',
+                color: '#171717',
+                transition: 'all 0.15s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 95%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#fafafa';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffffff';
+              }}
             >
               View Config
             </button>
             <button
               onClick={() => router.push(`/evaluations/${job.id}`)}
-              className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              className="px-4 py-2 rounded-md text-sm font-medium"
               style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
-                color: 'hsl(0, 0%, 100%)'
+                backgroundColor: '#171717',
+                color: '#ffffff',
+                border: 'none',
+                transition: 'all 0.15s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#404040';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#171717';
+              }}
             >
               View Results
             </button>
@@ -1286,9 +1405,9 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
 export default function SimplifiedEval() {
   return (
     <Suspense fallback={
-      <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+      <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#fafafa' }}>
         <div className="text-center">
-          <div className="animate-pulse" style={{ color: 'hsl(330, 3%, 49%)' }}>
+          <div className="animate-pulse" style={{ color: '#737373' }}>
             <svg
               className="mx-auto h-12 w-12 mb-4"
               fill="none"
@@ -1302,7 +1421,7 @@ export default function SimplifiedEval() {
                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            <p className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>
+            <p className="text-sm font-medium" style={{ color: '#171717' }}>
               Loading...
             </p>
           </div>

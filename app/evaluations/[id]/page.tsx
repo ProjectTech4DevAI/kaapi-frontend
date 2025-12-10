@@ -13,6 +13,7 @@ import { formatDate, getStatusColor } from '../../components/utils';
 import ConfigModal from '../../components/ConfigModal';
 import Sidebar from '../../components/Sidebar';
 import DetailedResultsTable from '../../components/DetailedResultsTable';
+import { colors } from '@/app/lib/colors';
 
 export default function EvaluationReport() {
   const router = useRouter();
@@ -204,12 +205,12 @@ export default function EvaluationReport() {
 
   if (isLoading) {
     return (
-      <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+      <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="animate-pulse" style={{ color: 'hsl(330, 3%, 49%)' }}>
+              <div className="animate-pulse" style={{ color: colors.text.secondary }}>
                 <svg
                   className="mx-auto h-12 w-12 mb-4"
                   fill="none"
@@ -223,7 +224,7 @@ export default function EvaluationReport() {
                     d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                   />
                 </svg>
-                <p className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
                   Loading evaluation report...
                 </p>
               </div>
@@ -236,7 +237,7 @@ export default function EvaluationReport() {
 
   if (error || !job) {
     return (
-      <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+      <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
           <div className="flex-1 flex items-center justify-center">
@@ -248,11 +249,11 @@ export default function EvaluationReport() {
                 onClick={() => router.push('/evaluations?tab=results')}
                 className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 style={{
-                  backgroundColor: 'hsl(167, 59%, 22%)',
+                  backgroundColor: colors.accent.primary,
                   color: 'hsl(0, 0%, 100%)'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.accent.hover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.accent.primary}
               >
                 Back to Evaluations
               </button>
@@ -276,7 +277,7 @@ export default function EvaluationReport() {
     : [];
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
@@ -284,19 +285,19 @@ export default function EvaluationReport() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header with Back Button */}
-          <div className="border-b px-6 py-4" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+          <div className="border-b px-6 py-4" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="p-2 rounded-md transition-colors flex-shrink-0"
                 style={{
                   borderWidth: '1px',
-                  borderColor: 'hsl(0, 0%, 85%)',
-                  backgroundColor: 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: colors.border,
+                  backgroundColor: colors.bg.primary,
+                  color: colors.text.primary
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
               >
                 <svg
                   className="w-5 h-5"
@@ -304,12 +305,21 @@ export default function EvaluationReport() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                  {sidebarCollapsed ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                    />
+                  )}
                 </svg>
               </button>
 
@@ -319,12 +329,12 @@ export default function EvaluationReport() {
                 className="p-2 rounded-md transition-colors flex items-center gap-2"
                 style={{
                   borderWidth: '1px',
-                  borderColor: 'hsl(0, 0%, 85%)',
-                  backgroundColor: 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: colors.border,
+                  backgroundColor: colors.bg.primary,
+                  color: colors.text.primary
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 95%)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
               >
                 <svg
                   className="w-5 h-5"
@@ -343,8 +353,8 @@ export default function EvaluationReport() {
               </button>
 
               <div className="flex-1">
-                <h1 className="text-2xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Evaluation Report</h1>
-                <p className="text-sm mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                <h1 className="text-2xl font-semibold" style={{ color: colors.text.primary }}>Evaluation Report</h1>
+                <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
                   {job.run_name}
                 </p>
               </div>
@@ -355,13 +365,13 @@ export default function EvaluationReport() {
                   onClick={() => setIsConfigModalOpen(true)}
                   className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
                   style={{
-                    backgroundColor: 'hsl(0, 0%, 100%)',
+                    backgroundColor: colors.bg.primary,
                     borderWidth: '1px',
-                    borderColor: 'hsl(167, 59%, 70%)',
-                    color: 'hsl(167, 59%, 22%)'
+                    borderColor: colors.border,
+                    color: colors.text.primary
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 95%)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 100%)'}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
                 >
                   View Config
                 </button>
@@ -370,17 +380,17 @@ export default function EvaluationReport() {
                   disabled={!hasScore}
                   className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
                   style={{
-                    backgroundColor: hasScore ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 95%)',
-                    color: hasScore ? 'hsl(0, 0%, 100%)' : 'hsl(330, 3%, 49%)',
+                    backgroundColor: hasScore ? colors.accent.primary : colors.bg.secondary,
+                    color: hasScore ? colors.bg.primary : colors.text.secondary,
                     cursor: hasScore ? 'pointer' : 'not-allowed',
                     borderWidth: hasScore ? '0' : '1px',
-                    borderColor: hasScore ? 'transparent' : 'hsl(0, 0%, 85%)'
+                    borderColor: hasScore ? 'transparent' : colors.border
                   }}
                   onMouseEnter={(e) => {
-                    if (hasScore) e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)';
+                    if (hasScore) e.currentTarget.style.backgroundColor = colors.accent.hover;
                   }}
                   onMouseLeave={(e) => {
-                    if (hasScore) e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)';
+                    if (hasScore) e.currentTarget.style.backgroundColor = colors.accent.primary;
                   }}
                 >
                   Export CSV
@@ -390,10 +400,10 @@ export default function EvaluationReport() {
             {assistantConfig && (
               <div className="flex items-center gap-2 mt-3 ml-20">
                 <span className="text-xs px-2 py-1 rounded-md font-medium" style={{
-                  backgroundColor: 'hsl(167, 59%, 95%)',
-                  color: 'hsl(167, 59%, 22%)',
+                  backgroundColor: colors.bg.secondary,
+                  color: colors.text.primary,
                   borderWidth: '1px',
-                  borderColor: 'hsl(167, 59%, 70%)'
+                  borderColor: colors.border
                 }}>
                   Assistant: {assistantConfig.name}
                 </span>
@@ -402,24 +412,24 @@ export default function EvaluationReport() {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex overflow-auto p-6" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
-            <div className="max-w-8xl mx-auto space-y-6">
+          <div className="flex overflow-auto p-6" style={{ backgroundColor: colors.bg.secondary }}>
+            <div className="max-w-7xl mx-auto space-y-6">
               {/* Summary Section */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
-                  <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Summary</h3>
+                  <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Summary</h3>
                 </div>
-                <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+                <div className="border rounded-lg p-6" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Dataset</div>
-                      <div className="text-base font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{job.dataset_name}</div>
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Dataset</div>
+                      <div className="text-base font-medium" style={{ color: colors.text.primary }}>{job.dataset_name}</div>
                     </div>
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Status</div>
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Status</div>
                       <div
                         className="inline-block px-3 py-1 rounded text-sm font-semibold"
                         style={{
@@ -433,14 +443,14 @@ export default function EvaluationReport() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t" style={{ borderColor: colors.border }}>
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Started At</div>
-                      <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatDate(job.inserted_at)}</div>
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Started At</div>
+                      <div className="text-sm" style={{ color: colors.text.primary }}>{formatDate(job.inserted_at)}</div>
                     </div>
                     <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: 'hsl(330, 3%, 49%)' }}>Last Updated At</div>
-                      <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatDate(job.updated_at)}</div>
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Last Updated At</div>
+                      <div className="text-sm" style={{ color: colors.text.primary }}>{formatDate(job.updated_at)}</div>
                     </div>
                   </div>
                 </div>
@@ -450,12 +460,12 @@ export default function EvaluationReport() {
               {hasScore && isNewFormat ? (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Metrics Overview</h3>
+                    <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Metrics Overview</h3>
                   </div>
-                  <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+                  <div className="border rounded-lg p-6" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
                     {summaryScores.length > 0 ? (
                       <div className={
                         summaryScores.length === 2
@@ -464,39 +474,39 @@ export default function EvaluationReport() {
                       }>
                         {summaryScores.filter(s => s.data_type === 'NUMERIC').map((summary) => (
                         <div key={summary.name} className="text-center">
-                          <div className="text-xs uppercase font-semibold mb-3" style={{ color: 'hsl(330, 3%, 49%)' }}>{summary.name}</div>
-                          <div className="text-3xl font-bold" style={{ color: 'hsl(167, 59%, 22%)' }}>
+                          <div className="text-xs uppercase font-semibold mb-3" style={{ color: colors.text.secondary }}>{summary.name}</div>
+                          <div className="text-3xl font-bold" style={{ color: colors.accent.primary }}>
                             {summary.avg !== undefined ? summary.avg.toFixed(3) : 'N/A'}
                           </div>
                           {summary.std !== undefined && (
-                            <div className="text-sm mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                            <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
                               ±{summary.std.toFixed(3)}
                             </div>
                           )}
-                          <div className="text-xs mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                          <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
                             {summary.total_pairs} pairs
                           </div>
                         </div>
                         ))}
                         {summaryScores.filter(s => s.data_type === 'CATEGORICAL').map((summary) => (
                           <div key={summary.name} className="text-center">
-                            <div className="text-xs uppercase font-semibold mb-3" style={{ color: 'hsl(330, 3%, 49%)' }}>{summary.name}</div>
+                            <div className="text-xs uppercase font-semibold mb-3" style={{ color: colors.text.secondary }}>{summary.name}</div>
                             <div className="text-left">
                               {summary.distribution && Object.entries(summary.distribution).map(([key, value]) => (
-                                <div key={key} className="flex justify-between items-center px-3 py-1 mb-1 rounded" style={{ backgroundColor: 'hsl(0, 0%, 98%)' }}>
-                                  <span className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{key}</span>
-                                  <span className="text-sm font-bold" style={{ color: 'hsl(167, 59%, 22%)' }}>{value}</span>
+                                <div key={key} className="flex justify-between items-center px-3 py-1 mb-1 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  <span className="text-sm font-medium" style={{ color: colors.text.primary }}>{key}</span>
+                                  <span className="text-sm font-bold" style={{ color: colors.accent.primary }}>{value}</span>
                                 </div>
                               ))}
                             </div>
-                            <div className="text-xs mt-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                            <div className="text-xs mt-2" style={{ color: colors.text.secondary }}>
                               {summary.total_pairs} pairs
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-4" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                      <div className="text-center py-4" style={{ color: colors.text.secondary }}>
                         <p className="text-sm">No summary scores available</p>
                       </div>
                     )}
@@ -519,12 +529,12 @@ export default function EvaluationReport() {
               {hasScore && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
-                    <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Detailed Results</h3>
+                    <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Detailed Results</h3>
                     {isNewFormat && (
-                      <span className="text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                      <span className="text-sm" style={{ color: colors.text.secondary }}>
                         ({normalizeToIndividualScores(scoreObject).length} items)
                       </span>
                     )}

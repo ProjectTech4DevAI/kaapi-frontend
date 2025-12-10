@@ -2,7 +2,14 @@
 
 :root {
   --background: #ffffff;
+  --background-secondary: #fafafa;
   --foreground: #171717;
+  --muted: #737373;
+  --border: #e5e5e5;
+  --accent: #0070f3;
+  --accent-hover: #0761d1;
+  --success: #16a34a;
+  --error: #dc2626;
 }
 
 @theme inline {
@@ -14,8 +21,11 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #000000;
+    --background-secondary: #0a0a0a;
     --foreground: #ededed;
+    --muted: #a1a1a1;
+    --border: #262626;
   }
 }
 

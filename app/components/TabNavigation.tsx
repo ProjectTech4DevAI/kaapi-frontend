@@ -19,7 +19,7 @@ interface TabNavigationProps {
 
 export default function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationProps) {
   return (
-    <div className="border-b" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+    <div className="border-b" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>
       <div className="flex px-6">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -27,10 +27,22 @@ export default function TabNavigation({ tabs, activeTab, onTabChange }: TabNavig
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className="px-6 py-3 text-sm font-medium border-b-2 transition-colors"
+              className="px-4 py-3 text-sm border-b-2"
               style={{
-                borderBottomColor: isActive ? 'hsl(167, 59%, 22%)' : 'transparent',
-                color: isActive ? 'hsl(167, 59%, 22%)' : 'hsl(330, 3%, 49%)'
+                borderBottomColor: isActive ? '#171717' : 'transparent',
+                color: isActive ? '#171717' : '#737373',
+                fontWeight: isActive ? 500 : 400,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = '#171717';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.color = '#737373';
+                }
               }}
             >
               {tab.label}

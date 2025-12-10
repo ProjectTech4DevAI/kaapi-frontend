@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'
 import { APIKey, STORAGE_KEY } from '../keystore/page';
+import Sidebar from '../components/Sidebar';
 
 // Backend response interface
 export interface Dataset {
@@ -219,79 +220,10 @@ export default function Datasets() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: '#fafafa' }}>
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Full Height */}
-        <aside
-          className="border-r transition-all duration-300 ease-in-out h-full flex-shrink-0"
-          style={{
-            width: sidebarCollapsed ? '0px' : '240px',
-            backgroundColor: 'hsl(0, 0%, 100%)',
-            borderColor: 'hsl(0, 0%, 85%)',
-            overflow: 'hidden',
-          }}
-        >
-          <div className="px-6 py-4" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-            <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Kaapi Konsole</h2>
-            <p className="text-sm mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>A Tech4Dev Product</p>
-          </div>
-          <nav className="p-4 space-y-2 h-full" style={{ width: '240px' }}>
-            <button
-              onClick={() => router.push('/evaluations')}
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
-              style={{
-                backgroundColor: 'transparent',
-                color: 'hsl(330, 3%, 49%)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 96.5%)';
-                e.currentTarget.style.color = 'hsl(330, 3%, 19%)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = 'hsl(330, 3%, 49%)';
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              Evaluations
-            </button>
-            <button
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
-              style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
-                color: 'hsl(0, 0%, 100%)'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-              Datasets
-            </button>
-            <button
-              onClick={() => router.push('/keystore')}
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
-              style={{
-                backgroundColor: 'transparent',
-                color: 'hsl(330, 3%, 49%)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 96.5%)';
-                e.currentTarget.style.color = 'hsl(330, 3%, 19%)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = 'hsl(330, 3%, 49%)';
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              Keystore
-            </button>
-          </nav>
-        </aside>
+        {/* Sidebar */}
+        <Sidebar collapsed={sidebarCollapsed} activeRoute="/datasets" />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -316,12 +248,21 @@ export default function Datasets() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                  {sidebarCollapsed ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                    />
+                  )}
                 </svg>
               </button>
               <div>
@@ -332,8 +273,8 @@ export default function Datasets() {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
-            <div className="max-w-6xl mx-auto space-y-6 page-transition">
+          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: '#fafafa' }}>
+            <div className="max-w-6xl mx-auto space-y-6">
               <DatasetListing
                 datasets={currentDatasets}
                 onDelete={handleDeleteDataset}
@@ -403,18 +344,18 @@ function DatasetListing({
       <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
         {/* Header with Upload Button */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
+          <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
             Your Datasets
           </h2>
           <button
             onClick={onUploadNew}
             className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             style={{
-              backgroundColor: 'hsl(167, 59%, 22%)',
+              backgroundColor: '#171717',
               color: 'hsl(0, 0%, 100%)'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
           >
             + Upload New Dataset
           </button>
@@ -444,7 +385,7 @@ function DatasetListing({
               href="/keystore"
               className="inline-block px-6 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
+                backgroundColor: '#171717',
                 color: 'hsl(0, 0%, 100%)'
               }}
             >
@@ -478,11 +419,11 @@ function DatasetListing({
               onClick={onUploadNew}
               className="px-6 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
+                backgroundColor: '#171717',
                 color: 'hsl(0, 0%, 100%)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
             >
               Upload Your First Dataset
             </button>
@@ -501,7 +442,7 @@ function DatasetListing({
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(167, 59%, 22%)' }}>
+                    <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#171717' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <h3 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
@@ -597,7 +538,7 @@ function DatasetListing({
       </div>
 
       {/* Info Card */}
-      <div className="border rounded-lg p-4" style={{ backgroundColor: 'hsl(202, 100%, 95%)', borderColor: 'hsl(202, 100%, 80%)' }}>
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(202, 100%, 95%)', borderColor: 'hsl(202, 100%, 80%)' }}>
         <div className="flex gap-3">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(202, 100%, 35%)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -671,7 +612,7 @@ export function UploadDatasetModal({
       >
         {/* Modal Header */}
         <div className="border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-          <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Upload New Dataset</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Upload New Dataset</h2>
           <button
             onClick={onClose}
             className="p-1 rounded-md transition-colors"
@@ -719,7 +660,7 @@ export function UploadDatasetModal({
                 htmlFor="dataset-file-upload"
                 className="px-6 py-2 rounded-md transition-colors inline-block text-sm font-medium"
                 style={{
-                  backgroundColor: isUploading ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
+                  backgroundColor: isUploading ? 'hsl(0, 0%, 95%)' : '#171717',
                   color: isUploading ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
                   cursor: isUploading ? 'not-allowed' : 'pointer'
                 }}
@@ -759,7 +700,7 @@ export function UploadDatasetModal({
                 disabled={isUploading}
                 className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
                 style={{
-                  borderColor: datasetName ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
+                  borderColor: datasetName ? '#171717' : 'hsl(0, 0%, 85%)',
                   backgroundColor: isUploading ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
                   color: 'hsl(330, 3%, 19%)'
                 }}
@@ -829,18 +770,18 @@ export function UploadDatasetModal({
             disabled={!selectedFile || !datasetName.trim() || isUploading}
             className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             style={{
-              backgroundColor: (!selectedFile || !datasetName.trim() || isUploading) ? 'hsl(0, 0%, 95%)' : 'hsl(167, 59%, 22%)',
+              backgroundColor: (!selectedFile || !datasetName.trim() || isUploading) ? 'hsl(0, 0%, 95%)' : '#171717',
               color: (!selectedFile || !datasetName.trim() || isUploading) ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
               cursor: (!selectedFile || !datasetName.trim() || isUploading) ? 'not-allowed' : 'pointer'
             }}
             onMouseEnter={(e) => {
               if (selectedFile && datasetName.trim() && !isUploading) {
-                e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)';
+                e.currentTarget.style.backgroundColor = '#404040';
               }
             }}
             onMouseLeave={(e) => {
               if (selectedFile && datasetName.trim() && !isUploading) {
-                e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)';
+                e.currentTarget.style.backgroundColor = '#171717';
               }
             }}
           >

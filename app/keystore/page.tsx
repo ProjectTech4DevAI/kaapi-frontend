@@ -7,6 +7,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'
+import Sidebar from '../components/Sidebar';
 
 export interface APIKey {
   id: string;
@@ -101,79 +102,10 @@ export default function KaapiKeystore() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
+    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: '#fafafa' }}>
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Full Height */}
-        <aside
-          className="border-r transition-all duration-300 ease-in-out h-full flex-shrink-0"
-          style={{
-            width: sidebarCollapsed ? '0px' : '240px',
-            backgroundColor: 'hsl(0, 0%, 100%)',
-            borderColor: 'hsl(0, 0%, 85%)',
-            overflow: 'hidden',
-          }}
-        >
-          <div className="px-6 py-4" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-            <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Kaapi Konsole</h2>
-            <p className="text-sm mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>A Tech4Dev Product</p>
-          </div>
-          <nav className="p-4 space-y-2 h-full" style={{ width: '240px' }}>
-            <button
-              onClick={() => router.push('/evaluations')}
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
-              style={{
-                backgroundColor: 'transparent',
-                color: 'hsl(330, 3%, 49%)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 96.5%)';
-                e.currentTarget.style.color = 'hsl(330, 3%, 19%)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = 'hsl(330, 3%, 49%)';
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              Evaluations
-            </button>
-            <button
-              onClick={() => router.push('/datasets')}
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
-              style={{
-                backgroundColor: 'transparent',
-                color: 'hsl(330, 3%, 49%)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'hsl(0, 0%, 96.5%)';
-                e.currentTarget.style.color = 'hsl(330, 3%, 19%)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = 'hsl(330, 3%, 49%)';
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-              </svg>
-              Datasets
-            </button>
-            <button
-              className="w-full text-left px-4 py-3 rounded-md transition-all duration-200 text-sm font-medium flex items-center gap-3"
-              style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
-                color: 'hsl(0, 0%, 100%)'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-              </svg>
-              Keystore
-            </button>
-          </nav>
-        </aside>
+        {/* Sidebar */}
+        <Sidebar collapsed={sidebarCollapsed} activeRoute="/keystore" />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -198,12 +130,21 @@ export default function KaapiKeystore() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                  {sidebarCollapsed ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                    />
+                  )}
                 </svg>
               </button>
               <div>
@@ -214,8 +155,8 @@ export default function KaapiKeystore() {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: 'hsl(42, 63%, 94%)' }}>
-            <div className="max-w-4xl mx-auto space-y-6 page-transition">
+          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: '#fafafa' }}>
+            <div className="max-w-4xl mx-auto space-y-6">
               <StoredKeysTab
                 apiKeys={apiKeys}
                 visibleKeys={visibleKeys}
@@ -270,7 +211,7 @@ function StoredKeysTab({
       {/* Stored Keys List */}
       <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
+          <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>
             Your API Key
           </h2>
           {apiKeys.length === 0 && (
@@ -278,11 +219,11 @@ function StoredKeysTab({
               onClick={onAddNew}
               className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
+                backgroundColor: '#171717',
                 color: 'hsl(0, 0%, 100%)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
             >
               + Add New Key
             </button>
@@ -310,11 +251,11 @@ function StoredKeysTab({
               onClick={onAddNew}
               className="px-6 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
-                backgroundColor: 'hsl(167, 59%, 22%)',
+                backgroundColor: '#171717',
                 color: 'hsl(0, 0%, 100%)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
             >
               Add API Key
             </button>
@@ -348,7 +289,7 @@ function StoredKeysTab({
                       <span
                         className="text-xs px-2 py-1 rounded"
                         style={{
-                          backgroundColor: 'hsl(167, 59%, 22%)',
+                          backgroundColor: '#171717',
                           color: 'hsl(0, 0%, 100%)'
                         }}
                       >
@@ -444,7 +385,7 @@ function StoredKeysTab({
       </div>
 
       {/* Info Card */}
-      <div className="border rounded-lg p-4" style={{ backgroundColor: 'hsl(202, 100%, 95%)', borderColor: 'hsl(202, 100%, 80%)' }}>
+      <div className="border rounded-lg p-6" style={{ backgroundColor: 'hsl(202, 100%, 95%)', borderColor: 'hsl(202, 100%, 80%)' }}>
         <div className="flex gap-3">
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'hsl(202, 100%, 35%)' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -518,7 +459,7 @@ function AddKeyModal({
       >
         {/* Modal Header */}
         <div className="border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
-          <h2 className="text-xl font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Add New API Key</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'hsl(330, 3%, 19%)' }}>Add New API Key</h2>
           <button
             onClick={onClose}
             className="p-1 rounded-md transition-colors"
@@ -629,11 +570,11 @@ function AddKeyModal({
             onClick={onAddKey}
             className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             style={{
-              backgroundColor: 'hsl(167, 59%, 22%)',
+              backgroundColor: '#171717',
               color: 'hsl(0, 0%, 100%)'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 28%)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'hsl(167, 59%, 22%)'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
           >
             Add API Key
           </button>

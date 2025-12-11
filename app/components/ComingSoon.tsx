@@ -95,7 +95,7 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
               className="text-sm"
               style={{ color: colors.text.secondary }}
             >
-              Great features, like great coffee, take time to brew to perfection.
+              Great features, like great coffee, take time to brew.
             </p>
           </div>
 

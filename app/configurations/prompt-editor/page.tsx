@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import Sidebar from '@/app/components/Sidebar';
 import { colors } from '@/app/lib/colors';
-import { Commit } from './types';
+import { Commit, Config, Tool, Variant, TestResult } from './types';
 import { getAllBranches, getLatestCommitOnBranch } from './utils';
 import Header from '@/app/components/prompt-editor/Header';
 import HistorySidebar from '@/app/components/prompt-editor/HistorySidebar';
@@ -18,6 +18,7 @@ import EditorView from '@/app/components/prompt-editor/EditorView';
 import DiffView from '@/app/components/prompt-editor/DiffView';
 import BranchModal from '@/app/components/prompt-editor/BranchModal';
 import MergeModal from '@/app/components/prompt-editor/MergeModal';
+import ConfigDrawer from '@/app/components/prompt-editor/ConfigDrawer';
 
 export default function MagicCanvasPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -52,6 +53,28 @@ export default function MagicCanvasPage() {
   const [branchFromCommit, setBranchFromCommit] = useState<Commit | null>(null);
   const [showMergeModal, setShowMergeModal] = useState<boolean>(false);
   const [mergeToBranch, setMergeToBranch] = useState<string>('');
+
+  // Drawer and Configuration State
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const [drawerTab, setDrawerTab] = useState<string>('current');
+  const [configs, setConfigs] = useState<Config[]>([]);
+  const [selectedConfigId, setSelectedConfigId] = useState<string>('');
+  const [configName, setConfigName] = useState<string>('');
+  const [provider, setProvider] = useState<string>('openai');
+  const [model, setModel] = useState<string>('gpt-4o-mini');
+  const [instructions, setInstructions] = useState<string>('');
+  const [temperature, setTemperature] = useState<number>(0.7);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [configCommitMsg, setConfigCommitMsg] = useState<string>('');
+
+  // A/B Testing State
+  const [variants, setVariants] = useState<Variant[]>([
+    { id: 'A', configId: '', commitId: '', name: 'Variant A' },
+    { id: 'B', configId: '', commitId: '', name: 'Variant B' }
+  ]);
+  const [testInput, setTestInput] = useState<string>('');
+  const [testResults, setTestResults] = useState<TestResult[] | null>(null);
+  const [isRunningTest, setIsRunningTest] = useState<boolean>(false);
 
   const createBranch = () => {
     if (!newBranchName.trim()) return alert('Please enter a branch name');
@@ -120,6 +143,84 @@ export default function MagicCanvasPage() {
     setMergeToBranch('');
   };
 
+  // Configuration Management Functions
+  const saveConfig = () => {
+    if (!configName.trim()) return alert('Please enter a configuration name');
+
+    // Find existing configs with the same name to determine version
+    const existingConfigs = configs.filter(c => c.name === configName);
+    const version = existingConfigs.length > 0
+      ? Math.max(...existingConfigs.map(c => c.version)) + 1
+      : 1;
+
+    const newConfig: Config = {
+      id: `cfg_${Date.now()}`,
+      name: configName,
+      version,
+      timestamp: Date.now(),
+      config_blob: {
+        completion: {
+          provider,
+          params: {
+            model,
+            instructions,
+            temperature,
+            tools,
+          },
+        },
+      },
+      commitMessage: configCommitMsg,
+    };
+
+    setConfigs([...configs, newConfig]);
+    setSelectedConfigId(newConfig.id);
+    setConfigCommitMsg('');
+    alert(`Configuration "${configName}" (v${version}) saved successfully!`);
+  };
+
+  const loadConfig = (configId: string) => {
+    const config = configs.find(c => c.id === configId);
+    if (!config) return;
+
+    setSelectedConfigId(configId);
+    setConfigName(config.name);
+    setProvider(config.config_blob.completion.provider);
+    setModel(config.config_blob.completion.params.model);
+    setInstructions(config.config_blob.completion.params.instructions);
+    setTemperature(config.config_blob.completion.params.temperature);
+    setTools(config.config_blob.completion.params.tools);
+    setDrawerTab('current');
+  };
+
+  const useCurrentPrompt = () => {
+    setInstructions(currentContent);
+  };
+
+  const runABTest = async () => {
+    if (!testInput.trim()) return alert('Please enter test input');
+
+    // Validate that all variants have config and commit selected
+    const invalidVariants = variants.filter(v => !v.configId || !v.commitId);
+    if (invalidVariants.length > 0) {
+      return alert('Please select both configuration and prompt for all variants');
+    }
+
+    setIsRunningTest(true);
+    setTestResults(null);
+
+    // Simulate API calls
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    const results: TestResult[] = variants.map(variant => ({
+      variantId: variant.id,
+      score: 0.7 + Math.random() * 0.25,
+      latency: 200 + Math.random() * 400,
+    }));
+
+    setTestResults(results);
+    setIsRunningTest(false);
+  };
+
 
   return (
     <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
@@ -138,6 +239,7 @@ export default function MagicCanvasPage() {
               setShowBranchModal(true);
             }}
             onMerge={() => setShowMergeModal(true)}
+            onOpenConfig={() => setDrawerOpen(true)}
           />
 
           <div className="flex flex-1 overflow-hidden">
@@ -201,6 +303,41 @@ export default function MagicCanvasPage() {
           setShowMergeModal(false);
           setMergeToBranch('');
         }}
+      />
+
+      <ConfigDrawer
+        isOpen={drawerOpen}
+        activeTab={drawerTab}
+        onClose={() => setDrawerOpen(false)}
+        onTabChange={setDrawerTab}
+        configs={configs}
+        selectedConfigId={selectedConfigId}
+        configName={configName}
+        provider={provider}
+        model={model}
+        instructions={instructions}
+        temperature={temperature}
+        tools={tools}
+        configCommitMsg={configCommitMsg}
+        currentContent={currentContent}
+        onConfigNameChange={setConfigName}
+        onProviderChange={setProvider}
+        onModelChange={setModel}
+        onInstructionsChange={setInstructions}
+        onTemperatureChange={setTemperature}
+        onToolsChange={setTools}
+        onConfigCommitMsgChange={setConfigCommitMsg}
+        onSaveConfig={saveConfig}
+        onLoadConfig={loadConfig}
+        onUseCurrentPrompt={useCurrentPrompt}
+        variants={variants}
+        testInput={testInput}
+        testResults={testResults}
+        isRunningTest={isRunningTest}
+        commits={commits}
+        onVariantsChange={setVariants}
+        onTestInputChange={setTestInput}
+        onRunTest={runABTest}
       />
     </div>
   );

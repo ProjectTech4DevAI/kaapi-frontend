@@ -11,6 +11,7 @@ interface HeaderProps {
   onSwitchBranch: (branch: string) => void;
   onCreateBranch: () => void;
   onMerge: () => void;
+  onOpenConfig: () => void;
 }
 
 export default function Header({
@@ -20,7 +21,8 @@ export default function Header({
   commits,
   onSwitchBranch,
   onCreateBranch,
-  onMerge
+  onMerge,
+  onOpenConfig
 }: HeaderProps) {
   return (
     <div className="border-b px-6 py-4" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
@@ -78,7 +80,7 @@ export default function Header({
             className="px-4 py-2 rounded-md text-sm font-medium"
             style={{
               backgroundColor: colors.accent.primary,
-              color: colors.bg.primary,
+              color: '#ffffff',
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
@@ -92,16 +94,39 @@ export default function Header({
             onClick={onMerge}
             className="px-4 py-2 rounded-md text-sm font-medium"
             style={{
-              backgroundColor: colors.bg.primary,
+              backgroundColor: colors.bg.secondary,
               color: colors.text.primary,
               border: `1px solid ${colors.border}`,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f0f0f0';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = colors.bg.secondary;
+            }}
           >
             Merge
+          </button>
+          <button
+            onClick={onOpenConfig}
+            className="px-4 py-2 rounded-md text-sm font-medium"
+            style={{
+              backgroundColor: '#525252',
+              color: '#ffffff',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#737373';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#525252';
+            }}
+          >
+            Config
           </button>
         </div>
       </div>

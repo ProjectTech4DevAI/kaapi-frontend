@@ -83,7 +83,14 @@ export default function MagicCanvasPage() {
     const sourceCommit = branchFromCommit || getLatestCommitOnBranch(commits, currentBranch);
     if (!sourceCommit) return;
     setCurrentBranch(newBranchName);
-    setCurrentContent(sourceCommit.content);
+
+    // Only reset content if explicitly branching from a different commit
+    // If branchFromCommit is null, we're branching from current HEAD, so preserve working changes
+    if (branchFromCommit && branchFromCommit.id !== sourceCommit.id) {
+      setCurrentContent(sourceCommit.content);
+    }
+    // Otherwise keep currentContent as-is to preserve uncommitted changes
+
     setShowBranchModal(false);
     setNewBranchName('');
     setBranchFromCommit(null);

@@ -241,19 +241,20 @@ export default function EvaluationReport() {
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
           <div className="flex-1 flex items-center justify-center">
-            <div className="border rounded-lg p-8 max-w-md" style={{ backgroundColor: 'hsl(8, 86%, 95%)', borderColor: 'hsl(8, 86%, 80%)' }}>
-              <p className="text-lg font-medium mb-4" style={{ color: 'hsl(8, 86%, 40%)' }}>
+            <div className="border rounded-lg p-8 max-w-md" style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5' }}>
+              <p className="text-lg font-medium mb-4" style={{ color: '#dc2626' }}>
                 {error || 'Evaluation job not found'}
               </p>
               <button
                 onClick={() => router.push('/evaluations?tab=results')}
-                className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                className="px-4 py-2 rounded-md text-sm font-medium"
                 style={{
-                  backgroundColor: colors.accent.primary,
-                  color: 'hsl(0, 0%, 100%)'
+                  backgroundColor: '#171717',
+                  color: '#ffffff',
+                  transition: 'background-color 0.15s ease'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.accent.hover}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.accent.primary}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
               >
                 Back to Evaluations
               </button>
@@ -513,12 +514,12 @@ export default function EvaluationReport() {
                   </div>
                 </div>
               ) : (
-                <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: 'hsl(8, 86%, 95%)', borderColor: 'hsl(8, 86%, 80%)' }}>
-                  <p className="text-sm font-medium" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5' }}>
+                  <p className="text-sm font-medium" style={{ color: '#dc2626' }}>
                     {job.error_message ? 'Evaluation Failed' : 'No results available yet'}
                   </p>
                   {job.error_message && (
-                    <p className="text-xs mt-2" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                    <p className="text-xs mt-2" style={{ color: '#dc2626' }}>
                       {job.error_message}
                     </p>
                   )}

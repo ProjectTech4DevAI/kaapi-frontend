@@ -16,8 +16,8 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
   if (!scoreObject || (!isNewScoreObject(scoreObject) && !isNewScoreObjectV2(scoreObject))) {
     return (
-      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: 'hsl(42, 63%, 94%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-        <p className="text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
+      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
+        <p className="text-sm" style={{ color: '#92400e' }}>
           No detailed results available or using legacy format
         </p>
       </div>
@@ -29,8 +29,8 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
   if (!individual_scores || individual_scores.length === 0) {
     return (
-      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: 'hsl(42, 63%, 94%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-        <p className="text-sm" style={{ color: 'hsl(330, 3%, 49%)' }}>
+      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
+        <p className="text-sm" style={{ color: '#92400e' }}>
           No individual scores available
         </p>
       </div>
@@ -48,22 +48,22 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
   // Helper function to format score value with color
   const formatScoreValue = (score: TraceScore | undefined) => {
-    if (!score) return { value: 'N/A', color: 'hsl(330, 3%, 49%)', bg: 'transparent' };
+    if (!score) return { value: 'N/A', color: '#737373', bg: 'transparent' };
 
     if (score.data_type === 'CATEGORICAL') {
       const catValue = String(score.value);
-      let color = 'hsl(330, 3%, 19%)';
-      let bg = 'hsl(0, 0%, 95%)';
+      let color = '#171717';
+      let bg = '#fafafa';
 
       if (catValue === 'CORRECT') {
-        color = 'hsl(134, 61%, 25%)';
-        bg = 'hsl(134, 61%, 95%)';
+        color = '#15803d';
+        bg = '#dcfce7';
       } else if (catValue === 'PARTIAL') {
-        color = 'hsl(45, 93%, 35%)';
-        bg = 'hsl(45, 93%, 90%)';
+        color = '#92400e';
+        bg = '#fef3c7';
       } else if (catValue === 'INCORRECT') {
-        color = 'hsl(8, 86%, 40%)';
-        bg = 'hsl(8, 86%, 95%)';
+        color = '#dc2626';
+        bg = '#fee2e2';
       }
 
       return { value: catValue, color, bg };
@@ -72,46 +72,46 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
     // NUMERIC
     const numValue = Number(score.value);
     const formattedValue = numValue.toFixed(2);
-    let color = 'hsl(330, 3%, 19%)';
+    let color = '#171717';
     let bg = 'transparent';
 
     // Color based on value
     if (numValue >= 0.7) {
-      color = 'hsl(134, 61%, 25%)';
-      bg = 'hsl(134, 61%, 95%)';
+      color = '#15803d';
+      bg = '#dcfce7';
     } else if (numValue >= 0.5) {
-      color = 'hsl(45, 93%, 35%)';
-      bg = 'hsl(45, 93%, 90%)';
+      color = '#92400e';
+      bg = '#fef3c7';
     } else {
-      color = 'hsl(8, 86%, 40%)';
-      bg = 'hsl(8, 86%, 95%)';
+      color = '#dc2626';
+      bg = '#fee2e2';
     }
 
     return { value: formattedValue, color, bg };
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
+    <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>
       {/* Table Container */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse" style={{ minWidth: '800px' }}>
           {/* Table Header */}
           <thead>
-            <tr style={{ backgroundColor: 'hsl(0, 0%, 96.5%)', borderBottom: '2px solid hsl(0, 0%, 85%)' }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'hsl(330, 3%, 19%)', width: '5%' }}>
+            <tr style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '5%' }}>
                 #
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'hsl(330, 3%, 19%)', width: '25%' }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
                 Question
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'hsl(330, 3%, 19%)', width: '25%' }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
                 Answer
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'hsl(330, 3%, 19%)', width: '25%' }}>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
                 Ground Truth
               </th>
               {scoreNames.map((scoreName) => (
-                <th key={scoreName} className="px-4 py-3 text-center text-xs font-semibold uppercase" style={{ color: 'hsl(330, 3%, 19%)', width: `${20 / scoreNames.length}%` }}>
+                <th key={scoreName} className="px-4 py-3 text-center text-xs font-semibold uppercase" style={{ color: '#171717', width: `${20 / scoreNames.length}%` }}>
                   {scoreName}
                 </th>
               ))}
@@ -128,28 +128,28 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
               return (
                 <tr
                   key={item.trace_id || index}
-                  className="border-b transition-colors"
-                  style={{ borderColor: 'hsl(0, 0%, 92%)' }}
+                  className="border-b"
+                  style={{ borderColor: '#e5e5e5', transition: 'background-color 0.15s ease' }}
                   onMouseEnter={(e) => {
                     const row = e.currentTarget;
-                    row.style.backgroundColor = 'hsl(0, 0%, 98%)';
+                    row.style.backgroundColor = '#fafafa';
                   }}
                   onMouseLeave={(e) => {
                     const row = e.currentTarget;
-                    row.style.backgroundColor = 'transparent';
+                    row.style.backgroundColor = '#ffffff';
                   }}
                 >
                   {/* Row Number */}
-                  <td className="px-4 py-3 text-sm font-medium" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                  <td className="px-4 py-3 text-sm font-medium" style={{ color: '#737373' }}>
                     {index + 1}
                   </td>
 
                   {/* Question */}
                   <td className="px-4 py-3">
-                    <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)', lineHeight: '1.5' }}>
+                    <div className="text-sm" style={{ color: '#171717', lineHeight: '1.5' }}>
                       {question.length > 150 ? (
                         <details>
-                          <summary className="cursor-pointer" style={{ color: 'hsl(167, 59%, 22%)' }}>
+                          <summary className="cursor-pointer" style={{ color: '#171717' }}>
                             {question.substring(0, 150)}...
                           </summary>
                           <div className="mt-2">{question}</div>
@@ -162,10 +162,10 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
                   {/* Answer */}
                   <td className="px-4 py-3">
-                    <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)', lineHeight: '1.5' }}>
+                    <div className="text-sm" style={{ color: '#171717', lineHeight: '1.5' }}>
                       {answer.length > 150 ? (
                         <details>
-                          <summary className="cursor-pointer" style={{ color: 'hsl(167, 59%, 22%)' }}>
+                          <summary className="cursor-pointer" style={{ color: '#171717' }}>
                             {answer.substring(0, 150)}...
                           </summary>
                           <div className="mt-2">{answer}</div>
@@ -178,10 +178,10 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
                   {/* Ground Truth */}
                   <td className="px-4 py-3">
-                    <div className="text-sm" style={{ color: 'hsl(330, 3%, 19%)', lineHeight: '1.5' }}>
+                    <div className="text-sm" style={{ color: '#171717', lineHeight: '1.5' }}>
                       {groundTruth.length > 150 ? (
                         <details>
-                          <summary className="cursor-pointer" style={{ color: 'hsl(167, 59%, 22%)' }}>
+                          <summary className="cursor-pointer" style={{ color: '#171717' }}>
                             {groundTruth.substring(0, 150)}...
                           </summary>
                           <div className="mt-2">{groundTruth}</div>
@@ -201,12 +201,12 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                       <td key={scoreName} className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <div
-                            className="inline-block px-3 py-1 rounded-md text-sm font-semibold"
+                            className="inline-block px-2 py-1 rounded text-xs font-medium"
                             style={{
                               color,
                               backgroundColor: bg,
                               borderWidth: bg === 'transparent' ? '1px' : '0',
-                              borderColor: 'hsl(0, 0%, 85%)'
+                              borderColor: '#e5e5e5'
                             }}
                           >
                             {value}
@@ -214,21 +214,21 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                           {score?.comment && (
                             <div className="relative inline-block group">
                               <div
-                                className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help text-xs font-bold"
+                                className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help text-xs font-medium"
                                 style={{
-                                  backgroundColor: 'hsl(0, 0%, 90%)',
-                                  color: 'hsl(330, 3%, 49%)',
-                                  transition: 'all 0.1s ease-in-out'
+                                  backgroundColor: '#fafafa',
+                                  color: '#737373',
+                                  transition: 'all 0.15s ease'
                                 }}
                                 onMouseEnter={(e) => {
                                   const el = e.currentTarget;
-                                  el.style.backgroundColor = 'hsl(167, 59%, 22%)';
-                                  el.style.color = 'hsl(0, 0%, 100%)';
+                                  el.style.backgroundColor = '#171717';
+                                  el.style.color = '#ffffff';
                                 }}
                                 onMouseLeave={(e) => {
                                   const el = e.currentTarget;
-                                  el.style.backgroundColor = 'hsl(0, 0%, 90%)';
-                                  el.style.color = 'hsl(330, 3%, 49%)';
+                                  el.style.backgroundColor = '#fafafa';
+                                  el.style.color = '#737373';
                                 }}
                               >
                                 i
@@ -236,13 +236,13 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                               <div
                                 className="absolute bottom-full left-1/2 mb-2 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none opacity-0 group-hover:opacity-100 z-10"
                                 style={{
-                                  backgroundColor: 'hsl(330, 3%, 19%)',
-                                  color: 'hsl(0, 0%, 100%)',
+                                  backgroundColor: '#171717',
+                                  color: '#ffffff',
                                   transform: 'translateX(-50%)',
                                   minWidth: '200px',
                                   maxWidth: '300px',
-                                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                                  transition: 'opacity 0.1s ease-in-out'
+                                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                  transition: 'opacity 0.15s ease'
                                 }}
                               >
                                 {score.comment}
@@ -254,7 +254,7 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                                     height: 0,
                                     borderLeft: '6px solid transparent',
                                     borderRight: '6px solid transparent',
-                                    borderTop: '6px solid hsl(330, 3%, 19%)'
+                                    borderTop: '6px solid #171717'
                                   }}
                                 />
                               </div>

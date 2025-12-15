@@ -76,6 +76,7 @@ export default function SimplifiedConfigEditor({
   const [tools, setTools] = useState<Tool[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
 
   // Get API key from localStorage
   const getApiKey = (): string | null => {
@@ -181,6 +182,31 @@ export default function SimplifiedConfigEditor({
 
     fetchConfigs();
   }, []);
+
+  // Detect unsaved changes
+  useEffect(() => {
+    if (!selectedConfigId) {
+      // New config - always has unsaved changes until saved
+      setHasUnsavedChanges(true);
+      return;
+    }
+
+    const selectedConfig = savedConfigs.find(c => c.id === selectedConfigId);
+    if (!selectedConfig) {
+      setHasUnsavedChanges(true);
+      return;
+    }
+
+    // Compare current state with selected config
+    const hasChanges =
+      instructions !== selectedConfig.instructions ||
+      modelName !== selectedConfig.modelName ||
+      vectorStoreIds !== selectedConfig.vectorStoreIds ||
+      provider !== selectedConfig.provider ||
+      temperature !== selectedConfig.temperature;
+
+    setHasUnsavedChanges(hasChanges);
+  }, [selectedConfigId, instructions, modelName, vectorStoreIds, provider, temperature, savedConfigs]);
 
   // Save current configuration
   const handleSaveConfig = async () => {
@@ -304,6 +330,9 @@ export default function SimplifiedConfigEditor({
         }
         setSavedConfigs(allVersions);
       }
+
+      // Reset unsaved changes flag after successful save
+      setHasUnsavedChanges(false);
     } catch (e) {
       console.error('Failed to save config:', e);
       toast.error('Failed to save configuration. Please try again.');
@@ -423,48 +452,51 @@ export default function SimplifiedConfigEditor({
             {/* Config Button */}
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
+              className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 relative"
               style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: hasUnsavedChanges ? '#fffbeb' : '#ffffff',
                 borderWidth: '1px',
-                borderColor: '#e5e5e5',
-                color: '#171717',
+                borderColor: hasUnsavedChanges ? '#fcd34d' : '#e5e5e5',
+                color: hasUnsavedChanges ? '#b45309' : '#171717',
                 transition: 'all 0.15s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fafafa'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = hasUnsavedChanges ? '#fef3c7' : '#fafafa'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = hasUnsavedChanges ? '#fffbeb' : '#ffffff'}
             >
+              {hasUnsavedChanges && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+              )}
               ⚙️ Config
             </button>
 
             {/* Run Evaluation Button */}
             <button
               onClick={onRunEvaluation}
-              disabled={!experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating}
+              disabled={!experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating || hasUnsavedChanges}
               className="rounded-full p-4"
               style={{
-                background: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating
+                background: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating || hasUnsavedChanges
                   ? '#fafafa'
                   : '#171717',
-                color: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating
+                color: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating || hasUnsavedChanges
                   ? '#737373'
                   : '#ffffff',
-                cursor: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating
+                cursor: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating || hasUnsavedChanges
                   ? 'not-allowed'
                   : 'pointer',
-                borderWidth: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating
+                borderWidth: !experimentName.trim() || !modelName.trim() || !instructions.trim() || isEvaluating || hasUnsavedChanges
                   ? '1px'
                   : '0',
                 borderColor: '#e5e5e5',
                 transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
-                if (experimentName.trim() && modelName.trim() && instructions.trim() && !isEvaluating) {
+                if (experimentName.trim() && modelName.trim() && instructions.trim() && !isEvaluating && !hasUnsavedChanges) {
                   e.currentTarget.style.background = '#404040';
                 }
               }}
               onMouseLeave={(e) => {
-                if (experimentName.trim() && modelName.trim() && instructions.trim() && !isEvaluating) {
+                if (experimentName.trim() && modelName.trim() && instructions.trim() && !isEvaluating && !hasUnsavedChanges) {
                   e.currentTarget.style.background = '#171717';
                 }
               }}
@@ -481,6 +513,28 @@ export default function SimplifiedConfigEditor({
             </button>
           </div>
         </div>
+
+        {/* Unsaved Changes Warning */}
+        {hasUnsavedChanges && (
+          <div className="mt-4 border rounded-lg p-4" style={{
+            backgroundColor: '#fffbeb',
+            borderColor: '#fcd34d',
+          }}>
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#f59e0b' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium" style={{ color: '#b45309' }}>
+                  Configuration has unsaved changes
+                </p>
+                <p className="text-xs mt-1" style={{ color: '#b45309' }}>
+                  Please save your configuration using the <strong>⚙️ Config</strong> button before running an evaluation.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Experiment Name */}

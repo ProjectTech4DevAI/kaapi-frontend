@@ -21,12 +21,14 @@ import ScoreDisplay from '../components/ScoreDisplay';
 import Sidebar from '../components/Sidebar';
 import TabNavigation from '../components/TabNavigation';
 import SimplifiedConfigEditor from '../components/SimplifiedConfigEditor';
+import { useToast } from '../components/Toast';
 
 type Tab = 'upload' | 'results';
 
 function SimplifiedEvalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
 
   // Initialize activeTab from URL query parameter, default to 'upload'
   const [activeTab, setActiveTab] = useState<Tab>(() => {
@@ -116,7 +118,7 @@ function SimplifiedEvalContent() {
     if (!file) return;
 
     if (!file.name.endsWith('.csv')) {
-      alert('Please select a CSV file');
+      toast.error('Please select a CSV file');
       event.target.value = '';
       return;
     }
@@ -128,17 +130,17 @@ function SimplifiedEvalContent() {
 
   const handleUploadFromModal = async () => {
     if (!uploadedFile) {
-      alert('Please select a file first');
+      toast.error('Please select a file first');
       return;
     }
 
     if (!datasetName.trim()) {
-      alert('Please enter a dataset name');
+      toast.error('Please enter a dataset name');
       return;
     }
 
     if (apiKeys.length === 0) {
-      alert('No API key found');
+      toast.error('No API key found');
       return;
     }
 
@@ -185,10 +187,10 @@ function SimplifiedEvalContent() {
       setDuplicationFactor('1');
       setIsUploadModalOpen(false);
 
-      alert('Dataset uploaded successfully!');
+      toast.success('Dataset uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      alert(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
@@ -196,24 +198,24 @@ function SimplifiedEvalContent() {
 
   const handleRunEvaluation = async() => {
     if (!selectedKeyId) {
-      alert('Please select an API key first');
+      toast.error('Please select an API key first');
       return;
     }
 
     if (!selectedDatasetId) {
-      alert('Please select a dataset first');
+      toast.error('Please select a dataset first');
       return;
     }
 
     if (!experimentName.trim()) {
-      alert('Please enter an experiment name');
+      toast.error('Please enter an experiment name');
       return;
     }
 
     // Get the selected API key
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) {
-      alert('Selected API key not found');
+      toast.error('Selected API key not found');
       return;
     }
 
@@ -279,15 +281,18 @@ function SimplifiedEvalContent() {
       const data = await response.json();
       console.log('Evaluation job created:', data);
 
+      // Extract the evaluation ID from response (could be data.id or data.data.id or data.eval_id)
+      const evalId = data.id || data.data?.id || data.eval_id || 'unknown';
+
       // Redirect to results tab to view evaluation status
       setIsEvaluating(false);
       setActiveTab('results');
 
       // Show success message
-      alert(`Evaluation job created successfully! Job ID: ${data.id}`);
-    } catch(error) {
+      toast.success(`Evaluation job created successfully! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
+    } catch(error: any) {
       console.error('Error:', error);
-      alert(`Failed to run evaluation: ${error.message}`);
+      toast.error(`Failed to run evaluation: ${error.message || 'Unknown error'}`);
       setIsEvaluating(false);
     }
   };

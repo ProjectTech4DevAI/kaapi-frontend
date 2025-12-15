@@ -14,10 +14,11 @@ import ConfigModal from '../../components/ConfigModal';
 import Sidebar from '../../components/Sidebar';
 import DetailedResultsTable from '../../components/DetailedResultsTable';
 import { colors } from '@/app/lib/colors';
-
+import { useToast } from '@/app/components/Toast';
 export default function EvaluationReport() {
   const router = useRouter();
   const params = useParams();
+  const toast=useToast()
   const jobId = params.id as string;
 
   const [job, setJob] = useState<EvalJob | null>(null);
@@ -28,6 +29,7 @@ export default function EvaluationReport() {
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  
 
   // Load API keys from localStorage
   useEffect(() => {
@@ -127,7 +129,7 @@ export default function EvaluationReport() {
   // Export to CSV
   const handleExportCSV = () => {
     if (!job || !scoreObject) {
-      alert('No valid data available to export');
+      toast.error('No valid data available to export')
       return;
     }
 
@@ -136,7 +138,7 @@ export default function EvaluationReport() {
       const individual_scores = normalizeToIndividualScores(scoreObject);
 
       if (!individual_scores || individual_scores.length === 0) {
-        alert('No valid data available to export');
+        toast.error('No valid data available to export')
         return;
       }
 
@@ -195,10 +197,11 @@ export default function EvaluationReport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      alert(`CSV exported successfully with ${rowCount} rows`);
+    
+      toast.info(`CSV exported successfully with ${rowCount} rows`)
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      alert('Failed to export CSV. Please check the console for details.');
+      toast.error('Failed to export CSV. Please check the console for details.');
     }
   };
 

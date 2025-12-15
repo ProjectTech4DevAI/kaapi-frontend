@@ -238,6 +238,9 @@ export default function ConfigDrawer({
       <div
         className="fixed right-0 top-0 bottom-0 w-[420px] z-50 flex flex-col"
         style={{
+          right: 0,
+          top: 0,
+          bottom: 0,
           backgroundColor: colors.bg.primary,
           borderLeft: `1px solid ${colors.border}`,
           boxShadow: '-4px 0 12px rgba(0, 0, 0, 0.15)',

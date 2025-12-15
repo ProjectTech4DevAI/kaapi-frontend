@@ -12,6 +12,7 @@
 "use client"
 import { useState, useEffect } from 'react';
 import ConfigDrawer from './ConfigDrawer';
+import { useToast } from './Toast';
 import {
   ConfigPublic,
   ConfigVersionPublic,
@@ -65,6 +66,7 @@ export default function SimplifiedConfigEditor({
   onVectorStoreIdsChange,
   onRunEvaluation,
 }: SimplifiedConfigEditorProps) {
+  const toast = useToast();
   const [savedConfigs, setSavedConfigs] = useState<SavedConfig[]>([]);
   const [configName, setConfigName] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>('');
@@ -183,13 +185,13 @@ export default function SimplifiedConfigEditor({
   // Save current configuration
   const handleSaveConfig = async () => {
     if (!configName.trim()) {
-      alert('Please enter a configuration name');
+      toast.error('Please enter a configuration name');
       return;
     }
 
     const apiKey = getApiKey();
     if (!apiKey) {
-      alert('No API key found. Please add an API key in the Keystore.');
+      toast.error('No API key found. Please add an API key in the Keystore.');
       return;
     }
 
@@ -231,11 +233,11 @@ export default function SimplifiedConfigEditor({
         const data = await response.json();
 
         if (!data.success) {
-          alert(`Failed to create version: ${data.error || 'Unknown error'}`);
+          toast.error(`Failed to create version: ${data.error || 'Unknown error'}`);
           return;
         }
 
-        alert(`Configuration "${configName}" updated! New version created.`);
+        toast.success(`Configuration "${configName}" updated! New version created.`);
       } else {
         // Create new config
         const configCreate: ConfigCreate = {
@@ -257,11 +259,11 @@ export default function SimplifiedConfigEditor({
         const data: ConfigWithVersionResponse = await response.json();
 
         if (!data.success || !data.data) {
-          alert(`Failed to create config: ${data.error || 'Unknown error'}`);
+          toast.error(`Failed to create config: ${data.error || 'Unknown error'}`);
           return;
         }
 
-        alert(`Configuration "${configName}" created successfully!`);
+        toast.success(`Configuration "${configName}" created successfully!`);
       }
 
       // Refresh configs list
@@ -304,7 +306,7 @@ export default function SimplifiedConfigEditor({
       }
     } catch (e) {
       console.error('Failed to save config:', e);
-      alert('Failed to save configuration. Please try again.');
+      toast.error('Failed to save configuration. Please try again.');
     } finally {
       setIsSaving(false);
     }

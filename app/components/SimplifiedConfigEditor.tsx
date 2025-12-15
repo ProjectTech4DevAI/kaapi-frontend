@@ -6,23 +6,38 @@
  * - Drawer for advanced config management
  * - Save/load configs with auto-versioning
  * - Comparison in drawer
+ * - Backend integration for persistent config storage
  */
 
 "use client"
 import { useState, useEffect } from 'react';
 import ConfigDrawer from './ConfigDrawer';
+import {
+  ConfigPublic,
+  ConfigVersionPublic,
+  ConfigCreate,
+  ConfigVersionCreate,
+  ConfigBlob,
+  Tool,
+  ConfigListResponse,
+  ConfigWithVersionResponse,
+  ConfigVersionListResponse,
+} from '@/app/lib/configTypes';
 
-// Types
+// UI representation of a config version (flattened for easier display)
 export interface SavedConfig {
-  id: string;
+  id: string; // version id
+  config_id: string; // parent config id
   name: string;
   version: number;
-  timestamp: number;
+  timestamp: string; // ISO datetime from backend
   instructions: string;
   modelName: string;
   provider: string;
   temperature: number;
   vectorStoreIds: string;
+  tools?: Tool[];
+  commit_message?: string | null;
 }
 
 interface SimplifiedConfigEditorProps {
@@ -37,9 +52,6 @@ interface SimplifiedConfigEditorProps {
   onVectorStoreIdsChange: (value: string) => void;
   onRunEvaluation: () => void;
 }
-
-const STORAGE_KEY = 'kaapi_saved_configs';
-const MAX_CONFIGS = 20;
 
 export default function SimplifiedConfigEditor({
   experimentName,
@@ -59,61 +71,243 @@ export default function SimplifiedConfigEditor({
   const [provider, setProvider] = useState<string>('openai');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Load saved configs from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const configs = JSON.parse(stored);
-        setSavedConfigs(configs);
-      } catch (e) {
-        console.error('Failed to load saved configs:', e);
-      }
-    }
-  }, []);
-
-  // Save config to localStorage
-  const saveConfigToStorage = (configs: SavedConfig[]) => {
+  // Get API key from localStorage
+  const getApiKey = (): string | null => {
     try {
-      // Keep only the most recent MAX_CONFIGS
-      const trimmed = configs.slice(0, MAX_CONFIGS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-      setSavedConfigs(trimmed);
+      const stored = localStorage.getItem('kaapi_api_keys');
+      if (stored) {
+        const keys = JSON.parse(stored);
+        return keys.length > 0 ? keys[0].key : null;
+      }
     } catch (e) {
-      console.error('Failed to save configs:', e);
+      console.error('Failed to get API key:', e);
     }
+    return null;
   };
 
+  // Flatten config versions for UI
+  const flattenConfigVersion = (
+    config: ConfigPublic,
+    version: ConfigVersionPublic
+  ): SavedConfig => {
+    const blob = version.config_blob;
+    const params = blob.completion.params;
+
+    return {
+      id: version.id,
+      config_id: config.id,
+      name: config.name,
+      version: version.version,
+      timestamp: version.inserted_at,
+      instructions: params.instructions || '',
+      modelName: params.model || '',
+      provider: blob.completion.provider,
+      temperature: params.temperature || 0.7,
+      vectorStoreIds: params.tools?.[0]?.vector_store_ids?.[0] || '',
+      tools: params.tools || [],
+      commit_message: version.commit_message,
+    };
+  };
+
+  // Load saved configs from backend
+  useEffect(() => {
+    const fetchConfigs = async () => {
+      setIsLoading(true);
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        console.warn('No API key found. Please add an API key in the Keystore.');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch all configs
+        const response = await fetch('/api/configs', {
+          headers: { 'X-API-KEY': apiKey },
+        });
+        const data: ConfigListResponse = await response.json();
+
+        if (!data.success || !data.data) {
+          console.error('Failed to fetch configs:', data.error);
+          setIsLoading(false);
+          return;
+        }
+
+        // For each config, fetch its versions
+        const allVersions: SavedConfig[] = [];
+        for (const config of data.data) {
+          try {
+            const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
+              headers: { 'X-API-KEY': apiKey },
+            });
+            const versionsData: ConfigVersionListResponse = await versionsResponse.json();
+
+            if (versionsData.success && versionsData.data) {
+              // Fetch full version details for each version
+              for (const versionItem of versionsData.data) {
+                try {
+                  const versionResponse = await fetch(
+                    `/api/configs/${config.id}/versions/${versionItem.version}`,
+                    { headers: { 'X-API-KEY': apiKey } }
+                  );
+                  const versionData = await versionResponse.json();
+
+                  if (versionData.success && versionData.data) {
+                    allVersions.push(flattenConfigVersion(config, versionData.data));
+                  }
+                } catch (e) {
+                  console.error(`Failed to fetch version ${versionItem.version}:`, e);
+                }
+              }
+            }
+          } catch (e) {
+            console.error(`Failed to fetch versions for config ${config.id}:`, e);
+          }
+        }
+
+        setSavedConfigs(allVersions);
+      } catch (e) {
+        console.error('Failed to load saved configs:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConfigs();
+  }, []);
+
   // Save current configuration
-  const handleSaveConfig = () => {
+  const handleSaveConfig = async () => {
     if (!configName.trim()) {
       alert('Please enter a configuration name');
       return;
     }
 
-    // Find existing configs with same name to determine version
-    const existingConfigs = savedConfigs.filter(c => c.name === configName.trim());
-    const version = existingConfigs.length > 0
-      ? Math.max(...existingConfigs.map(c => c.version)) + 1
-      : 1;
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      alert('No API key found. Please add an API key in the Keystore.');
+      return;
+    }
 
-    const newConfig: SavedConfig = {
-      id: `cfg_${Date.now()}`,
-      name: configName.trim(),
-      version,
-      timestamp: Date.now(),
-      instructions,
-      modelName,
-      provider,
-      temperature,
-      vectorStoreIds,
-    };
+    setIsSaving(true);
 
-    const updatedConfigs = [newConfig, ...savedConfigs];
-    saveConfigToStorage(updatedConfigs);
-    setSelectedConfigId(newConfig.id);
-    alert(`Configuration "${configName}" v${version} saved successfully!`);
+    try {
+      // Build config blob
+      const configBlob: ConfigBlob = {
+        completion: {
+          provider: provider as 'openai' | 'anthropic' | 'google',
+          params: {
+            model: modelName,
+            instructions: instructions,
+            temperature: temperature,
+            ...(tools.length > 0 && { tools }),
+          },
+        },
+      };
+
+      // Check if updating existing config (same name exists)
+      const existingConfig = savedConfigs.find(c => c.name === configName.trim());
+
+      if (existingConfig) {
+        // Create new version for existing config
+        const versionCreate: ConfigVersionCreate = {
+          config_blob: configBlob,
+          commit_message: `Updated to ${modelName} with temperature ${temperature}`,
+        };
+
+        const response = await fetch(`/api/configs/${existingConfig.config_id}/versions`, {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(versionCreate),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          alert(`Failed to create version: ${data.error || 'Unknown error'}`);
+          return;
+        }
+
+        alert(`Configuration "${configName}" updated! New version created.`);
+      } else {
+        // Create new config
+        const configCreate: ConfigCreate = {
+          name: configName.trim(),
+          description: `${provider} ${modelName} configuration`,
+          config_blob: configBlob,
+          commit_message: 'Initial version',
+        };
+
+        const response = await fetch('/api/configs', {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(configCreate),
+        });
+
+        const data: ConfigWithVersionResponse = await response.json();
+
+        if (!data.success || !data.data) {
+          alert(`Failed to create config: ${data.error || 'Unknown error'}`);
+          return;
+        }
+
+        alert(`Configuration "${configName}" created successfully!`);
+      }
+
+      // Refresh configs list
+      const response = await fetch('/api/configs', {
+        headers: { 'X-API-KEY': apiKey },
+      });
+      const data: ConfigListResponse = await response.json();
+
+      if (data.success && data.data) {
+        const allVersions: SavedConfig[] = [];
+        for (const config of data.data) {
+          try {
+            const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
+              headers: { 'X-API-KEY': apiKey },
+            });
+            const versionsData: ConfigVersionListResponse = await versionsResponse.json();
+
+            if (versionsData.success && versionsData.data) {
+              for (const versionItem of versionsData.data) {
+                try {
+                  const versionResponse = await fetch(
+                    `/api/configs/${config.id}/versions/${versionItem.version}`,
+                    { headers: { 'X-API-KEY': apiKey } }
+                  );
+                  const versionData = await versionResponse.json();
+
+                  if (versionData.success && versionData.data) {
+                    allVersions.push(flattenConfigVersion(config, versionData.data));
+                  }
+                } catch (e) {
+                  console.error('Failed to fetch version:', e);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to fetch versions:', e);
+          }
+        }
+        setSavedConfigs(allVersions);
+      }
+    } catch (e) {
+      console.error('Failed to save config:', e);
+      alert('Failed to save configuration. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Load a saved configuration
@@ -125,6 +319,7 @@ export default function SimplifiedConfigEditor({
     setTemperature(config.temperature);
     setSelectedConfigId(config.id);
     setConfigName(config.name);
+    setTools(config.tools || []);
   };
 
   // Handle config selection from dropdown
@@ -135,6 +330,7 @@ export default function SimplifiedConfigEditor({
       setConfigName('');
       setProvider('openai');
       setTemperature(0.7);
+      setTools([]);
       onModelNameChange('gpt-4');
       onInstructionsChange('You are a helpful FAQ assistant.');
       onVectorStoreIdsChange('');
@@ -165,6 +361,15 @@ export default function SimplifiedConfigEditor({
       case 'vectorStoreIds':
         onVectorStoreIdsChange(value);
         break;
+      case 'instructions':
+        onInstructionsChange(value);
+        break;
+      case 'tools':
+        setTools(value);
+        break;
+      case 'selectedConfigId':
+        setSelectedConfigId(value);
+        break;
     }
   };
 
@@ -180,10 +385,15 @@ export default function SimplifiedConfigEditor({
   // Get current selected config
   const selectedConfig = savedConfigs.find(c => c.id === selectedConfigId);
 
-  // Format timestamp
-  const formatTimestamp = (timestamp: number) => {
-    const now = Date.now();
-    const diff = now - timestamp;
+  // Format timestamp - calculate relative time from UTC timestamps
+  const formatTimestamp = (timestamp: string | number) => {
+    const now = Date.now(); // Current time in UTC milliseconds
+    const date = typeof timestamp === 'string'
+      ? new Date(timestamp).getTime() // Parse UTC timestamp to milliseconds
+      : timestamp;
+
+    // Calculate difference (works the same in any timezone)
+    const diff = now - date;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -293,7 +503,20 @@ export default function SimplifiedConfigEditor({
           </div>
 
           {/* Load Saved Config (Dropdown Selector) */}
-          {savedConfigs.length > 0 && (
+          {isLoading ? (
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+                Load Saved Configuration
+              </label>
+              <div className="w-full px-4 py-2 rounded-md border text-sm" style={{
+                borderColor: '#e5e5e5',
+                backgroundColor: '#fafafa',
+                color: '#737373',
+              }}>
+                Loading configurations...
+              </div>
+            </div>
+          ) : savedConfigs.length > 0 ? (
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
                 Load Saved Configuration
@@ -321,7 +544,7 @@ export default function SimplifiedConfigEditor({
                 Select a saved config to load or create a new one
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Prompt Instructions */}
           <div>
@@ -379,7 +602,9 @@ export default function SimplifiedConfigEditor({
           provider,
           temperature,
           vectorStoreIds,
+          tools,
         }}
+        selectedConfigId={selectedConfigId}
         onConfigChange={handleConfigChange}
         onSaveConfig={handleSaveConfig}
         onLoadConfig={handleLoadConfig}

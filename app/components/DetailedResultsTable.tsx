@@ -146,49 +146,43 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
                   {/* Question */}
                   <td className="px-4 py-3">
-                    <div className="text-sm" style={{ color: '#171717', lineHeight: '1.5' }}>
-                      {question.length > 150 ? (
-                        <details>
-                          <summary className="cursor-pointer" style={{ color: '#171717' }}>
-                            {question.substring(0, 150)}...
-                          </summary>
-                          <div className="mt-2">{question}</div>
-                        </details>
-                      ) : (
-                        question
-                      )}
+                    <div
+                      className="text-sm overflow-auto"
+                      style={{
+                        color: '#171717',
+                        lineHeight: '1.5',
+                        maxHeight: '150px'
+                      }}
+                    >
+                      {question}
                     </div>
                   </td>
 
                   {/* Answer */}
                   <td className="px-4 py-3">
-                    <div className="text-sm" style={{ color: '#171717', lineHeight: '1.5' }}>
-                      {answer.length > 150 ? (
-                        <details>
-                          <summary className="cursor-pointer" style={{ color: '#171717' }}>
-                            {answer.substring(0, 150)}...
-                          </summary>
-                          <div className="mt-2">{answer}</div>
-                        </details>
-                      ) : (
-                        answer
-                      )}
+                    <div
+                      className="text-sm overflow-auto"
+                      style={{
+                        color: '#171717',
+                        lineHeight: '1.5',
+                        maxHeight: '150px'
+                      }}
+                    >
+                      {answer}
                     </div>
                   </td>
 
                   {/* Ground Truth */}
                   <td className="px-4 py-3">
-                    <div className="text-sm" style={{ color: '#171717', lineHeight: '1.5' }}>
-                      {groundTruth.length > 150 ? (
-                        <details>
-                          <summary className="cursor-pointer" style={{ color: '#171717' }}>
-                            {groundTruth.substring(0, 150)}...
-                          </summary>
-                          <div className="mt-2">{groundTruth}</div>
-                        </details>
-                      ) : (
-                        groundTruth
-                      )}
+                    <div
+                      className="text-sm overflow-auto"
+                      style={{
+                        color: '#171717',
+                        lineHeight: '1.5',
+                        maxHeight: '150px'
+                      }}
+                    >
+                      {groundTruth}
                     </div>
                   </td>
 

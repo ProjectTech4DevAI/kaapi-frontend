@@ -1,12 +1,12 @@
 import { colors } from '@/app/lib/colors';
-import { Commit } from '@/app/configurations/prompt-editor/types';
-import { getAllBranches, getBranchColor } from '@/app/configurations/prompt-editor/utils';
+import { UnifiedCommit } from '@/app/configurations/prompt-editor/types';
+import { getAllUnifiedBranches, getUnifiedBranchColor } from '@/app/configurations/prompt-editor/utils';
 
 interface MergeModalProps {
   isOpen: boolean;
   currentBranch: string;
   mergeToBranch: string;
-  commits: Commit[];
+  commits: UnifiedCommit[];
   onMergeToBranchChange: (branch: string) => void;
   onMerge: () => void;
   onClose: () => void;
@@ -37,7 +37,7 @@ export default function MergeModal({
         </h3>
         <div className="mb-4">
           <label className="block text-sm mb-2" style={{ color: colors.text.secondary }}>
-            Merge <strong style={{ color: getBranchColor(commits, currentBranch) }}>{currentBranch}</strong> into:
+            Merge <strong style={{ color: getUnifiedBranchColor(commits, currentBranch) }}>{currentBranch}</strong> into:
           </label>
           <select
             value={mergeToBranch}
@@ -50,7 +50,7 @@ export default function MergeModal({
             }}
           >
             <option value="">Select target branch...</option>
-            {getAllBranches(commits).filter(b => b !== currentBranch).map(b => <option key={b} value={b}>{b}</option>)}
+            {getAllUnifiedBranches(commits).filter(b => b !== currentBranch).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
         {mergeToBranch && (() => {

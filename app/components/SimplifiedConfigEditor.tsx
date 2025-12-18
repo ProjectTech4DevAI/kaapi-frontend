@@ -77,6 +77,7 @@ export default function SimplifiedConfigEditor({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [commitMessage, setCommitMessage] = useState<string>('');
 
   // Get API key from localStorage
   const getApiKey = (): string | null => {
@@ -244,7 +245,7 @@ export default function SimplifiedConfigEditor({
         // Create new version for existing config
         const versionCreate: ConfigVersionCreate = {
           config_blob: configBlob,
-          commit_message: `Updated to ${modelName} with temperature ${temperature}`,
+          commit_message: commitMessage.trim() || `Updated to ${modelName} with temperature ${temperature}`,
         };
 
         const response = await fetch(`/api/configs/${existingConfig.config_id}/versions`, {
@@ -270,7 +271,7 @@ export default function SimplifiedConfigEditor({
           name: configName.trim(),
           description: `${provider} ${modelName} configuration`,
           config_blob: configBlob,
-          commit_message: 'Initial version',
+          commit_message: commitMessage.trim() || 'Initial version',
         };
 
         const response = await fetch('/api/configs', {
@@ -331,8 +332,9 @@ export default function SimplifiedConfigEditor({
         setSavedConfigs(allVersions);
       }
 
-      // Reset unsaved changes flag after successful save
+      // Reset unsaved changes flag and commit message after successful save
       setHasUnsavedChanges(false);
+      setCommitMessage('');
     } catch (e) {
       console.error('Failed to save config:', e);
       toast.error('Failed to save configuration. Please try again.');
@@ -400,6 +402,9 @@ export default function SimplifiedConfigEditor({
         break;
       case 'selectedConfigId':
         setSelectedConfigId(value);
+        break;
+      case 'commitMessage':
+        setCommitMessage(value);
         break;
     }
   };
@@ -659,6 +664,7 @@ export default function SimplifiedConfigEditor({
           temperature,
           vectorStoreIds,
           tools,
+          commitMessage,
         }}
         selectedConfigId={selectedConfigId}
         onConfigChange={handleConfigChange}

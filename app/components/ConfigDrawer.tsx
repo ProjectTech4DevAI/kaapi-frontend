@@ -28,6 +28,7 @@ interface ConfigDrawerProps {
     temperature: number;
     vectorStoreIds: string;
     tools?: Tool[];
+    commitMessage?: string;
   };
   selectedConfigId: string;
   onConfigChange: (field: string, value: any) => void;
@@ -678,6 +679,34 @@ export default function ConfigDrawer({
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Commit Message */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: colors.text.primary,
+                    marginBottom: '6px',
+                  }}
+                >
+                  Commit Message (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={currentConfig.commitMessage || ''}
+                  onChange={(e) => onConfigChange('commitMessage', e.target.value)}
+                  placeholder="Describe this configuration..."
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                  }}
+                />
               </div>
 
               {/* Save Button */}

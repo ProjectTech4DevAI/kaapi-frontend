@@ -1,9 +1,9 @@
 import { colors } from '@/app/lib/colors';
-import { Commit } from '@/app/configurations/prompt-editor/types';
+import { UnifiedCommit } from '@/app/configurations/prompt-editor/types';
 
 interface BranchModalProps {
   isOpen: boolean;
-  branchFromCommit: Commit | null;
+  branchFromCommit: UnifiedCommit | null;
   newBranchName: string;
   onBranchNameChange: (name: string) => void;
   onCreate: () => void;

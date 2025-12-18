@@ -1,231 +1,400 @@
 /**
- * Prompt Editor - Git-based Version Controlled Prompt Editor
+ * Prompt Editor - Version Controlled Prompt + Config Editor
  *
- * A WYSIWYG editor for managing prompts with git-like version control.
- * Features: store, edit, merge, compare prompts in a versioned manner.
- * Uses Myers diff algorithm for efficient change detection.
+ * A WYSIWYG editor for managing prompts and configs with linear versioning.
+ * Features: save, load, compare configs with backend persistence.
+ * Uses backend API for config storage and version management.
  */
 
 "use client"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/app/components/Sidebar';
 import { colors } from '@/app/lib/colors';
-import { Commit, Config, Tool, Variant, TestResult } from './types';
-import { getAllBranches, getLatestCommitOnBranch } from './utils';
+import { ConfigBlob, Tool } from './types';
+import { hasPromptChanges, hasConfigChanges } from './utils';
+import {
+  ConfigPublic,
+  ConfigVersionPublic,
+  ConfigCreate,
+  ConfigVersionCreate,
+  ConfigListResponse,
+  ConfigVersionListResponse,
+  ConfigVersionResponse,
+} from '@/app/lib/configTypes';
 import Header from '@/app/components/prompt-editor/Header';
 import HistorySidebar from '@/app/components/prompt-editor/HistorySidebar';
-import EditorView from '@/app/components/prompt-editor/EditorView';
+import PromptEditorPane from '@/app/components/prompt-editor/PromptEditorPane';
+import ConfigEditorPane from '@/app/components/prompt-editor/ConfigEditorPane';
 import DiffView from '@/app/components/prompt-editor/DiffView';
-import BranchModal from '@/app/components/prompt-editor/BranchModal';
-import MergeModal from '@/app/components/prompt-editor/MergeModal';
-import ConfigDrawer from '@/app/components/prompt-editor/ConfigDrawer';
+import { useToast } from '@/app/components/Toast';
 
-export default function MagicCanvasPage() {
+// UI representation of a config version (flattened for easier display)
+interface SavedConfig {
+  id: string; // version id
+  config_id: string; // parent config id
+  name: string;
+  version: number;
+  timestamp: string; // ISO datetime from backend
+  instructions: string;
+  promptContent: string;
+  modelName: string;
+  provider: string;
+  temperature: number;
+  tools?: Tool[];
+  commit_message?: string | null;
+}
+
+export default function PromptEditorPage() {
+  const toast = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [commits, setCommits] = useState<Commit[]>([
-    {
-      id: '1',
-      content: 'You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.',
-      timestamp: Date.now() - 7200000,
-      author: 'User',
-      message: 'Initial prompt',
-      branch: 'main',
-      parentId: null
+
+  // Default config for new versions
+  const defaultConfig: ConfigBlob = {
+    completion: {
+      provider: 'openai',
+      params: {
+        model: 'gpt-4o-mini',
+        instructions: '',
+        temperature: 0.7,
+        tools: [],
+      },
     },
-    {
-      id: '2',
-      content: 'You are a helpful AI assistant.\nYou provide detailed and accurate answers.\nYou are polite and professional.\nYou cite sources when possible.',
-      timestamp: Date.now() - 3600000,
-      author: 'User',
-      message: 'Added source citation',
-      branch: 'main',
-      parentId: '1'
-    }
-  ]);
+  };
 
-  const [currentBranch, setCurrentBranch] = useState<string>('main');
-  const [currentContent, setCurrentContent] = useState<string>('You are a helpful AI assistant.\nYou provide detailed and accurate answers.\nYou are polite and professional.\nYou cite sources when possible.');
-  const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
-  const [compareWith, setCompareWith] = useState<Commit | null>(null);
-  const [commitMessage, setCommitMessage] = useState<string>('');
-  const [showBranchModal, setShowBranchModal] = useState<boolean>(false);
-  const [newBranchName, setNewBranchName] = useState<string>('');
-  const [branchFromCommit, setBranchFromCommit] = useState<Commit | null>(null);
-  const [showMergeModal, setShowMergeModal] = useState<boolean>(false);
-  const [mergeToBranch, setMergeToBranch] = useState<string>('');
+  // Saved configurations (from backend)
+  const [savedConfigs, setSavedConfigs] = useState<SavedConfig[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Drawer and Configuration State
-  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
-  const [drawerTab, setDrawerTab] = useState<string>('current');
-  const [configs, setConfigs] = useState<Config[]>([]);
-  const [selectedConfigId, setSelectedConfigId] = useState<string>('');
-  const [configName, setConfigName] = useState<string>('');
+  // Current working state
+  const [currentContent, setCurrentContent] = useState<string>('You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.');
+  const [currentConfigBlob, setCurrentConfigBlob] = useState<ConfigBlob>(defaultConfig);
+  const [currentConfigName, setCurrentConfigName] = useState<string>('');
+  const [selectedConfigId, setSelectedConfigId] = useState<string>(''); // Selected version ID
   const [provider, setProvider] = useState<string>('openai');
-  const [model, setModel] = useState<string>('gpt-4o-mini');
-  const [instructions, setInstructions] = useState<string>('');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [tools, setTools] = useState<Tool[]>([]);
-  const [configCommitMsg, setConfigCommitMsg] = useState<string>('');
 
-  // A/B Testing State
-  const [variants, setVariants] = useState<Variant[]>([
-    { id: 'A', configId: '', commitId: '', name: 'Variant A' },
-    { id: 'B', configId: '', commitId: '', name: 'Variant B' }
-  ]);
-  const [testInput, setTestInput] = useState<string>('');
-  const [testResults, setTestResults] = useState<TestResult[] | null>(null);
-  const [isRunningTest, setIsRunningTest] = useState<boolean>(false);
+  // UI state
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [commitMessage, setCommitMessage] = useState<string>('');
 
-  const createBranch = () => {
-    if (!newBranchName.trim()) return alert('Please enter a branch name');
-    if (getAllBranches(commits).includes(newBranchName)) return alert('Branch already exists');
+  // History viewing state
+  const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(null);
+  const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
 
-    const sourceCommit = branchFromCommit || getLatestCommitOnBranch(commits, currentBranch);
-    if (!sourceCommit) return;
-    setCurrentBranch(newBranchName);
-
-    // Only reset content if explicitly branching from a different commit
-    // If branchFromCommit is null, we're branching from current HEAD, so preserve working changes
-    if (branchFromCommit && branchFromCommit.id !== sourceCommit.id) {
-      setCurrentContent(sourceCommit.content);
+  // Get API key from localStorage
+  const getApiKey = (): string | null => {
+    try {
+      const stored = localStorage.getItem('kaapi_api_keys');
+      if (stored) {
+        const keys = JSON.parse(stored);
+        return keys.length > 0 ? keys[0].key : null;
+      }
+    } catch (e) {
+      console.error('Failed to get API key:', e);
     }
-    // Otherwise keep currentContent as-is to preserve uncommitted changes
-
-    setShowBranchModal(false);
-    setNewBranchName('');
-    setBranchFromCommit(null);
+    return null;
   };
 
-  const switchBranch = (branchName: string) => {
-    const latestCommit = getLatestCommitOnBranch(commits, branchName);
-    if (latestCommit) setCurrentContent(latestCommit.content);
-    setCurrentBranch(branchName);
-    setSelectedCommit(null);
+  // Flatten config version for UI
+  const flattenConfigVersion = (
+    config: ConfigPublic,
+    version: ConfigVersionPublic
+  ): SavedConfig => {
+    const blob = version.config_blob as ConfigBlob;
+    const params = blob.completion.params;
+
+    // Debug: log the params to see what we're getting
+    console.log('Flattening config version:', {
+      configName: config.name,
+      version: version.version,
+      instructions: params.instructions,
+      instructionsLength: params.instructions?.length || 0,
+    });
+
+    return {
+      id: version.id,
+      config_id: config.id,
+      name: config.name,
+      version: version.version,
+      timestamp: version.inserted_at,
+      instructions: params.instructions || '',
+      promptContent: params.instructions || '', // Using instructions as prompt content
+      modelName: params.model || '',
+      provider: blob.completion.provider,
+      temperature: params.temperature || 0.7,
+      tools: params.tools || [],
+      commit_message: version.commit_message,
+    };
   };
 
-  const commitVersion = () => {
-    if (!commitMessage.trim()) return alert('Please enter a commit message');
-    const latestCommit = getLatestCommitOnBranch(commits, currentBranch);
-    setCommits([...commits, {
-      id: String(commits.length + 1),
-      content: currentContent,
-      timestamp: Date.now(),
-      author: 'User',
-      message: commitMessage,
-      branch: currentBranch,
-      parentId: latestCommit?.id || null
-    }]);
-    setCommitMessage('');
-  };
+  // Load saved configs from backend
+  useEffect(() => {
+    const fetchConfigs = async () => {
+      setIsLoading(true);
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        console.warn('No API key found. Please add an API key in the Keystore.');
+        setIsLoading(false);
+        return;
+      }
 
-  const mergeBranch = () => {
-    if (!mergeToBranch) return alert('Please select a branch to merge into');
-    const currentLatest = getLatestCommitOnBranch(commits, currentBranch);
-    const targetLatest = getLatestCommitOnBranch(commits, mergeToBranch);
-    if (!currentLatest) return alert('No commits on current branch to merge');
+      try {
+        // Fetch all configs
+        const response = await fetch('/api/configs', {
+          headers: { 'X-API-KEY': apiKey },
+        });
+        const data: ConfigListResponse = await response.json();
 
-    const lastMerge = commits
-      .filter(c => c.branch === mergeToBranch && c.mergeFrom === currentBranch)
-      .sort((a, b) => b.timestamp - a.timestamp)[0];
+        if (!data.success || !data.data) {
+          console.error('Failed to fetch configs:', data.error);
+          setIsLoading(false);
+          return;
+        }
 
-    if (lastMerge) {
-      const newCommits = commits.filter(c => c.branch === currentBranch && c.timestamp > lastMerge.timestamp);
-      if (newCommits.length === 0) return alert(`Nothing to merge. No new commits on "${currentBranch}" since the last merge.`);
-    }
+        // For each config, fetch its versions
+        const allVersions: SavedConfig[] = [];
+        for (const config of data.data) {
+          try {
+            const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
+              headers: { 'X-API-KEY': apiKey },
+            });
+            const versionsData: ConfigVersionListResponse = await versionsResponse.json();
 
-    setCommits([...commits, {
-      id: String(commits.length + 1),
-      content: currentLatest.content,
-      timestamp: Date.now(),
-      author: 'User',
-      message: `Merge ${currentBranch} into ${mergeToBranch}`,
-      branch: mergeToBranch,
-      parentId: targetLatest?.id || null,
-      mergeFrom: currentBranch,
-      mergeFromCommitId: currentLatest.id
-    }]);
-    setCurrentBranch(mergeToBranch);
-    setCurrentContent(currentLatest.content);
-    setShowMergeModal(false);
-    setMergeToBranch('');
-  };
+            if (versionsData.success && versionsData.data) {
+              // Fetch full version details for each version
+              for (const versionItem of versionsData.data) {
+                try {
+                  const versionResponse = await fetch(
+                    `/api/configs/${config.id}/versions/${versionItem.version}`,
+                    { headers: { 'X-API-KEY': apiKey } }
+                  );
+                  const versionData: ConfigVersionResponse = await versionResponse.json();
 
-  // Configuration Management Functions
-  const saveConfig = () => {
-    if (!configName.trim()) return alert('Please enter a configuration name');
+                  if (versionData.success && versionData.data) {
+                    allVersions.push(flattenConfigVersion(config, versionData.data));
+                  }
+                } catch (e) {
+                  console.error(`Failed to fetch version ${versionItem.version}:`, e);
+                }
+              }
+            }
+          } catch (e) {
+            console.error(`Failed to fetch versions for config ${config.id}:`, e);
+          }
+        }
 
-    // Find existing configs with the same name to determine version
-    const existingConfigs = configs.filter(c => c.name === configName);
-    const version = existingConfigs.length > 0
-      ? Math.max(...existingConfigs.map(c => c.version)) + 1
-      : 1;
-
-    const newConfig: Config = {
-      id: `cfg_${Date.now()}`,
-      name: configName,
-      version,
-      timestamp: Date.now(),
-      config_blob: {
-        completion: {
-          provider,
-          params: {
-            model,
-            instructions,
-            temperature,
-            tools,
-          },
-        },
-      },
-      commitMessage: configCommitMsg,
+        setSavedConfigs(allVersions);
+      } catch (e) {
+        console.error('Failed to load saved configs:', e);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setConfigs([...configs, newConfig]);
-    setSelectedConfigId(newConfig.id);
-    setConfigCommitMsg('');
-    alert(`Configuration "${configName}" (v${version}) saved successfully!`);
-  };
+    fetchConfigs();
+  }, []);
 
-  const loadConfig = (configId: string) => {
-    const config = configs.find(c => c.id === configId);
-    if (!config) return;
-
-    setSelectedConfigId(configId);
-    setConfigName(config.name);
-    setProvider(config.config_blob.completion.provider);
-    setModel(config.config_blob.completion.params.model);
-    setInstructions(config.config_blob.completion.params.instructions);
-    setTemperature(config.config_blob.completion.params.temperature);
-    setTools(config.config_blob.completion.params.tools);
-    setDrawerTab('current');
-  };
-
-  const useCurrentPrompt = () => {
-    setInstructions(currentContent);
-  };
-
-  const runABTest = async () => {
-    if (!testInput.trim()) return alert('Please enter test input');
-
-    // Validate that all variants have config and commit selected
-    const invalidVariants = variants.filter(v => !v.configId || !v.commitId);
-    if (invalidVariants.length > 0) {
-      return alert('Please select both configuration and prompt for all variants');
+  // Detect unsaved changes
+  useEffect(() => {
+    if (!selectedConfigId) {
+      // New config - always has unsaved changes until saved
+      setHasUnsavedChanges(true);
+      return;
     }
 
-    setIsRunningTest(true);
-    setTestResults(null);
+    const selectedConfig = savedConfigs.find(c => c.id === selectedConfigId);
+    if (!selectedConfig) {
+      setHasUnsavedChanges(true);
+      return;
+    }
 
-    // Simulate API calls
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Compare current state with selected config
+    const promptChanged = currentContent !== selectedConfig.promptContent;
+    const configChanged = hasConfigChanges(currentConfigBlob, {
+      completion: {
+        provider: selectedConfig.provider as any,
+        params: {
+          model: selectedConfig.modelName,
+          instructions: selectedConfig.instructions,
+          temperature: selectedConfig.temperature,
+          tools: selectedConfig.tools || [],
+        },
+      },
+    });
 
-    const results: TestResult[] = variants.map(variant => ({
-      variantId: variant.id,
-      score: 0.7 + Math.random() * 0.25,
-      latency: 200 + Math.random() * 400,
-    }));
+    setHasUnsavedChanges(promptChanged || configChanged);
+  }, [selectedConfigId, currentContent, currentConfigBlob, provider, temperature, tools, savedConfigs]);
 
-    setTestResults(results);
-    setIsRunningTest(false);
+  // Save current configuration
+  const handleSaveConfig = async () => {
+    if (!currentConfigName.trim()) {
+      toast.error('Please enter a configuration name');
+      return;
+    }
+
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      toast.error('No API key found. Please add an API key in the Keystore.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Build config blob (store prompt in instructions field)
+      const configBlob: ConfigBlob = {
+        completion: {
+          provider: provider as 'openai' | 'anthropic' | 'google',
+          params: {
+            model: currentConfigBlob.completion.params.model,
+            instructions: currentContent, // Store prompt as instructions
+            temperature: temperature,
+            ...(tools.length > 0 && { tools }),
+          },
+        },
+      };
+
+      // Check if updating existing config (same name exists)
+      const existingConfig = savedConfigs.find(c => c.name === currentConfigName.trim());
+
+      if (existingConfig) {
+        // Create new version for existing config
+        const versionCreate: ConfigVersionCreate = {
+          config_blob: configBlob,
+          commit_message: commitMessage.trim() || `Updated prompt and config`,
+        };
+
+        const response = await fetch(`/api/configs/${existingConfig.config_id}/versions`, {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(versionCreate),
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          toast.error(`Failed to create version: ${data.error || 'Unknown error'}`);
+          return;
+        }
+
+        toast.success(`Configuration "${currentConfigName}" updated! New version created.`);
+      } else {
+        // Create new config
+        const configCreate: ConfigCreate = {
+          name: currentConfigName.trim(),
+          description: `${provider} configuration with prompt`,
+          config_blob: configBlob,
+          commit_message: commitMessage.trim() || 'Initial version',
+        };
+
+        const response = await fetch('/api/configs', {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(configCreate),
+        });
+
+        const data = await response.json();
+
+        if (!data.success || !data.data) {
+          toast.error(`Failed to create config: ${data.error || 'Unknown error'}`);
+          return;
+        }
+
+        toast.success(`Configuration "${currentConfigName}" created successfully!`);
+      }
+
+      // Refresh configs list
+      const response = await fetch('/api/configs', {
+        headers: { 'X-API-KEY': apiKey },
+      });
+      const data: ConfigListResponse = await response.json();
+
+      if (data.success && data.data) {
+        const allVersions: SavedConfig[] = [];
+        for (const config of data.data) {
+          try {
+            const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
+              headers: { 'X-API-KEY': apiKey },
+            });
+            const versionsData: ConfigVersionListResponse = await versionsResponse.json();
+
+            if (versionsData.success && versionsData.data) {
+              for (const versionItem of versionsData.data) {
+                try {
+                  const versionResponse = await fetch(
+                    `/api/configs/${config.id}/versions/${versionItem.version}`,
+                    { headers: { 'X-API-KEY': apiKey } }
+                  );
+                  const versionData: ConfigVersionResponse = await versionResponse.json();
+
+                  if (versionData.success && versionData.data) {
+                    allVersions.push(flattenConfigVersion(config, versionData.data));
+                  }
+                } catch (e) {
+                  console.error('Failed to fetch version:', e);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to fetch versions:', e);
+          }
+        }
+        setSavedConfigs(allVersions);
+      }
+
+      // Reset unsaved changes flag and commit message after successful save
+      setHasUnsavedChanges(false);
+      setCommitMessage('');
+    } catch (e) {
+      console.error('Failed to save config:', e);
+      toast.error('Failed to save configuration. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Load a saved configuration by ID
+  const handleLoadConfigById = (configId: string) => {
+    if (!configId) {
+      // Reset to new config
+      setCurrentContent('');
+      setCurrentConfigBlob(defaultConfig);
+      setProvider('openai');
+      setTemperature(0.7);
+      setSelectedConfigId('');
+      setCurrentConfigName('');
+      setTools([]);
+      return;
+    }
+
+    const config = savedConfigs.find(c => c.id === configId);
+    if (!config) return;
+
+    setCurrentContent(config.promptContent);
+    setCurrentConfigBlob({
+      completion: {
+        provider: config.provider as any,
+        params: {
+          model: config.modelName,
+          instructions: config.instructions,
+          temperature: config.temperature,
+          tools: config.tools || [],
+        },
+      },
+    });
+    setProvider(config.provider);
+    setTemperature(config.temperature);
+    setSelectedConfigId(config.id);
+    setCurrentConfigName(config.name);
+    setTools(config.tools || []);
   };
 
 
@@ -238,114 +407,67 @@ export default function MagicCanvasPage() {
           <Header
             sidebarCollapsed={sidebarCollapsed}
             setSidebarCollapsed={setSidebarCollapsed}
-            currentBranch={currentBranch}
-            commits={commits}
-            onSwitchBranch={switchBranch}
-            onCreateBranch={() => {
-              setBranchFromCommit(getLatestCommitOnBranch(commits, currentBranch));
-              setShowBranchModal(true);
-            }}
-            onMerge={() => setShowMergeModal(true)}
-            onOpenConfig={() => setDrawerOpen(true)}
           />
 
           <div className="flex flex-1 overflow-hidden">
             <HistorySidebar
-              commits={commits}
-              selectedCommit={selectedCommit}
-              onSelectCommit={(commit) => {
-                setSelectedCommit(commit);
+              savedConfigs={savedConfigs}
+              selectedVersion={selectedVersion}
+              onSelectVersion={(version) => {
+                setSelectedVersion(version);
                 setCompareWith(null);
               }}
               onBackToEditor={() => {
-                setSelectedCommit(null);
+                setSelectedVersion(null);
                 setCompareWith(null);
               }}
+              isLoading={isLoading}
             />
 
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {!selectedCommit ? (
-                <EditorView
-                  currentBranch={currentBranch}
-                  currentContent={currentContent}
-                  commitMessage={commitMessage}
-                  commits={commits}
-                  onContentChange={setCurrentContent}
-                  onCommitMessageChange={setCommitMessage}
-                  onCommit={commitVersion}
-                />
-              ) : (
-                <DiffView
-                  selectedCommit={selectedCommit}
-                  compareWith={compareWith}
-                  commits={commits}
-                  onCompareChange={setCompareWith}
-                />
-              )}
-            </div>
+            {!selectedVersion ? (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Split View: Prompt (left) + Config (right) */}
+                <div className="flex flex-1 overflow-hidden">
+                  <div className="flex-1 flex border-r" style={{ borderColor: colors.border }}>
+                    <PromptEditorPane
+                      currentContent={currentContent}
+                      onContentChange={setCurrentContent}
+                      currentBranch={currentConfigName || 'Unsaved'}
+                    />
+                  </div>
+                  <div className="flex-1 flex">
+                    <ConfigEditorPane
+                      configBlob={currentConfigBlob}
+                      onConfigChange={setCurrentConfigBlob}
+                      configName={currentConfigName}
+                      onConfigNameChange={setCurrentConfigName}
+                      savedConfigs={savedConfigs}
+                      selectedConfigId={selectedConfigId}
+                      onLoadConfig={handleLoadConfigById}
+                      commitMessage={commitMessage}
+                      onCommitMessageChange={setCommitMessage}
+                      onSave={handleSaveConfig}
+                      isSaving={isSaving}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <DiffView
+                selectedCommit={selectedVersion}
+                compareWith={compareWith}
+                commits={savedConfigs}
+                onCompareChange={setCompareWith}
+                onLoadVersion={(versionId) => {
+                  handleLoadConfigById(versionId);
+                  setSelectedVersion(null);
+                  setCompareWith(null);
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
-
-      <BranchModal
-        isOpen={showBranchModal}
-        branchFromCommit={branchFromCommit}
-        newBranchName={newBranchName}
-        onBranchNameChange={setNewBranchName}
-        onCreate={createBranch}
-        onClose={() => {
-          setShowBranchModal(false);
-          setNewBranchName('');
-        }}
-      />
-
-      <MergeModal
-        isOpen={showMergeModal}
-        currentBranch={currentBranch}
-        mergeToBranch={mergeToBranch}
-        commits={commits}
-        onMergeToBranchChange={setMergeToBranch}
-        onMerge={mergeBranch}
-        onClose={() => {
-          setShowMergeModal(false);
-          setMergeToBranch('');
-        }}
-      />
-
-      <ConfigDrawer
-        isOpen={drawerOpen}
-        activeTab={drawerTab}
-        onClose={() => setDrawerOpen(false)}
-        onTabChange={setDrawerTab}
-        configs={configs}
-        selectedConfigId={selectedConfigId}
-        configName={configName}
-        provider={provider}
-        model={model}
-        instructions={instructions}
-        temperature={temperature}
-        tools={tools}
-        configCommitMsg={configCommitMsg}
-        currentContent={currentContent}
-        onConfigNameChange={setConfigName}
-        onProviderChange={setProvider}
-        onModelChange={setModel}
-        onInstructionsChange={setInstructions}
-        onTemperatureChange={setTemperature}
-        onToolsChange={setTools}
-        onConfigCommitMsgChange={setConfigCommitMsg}
-        onSaveConfig={saveConfig}
-        onLoadConfig={loadConfig}
-        onUseCurrentPrompt={useCurrentPrompt}
-        variants={variants}
-        testInput={testInput}
-        testResults={testResults}
-        isRunningTest={isRunningTest}
-        commits={commits}
-        onVariantsChange={setVariants}
-        onTestInputChange={setTestInput}
-        onRunTest={runABTest}
-      />
     </div>
   );
 }

@@ -1,16 +1,16 @@
 import React from 'react';
 import { colors } from '@/app/lib/colors';
-import { Commit } from '@/app/configurations/prompt-editor/types';
-import { getBranchColor, formatTime } from '@/app/configurations/prompt-editor/utils';
+import { UnifiedCommit } from '@/app/configurations/prompt-editor/types';
+import { getUnifiedBranchColor, formatTime } from '@/app/configurations/prompt-editor/utils';
 
 interface CommitNodeProps {
-  commit: Commit;
-  commits: Commit[];
-  selectedCommit: Commit | null;
+  commit: UnifiedCommit;
+  commits: UnifiedCommit[];
+  selectedCommit: UnifiedCommit | null;
   depth: number;
   isLastChild: boolean;
   verticalLines: boolean[];
-  onSelect: (commit: Commit) => void;
+  onSelect: (commit: UnifiedCommit) => void;
 }
 
 export default function CommitNode({
@@ -22,7 +22,7 @@ export default function CommitNode({
   verticalLines,
   onSelect
 }: CommitNodeProps) {
-  const branchColor = getBranchColor(commits, commit.branch);
+  const branchColor = getUnifiedBranchColor(commits, commit.branch);
   const isSelected = selectedCommit?.id === commit.id;
 
   return (

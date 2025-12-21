@@ -52,6 +52,7 @@ interface SimplifiedConfigEditorProps {
   onModelNameChange: (value: string) => void;
   onVectorStoreIdsChange: (value: string) => void;
   onRunEvaluation: () => void;
+  onConfigSelect?: (configId: string, configVersion: number) => void;
 }
 
 export default function SimplifiedConfigEditor({
@@ -65,6 +66,7 @@ export default function SimplifiedConfigEditor({
   onModelNameChange,
   onVectorStoreIdsChange,
   onRunEvaluation,
+  onConfigSelect,
 }: SimplifiedConfigEditorProps) {
   const toast = useToast();
   const [savedConfigs, setSavedConfigs] = useState<SavedConfig[]>([]);
@@ -353,12 +355,17 @@ export default function SimplifiedConfigEditor({
     setSelectedConfigId(config.id);
     setConfigName(config.name);
     setTools(config.tools || []);
+
+    // Notify parent about config selection
+    if (onConfigSelect) {
+      onConfigSelect(config.config_id, config.version);
+    }
   };
 
   // Handle config selection from dropdown
   const handleConfigSelect = (configId: string) => {
     if (configId === '') {
-      // New config
+      // New config - clear config selection
       setSelectedConfigId('');
       setConfigName('');
       setProvider('openai');
@@ -367,6 +374,11 @@ export default function SimplifiedConfigEditor({
       onModelNameChange('gpt-4');
       onInstructionsChange('You are a helpful FAQ assistant.');
       onVectorStoreIdsChange('');
+
+      // Notify parent to clear config selection
+      if (onConfigSelect) {
+        onConfigSelect('', 0);
+      }
       return;
     }
 

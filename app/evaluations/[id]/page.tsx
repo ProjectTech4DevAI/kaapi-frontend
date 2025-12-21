@@ -15,6 +15,16 @@ import Sidebar from '../../components/Sidebar';
 import DetailedResultsTable from '../../components/DetailedResultsTable';
 import { colors } from '@/app/lib/colors';
 import { useToast } from '@/app/components/Toast';
+interface ConfigVersionInfo {
+  name: string;
+  version: number;
+  model?: string;
+  instructions?: string;
+  temperature?: number;
+  tools?: any[];
+  provider?: string;
+}
+
 export default function EvaluationReport() {
   const router = useRouter();
   const params = useParams();
@@ -29,6 +39,7 @@ export default function EvaluationReport() {
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [configVersionInfo, setConfigVersionInfo] = useState<ConfigVersionInfo | null>(null);
   
 
   // Load API keys from localStorage
@@ -87,6 +98,11 @@ export default function EvaluationReport() {
       if (foundJob.assistant_id) {
         fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
       }
+
+      // Fetch config info if config_id exists
+      if (foundJob.config_id && foundJob.config_version) {
+        fetchConfigInfo(foundJob.config_id, foundJob.config_version, selectedKey.key);
+      }
     } catch (err: any) {
       console.error('Failed to fetch job details:', err);
       setError(err.message || 'Failed to fetch evaluation job');
@@ -116,6 +132,55 @@ export default function EvaluationReport() {
       }
     } catch (err: any) {
       console.error(`Failed to fetch assistant config for ${assistantId}:`, err);
+    }
+  };
+
+  // Fetch full config version info including config_blob
+  const fetchConfigInfo = async (configId: string, configVersion: number, apiKey: string) => {
+    try {
+      // Fetch config name first
+      const configResponse = await fetch(`/api/configs/${configId}`, {
+        headers: { 'X-API-KEY': apiKey },
+      });
+
+      if (!configResponse.ok) {
+        console.error('Failed to fetch config info');
+        return;
+      }
+
+      const configData = await configResponse.json();
+      const configName = configData.success && configData.data ? configData.data.name : null;
+
+      // Fetch full version details including config_blob
+      const versionResponse = await fetch(
+        `/api/configs/${configId}/versions/${configVersion}`,
+        {
+          headers: { 'X-API-KEY': apiKey },
+        }
+      );
+
+      if (!versionResponse.ok) {
+        console.error('Failed to fetch version details');
+        return;
+      }
+
+      const versionData = await versionResponse.json();
+      if (versionData.success && versionData.data) {
+        const blob = versionData.data.config_blob;
+        const params = blob?.completion?.params || {};
+
+        setConfigVersionInfo({
+          name: configName || 'Unknown Config',
+          version: configVersion,
+          model: params.model,
+          instructions: params.instructions,
+          temperature: params.temperature,
+          tools: params.tools,
+          provider: blob?.completion?.provider,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching config version info:', error);
     }
   };
 
@@ -358,9 +423,31 @@ export default function EvaluationReport() {
 
               <div className="flex-1">
                 <h1 className="text-2xl font-semibold" style={{ color: colors.text.primary }}>Evaluation Report</h1>
-                <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                  {job.run_name}
-                </p>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>
+                    {job.run_name}
+                  </p>
+                  {configVersionInfo && (
+                    <>
+                      <span style={{ color: colors.text.secondary }}>•</span>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded" style={{ backgroundColor: '#f0f9ff', borderWidth: '1px', borderColor: '#bae6fd' }}>
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#0369a1' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold" style={{ color: '#0369a1' }}>
+                            {configVersionInfo.name} <span className="font-normal">v{configVersionInfo.version}</span>
+                          </span>
+                          {configVersionInfo.provider && configVersionInfo.model && (
+                            <span className="text-[10px]" style={{ color: '#0369a1', opacity: 0.8 }}>
+                              {configVersionInfo.provider}/{configVersionInfo.model}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}

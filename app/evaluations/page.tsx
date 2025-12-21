@@ -60,6 +60,10 @@ function SimplifiedEvalContent() {
   const [vectorStoreIds, setVectorStoreIds] = useState<string>('');
   const [maxNumResults, setMaxNumResults] = useState<string>('3');
 
+  // Config reference fields
+  const [selectedConfigId, setSelectedConfigId] = useState<string>('');
+  const [selectedConfigVersion, setSelectedConfigVersion] = useState<number>(0);
+
   // Load API keys from localStorage and auto-select if only one exists
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -212,6 +216,11 @@ function SimplifiedEvalContent() {
       return;
     }
 
+    if (!selectedConfigId || !selectedConfigVersion) {
+      toast.error('Please select and save a configuration before running evaluation');
+      return;
+    }
+
     // Get the selected API key
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) {
@@ -223,45 +232,13 @@ function SimplifiedEvalContent() {
 
     // Create the evaluation job using the selected dataset_id
     try {
-      // Build the request payload
+      // Build the request payload with config reference
       const payload: any = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
+        config_id: selectedConfigId,
+        config_version: selectedConfigVersion,
       };
-
-      // Add optional config if fields are provided
-      const hasConfig = modelName || instructions || vectorStoreIds;
-      if (hasConfig) {
-        payload.config = {};
-
-        if (modelName) {
-          payload.config.model = modelName;
-        }
-
-        if (instructions) {
-          payload.config.instructions = instructions;
-        }
-
-        // TODO: Implement temperature feature later
-        // if (temperature) {
-        //   payload.config.temperature = parseFloat(temperature);
-        // }
-
-        // Add tools if vector store IDs are provided
-        if (vectorStoreIds) {
-          const vectorStoreIdArray = vectorStoreIds.split(',').map(id => id.trim()).filter(id => id);
-          if (vectorStoreIdArray.length > 0) {
-            payload.config.tools = [
-              {
-                type: 'file_search',
-                vector_store_ids: vectorStoreIdArray,
-                // max_num_results: parseInt(maxNumResults) || 3,
-              }
-            ];
-            payload.config.include = ['file_search_call.results'];
-          }
-        }
-      }
 
       // Call evaluation endpoint via proxy
       const response = await fetch('/api/evaluations', {
@@ -392,6 +369,10 @@ function SimplifiedEvalContent() {
                   onVectorStoreIdsChange={setVectorStoreIds}
                   onMaxNumResultsChange={setMaxNumResults}
                   onRunEvaluation={handleRunEvaluation}
+                  onConfigSelect={(configId, configVersion) => {
+                    setSelectedConfigId(configId);
+                    setSelectedConfigVersion(configVersion);
+                  }}
                 />
               ) : (
                 <ResultsTab apiKeys={apiKeys} selectedKeyId={selectedKeyId} />
@@ -447,6 +428,7 @@ interface UploadTabProps {
   onVectorStoreIdsChange: (value: string) => void;
   onMaxNumResultsChange: (value: string) => void;
   onRunEvaluation: () => void;
+  onConfigSelect: (configId: string, configVersion: number) => void;
 }
 
 function UploadTab({
@@ -470,6 +452,7 @@ function UploadTab({
   onVectorStoreIdsChange,
   onMaxNumResultsChange,
   onRunEvaluation,
+  onConfigSelect,
 }: UploadTabProps) {
   const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
   const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
@@ -752,6 +735,7 @@ function UploadTab({
           onModelNameChange={onModelNameChange}
           onVectorStoreIdsChange={onVectorStoreIdsChange}
           onRunEvaluation={onRunEvaluation}
+          onConfigSelect={onConfigSelect}
         />
       )}
     </div>

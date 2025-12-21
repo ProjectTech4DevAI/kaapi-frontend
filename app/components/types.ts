@@ -114,6 +114,9 @@ export interface EvalJob {
     include?: string[];
     temperature?: number;
   };
+  config_id?: string;
+  config_version?: number;
+  model?: string;
   assistant_id?: string;
   organization_id: number;
   project_id: number;

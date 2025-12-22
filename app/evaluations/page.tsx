@@ -20,12 +20,15 @@ import StatusBadge from '../components/StatusBadge';
 import ScoreDisplay from '../components/ScoreDisplay';
 import Sidebar from '../components/Sidebar';
 import TabNavigation from '../components/TabNavigation';
+import SimplifiedConfigEditor from '../components/SimplifiedConfigEditor';
+import { useToast } from '../components/Toast';
 
 type Tab = 'upload' | 'results';
 
 function SimplifiedEvalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
 
   // Initialize activeTab from URL query parameter, default to 'upload'
   const [activeTab, setActiveTab] = useState<Tab>(() => {
@@ -56,8 +59,10 @@ function SimplifiedEvalContent() {
   // const [temperature, setTemperature] = useState<string>('0.000001'); // TODO: Implement temperature feature later
   const [vectorStoreIds, setVectorStoreIds] = useState<string>('');
   const [maxNumResults, setMaxNumResults] = useState<string>('3');
-  const [assistantId, setAssistantId] = useState<string>('');
-  const [useAssistantId, setUseAssistantId] = useState<boolean>(false);
+
+  // Config reference fields
+  const [selectedConfigId, setSelectedConfigId] = useState<string>('');
+  const [selectedConfigVersion, setSelectedConfigVersion] = useState<number>(0);
 
   // Load API keys from localStorage and auto-select if only one exists
   useEffect(() => {
@@ -117,7 +122,7 @@ function SimplifiedEvalContent() {
     if (!file) return;
 
     if (!file.name.endsWith('.csv')) {
-      alert('Please select a CSV file');
+      toast.error('Please select a CSV file');
       event.target.value = '';
       return;
     }
@@ -129,17 +134,17 @@ function SimplifiedEvalContent() {
 
   const handleUploadFromModal = async () => {
     if (!uploadedFile) {
-      alert('Please select a file first');
+      toast.error('Please select a file first');
       return;
     }
 
     if (!datasetName.trim()) {
-      alert('Please enter a dataset name');
+      toast.error('Please enter a dataset name');
       return;
     }
 
     if (apiKeys.length === 0) {
-      alert('No API key found');
+      toast.error('No API key found');
       return;
     }
 
@@ -186,10 +191,10 @@ function SimplifiedEvalContent() {
       setDuplicationFactor('1');
       setIsUploadModalOpen(false);
 
-      alert('Dataset uploaded successfully!');
+      toast.success('Dataset uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      alert(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
@@ -197,24 +202,29 @@ function SimplifiedEvalContent() {
 
   const handleRunEvaluation = async() => {
     if (!selectedKeyId) {
-      alert('Please select an API key first');
+      toast.error('Please select an API key first');
       return;
     }
 
     if (!selectedDatasetId) {
-      alert('Please select a dataset first');
+      toast.error('Please select a dataset first');
       return;
     }
 
     if (!experimentName.trim()) {
-      alert('Please enter an experiment name');
+      toast.error('Please enter an experiment name');
+      return;
+    }
+
+    if (!selectedConfigId || !selectedConfigVersion) {
+      toast.error('Please select and save a configuration before running evaluation');
       return;
     }
 
     // Get the selected API key
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) {
-      alert('Selected API key not found');
+      toast.error('Selected API key not found');
       return;
     }
 
@@ -222,51 +232,13 @@ function SimplifiedEvalContent() {
 
     // Create the evaluation job using the selected dataset_id
     try {
-      // Build the request payload
+      // Build the request payload with config reference
       const payload: any = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
+        config_id: selectedConfigId,
+        config_version: selectedConfigVersion,
       };
-
-      // Add assistant_id if using assistant_id mode
-      if (useAssistantId && assistantId) {
-        payload.assistant_id = assistantId.trim();
-        payload.config = {};
-      } else {
-        // Add optional config if fields are provided
-        const hasConfig = modelName || instructions || vectorStoreIds;
-        if (hasConfig) {
-          payload.config = {};
-
-          if (modelName) {
-            payload.config.model = modelName;
-          }
-
-          if (instructions) {
-            payload.config.instructions = instructions;
-          }
-
-          // TODO: Implement temperature feature later
-          // if (temperature) {
-          //   payload.config.temperature = parseFloat(temperature);
-          // }
-
-          // Add tools if vector store IDs are provided
-          if (vectorStoreIds) {
-            const vectorStoreIdArray = vectorStoreIds.split(',').map(id => id.trim()).filter(id => id);
-            if (vectorStoreIdArray.length > 0) {
-              payload.config.tools = [
-                {
-                  type: 'file_search',
-                  vector_store_ids: vectorStoreIdArray,
-                  // max_num_results: parseInt(maxNumResults) || 3,
-                }
-              ];
-              payload.config.include = ['file_search_call.results'];
-            }
-          }
-        }
-      }
 
       // Call evaluation endpoint via proxy
       const response = await fetch('/api/evaluations', {
@@ -286,15 +258,18 @@ function SimplifiedEvalContent() {
       const data = await response.json();
       console.log('Evaluation job created:', data);
 
+      // Extract the evaluation ID from response (could be data.id or data.data.id or data.eval_id)
+      const evalId = data.id || data.data?.id || data.eval_id || 'unknown';
+
       // Redirect to results tab to view evaluation status
       setIsEvaluating(false);
       setActiveTab('results');
 
       // Show success message
-      alert(`Evaluation job created successfully! Job ID: ${data.id}`);
-    } catch(error) {
+      toast.success(`Evaluation job created successfully! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
+    } catch(error: any) {
       console.error('Error:', error);
-      alert(`Failed to run evaluation: ${error.message}`);
+      toast.error(`Failed to run evaluation: ${error.message || 'Unknown error'}`);
       setIsEvaluating(false);
     }
   };
@@ -384,8 +359,6 @@ function SimplifiedEvalContent() {
                   // temperature={temperature} // TODO: Implement temperature feature later
                   vectorStoreIds={vectorStoreIds}
                   maxNumResults={maxNumResults}
-                  assistantId={assistantId}
-                  useAssistantId={useAssistantId}
                   onKeySelect={setSelectedKeyId}
                   onStoredDatasetSelect={handleStoredDatasetSelect}
                   onOpenUploadModal={() => setIsUploadModalOpen(true)}
@@ -395,9 +368,11 @@ function SimplifiedEvalContent() {
                   // onTemperatureChange={setTemperature} // TODO: Implement temperature feature later
                   onVectorStoreIdsChange={setVectorStoreIds}
                   onMaxNumResultsChange={setMaxNumResults}
-                  onAssistantIdChange={setAssistantId}
-                  onUseAssistantIdChange={setUseAssistantId}
                   onRunEvaluation={handleRunEvaluation}
+                  onConfigSelect={(configId, configVersion) => {
+                    setSelectedConfigId(configId);
+                    setSelectedConfigVersion(configVersion);
+                  }}
                 />
               ) : (
                 <ResultsTab apiKeys={apiKeys} selectedKeyId={selectedKeyId} />
@@ -443,8 +418,6 @@ interface UploadTabProps {
   // temperature: string; // TODO: Implement temperature feature later
   vectorStoreIds: string;
   maxNumResults: string;
-  assistantId: string;
-  useAssistantId: boolean;
   onKeySelect: (keyId: string) => void;
   onStoredDatasetSelect: (datasetId: string) => void;
   onOpenUploadModal: () => void;
@@ -454,9 +427,8 @@ interface UploadTabProps {
   // onTemperatureChange: (value: string) => void; // TODO: Implement temperature feature later
   onVectorStoreIdsChange: (value: string) => void;
   onMaxNumResultsChange: (value: string) => void;
-  onAssistantIdChange: (value: string) => void;
-  onUseAssistantIdChange: (value: boolean) => void;
   onRunEvaluation: () => void;
+  onConfigSelect: (configId: string, configVersion: number) => void;
 }
 
 function UploadTab({
@@ -471,8 +443,6 @@ function UploadTab({
   // temperature, // TODO: Implement temperature feature later
   vectorStoreIds,
   maxNumResults,
-  assistantId,
-  useAssistantId,
   onKeySelect,
   onStoredDatasetSelect,
   onOpenUploadModal,
@@ -481,9 +451,8 @@ function UploadTab({
   onInstructionsChange,
   onVectorStoreIdsChange,
   onMaxNumResultsChange,
-  onAssistantIdChange,
-  onUseAssistantIdChange,
   onRunEvaluation,
+  onConfigSelect,
 }: UploadTabProps) {
   const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
   const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
@@ -753,280 +722,21 @@ function UploadTab({
         </div>
       </div>
 
-      {/* Evaluation Configuration Card */}
+      {/* Simplified Config Editor */}
       {selectedDatasetId && (
-        <div className="border rounded-lg p-8" style={{
-          backgroundColor: '#ffffff',
-          borderColor: '#e5e5e5',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-          transition: 'all 0.15s ease'
-        }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold" style={{ color: '#171717' }}>Evaluation Configuration</h2>
-
-            {/* Play Button */}
-            <button
-              onClick={onRunEvaluation}
-              disabled={!selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim())}
-              className="rounded-full p-4"
-              style={{
-                background: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim())
-                  ? '#fafafa'
-                  : '#171717',
-                color: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? '#737373' : '#ffffff',
-                cursor: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? 'not-allowed' : 'pointer',
-                borderWidth: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? '1px' : '0',
-                borderColor: !selectedDatasetId || !experimentName.trim() || isEvaluating || (!useAssistantId && (!modelName.trim() || !instructions.trim())) || (useAssistantId && !assistantId.trim()) ? '#e5e5e5' : 'transparent',
-                transform: isEvaluating ? 'scale(0.95)' : 'scale(1)',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                if (selectedDatasetId && experimentName.trim() && !isEvaluating && ((useAssistantId && assistantId.trim()) || (!useAssistantId && modelName.trim() && instructions.trim()))) {
-                  e.currentTarget.style.background = '#404040';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedDatasetId && experimentName.trim() && !isEvaluating && ((useAssistantId && assistantId.trim()) || (!useAssistantId && modelName.trim() && instructions.trim()))) {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.background = '#171717';
-                }
-              }}
-              title={!selectedDatasetId ? 'Select a dataset first' : !experimentName.trim() ? 'Enter an experiment name' : useAssistantId && !assistantId.trim() ? 'Enter assistant ID' : !useAssistantId && !modelName.trim() ? 'Enter model name' : !useAssistantId && !instructions.trim() ? 'Enter instructions' : isEvaluating ? 'Creating evaluation job...' : 'Run Evaluation'}
-            >
-              {isEvaluating ? (
-                <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {/* Experiment Name - Required */}
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-                Experiment Name <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={experimentName}
-                onChange={(e) => onExperimentNameChange(e.target.value)}
-                placeholder="e.g., test_run_1"
-                disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
-                style={{
-                  borderColor: experimentName ? '#171717' : '#e5e5e5',
-                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
-                  color: '#171717',
-                  transition: 'all 0.15s ease'
-                }}
-              />
-            </div>
-
-            {/* Configuration Mode Toggle */}
-            <div className="border-t border-b py-4" style={{ borderColor: '#e5e5e5' }}>
-              <label className="block text-sm font-semibold mb-3" style={{ color: '#171717' }}>
-                Configuration Mode
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={!useAssistantId}
-                    onChange={() => onUseAssistantIdChange(false)}
-                    disabled={isEvaluating}
-                    className="w-4 h-4"
-                    style={{ accentColor: '#171717' }}
-                  />
-                  <span className="text-sm" style={{ color: '#171717' }}>
-                    Use Config (Model, Instructions, Tools)
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={useAssistantId}
-                    onChange={() => onUseAssistantIdChange(true)}
-                    disabled={isEvaluating}
-                    className="w-4 h-4"
-                    style={{ accentColor: '#171717' }}
-                  />
-                  <span className="text-sm" style={{ color: '#171717' }}>
-                    Use Assistant ID
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {/* Assistant ID Field - Shown when useAssistantId is true */}
-            {useAssistantId ? (
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-                  Assistant ID <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={assistantId}
-                  onChange={(e) => onAssistantIdChange(e.target.value)}
-                  placeholder="e.g., asst_xyz"
-                  disabled={isEvaluating}
-                  className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
-                  style={{
-                    borderColor: assistantId ? '#171717' : '#e5e5e5',
-                    backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
-                    color: '#171717',
-                    transition: 'all 0.15s ease'
-                  }}
-                />
-                <p className="text-xs mt-1" style={{ color: '#737373' }}>
-                  Configuration will be fetched from the assistant in the database
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Model Name - Required */}
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-                    Model <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
-                  </label>
-              <input
-                type="text"
-                value={modelName}
-                onChange={(e) => onModelNameChange(e.target.value)}
-                placeholder="e.g., gpt-4"
-                disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
-                style={{
-                  borderColor: modelName ? '#171717' : '#e5e5e5',
-                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
-                  color: '#171717',
-                  transition: 'all 0.15s ease'
-                }}
-              />
-            </div>
-
-            {/* Instructions - Required */}
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-                Instructions <span style={{ color: 'hsl(0, 84%, 60%)' }}>*</span>
-              </label>
-              <textarea
-                value={instructions}
-                onChange={(e) => onInstructionsChange(e.target.value)}
-                placeholder="System instructions for the model"
-                rows={3}
-                disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
-                style={{
-                  borderColor: instructions ? '#171717' : '#e5e5e5',
-                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
-                  color: '#171717',
-                  transition: 'all 0.15s ease'
-                }}
-              />
-            </div>
-
-            {/* TODO: Implement temperature feature later */}
-            {/* Temperature */}
-            {/* <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                Temperature
-              </label>
-              <input
-                type="number"
-                value={temperature}
-                onChange={(e) => onTemperatureChange(e.target.value)}
-                placeholder="0.000001"
-                step="0.000001"
-                min="0"
-                max="2"
-                disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
-                style={{
-                  borderColor: temperature ? 'hsl(167, 59%, 22%)' : 'hsl(0, 0%, 85%)',
-                  backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
-                }}
-              />
-            </div> */}
-
-            {/* Vector Store Configuration */}
-            <div className="border-t pt-4" style={{ borderColor: '#e5e5e5' }}>
-              <h3 className="text-sm font-semibold mb-3" style={{ color: '#171717' }}>
-                File Search Configuration (Optional)
-              </h3>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-                    Vector Store IDs
-                  </label>
-                  <input
-                    type="text"
-                    value={vectorStoreIds}
-                    onChange={(e) => onVectorStoreIdsChange(e.target.value)}
-                    placeholder="e.g., vs_12345, vs_67890"
-                    disabled={isEvaluating}
-                    className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
-                    style={{
-                      borderColor: vectorStoreIds ? '#171717' : '#e5e5e5',
-                      backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
-                      color: '#171717',
-                      transition: 'all 0.15s ease'
-                    }}
-                  />
-                  <p className="text-xs mt-1" style={{ color: '#737373' }}>
-                    Comma-separated list of vector store IDs for file search
-                  </p>
-                </div>
-{/* 
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                    Max Number of Results
-                  </label>
-                  <input
-                    type="number"
-                    value={maxNumResults}
-                    onChange={(e) => onMaxNumResultsChange(e.target.value)}
-                    placeholder="3"
-                    min="1"
-                    max="20"
-                    disabled={isEvaluating}
-                    className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
-                    style={{
-                      borderColor: 'hsl(0, 0%, 85%)',
-                      backgroundColor: isEvaluating ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                      color: 'hsl(330, 3%, 19%)'
-                    }}
-                  />
-                </div> */}
-              </div>
-            </div>
-              </>
-            )}
-          </div>
-
-          {/* Status Messages */}
-          {isEvaluating && (
-            <div className="mt-4 border rounded-lg p-3 animate-fadeIn" style={{
-              backgroundColor: '#fafafa',
-              borderColor: '#e5e5e5'
-            }}>
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#171717' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <p className="text-sm" style={{ color: '#171717' }}>
-                  Uploading dataset and creating evaluation job...
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        <SimplifiedConfigEditor
+          experimentName={experimentName}
+          instructions={instructions}
+          modelName={modelName}
+          vectorStoreIds={vectorStoreIds}
+          isEvaluating={isEvaluating}
+          onExperimentNameChange={onExperimentNameChange}
+          onInstructionsChange={onInstructionsChange}
+          onModelNameChange={onModelNameChange}
+          onVectorStoreIdsChange={onVectorStoreIdsChange}
+          onRunEvaluation={onRunEvaluation}
+          onConfigSelect={onConfigSelect}
+        />
       )}
     </div>
   );

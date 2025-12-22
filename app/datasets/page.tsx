@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'
 import { APIKey, STORAGE_KEY } from '../keystore/page';
 import Sidebar from '../components/Sidebar';
+import { useToast } from '../components/Toast';
 
 // Backend response interface
 export interface Dataset {
@@ -26,6 +27,7 @@ export const DATASETS_STORAGE_KEY = 'kaapi_datasets';
 
 export default function Datasets() {
   const router = useRouter();
+  const toast = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -101,7 +103,7 @@ export default function Datasets() {
     if (!file) return;
 
     if (!file.name.endsWith('.csv')) {
-      alert('Please select a CSV file');
+      toast.error('Please select a CSV file');
       event.target.value = '';
       return;
     }
@@ -114,17 +116,17 @@ export default function Datasets() {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      alert('Please select a file first');
+      toast.error('Please select a file first');
       return;
     }
 
     if (!datasetName.trim()) {
-      alert('Please enter a dataset name');
+      toast.error('Please enter a dataset name');
       return;
     }
 
     if (!apiKey) {
-      alert('No API key found. Please add an API key in the Keystore.');
+      toast.error('No API key found. Please add an API key in the Keystore.');
       return;
     }
 
@@ -170,10 +172,10 @@ export default function Datasets() {
       // Close modal
       setIsModalOpen(false);
 
-      alert('Dataset uploaded successfully!');
+      toast.success('Dataset uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      alert(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
@@ -181,10 +183,11 @@ export default function Datasets() {
 
   const handleDeleteDataset = async (datasetId: number) => {
     if (!apiKey) {
-      alert('No API key found');
+      toast.error('No API key found');
       return;
     }
 
+    // Using browser confirm for now - could be replaced with a custom modal later
     if (!confirm('Are you sure you want to delete this dataset?')) {
       return;
     }
@@ -204,10 +207,10 @@ export default function Datasets() {
 
       // Refresh datasets list
       await fetchDatasets();
-      alert('Dataset deleted successfully');
+      toast.success('Dataset deleted successfully');
     } catch (error) {
       console.error('Delete error:', error);
-      alert(`Failed to delete dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to delete dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

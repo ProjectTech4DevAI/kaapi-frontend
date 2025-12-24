@@ -497,7 +497,7 @@ function UploadTab({
                   <li>Select an API key from your keystore</li>
                   <li>Select a stored dataset or upload a new CSV file (format: question,answer columns)</li>
                   <li>Configure evaluation settings (experiment name required, other fields optional)</li>
-                  <li>Click "Run Evaluation" to start the evaluation process</li>
+                  <li>Click <blockquote>Run Evaluation </blockquote> to start the evaluation process</li>
                   <li>Wait for processing to complete (automatic redirect to results)</li>
                   <li>View detailed results and metrics in the Results tab</li>
                 </ol>

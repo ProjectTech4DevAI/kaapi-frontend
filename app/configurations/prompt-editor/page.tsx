@@ -246,7 +246,8 @@ export default function PromptEditorPage() {
       // Build config blob (store prompt in instructions field)
       const configBlob: ConfigBlob = {
         completion: {
-          provider: provider as 'openai' | 'anthropic' | 'google',
+          // provider: provider as 'openai' | 'anthropic' | 'google',
+          provider:provider as 'openai',
           params: {
             model: currentConfigBlob.completion.params.model,
             instructions: currentContent, // Store prompt as instructions

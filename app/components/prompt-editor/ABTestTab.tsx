@@ -1,15 +1,15 @@
 import React from 'react';
 import { colors } from '@/app/lib/colors';
-import { Config, Commit, Variant, TestResult } from '@/app/configurations/prompt-editor/types';
+import { Config, Commit, LegacyVariant, TestResult } from '@/app/configurations/prompt-editor/types';
 
 interface ABTestTabProps {
-  variants: Variant[];
+  variants: LegacyVariant[];
   testInput: string;
   testResults: TestResult[] | null;
   isRunningTest: boolean;
   commits: Commit[];
   configs: Config[];
-  onVariantsChange: (variants: Variant[]) => void;
+  onVariantsChange: (variants: LegacyVariant[]) => void;
   onTestInputChange: (input: string) => void;
   onRunTest: () => void;
 }
@@ -39,7 +39,7 @@ export default function ABTestTab({
     ]);
   };
 
-  const updateVariant = (index: number, field: keyof Variant, value: string) => {
+  const updateVariant = (index: number, field: keyof LegacyVariant, value: string) => {
     const newVariants = [...variants];
     (newVariants[index] as any)[field] = value;
     onVariantsChange(newVariants);

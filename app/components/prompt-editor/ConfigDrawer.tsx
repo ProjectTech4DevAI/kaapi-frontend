@@ -1,6 +1,6 @@
 import React from 'react';
 import { colors } from '@/app/lib/colors';
-import { Config, Commit, Variant, TestResult } from '@/app/configurations/prompt-editor/types';
+import { Config, Commit, LegacyVariant, TestResult } from '@/app/configurations/prompt-editor/types';
 import CurrentConfigTab from './CurrentConfigTab';
 import HistoryTab from './HistoryTab';
 import ABTestTab from './ABTestTab';
@@ -34,12 +34,12 @@ interface ConfigDrawerProps {
   onUseCurrentPrompt: () => void;
 
   // A/B Test Tab Props
-  variants: Variant[];
+  variants: LegacyVariant[];
   testInput: string;
   testResults: TestResult[] | null;
   isRunningTest: boolean;
   commits: Commit[];
-  onVariantsChange: (variants: Variant[]) => void;
+  onVariantsChange: (variants: LegacyVariant[]) => void;
   onTestInputChange: (input: string) => void;
   onRunTest: () => void;
 }

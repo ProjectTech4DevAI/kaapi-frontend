@@ -31,7 +31,7 @@ export interface Tool {
 
 export interface ConfigBlob {
   completion: {
-    provider: 'openai' | 'anthropic' | 'google';
+    provider: 'openai'; // | 'anthropic' | 'google'; // Only OpenAI supported for now
     params: {
       model: string;
       instructions: string;

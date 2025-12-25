@@ -46,17 +46,17 @@ const MODEL_OPTIONS = {
     { value: 'gpt-4', label: 'GPT-4' },
     { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
   ],
-  anthropic: [
-    { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-    { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-    { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-    { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  ],
-  google: [
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-    { value: 'gemini-pro', label: 'Gemini Pro' },
-  ],
+  // anthropic: [
+  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
+  // ],
+  // google: [
+  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  //   { value: 'gemini-pro', label: 'Gemini Pro' },
+  // ],
 };
 
 // Simple diff utility
@@ -454,8 +454,8 @@ export default function ConfigDrawer({
                   }}
                 >
                   <option value="openai">OpenAI</option>
-                  <option value="anthropic">Anthropic</option>
-                  <option value="google">Google</option>
+                  {/* <option value="anthropic">Anthropic</option> */}
+                  {/* <option value="google">Google</option> */}
                 </select>
               </div>
 

@@ -230,7 +230,7 @@ export default function SimplifiedConfigEditor({
       // Build config blob
       const configBlob: ConfigBlob = {
         completion: {
-          provider: provider as 'openai' | 'anthropic' | 'google',
+          provider: provider as 'openai', // | 'anthropic' | 'google', // Only OpenAI supported for now
           params: {
             model: modelName,
             instructions: instructions,

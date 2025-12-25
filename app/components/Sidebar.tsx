@@ -63,7 +63,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
       submenu: [
         { name: 'Evaluations', route: '/evaluations' },
         { name: 'Model Testing', route: '/model-testing', comingSoon: true },
-        { name: 'Speech-to-text', route: '/speech-to-text', comingSoon: true },
+        { name: 'Speech-to-text', route: '/speech-to-text' },
         { name: 'Text-to-speech', route: '/text-to-speech', comingSoon: true },
         { name: 'Guardrails', route: '/guardrails', comingSoon: true },
         { name: 'Redteaming', route: '/redteaming', comingSoon: true },

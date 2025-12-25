@@ -15,6 +15,7 @@ import Sidebar from '../../components/Sidebar';
 import DetailedResultsTable from '../../components/DetailedResultsTable';
 import { colors } from '@/app/lib/colors';
 import { useToast } from '@/app/components/Toast';
+import Loader from '@/app/components/Loader';
 interface ConfigVersionInfo {
   name: string;
   version: number;
@@ -276,27 +277,8 @@ export default function EvaluationReport() {
       <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-pulse" style={{ color: colors.text.secondary }}>
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                  Loading evaluation report...
-                </p>
-              </div>
-            </div>
+          <div className="flex-1 flex items-center justify-center p-6">
+            <Loader size="lg" message="Loading evaluation report..." />
           </div>
         </div>
       </div>

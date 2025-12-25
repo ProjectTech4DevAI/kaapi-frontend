@@ -19,7 +19,7 @@ export interface CompletionParams {
 }
 
 export interface CompletionConfig {
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai'; // | 'anthropic' | 'google'; // Only OpenAI supported for now
   params: CompletionParams;
 }
 

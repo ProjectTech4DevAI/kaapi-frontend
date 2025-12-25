@@ -192,8 +192,8 @@ export default function CurrentConfigTab({
           }}
         >
           <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="google">Google</option>
+          {/* <option value="anthropic">Anthropic</option> */}
+          {/* <option value="google">Google</option> */}
         </select>
       </div>
 

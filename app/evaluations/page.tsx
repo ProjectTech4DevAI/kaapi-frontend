@@ -22,6 +22,7 @@ import Sidebar from '../components/Sidebar';
 import TabNavigation from '../components/TabNavigation';
 import SimplifiedConfigEditor from '../components/SimplifiedConfigEditor';
 import { useToast } from '../components/Toast';
+import Loader, { LoaderBox } from '../components/Loader';
 
 type Tab = 'upload' | 'results';
 
@@ -895,13 +896,7 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
 
       {/* Loading State */}
       {isLoading && evalJobs.length === 0 && (
-        <div className="border rounded-lg p-8 text-center" style={{
-          backgroundColor: '#ffffff',
-          borderColor: '#e5e5e5',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
-        }}>
-          <p style={{ color: '#737373' }}>Loading evaluation jobs...</p>
-        </div>
+        <LoaderBox message="Loading evaluation jobs..." size="md" />
       )}
 
       {/* Error State */}
@@ -1114,30 +1109,7 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
 // Wrapper component with Suspense
 export default function SimplifiedEval() {
   return (
-    <Suspense fallback={
-      <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#fafafa' }}>
-        <div className="text-center">
-          <div className="animate-pulse" style={{ color: '#737373' }}>
-            <svg
-              className="mx-auto h-12 w-12 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            <p className="text-sm font-medium" style={{ color: '#171717' }}>
-              Loading...
-            </p>
-          </div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<Loader size="lg" message="Loading..." fullScreen />}>
       <SimplifiedEvalContent />
     </Suspense>
   );

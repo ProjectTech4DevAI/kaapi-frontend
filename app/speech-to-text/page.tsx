@@ -497,6 +497,16 @@ function AudioWaveformPlayer({ audioBase64, mediaType, rowId, fileSize, isPlayin
 }
 
 // Types
+interface UploadedAudioFile {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  base64: string;
+  mediaType: string;
+  groundTruth: string;
+}
+
 interface ParsedRow {
   status: 'success' | 'error';
   row: number;
@@ -514,10 +524,21 @@ interface ModelConfig {
   provider: string;
 }
 
+interface WerMetrics {
+  wer: number;
+  substitutions: number;
+  deletions: number;
+  insertions: number;
+  semantic_errors: number;
+  reference_word_count: number;
+  hypothesis_word_count: number;
+}
+
 interface TranscriptionResult {
   model: string;
   text: string;
-  wer: number;
+  strict?: WerMetrics;
+  lenient?: WerMetrics;
   status: 'success' | 'error';
   error?: string;
 }
@@ -529,20 +550,42 @@ interface EvaluationResult {
   transcriptions: Record<string, TranscriptionResult>;
 }
 
+// Transcription preview row - before WER evaluation
+interface TranscriptionPreviewRow {
+  file_id: string;
+  row: number;
+  audio_url: string;
+  ground_truth: string;
+  transcripts: Record<string, { // keyed by "provider:model"
+    provider: string;
+    model: string;
+    transcript: string;
+    status: 'success' | 'error';
+    error?: string;
+  }>;
+}
+
 type InputMode = 'single' | 'batch';
 
-// Available STT Models
+// Available STT Models - id format: "provider:model" for API mapping
 const STT_MODELS: ModelConfig[] = [
-  // Google
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google' },
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'Google' },
-  { id: 'chirp-3', name: 'Chirp 3', provider: 'Google' },
+  // Google Gemini
+  { id: 'gemini:gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google' },
+  { id: 'gemini:gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google' },
+  // Google Cloud STT
+  { id: 'google-stt:chirp_3', name: 'Chirp 3', provider: 'Google' },
   // OpenAI
-  { id: 'gpt-4o-transcribe', name: 'GPT-4o Transcribe', provider: 'OpenAI' },
-  { id: 'whisper-1', name: 'Whisper-1', provider: 'OpenAI' },
+  { id: 'openai:gpt-4o-transcribe', name: 'GPT-4o Transcribe', provider: 'OpenAI' },
+  { id: 'openai:whisper-1', name: 'Whisper-1', provider: 'OpenAI' },
   // AI4Bharat
-  { id: 'ai4bharat/indic-conformer-600m-multilingual', name: 'Indic Conformer 600M', provider: 'AI4Bharat' },
+  { id: 'ai4bharat:indic-conformer-600m-multilingual', name: 'Indic Conformer 600M', provider: 'AI4Bharat' },
 ];
+
+// Helper to parse model ID into provider and model
+const parseModelId = (modelId: string): { provider: string; model: string } => {
+  const [provider, model] = modelId.split(':');
+  return { provider, model };
+};
 
 // Group models by provider
 const MODEL_GROUPS = STT_MODELS.reduce((acc, model) => {
@@ -565,26 +608,33 @@ export default function SpeechToTextPage() {
   // API Keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
 
-  // Single file mode state
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioBase64, setAudioBase64] = useState<string | null>(null);
-  const [audioMediaType, setAudioMediaType] = useState<string | null>(null);
-  const [isSinglePlaying, setIsSinglePlaying] = useState(false);
-  const [groundTruth, setGroundTruth] = useState('');
+  // Single/Multiple file mode state
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedAudioFile[]>([]);
+  const [playingFileId, setPlayingFileId] = useState<string | null>(null);
 
   // Batch mode state
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [isParsing, setIsParsing] = useState(false);
   const [playingRowId, setPlayingRowId] = useState<number | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
   // Model selection
-  const [selectedModels, setSelectedModels] = useState<string[]>(['whisper-1']);
+  const [selectedModels, setSelectedModels] = useState<string[]>(['openai:whisper-1']);
 
-  // Evaluation state
+  // Transcription state (Step 1)
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionResults, setTranscriptionResults] = useState<TranscriptionPreviewRow[]>([]);
+  const [transcriptionProgress, setTranscriptionProgress] = useState({ current: 0, total: 0 });
+
+  // Evaluation state (Step 2)
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluationResults, setEvaluationResults] = useState<EvaluationResult[]>([]);
-  const [evaluationProgress, setEvaluationProgress] = useState({ current: 0, total: 0 });
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
+  // Drill-down modal state
+  const [selectedResultRow, setSelectedResultRow] = useState<EvaluationResult | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Load API keys
   useEffect(() => {
@@ -599,39 +649,83 @@ export default function SpeechToTextPage() {
     }
   }, []);
 
-  // Handle audio file selection (single mode)
+  // Handle audio file selection (supports multiple files)
   const handleAudioFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     const validTypes = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.webm'];
-    const isValid = validTypes.some(ext => file.name.toLowerCase().endsWith(ext));
+    const validFiles: File[] = [];
 
-    if (!isValid) {
-      toast.error('Please select a valid audio file (mp3, wav, m4a, ogg, flac, webm)');
+    Array.from(files).forEach(file => {
+      const isValid = validTypes.some(ext => file.name.toLowerCase().endsWith(ext));
+      if (isValid) {
+        validFiles.push(file);
+      }
+    });
+
+    if (validFiles.length === 0) {
+      toast.error('Please select valid audio files (mp3, wav, m4a, ogg, flac, webm)');
       event.target.value = '';
       return;
     }
 
-    setAudioFile(file);
-    setIsSinglePlaying(false);
+    if (validFiles.length < files.length) {
+      toast.warning(`${files.length - validFiles.length} file(s) skipped - unsupported format`);
+    }
 
-    // Convert file to base64 for preview
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Remove the data URL prefix to get just the base64
-      const base64 = result.split(',')[1];
-      setAudioBase64(base64);
-      setAudioMediaType(file.type || 'audio/mpeg');
-      console.log('[STT Page] Single file loaded:', file.name, 'type:', file.type, 'size:', file.size);
-    };
-    reader.onerror = () => {
-      console.error('[STT Page] Failed to read audio file');
-      toast.error('Failed to read audio file');
-    };
-    reader.readAsDataURL(file);
+    // Process each file
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+
+        const newFile: UploadedAudioFile = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          file,
+          name: file.name,
+          size: file.size,
+          base64,
+          mediaType: file.type || 'audio/mpeg',
+          groundTruth: '',
+        };
+
+        setUploadedFiles(prev => [...prev, newFile]);
+        console.log('[STT Page] File loaded:', file.name, 'type:', file.type, 'size:', file.size);
+      };
+      reader.onerror = () => {
+        console.error('[STT Page] Failed to read audio file:', file.name);
+        toast.error(`Failed to read ${file.name}`);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input to allow selecting the same file again
+    event.target.value = '';
   };
+
+  // Update ground truth for a specific file
+  const updateGroundTruth = useCallback((fileId: string, text: string) => {
+    setUploadedFiles(prev => prev.map(f =>
+      f.id === fileId ? { ...f, groundTruth: text } : f
+    ));
+  }, []);
+
+  // Remove a file from the list
+  const removeFile = useCallback((fileId: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+    if (playingFileId === fileId) {
+      setPlayingFileId(null);
+    }
+  }, [playingFileId]);
+
+  // Handle file play toggle
+  const handleFilePlayToggle = useCallback((fileId: string) => {
+    setPlayingFileId(prev => prev === fileId ? null : fileId);
+    // Stop batch audio if file audio starts playing
+    setPlayingRowId(null);
+  }, []);
 
   // Handle CSV file selection (batch mode)
   const handleCsvFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -646,25 +740,44 @@ export default function SpeechToTextPage() {
 
     setCsvFile(file);
     setParsedRows([]);
+    setSelectedRows(new Set());
 
     // Parse CSV
     await parseCSV(file);
   };
 
-  // Handle audio play toggle - only one audio can play at a time
+  // Handle audio play toggle for batch mode - only one audio can play at a time
   const handleAudioPlayToggle = useCallback((rowId: number) => {
     console.log('[STT Page] Audio play toggle for row:', rowId);
     setPlayingRowId(prev => prev === rowId ? null : rowId);
-    // Stop single file audio if batch audio starts playing
-    setIsSinglePlaying(false);
+    // Stop uploaded file audio if batch audio starts playing
+    setPlayingFileId(null);
   }, []);
 
-  // Handle single file audio play toggle
-  const handleSingleAudioPlayToggle = useCallback((_rowId: number) => {
-    setIsSinglePlaying(prev => !prev);
-    // Stop batch audio if single file audio starts playing
-    setPlayingRowId(null);
+  // Toggle individual row selection
+  const toggleRowSelection = useCallback((rowId: number) => {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rowId)) {
+        newSet.delete(rowId);
+      } else {
+        newSet.add(rowId);
+      }
+      return newSet;
+    });
   }, []);
+
+  // Toggle all rows selection
+  const toggleAllRows = useCallback(() => {
+    const successRows = parsedRows.filter(r => r.status === 'success');
+    const allSelected = successRows.every(r => selectedRows.has(r.row));
+
+    if (allSelected) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(successRows.map(r => r.row)));
+    }
+  }, [parsedRows, selectedRows]);
 
   // Parse CSV and fetch audio files
   const parseCSV = async (file: File) => {
@@ -719,6 +832,10 @@ export default function SpeechToTextPage() {
 
       setParsedRows(data.rows || []);
 
+      // Auto-select all successful rows
+      const successfulRows = (data.rows || []).filter((r: ParsedRow) => r.status === 'success');
+      setSelectedRows(new Set(successfulRows.map((r: ParsedRow) => r.row)));
+
       const successCount = data.rows?.filter((r: ParsedRow) => r.status === 'success').length || 0;
       const errorCount = data.rows?.filter((r: ParsedRow) => r.status === 'error').length || 0;
 
@@ -758,26 +875,22 @@ export default function SpeechToTextPage() {
     }
   };
 
-  // Run evaluation
-  const runEvaluation = async () => {
+  // Step 1: Run Transcription
+  const runTranscription = async () => {
     if (selectedModels.length === 0) {
       toast.error('Please select at least one model');
       return;
     }
 
     if (inputMode === 'single') {
-      if (!audioFile) {
-        toast.error('Please upload an audio file');
-        return;
-      }
-      if (!groundTruth.trim()) {
-        toast.error('Please enter the ground truth text');
+      if (uploadedFiles.length === 0) {
+        toast.error('Please upload at least one audio file');
         return;
       }
     } else {
-      const validRows = parsedRows.filter(r => r.status === 'success');
-      if (validRows.length === 0) {
-        toast.error('No valid audio files to evaluate');
+      const selectedValidRows = parsedRows.filter(r => r.status === 'success' && selectedRows.has(r.row));
+      if (selectedValidRows.length === 0) {
+        toast.error('Please select at least one audio file to transcribe');
         return;
       }
     }
@@ -787,72 +900,389 @@ export default function SpeechToTextPage() {
       return;
     }
 
-    setIsEvaluating(true);
-    setEvaluationResults([]);
+    setIsTranscribing(true);
+    setTranscriptionResults([]);
+    setEvaluationResults([]); // Clear previous evaluation results
 
     try {
-      // TODO: Implement actual API call
-      // For now, simulate evaluation with mock data
-      const itemsToEvaluate = inputMode === 'single'
-        ? [{ audio_url: audioFile?.name || '', ground_truth: groundTruth }]
-        : parsedRows.filter(r => r.status === 'success');
+      // Prepare files for API
+      const files = inputMode === 'single'
+        ? uploadedFiles.map(f => ({
+            file_id: f.id,
+            audio_base64: f.base64,
+          }))
+        : parsedRows
+            .filter(r => r.status === 'success' && selectedRows.has(r.row))
+            .map(r => ({
+              file_id: `row-${r.row}`,
+              audio_base64: r.audio_base64 || '',
+            }));
 
-      setEvaluationProgress({ current: 0, total: itemsToEvaluate.length });
+      // Prepare providers from selected models
+      const providers = selectedModels.map(modelId => parseModelId(modelId));
 
-      // Simulated results (replace with actual API call)
-      const mockResults: EvaluationResult[] = itemsToEvaluate.map((item: { audio_url?: string; ground_truth?: string }, idx: number) => {
-        const transcriptions: Record<string, TranscriptionResult> = {};
-        selectedModels.forEach(modelId => {
-          transcriptions[modelId] = {
-            model: modelId,
-            text: 'Simulated transcription result',
-            wer: Math.random() * 15, // Random WER between 0-15%
+      const totalTasks = files.length * providers.length;
+      setTranscriptionProgress({ current: 0, total: totalTasks });
+
+      console.log('[STT Page] Starting transcription:', {
+        fileCount: files.length,
+        providerCount: providers.length,
+        totalTasks,
+      });
+
+      // Call the transcription API
+      const response = await fetch('/api/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': apiKeys[0].key,
+        },
+        body: JSON.stringify({ files, providers }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[STT Page] Transcription response:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || 'Transcription failed');
+      }
+
+      // Transform API response to TranscriptionPreviewRow format
+      const resultsMap = new Map<string, TranscriptionPreviewRow>();
+
+      // Get ground truth and audio URL maps
+      const groundTruthMap = new Map<string, string>();
+      const audioUrlMap = new Map<string, string>();
+
+      if (inputMode === 'single') {
+        uploadedFiles.forEach((f, idx) => {
+          groundTruthMap.set(f.id, f.groundTruth);
+          audioUrlMap.set(f.id, f.name);
+          // Initialize result row
+          resultsMap.set(f.id, {
+            file_id: f.id,
+            row: idx + 1,
+            audio_url: f.name,
+            ground_truth: f.groundTruth,
+            transcripts: {},
+          });
+        });
+      } else {
+        parsedRows.filter(r => r.status === 'success' && selectedRows.has(r.row)).forEach(r => {
+          const fileId = `row-${r.row}`;
+          groundTruthMap.set(fileId, r.ground_truth);
+          audioUrlMap.set(fileId, r.audio_url);
+          // Initialize result row
+          resultsMap.set(fileId, {
+            file_id: fileId,
+            row: r.row,
+            audio_url: r.audio_url,
+            ground_truth: r.ground_truth,
+            transcripts: {},
+          });
+        });
+      }
+
+      // Process successful transcriptions
+      (data.data?.success || []).forEach((result: {
+        file_id: string;
+        provider: string;
+        model: string;
+        transcript: string;
+        status: string;
+      }) => {
+        const fileId = result.file_id;
+        const modelKey = `${result.provider}:${result.model}`;
+        const row = resultsMap.get(fileId);
+
+        if (row) {
+          row.transcripts[modelKey] = {
+            provider: result.provider,
+            model: result.model,
+            transcript: result.transcript,
             status: 'success',
+          };
+        }
+      });
+
+      // Process errors
+      (data.data?.errors || []).forEach((result: {
+        file_id: string;
+        provider: string;
+        model: string;
+        error?: string;
+      }) => {
+        const fileId = result.file_id;
+        const modelKey = `${result.provider}:${result.model}`;
+        const row = resultsMap.get(fileId);
+
+        if (row) {
+          row.transcripts[modelKey] = {
+            provider: result.provider,
+            model: result.model,
+            transcript: '',
+            status: 'error',
+            error: result.error,
+          };
+        }
+      });
+
+      const results = Array.from(resultsMap.values()).sort((a, b) => a.row - b.row);
+      setTranscriptionProgress({ current: totalTasks, total: totalTasks });
+      setTranscriptionResults(results);
+
+      const successCount = data.data?.processed || 0;
+      const failedCount = data.data?.failed || 0;
+
+      if (failedCount > 0) {
+        toast.warning(`Transcription completed with ${failedCount} error(s)`);
+      } else {
+        toast.success(`Transcription completed (${successCount} tasks)`);
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast.error(error instanceof Error ? error.message : 'Transcription failed');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  // Step 2: Run WER Evaluation on transcription results
+  const runWerEvaluation = async () => {
+    if (transcriptionResults.length === 0) {
+      toast.error('Please run transcription first');
+      return;
+    }
+
+    if (apiKeys.length === 0) {
+      toast.error('Please add an API key in Keystore first');
+      return;
+    }
+
+    setIsEvaluating(true);
+    setEvaluationResults([]);
+    setIsSummaryOpen(false);
+
+    try {
+      // Build WER evaluation items from transcription results
+      // Each item is: file_id + model -> ground_truth vs hypothesis
+      const werItems: Array<{
+        id: string;
+        ground_truth: string;
+        hypothesis: string;
+        model: string;
+        file_id: string;
+        model_key: string;
+      }> = [];
+
+      transcriptionResults.forEach(row => {
+        Object.entries(row.transcripts).forEach(([modelKey, transcript]) => {
+          if (transcript.status === 'success' && row.ground_truth) {
+            // Convert model key format from "provider:model" to "provider/model"
+            const modelForApi = modelKey.replace(':', '/');
+            // Use consistent ID format: file_id_modelKey for proper result mapping
+            werItems.push({
+              id: `${row.file_id}_${modelKey}`,
+              ground_truth: row.ground_truth,
+              hypothesis: transcript.transcript,
+              model: modelForApi,
+              file_id: row.file_id,
+              model_key: modelKey,
+            });
+          }
+        });
+      });
+
+      if (werItems.length === 0) {
+        toast.error('No valid transcriptions with ground truth to evaluate');
+        setIsEvaluating(false);
+        return;
+      }
+
+      console.log('[STT Page] Starting WER evaluation:', {
+        itemCount: werItems.length,
+      });
+
+      // Call the WER evaluation API
+      const response = await fetch('/api/v1/evaluations/stt/wer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': apiKeys[0].key,
+        },
+        body: JSON.stringify({
+          items: werItems.map(item => ({
+            id: item.id,
+            ground_truth: item.ground_truth,
+            hypothesis: item.hypothesis,
+            model: item.model,
+          })),
+          mode: 'both',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[STT Page] WER evaluation response:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || 'WER evaluation failed');
+      }
+
+      // Create a map of WER results by ID
+      const werResultsMap = new Map<string, {
+        strict: WerMetrics;
+        lenient: WerMetrics;
+      }>();
+
+      (data.data?.results || []).forEach((result: {
+        id: string;
+        strict: WerMetrics;
+        lenient: WerMetrics;
+      }) => {
+        werResultsMap.set(result.id, {
+          strict: result.strict,
+          lenient: result.lenient,
+        });
+      });
+
+      // Transform to EvaluationResult format
+      const results: EvaluationResult[] = transcriptionResults.map(row => {
+        const transcriptions: Record<string, TranscriptionResult> = {};
+
+        Object.entries(row.transcripts).forEach(([modelKey, transcript]) => {
+          const werId = `${row.file_id}_${modelKey}`;
+          const werResult = werResultsMap.get(werId);
+
+          transcriptions[modelKey] = {
+            model: modelKey,
+            text: transcript.transcript,
+            strict: werResult?.strict,
+            lenient: werResult?.lenient,
+            status: transcript.status,
+            error: transcript.error,
           };
         });
 
         return {
-          row: idx + 1,
-          audio_url: 'audio_url' in item ? item.audio_url : (audioFile?.name || ''),
-          ground_truth: 'ground_truth' in item ? item.ground_truth : groundTruth,
+          row: row.row,
+          audio_url: row.audio_url,
+          ground_truth: row.ground_truth,
           transcriptions,
         };
       });
 
-      // Simulate progress
-      for (let i = 0; i < mockResults.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setEvaluationProgress({ current: i + 1, total: itemsToEvaluate.length });
-      }
+      setEvaluationResults(results);
 
-      setEvaluationResults(mockResults);
-      toast.success('Evaluation completed');
+      const processed = data.data?.processed || 0;
+      toast.success(`WER evaluation completed (${processed} items)`);
     } catch (error) {
-      console.error('Evaluation error:', error);
-      toast.error('Evaluation failed');
+      console.error('WER evaluation error:', error);
+      toast.error(error instanceof Error ? error.message : 'WER evaluation failed');
     } finally {
       setIsEvaluating(false);
     }
   };
 
-  // Download results as CSV
+  // Download results as CSV with all metrics
   const downloadResultsCSV = () => {
     if (evaluationResults.length === 0) return;
 
-    const headers = ['Row', 'Audio URL', 'Ground Truth', ...selectedModels.map(m => `${m}_WER`), ...selectedModels.map(m => `${m}_Text`)];
-    const rows = evaluationResults.map(result => {
-      const werValues = selectedModels.map(m => result.transcriptions[m]?.wer?.toFixed(2) || 'ERROR');
-      const textValues = selectedModels.map(m => `"${result.transcriptions[m]?.text || 'ERROR'}"`);
-      return [result.row, result.audio_url, `"${result.ground_truth}"`, ...werValues, ...textValues].join(',');
+    // Helper to escape CSV values
+    const escapeCSV = (value: string | number | undefined | null): string => {
+      if (value === undefined || value === null) return '';
+      const str = String(value);
+      // Escape quotes by doubling them and wrap in quotes if contains comma, quote, or newline
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    // Build headers with all metrics for each model
+    const modelHeaders: string[] = [];
+    selectedModels.forEach(m => {
+      const modelName = STT_MODELS.find(model => model.id === m)?.name || m.split(':')[1];
+      // Strict metrics
+      modelHeaders.push(`${modelName}_Strict_WER`);
+      modelHeaders.push(`${modelName}_Strict_Substitutions`);
+      modelHeaders.push(`${modelName}_Strict_Deletions`);
+      modelHeaders.push(`${modelName}_Strict_Insertions`);
+      modelHeaders.push(`${modelName}_Strict_Semantic_Errors`);
+      modelHeaders.push(`${modelName}_Strict_Ref_Words`);
+      modelHeaders.push(`${modelName}_Strict_Hyp_Words`);
+      // Lenient metrics
+      modelHeaders.push(`${modelName}_Lenient_WER`);
+      modelHeaders.push(`${modelName}_Lenient_Substitutions`);
+      modelHeaders.push(`${modelName}_Lenient_Deletions`);
+      modelHeaders.push(`${modelName}_Lenient_Insertions`);
+      modelHeaders.push(`${modelName}_Lenient_Semantic_Errors`);
+      modelHeaders.push(`${modelName}_Lenient_Ref_Words`);
+      modelHeaders.push(`${modelName}_Lenient_Hyp_Words`);
+      // Transcription
+      modelHeaders.push(`${modelName}_Transcription`);
     });
 
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const headers = ['Row', 'Audio_URL', 'Ground_Truth', ...modelHeaders];
+
+    const rows = evaluationResults.map(result => {
+      const modelValues: string[] = [];
+      selectedModels.forEach(m => {
+        const t = result.transcriptions[m];
+        const strict = t?.strict;
+        const lenient = t?.lenient;
+
+        // Strict metrics
+        modelValues.push(strict?.wer !== undefined ? (strict.wer * 100).toFixed(4) + '%' : 'N/A');
+        modelValues.push(strict?.substitutions?.toString() || 'N/A');
+        modelValues.push(strict?.deletions?.toString() || 'N/A');
+        modelValues.push(strict?.insertions?.toString() || 'N/A');
+        modelValues.push(strict?.semantic_errors?.toString() || 'N/A');
+        modelValues.push(strict?.reference_word_count?.toString() || 'N/A');
+        modelValues.push(strict?.hypothesis_word_count?.toString() || 'N/A');
+
+        // Lenient metrics
+        modelValues.push(lenient?.wer !== undefined ? (lenient.wer * 100).toFixed(4) + '%' : 'N/A');
+        modelValues.push(lenient?.substitutions?.toString() || 'N/A');
+        modelValues.push(lenient?.deletions?.toString() || 'N/A');
+        modelValues.push(lenient?.insertions?.toString() || 'N/A');
+        modelValues.push(lenient?.semantic_errors?.toString() || 'N/A');
+        modelValues.push(lenient?.reference_word_count?.toString() || 'N/A');
+        modelValues.push(lenient?.hypothesis_word_count?.toString() || 'N/A');
+
+        // Transcription text
+        modelValues.push(escapeCSV(t?.text || (t?.status === 'error' ? `ERROR: ${t.error}` : '')));
+      });
+
+      return [
+        result.row,
+        escapeCSV(result.audio_url),
+        escapeCSV(result.ground_truth),
+        ...modelValues
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+
+    // Use Blob for proper download without truncation
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stt-evaluation-results-${Date.now()}.csv`;
-    a.click();
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `stt-evaluation-results-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
@@ -869,6 +1299,105 @@ export default function SpeechToTextPage() {
     if (wer < 10) return colors.status.warning;
     return colors.status.error;
   };
+
+  // Compute model-wise summary statistics from evaluation results
+  const computeModelWiseStats = () => {
+    if (evaluationResults.length === 0) return {};
+
+    const modelStats: Record<string, {
+      modelName: string;
+      provider: string;
+      count: number;
+      strictWers: number[];
+      lenientWers: number[];
+      strictSubs: number[];
+      strictDels: number[];
+      strictIns: number[];
+      lenientSubs: number[];
+      lenientDels: number[];
+      lenientIns: number[];
+    }> = {};
+
+    // Collect all WER values per model
+    evaluationResults.forEach(result => {
+      Object.entries(result.transcriptions).forEach(([modelKey, transcription]) => {
+        if (transcription.status === 'success' && transcription.strict && transcription.lenient) {
+          if (!modelStats[modelKey]) {
+            const modelConfig = STT_MODELS.find(m => m.id === modelKey);
+            modelStats[modelKey] = {
+              modelName: modelConfig?.name || modelKey.split(':')[1],
+              provider: modelConfig?.provider || modelKey.split(':')[0],
+              count: 0,
+              strictWers: [],
+              lenientWers: [],
+              strictSubs: [],
+              strictDels: [],
+              strictIns: [],
+              lenientSubs: [],
+              lenientDels: [],
+              lenientIns: [],
+            };
+          }
+          modelStats[modelKey].count++;
+          modelStats[modelKey].strictWers.push(transcription.strict.wer);
+          modelStats[modelKey].lenientWers.push(transcription.lenient.wer);
+          modelStats[modelKey].strictSubs.push(transcription.strict.substitutions);
+          modelStats[modelKey].strictDels.push(transcription.strict.deletions);
+          modelStats[modelKey].strictIns.push(transcription.strict.insertions);
+          modelStats[modelKey].lenientSubs.push(transcription.lenient.substitutions);
+          modelStats[modelKey].lenientDels.push(transcription.lenient.deletions);
+          modelStats[modelKey].lenientIns.push(transcription.lenient.insertions);
+        }
+      });
+    });
+
+    // Compute averages
+    const result: Record<string, {
+      modelName: string;
+      provider: string;
+      count: number;
+      avgStrictWer: number;
+      minStrictWer: number;
+      maxStrictWer: number;
+      avgLenientWer: number;
+      minLenientWer: number;
+      maxLenientWer: number;
+      avgStrictSubs: number;
+      avgStrictDels: number;
+      avgStrictIns: number;
+      avgLenientSubs: number;
+      avgLenientDels: number;
+      avgLenientIns: number;
+    }> = {};
+
+    Object.entries(modelStats).forEach(([modelKey, stats]) => {
+      const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+      const min = (arr: number[]) => arr.length > 0 ? Math.min(...arr) : 0;
+      const max = (arr: number[]) => arr.length > 0 ? Math.max(...arr) : 0;
+
+      result[modelKey] = {
+        modelName: stats.modelName,
+        provider: stats.provider,
+        count: stats.count,
+        avgStrictWer: avg(stats.strictWers),
+        minStrictWer: min(stats.strictWers),
+        maxStrictWer: max(stats.strictWers),
+        avgLenientWer: avg(stats.lenientWers),
+        minLenientWer: min(stats.lenientWers),
+        maxLenientWer: max(stats.lenientWers),
+        avgStrictSubs: avg(stats.strictSubs),
+        avgStrictDels: avg(stats.strictDels),
+        avgStrictIns: avg(stats.strictIns),
+        avgLenientSubs: avg(stats.lenientSubs),
+        avgLenientDels: avg(stats.lenientDels),
+        avgLenientIns: avg(stats.lenientIns),
+      };
+    });
+
+    return result;
+  };
+
+  const modelWiseStats = computeModelWiseStats();
 
   const tabs = [
     { id: 'single', label: 'Single File' },
@@ -934,36 +1463,47 @@ export default function SpeechToTextPage() {
                 className="border rounded-lg p-6"
                 style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
               >
-                <h2 className="text-sm font-medium mb-4" style={{ color: colors.text.primary }}>
-                  {inputMode === 'single' ? 'Upload Audio File' : 'Upload CSV File'}
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                    {inputMode === 'single' ? 'Upload Audio Files' : 'Upload CSV File'}
+                  </h2>
+                  {inputMode === 'single' && uploadedFiles.length > 0 && (
+                    <span className="text-xs" style={{ color: colors.text.secondary }}>
+                      {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} uploaded
+                    </span>
+                  )}
+                </div>
 
                 {inputMode === 'single' ? (
-                  /* Single File Mode */
+                  /* Multiple File Upload Mode */
                   <div className="space-y-4">
                     {/* Audio Dropzone */}
                     <div
-                      className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer"
+                      className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer"
                       style={{
-                        borderColor: audioFile ? colors.status.success : colors.border,
-                        backgroundColor: audioFile ? 'rgba(22, 163, 74, 0.05)' : 'transparent',
+                        borderColor: colors.border,
+                        backgroundColor: 'transparent',
                         transition: 'all 0.15s ease',
                       }}
                       onClick={() => document.getElementById('audio-upload')?.click()}
                       onDragOver={(e) => {
                         e.preventDefault();
                         e.currentTarget.style.borderColor = colors.accent.primary;
+                        e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
                       }}
                       onDragLeave={(e) => {
-                        e.currentTarget.style.borderColor = audioFile ? colors.status.success : colors.border;
+                        e.currentTarget.style.borderColor = colors.border;
+                        e.currentTarget.style.backgroundColor = 'transparent';
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
-                        const file = e.dataTransfer.files[0];
-                        if (file) {
+                        e.currentTarget.style.borderColor = colors.border;
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        const files = e.dataTransfer.files;
+                        if (files.length > 0) {
                           const input = document.getElementById('audio-upload') as HTMLInputElement;
                           const dt = new DataTransfer();
-                          dt.items.add(file);
+                          Array.from(files).forEach(f => dt.items.add(f));
                           input.files = dt.files;
                           handleAudioFileSelect({ target: input } as React.ChangeEvent<HTMLInputElement>);
                         }
@@ -975,69 +1515,128 @@ export default function SpeechToTextPage() {
                         accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
                         onChange={handleAudioFileSelect}
                         className="hidden"
+                        multiple
                       />
-                      {audioFile ? (
-                        <div className="space-y-3">
-                          <svg className="w-8 h-8 mx-auto" style={{ color: colors.status.success }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                            {audioFile.name}
-                          </p>
-                          <p className="text-xs" style={{ color: colors.text.secondary }}>
-                            {formatFileSize(audioFile.size)}
-                          </p>
-                          {/* Audio Preview Player */}
-                          {audioBase64 && audioMediaType && (
-                            <div
-                              className="flex justify-center pt-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <AudioWaveformPlayer
-                                audioBase64={audioBase64}
-                                mediaType={audioMediaType}
-                                rowId={-1}
-                                fileSize={audioFile.size}
-                                isPlaying={isSinglePlaying}
-                                onPlayToggle={handleSingleAudioPlayToggle}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <svg className="w-8 h-8 mx-auto" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                          </svg>
-                          <p className="text-sm" style={{ color: colors.text.secondary }}>
-                            Drag and drop an audio file, or click to browse
-                          </p>
-                          <p className="text-xs" style={{ color: colors.text.secondary }}>
-                            Supports: MP3, WAV, M4A, OGG, FLAC, WebM
-                          </p>
-                        </div>
-                      )}
+                      <div className="space-y-2">
+                        <svg className="w-8 h-8 mx-auto" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                        <p className="text-sm" style={{ color: colors.text.secondary }}>
+                          {uploadedFiles.length > 0 ? 'Add more files' : 'Drag and drop audio files, or click to browse'}
+                        </p>
+                        <p className="text-xs" style={{ color: colors.text.secondary }}>
+                          Supports: MP3, WAV, M4A, OGG, FLAC, WebM
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Ground Truth Input */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: colors.text.primary }}>
-                        Ground Truth Text
-                      </label>
-                      <textarea
-                        value={groundTruth}
-                        onChange={(e) => setGroundTruth(e.target.value)}
-                        placeholder="Enter the expected transcription..."
-                        rows={4}
-                        className="w-full px-3 py-2 border rounded-md text-sm"
-                        style={{
-                          backgroundColor: colors.bg.primary,
-                          borderColor: colors.border,
-                          color: colors.text.primary,
-                          resize: 'vertical',
-                        }}
-                      />
-                    </div>
+                    {/* Uploaded Files List */}
+                    {uploadedFiles.length > 0 && (
+                      <div className="space-y-3">
+                        {uploadedFiles.map((file, index) => (
+                          <div
+                            key={file.id}
+                            className="border rounded-lg p-4"
+                            style={{
+                              borderColor: file.groundTruth.trim() ? colors.status.success : colors.border,
+                              backgroundColor: file.groundTruth.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.primary,
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {/* File Header */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <span
+                                  className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+                                  style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                                >
+                                  {index + 1}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
+                                    {file.name}
+                                  </p>
+                                  <p className="text-xs" style={{ color: colors.text.secondary }}>
+                                    {formatFileSize(file.size)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                {/* Audio Player */}
+                                <AudioWaveformPlayer
+                                  audioBase64={file.base64}
+                                  mediaType={file.mediaType}
+                                  rowId={index}
+                                  fileSize={file.size}
+                                  isPlaying={playingFileId === file.id}
+                                  onPlayToggle={() => handleFilePlayToggle(file.id)}
+                                />
+                                {/* Remove Button */}
+                                <button
+                                  onClick={() => removeFile(file.id)}
+                                  className="p-1.5 rounded-md hover:bg-red-50"
+                                  style={{ color: colors.text.secondary, transition: 'all 0.15s ease' }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = '#dc2626';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color = colors.text.secondary;
+                                  }}
+                                  title="Remove file"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Ground Truth Input */}
+                            <div>
+                              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+                                Ground Truth
+                              </label>
+                              <textarea
+                                value={file.groundTruth}
+                                onChange={(e) => updateGroundTruth(file.id, e.target.value)}
+                                placeholder="Enter the expected transcription..."
+                                rows={2}
+                                className="w-full px-3 py-2 border rounded-md text-sm"
+                                style={{
+                                  backgroundColor: colors.bg.primary,
+                                  borderColor: colors.border,
+                                  color: colors.text.primary,
+                                  resize: 'vertical',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Summary Footer */}
+                        <div
+                          className="flex items-center justify-between px-3 py-2 rounded-md"
+                          style={{ backgroundColor: colors.bg.secondary }}
+                        >
+                          <span className="text-xs" style={{ color: colors.text.secondary }}>
+                            Total: {formatFileSize(uploadedFiles.reduce((acc, f) => acc + f.size, 0))}
+                          </span>
+                          <button
+                            onClick={() => setUploadedFiles([])}
+                            className="text-xs font-medium px-2 py-1 rounded"
+                            style={{ color: '#dc2626', transition: 'all 0.15s ease' }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#fee2e2';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   /* Batch CSV Mode */
@@ -1122,33 +1721,97 @@ export default function SpeechToTextPage() {
                           className="px-4 py-3 border-b flex items-center justify-between"
                           style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border }}
                         >
-                          <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                            Preview ({parsedRows.filter(r => r.status === 'success').length} ready, {parsedRows.filter(r => r.status === 'error').length} failed)
-                          </p>
+                          <div className="flex items-center gap-3">
+                            <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                              Preview ({parsedRows.filter(r => r.status === 'success').length} ready, {parsedRows.filter(r => r.status === 'error').length} failed)
+                            </p>
+                            {selectedRows.size > 0 && (
+                              <span
+                                className="text-xs px-2 py-0.5 rounded-full font-medium"
+                                style={{ backgroundColor: colors.accent.primary, color: '#fff' }}
+                              >
+                                {selectedRows.size} selected
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs" style={{ color: colors.text.secondary }}>
                             Click play to preview audio
                           </p>
                         </div>
                         <div className="max-h-96 overflow-auto">
                           <table className="w-full text-sm">
-                            <thead className="sticky top-0">
+                            <thead className="sticky top-0 z-10">
                               <tr style={{ backgroundColor: colors.bg.secondary }}>
+                                <th className="px-3 py-2 text-left font-medium w-10" style={{ color: colors.text.primary }}>
+                                  {/* Select All Checkbox */}
+                                  {(() => {
+                                    const successRows = parsedRows.filter(r => r.status === 'success');
+                                    const allSelected = successRows.length > 0 && successRows.every(r => selectedRows.has(r.row));
+                                    const someSelected = successRows.some(r => selectedRows.has(r.row));
+                                    return (
+                                      <button
+                                        onClick={toggleAllRows}
+                                        className="w-4 h-4 border rounded flex items-center justify-center"
+                                        style={{
+                                          borderColor: allSelected || someSelected ? colors.accent.primary : colors.border,
+                                          backgroundColor: allSelected ? colors.accent.primary : 'transparent',
+                                          transition: 'all 0.15s ease',
+                                        }}
+                                        title={allSelected ? 'Deselect all' : 'Select all'}
+                                      >
+                                        {allSelected && (
+                                          <svg className="w-3 h-3" style={{ color: '#fff' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        )}
+                                        {someSelected && !allSelected && (
+                                          <div className="w-2 h-0.5" style={{ backgroundColor: colors.accent.primary }} />
+                                        )}
+                                      </button>
+                                    );
+                                  })()}
+                                </th>
                                 <th className="px-3 py-2 text-left font-medium w-12" style={{ color: colors.text.primary }}>#</th>
-                                <th className="px-3 py-2 text-left font-medium w-48" style={{ color: colors.text.primary }}>Audio</th>
+                                <th className="px-3 py-2 text-left font-medium w-52" style={{ color: colors.text.primary }}>Audio</th>
                                 <th className="px-3 py-2 text-left font-medium" style={{ color: colors.text.primary }}>Ground Truth</th>
-                                <th className="px-3 py-2 text-left font-medium w-20" style={{ color: colors.text.primary }}>Status</th>
+                                <th className="px-3 py-2 text-left font-medium w-28" style={{ color: colors.text.primary }}>Status</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {parsedRows.map((row) => (
+                              {parsedRows.map((row) => {
+                                const isSelected = selectedRows.has(row.row);
+                                const isSuccess = row.status === 'success';
+                                return (
                                 <tr
                                   key={row.row}
                                   className="border-t"
                                   style={{
                                     borderColor: colors.border,
-                                    backgroundColor: playingRowId === row.row ? 'rgba(23, 23, 23, 0.03)' : 'transparent',
+                                    backgroundColor: isSelected ? 'rgba(0, 0, 0, 0.02)' : playingRowId === row.row ? 'rgba(23, 23, 23, 0.03)' : 'transparent',
                                   }}
                                 >
+                                  <td className="px-3 py-3">
+                                    {/* Individual Row Checkbox */}
+                                    <button
+                                      onClick={() => isSuccess && toggleRowSelection(row.row)}
+                                      className="w-4 h-4 border rounded flex items-center justify-center"
+                                      style={{
+                                        borderColor: isSelected ? colors.accent.primary : colors.border,
+                                        backgroundColor: isSelected ? colors.accent.primary : 'transparent',
+                                        opacity: isSuccess ? 1 : 0.4,
+                                        cursor: isSuccess ? 'pointer' : 'not-allowed',
+                                        transition: 'all 0.15s ease',
+                                      }}
+                                      disabled={!isSuccess}
+                                      title={isSuccess ? (isSelected ? 'Deselect row' : 'Select row') : 'Cannot select failed row'}
+                                    >
+                                      {isSelected && (
+                                        <svg className="w-3 h-3" style={{ color: '#fff' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                  </td>
                                   <td className="px-3 py-3" style={{ color: colors.text.secondary }}>{row.row}</td>
                                   <td className="px-3 py-3">
                                     {row.status === 'success' && row.audio_base64 && row.media_type ? (
@@ -1168,18 +1831,17 @@ export default function SpeechToTextPage() {
                                   </td>
                                   <td className="px-3 py-3">
                                     <span
-                                      className="block truncate max-w-md"
+                                      className="block text-sm leading-relaxed"
                                       style={{ color: colors.text.primary }}
-                                      title={row.ground_truth}
                                     >
                                       {row.ground_truth}
                                     </span>
                                   </td>
                                   <td className="px-3 py-3">
                                     {row.status === 'success' ? (
-                                      <div className="flex items-center gap-1">
+                                      <div className="flex flex-col gap-1">
                                         <span
-                                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-fit"
                                           style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
                                         >
                                           Ready
@@ -1201,7 +1863,7 @@ export default function SpeechToTextPage() {
                                     )}
                                   </td>
                                 </tr>
-                              ))}
+                              );})}
                             </tbody>
                           </table>
                         </div>
@@ -1316,48 +1978,179 @@ export default function SpeechToTextPage() {
                 )}
               </div>
 
-              {/* Run Button */}
+              {/* Step 1: Transcribe Button */}
               <div className="flex justify-end">
                 <button
-                  onClick={runEvaluation}
-                  disabled={isEvaluating || selectedModels.length === 0}
+                  onClick={runTranscription}
+                  disabled={isTranscribing || selectedModels.length === 0}
                   className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
                   style={{
-                    backgroundColor: isEvaluating || selectedModels.length === 0 ? colors.border : colors.accent.primary,
-                    color: isEvaluating || selectedModels.length === 0 ? colors.text.secondary : '#ffffff',
-                    cursor: isEvaluating || selectedModels.length === 0 ? 'not-allowed' : 'pointer',
+                    backgroundColor: isTranscribing || selectedModels.length === 0 ? colors.border : colors.accent.primary,
+                    color: isTranscribing || selectedModels.length === 0 ? colors.text.secondary : '#ffffff',
+                    cursor: isTranscribing || selectedModels.length === 0 ? 'not-allowed' : 'pointer',
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
-                    if (!isEvaluating && selectedModels.length > 0) {
+                    if (!isTranscribing && selectedModels.length > 0) {
                       e.currentTarget.style.backgroundColor = colors.accent.hover;
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isEvaluating && selectedModels.length > 0) {
+                    if (!isTranscribing && selectedModels.length > 0) {
                       e.currentTarget.style.backgroundColor = colors.accent.primary;
                     }
                   }}
                 >
-                  {isEvaluating ? (
+                  {isTranscribing ? (
                     <>
                       <div
                         className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
                         style={{ borderColor: '#ffffff', borderTopColor: 'transparent' }}
                       />
-                      Evaluating ({evaluationProgress.current}/{evaluationProgress.total})
+                      Transcribing ({transcriptionProgress.current}/{transcriptionProgress.total})
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                       </svg>
-                      Run Evaluation
+                      Transcribe
                     </>
                   )}
                 </button>
               </div>
+
+              {/* Transcription Preview Section */}
+              {transcriptionResults.length > 0 && (
+                <div
+                  className="border rounded-lg overflow-hidden"
+                  style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+                >
+                  <div
+                    className="px-6 py-4 border-b flex items-center justify-between"
+                    style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border }}
+                  >
+                    <div>
+                      <h2 className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                        Transcription Results
+                      </h2>
+                      <p className="text-xs" style={{ color: colors.text.secondary }}>
+                        {transcriptionResults.length} audio file{transcriptionResults.length !== 1 ? 's' : ''} transcribed
+                      </p>
+                    </div>
+                    <button
+                      onClick={runWerEvaluation}
+                      disabled={isEvaluating}
+                      className="px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2"
+                      style={{
+                        backgroundColor: isEvaluating ? colors.border : colors.status.success,
+                        color: isEvaluating ? colors.text.secondary : '#ffffff',
+                        cursor: isEvaluating ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      {isEvaluating ? (
+                        <>
+                          <div
+                            className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"
+                            style={{ borderColor: '#ffffff', borderTopColor: 'transparent' }}
+                          />
+                          Evaluating...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          Run WER Evaluation
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr style={{ backgroundColor: colors.bg.secondary }}>
+                          <th className="px-4 py-3 text-left font-semibold border-b" style={{ color: colors.text.primary, borderColor: colors.border }}>
+                            #
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold border-b" style={{ color: colors.text.primary, borderColor: colors.border }}>
+                            Audio
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold border-b" style={{ color: colors.text.primary, borderColor: colors.border }}>
+                            Ground Truth
+                          </th>
+                          {selectedModels.map(modelId => {
+                            const model = STT_MODELS.find(m => m.id === modelId);
+                            return (
+                              <th
+                                key={modelId}
+                                className="px-4 py-3 text-left font-semibold border-b"
+                                style={{ color: colors.text.primary, borderColor: colors.border }}
+                              >
+                                {model?.name || modelId.split(':')[1]}
+                              </th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transcriptionResults.map((result, idx) => (
+                          <tr
+                            key={result.file_id}
+                            className="border-b"
+                            style={{
+                              borderColor: colors.border,
+                              backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                            }}
+                          >
+                            <td className="px-4 py-3" style={{ color: colors.text.secondary }}>
+                              {result.row}
+                            </td>
+                            <td className="px-4 py-3 max-w-[150px] truncate" style={{ color: colors.text.primary }} title={result.audio_url}>
+                              {result.audio_url}
+                            </td>
+                            <td className="px-4 py-3 max-w-[200px]" style={{ color: colors.text.secondary }}>
+                              <div className="truncate" title={result.ground_truth}>
+                                {result.ground_truth || <span className="italic opacity-50">No ground truth</span>}
+                              </div>
+                            </td>
+                            {selectedModels.map(modelId => {
+                              const transcript = result.transcripts[modelId];
+                              return (
+                                <td key={modelId} className="px-4 py-3 max-w-[250px]">
+                                  {transcript?.status === 'success' ? (
+                                    <div
+                                      className="text-sm leading-relaxed"
+                                      style={{ color: colors.text.primary }}
+                                      title={transcript.transcript}
+                                    >
+                                      <div className="line-clamp-3">
+                                        {transcript.transcript}
+                                      </div>
+                                    </div>
+                                  ) : transcript?.status === 'error' ? (
+                                    <span
+                                      className="text-xs px-2 py-0.5 rounded cursor-help"
+                                      style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                      title={transcript.error}
+                                    >
+                                      ERROR
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs opacity-50">-</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* Results Section */}
               {evaluationResults.length > 0 && (
@@ -1371,7 +2164,7 @@ export default function SpeechToTextPage() {
                   >
                     <div>
                       <h2 className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                        Evaluation Results
+                        WER Evaluation Results
                       </h2>
                       <p className="text-xs" style={{ color: colors.text.secondary }}>
                         {evaluationResults.length} audio file{evaluationResults.length !== 1 ? 's' : ''} evaluated
@@ -1407,6 +2200,9 @@ export default function SpeechToTextPage() {
                       <thead>
                         <tr style={{ backgroundColor: colors.bg.secondary }}>
                           <th className="px-4 py-3 text-left font-semibold border-b" style={{ color: colors.text.primary, borderColor: colors.border }}>
+                            #
+                          </th>
+                          <th className="px-4 py-3 text-left font-semibold border-b" style={{ color: colors.text.primary, borderColor: colors.border }}>
                             Audio
                           </th>
                           <th className="px-4 py-3 text-left font-semibold border-b" style={{ color: colors.text.primary, borderColor: colors.border }}>
@@ -1417,12 +2213,12 @@ export default function SpeechToTextPage() {
                             return (
                               <th
                                 key={modelId}
-                                className="px-4 py-3 text-left font-semibold border-b"
+                                className="px-4 py-3 text-center font-semibold border-b"
                                 style={{ color: colors.text.primary, borderColor: colors.border }}
                               >
-                                {model?.name || modelId}
+                                {model?.name || modelId.split(':')[1]}
                                 <span className="block text-xs font-normal" style={{ color: colors.text.secondary }}>
-                                  WER %
+                                  Strict / Lenient WER
                                 </span>
                               </th>
                             );
@@ -1433,36 +2229,71 @@ export default function SpeechToTextPage() {
                         {evaluationResults.map((result, idx) => (
                           <tr
                             key={result.row}
-                            className="border-b"
+                            className="border-b cursor-pointer"
                             style={{
                               borderColor: colors.border,
                               backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                              transition: 'background-color 0.15s ease',
+                            }}
+                            onClick={() => {
+                              setSelectedResultRow(result);
+                              setIsModalOpen(true);
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f0f0f0';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary;
                             }}
                           >
-                            <td className="px-4 py-3 max-w-xs truncate" style={{ color: colors.text.primary }}>
+                            <td className="px-4 py-3" style={{ color: colors.text.secondary }}>
+                              {result.row}
+                            </td>
+                            <td className="px-4 py-3 max-w-[150px] truncate" style={{ color: colors.text.primary }} title={result.audio_url}>
                               {result.audio_url}
                             </td>
-                            <td className="px-4 py-3 max-w-xs truncate" style={{ color: colors.text.secondary }}>
-                              {result.ground_truth}
+                            <td className="px-4 py-3 max-w-[200px]" style={{ color: colors.text.secondary }}>
+                              <div className="truncate" title={result.ground_truth}>
+                                {result.ground_truth || <span className="italic opacity-50">No ground truth</span>}
+                              </div>
                             </td>
                             {selectedModels.map(modelId => {
                               const transcription = result.transcriptions[modelId];
                               return (
-                                <td key={modelId} className="px-4 py-3">
-                                  {transcription?.status === 'success' ? (
+                                <td key={modelId} className="px-4 py-3 text-center">
+                                  {transcription?.status === 'success' && transcription.strict && transcription.lenient ? (
+                                    <div className="flex flex-col items-center gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <span
+                                          className="text-sm font-medium"
+                                          style={{ color: getWerColor(transcription.strict.wer * 100) }}
+                                          title={`Substitutions: ${transcription.strict.substitutions}, Deletions: ${transcription.strict.deletions}, Insertions: ${transcription.strict.insertions}`}
+                                        >
+                                          {(transcription.strict.wer * 100).toFixed(1)}%
+                                        </span>
+                                        <span style={{ color: colors.text.secondary }}>/</span>
+                                        <span
+                                          className="text-sm font-medium"
+                                          style={{ color: getWerColor(transcription.lenient.wer * 100) }}
+                                          title={`Substitutions: ${transcription.lenient.substitutions}, Deletions: ${transcription.lenient.deletions}, Insertions: ${transcription.lenient.insertions}`}
+                                        >
+                                          {(transcription.lenient.wer * 100).toFixed(1)}%
+                                        </span>
+                                      </div>
+                                      <div className="text-xs max-w-[200px] truncate" style={{ color: colors.text.secondary }} title={transcription.text}>
+                                        {transcription.text}
+                                      </div>
+                                    </div>
+                                  ) : transcription?.status === 'error' ? (
                                     <span
-                                      className="font-medium"
-                                      style={{ color: getWerColor(transcription.wer) }}
-                                    >
-                                      {transcription.wer.toFixed(2)}%
-                                    </span>
-                                  ) : (
-                                    <span
-                                      className="text-xs px-2 py-0.5 rounded"
+                                      className="text-xs px-2 py-0.5 rounded cursor-help"
                                       style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                      title={transcription.error}
                                     >
                                       ERROR
                                     </span>
+                                  ) : (
+                                    <span className="text-xs opacity-50">N/A</span>
                                   )}
                                 </td>
                               );
@@ -1473,42 +2304,385 @@ export default function SpeechToTextPage() {
                     </table>
                   </div>
 
-                  {/* Summary Stats */}
-                  <div
-                    className="px-6 py-4 border-t"
-                    style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border }}
-                  >
-                    <div className="flex gap-6">
-                      {selectedModels.map(modelId => {
-                        const model = STT_MODELS.find(m => m.id === modelId);
-                        const wers = evaluationResults
-                          .map(r => r.transcriptions[modelId])
-                          .filter(t => t?.status === 'success')
-                          .map(t => t.wer);
+                  {/* Model-wise Summary Stats - Collapsible */}
+                  {Object.keys(modelWiseStats).length > 0 && (
+                    <div
+                      className="border-t"
+                      style={{ borderColor: colors.border }}
+                    >
+                      {/* Dropdown Header */}
+                      <button
+                        onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+                        className="w-full px-6 py-3 flex items-center justify-between"
+                        style={{ backgroundColor: colors.bg.secondary }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <svg
+                            className="w-4 h-4 transition-transform"
+                            style={{
+                              color: colors.text.secondary,
+                              transform: isSummaryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                            }}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                          <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                            Model-wise Summary Statistics
+                          </span>
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: colors.bg.primary, color: colors.text.secondary }}
+                          >
+                            {Object.keys(modelWiseStats).length} model{Object.keys(modelWiseStats).length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <span className="text-xs" style={{ color: colors.text.secondary }}>
+                          {isSummaryOpen ? 'Click to collapse' : 'Click to expand'}
+                        </span>
+                      </button>
 
-                        if (wers.length === 0) return null;
+                      {/* Collapsible Content */}
+                      {isSummaryOpen && (
+                        <div
+                          className="px-6 py-4"
+                          style={{ backgroundColor: colors.bg.secondary }}
+                        >
+                          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.min(Object.keys(modelWiseStats).length, 3)}, 1fr)` }}>
+                            {Object.entries(modelWiseStats).map(([modelKey, stats]) => (
+                              <div
+                                key={modelKey}
+                                className="rounded-lg border p-4"
+                                style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+                              >
+                                {/* Model Header */}
+                                <div className="flex items-center gap-2 mb-3 pb-2 border-b" style={{ borderColor: colors.border }}>
+                                  <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                                    {stats.modelName}
+                                  </span>
+                                  <span
+                                    className="text-xs px-1.5 py-0.5 rounded"
+                                    style={{ backgroundColor: '#e5e5e5', color: colors.text.secondary }}
+                                  >
+                                    {stats.provider}
+                                  </span>
+                                  <span className="text-xs ml-auto" style={{ color: colors.text.secondary }}>
+                                    {stats.count} samples
+                                  </span>
+                                </div>
 
-                        const avgWer = wers.reduce((a, b) => a + b, 0) / wers.length;
+                                {/* WER Stats */}
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                  {/* Strict */}
+                                  <div>
+                                    <p className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>Strict WER</p>
+                                    <p className="text-xl font-bold" style={{ color: getWerColor(stats.avgStrictWer * 100) }}>
+                                      {(stats.avgStrictWer * 100).toFixed(2)}%
+                                    </p>
+                                    <div className="flex gap-2 mt-1">
+                                      <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                        Min: <span style={{ color: getWerColor(stats.minStrictWer * 100) }}>{(stats.minStrictWer * 100).toFixed(1)}%</span>
+                                      </span>
+                                      <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                        Max: <span style={{ color: getWerColor(stats.maxStrictWer * 100) }}>{(stats.maxStrictWer * 100).toFixed(1)}%</span>
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {/* Lenient */}
+                                  <div>
+                                    <p className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>Lenient WER</p>
+                                    <p className="text-xl font-bold" style={{ color: getWerColor(stats.avgLenientWer * 100) }}>
+                                      {(stats.avgLenientWer * 100).toFixed(2)}%
+                                    </p>
+                                    <div className="flex gap-2 mt-1">
+                                      <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                        Min: <span style={{ color: getWerColor(stats.minLenientWer * 100) }}>{(stats.minLenientWer * 100).toFixed(1)}%</span>
+                                      </span>
+                                      <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                        Max: <span style={{ color: getWerColor(stats.maxLenientWer * 100) }}>{(stats.maxLenientWer * 100).toFixed(1)}%</span>
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
 
-                        return (
-                          <div key={modelId}>
-                            <p className="text-xs" style={{ color: colors.text.secondary }}>
-                              {model?.name || modelId} Avg
-                            </p>
-                            <p className="text-lg font-semibold" style={{ color: getWerColor(avgWer) }}>
-                              {avgWer.toFixed(2)}%
-                            </p>
+                                {/* Error Breakdown */}
+                                <div className="pt-2 border-t" style={{ borderColor: colors.border }}>
+                                  <p className="text-xs mb-2" style={{ color: colors.text.secondary }}>Avg Errors (Strict / Lenient)</p>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Subs</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.status.warning }}>
+                                        {stats.avgStrictSubs.toFixed(1)} / {stats.avgLenientSubs.toFixed(1)}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Del</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.status.error }}>
+                                        {stats.avgStrictDels.toFixed(1)} / {stats.avgLenientDels.toFixed(1)}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Ins</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.accent.primary }}>
+                                        {stats.avgStrictIns.toFixed(1)} / {stats.avgLenientIns.toFixed(1)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        );
-                      })}
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Drill-down Modal */}
+      {isModalOpen && selectedResultRow && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+            style={{ backgroundColor: colors.bg.primary }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              className="px-6 py-4 flex items-center justify-between border-b"
+              style={{ borderColor: colors.border }}
+            >
+              <div>
+                <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+                  Row {selectedResultRow.row} - WER Details
+                </h2>
+                <p className="text-sm truncate max-w-[500px]" style={{ color: colors.text.secondary }}>
+                  {selectedResultRow.audio_url}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 rounded-md hover:bg-opacity-80"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="overflow-y-auto flex-1 p-6">
+              {/* Ground Truth */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium mb-2" style={{ color: colors.text.secondary }}>
+                  Ground Truth
+                </h3>
+                <p
+                  className="text-sm p-3 rounded-md"
+                  style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary }}
+                >
+                  {selectedResultRow.ground_truth || <span className="italic opacity-50">No ground truth</span>}
+                </p>
+              </div>
+
+              {/* Model Results */}
+              <div className="space-y-4">
+                {Object.entries(selectedResultRow.transcriptions).map(([modelKey, transcription]) => {
+                  const modelConfig = STT_MODELS.find(m => m.id === modelKey);
+                  const modelName = modelConfig?.name || modelKey.split(':')[1];
+                  const providerName = modelConfig?.provider || modelKey.split(':')[0];
+
+                  return (
+                    <div
+                      key={modelKey}
+                      className="rounded-lg border"
+                      style={{ borderColor: colors.border }}
+                    >
+                      {/* Model Header */}
+                      <div
+                        className="px-4 py-3 flex items-center justify-between border-b"
+                        style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                            {modelName}
+                          </span>
+                          <span
+                            className="text-xs px-2 py-0.5 rounded"
+                            style={{ backgroundColor: '#e5e5e5', color: colors.text.secondary }}
+                          >
+                            {providerName}
+                          </span>
+                        </div>
+                        {transcription.status === 'success' && transcription.strict && transcription.lenient && (
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <span className="text-xs" style={{ color: colors.text.secondary }}>Strict WER</span>
+                              <p
+                                className="text-lg font-semibold"
+                                style={{ color: getWerColor(transcription.strict.wer * 100) }}
+                              >
+                                {(transcription.strict.wer * 100).toFixed(2)}%
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs" style={{ color: colors.text.secondary }}>Lenient WER</span>
+                              <p
+                                className="text-lg font-semibold"
+                                style={{ color: getWerColor(transcription.lenient.wer * 100) }}
+                              >
+                                {(transcription.lenient.wer * 100).toFixed(2)}%
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Transcription Text & Metrics */}
+                      <div className="p-4">
+                        {transcription.status === 'error' ? (
+                          <div
+                            className="text-sm px-3 py-2 rounded"
+                            style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                          >
+                            Error: {transcription.error || 'Unknown error'}
+                          </div>
+                        ) : (
+                          <>
+                            {/* Transcription Text */}
+                            <div className="mb-4">
+                              <span className="text-xs" style={{ color: colors.text.secondary }}>Transcription</span>
+                              <p className="text-sm mt-1" style={{ color: colors.text.primary }}>
+                                {transcription.text}
+                              </p>
+                            </div>
+
+                            {/* Error Metrics Grid */}
+                            {transcription.strict && transcription.lenient && (
+                              <div className="grid grid-cols-2 gap-4">
+                                {/* Strict Metrics */}
+                                <div
+                                  className="rounded-md p-3"
+                                  style={{ backgroundColor: colors.bg.secondary }}
+                                >
+                                  <p className="text-xs font-medium mb-3" style={{ color: colors.text.secondary }}>
+                                    Strict Mode Errors
+                                  </p>
+                                  <div className="grid grid-cols-4 gap-3">
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Substitutions</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.status.warning }}>
+                                        {transcription.strict.substitutions}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Deletions</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.status.error }}>
+                                        {transcription.strict.deletions}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Insertions</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.accent.primary }}>
+                                        {transcription.strict.insertions}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Semantic</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+                                        {transcription.strict.semantic_errors}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 pt-3 border-t flex gap-4" style={{ borderColor: colors.border }}>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Reference Words</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                                        {transcription.strict.reference_word_count}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Hypothesis Words</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                                        {transcription.strict.hypothesis_word_count}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Lenient Metrics */}
+                                <div
+                                  className="rounded-md p-3"
+                                  style={{ backgroundColor: colors.bg.secondary }}
+                                >
+                                  <p className="text-xs font-medium mb-3" style={{ color: colors.text.secondary }}>
+                                    Lenient Mode Errors
+                                  </p>
+                                  <div className="grid grid-cols-4 gap-3">
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Substitutions</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.status.warning }}>
+                                        {transcription.lenient.substitutions}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Deletions</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.status.error }}>
+                                        {transcription.lenient.deletions}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Insertions</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.accent.primary }}>
+                                        {transcription.lenient.insertions}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Semantic</p>
+                                      <p className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+                                        {transcription.lenient.semantic_errors}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 pt-3 border-t flex gap-4" style={{ borderColor: colors.border }}>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Reference Words</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                                        {transcription.lenient.reference_word_count}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs" style={{ color: colors.text.secondary }}>Hypothesis Words</p>
+                                      <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                                        {transcription.lenient.hypothesis_word_count}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

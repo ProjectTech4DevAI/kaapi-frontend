@@ -10,8 +10,9 @@ import { colors } from '@/app/lib/colors';
 
 interface SubMenuItem {
   name: string;
-  route: string;
+  route?: string;
   comingSoon?: boolean;
+  submenu?: SubMenuItem[]; // Support nested submenus
 }
 
 interface MenuItem {
@@ -30,6 +31,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
   const router = useRouter();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     'Tasks': true,
+    'Evaluations': true,
     'Configurations': false,
   });
 
@@ -61,12 +63,17 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
         </svg>
       ),
       submenu: [
-        { name: 'Evaluations', route: '/evaluations' },
-        { name: 'Model Testing', route: '/model-testing', comingSoon: true },
-        { name: 'Speech-to-text', route: '/speech-to-text' },
-        { name: 'Text-to-speech', route: '/text-to-speech', comingSoon: true },
-        { name: 'Guardrails', route: '/guardrails', comingSoon: true },
-        { name: 'Redteaming', route: '/redteaming', comingSoon: true },
+        {
+          name: 'Evaluations',
+          submenu: [
+            { name: 'Text Generation', route: '/evaluations' },
+            { name: 'Speech-to-Text', route: '/speech-to-text' },
+            { name: 'Text-to-Speech', route: '/text-to-speech', comingSoon: true },
+          ]
+        },
+        // { name: 'Model Testing', route: '/model-testing', comingSoon: true },
+        // { name: 'Guardrails', route: '/guardrails', comingSoon: true },
+        // { name: 'Redteaming', route: '/redteaming', comingSoon: true },
       ]
     },
     {
@@ -124,7 +131,12 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
           const hasSubmenu = item.submenu && item.submenu.length > 0;
           const isExpanded = expandedMenus[item.name];
           const isActive = activeRoute === item.route;
-          const hasActiveChild = hasSubmenu && item.submenu?.some(sub => activeRoute === sub.route);
+
+          // Check if any child or nested child is active
+          const hasActiveChild = hasSubmenu && item.submenu?.some(sub =>
+            activeRoute === sub.route ||
+            (sub.submenu && sub.submenu.some(nested => activeRoute === nested.route))
+          );
 
           return (
             <div key={item.name}>
@@ -187,46 +199,127 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                   }}
                 >
                   {item.submenu?.map((subItem) => {
+                    const hasNestedSubmenu = subItem.submenu && subItem.submenu.length > 0;
+                    const isNestedExpanded = expandedMenus[subItem.name];
                     const isSubActive = activeRoute === subItem.route;
+                    const hasActiveNestedChild = hasNestedSubmenu && subItem.submenu?.some(nested => activeRoute === nested.route);
+
                     return (
-                      <button
-                        key={subItem.route}
-                        onClick={() => router.push(subItem.route)}
-                        className="w-full text-left px-3 py-1.5 rounded-md text-xs flex items-center justify-between gap-2"
-                        style={{
-                          backgroundColor: isSubActive ? colors.bg.primary : 'transparent',
-                          color: isSubActive ? colors.text.primary : colors.text.secondary,
-                          fontWeight: isSubActive ? 500 : 400,
-                          transition: 'all 0.15s ease',
-                          border: isSubActive ? `1px solid ${colors.border}` : '1px solid transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSubActive) {
-                            e.currentTarget.style.backgroundColor = colors.bg.primary;
-                            e.currentTarget.style.color = colors.text.primary;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSubActive) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = colors.text.secondary;
-                          }
-                        }}
-                      >
-                        <span>{subItem.name}</span>
-                        {subItem.comingSoon && (
-                          <span
-                            className="text-[10px] px-1.5 py-0.5 rounded"
+                      <div key={subItem.name}>
+                        <button
+                          onClick={() => {
+                            if (hasNestedSubmenu) {
+                              toggleMenu(subItem.name);
+                            } else if (subItem.route) {
+                              router.push(subItem.route);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-1.5 rounded-md text-xs flex items-center justify-between gap-2"
+                          style={{
+                            backgroundColor: isSubActive ? colors.bg.primary : 'transparent',
+                            color: (isSubActive || hasActiveNestedChild) ? colors.text.primary : colors.text.secondary,
+                            fontWeight: (isSubActive || hasActiveNestedChild) ? 500 : 400,
+                            transition: 'all 0.15s ease',
+                            border: isSubActive ? `1px solid ${colors.border}` : '1px solid transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSubActive) {
+                              e.currentTarget.style.backgroundColor = colors.bg.primary;
+                              e.currentTarget.style.color = colors.text.primary;
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSubActive) {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = (hasActiveNestedChild) ? colors.text.primary : colors.text.secondary;
+                            }
+                          }}
+                        >
+                          <span className="flex-1">{subItem.name}</span>
+                          {subItem.comingSoon && (
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded"
+                              style={{
+                                backgroundColor: '#fef3c7',
+                                color: '#92400e',
+                                fontWeight: 600
+                              }}
+                            >
+                              ☕
+                            </span>
+                          )}
+                          {hasNestedSubmenu && (
+                            <svg
+                              className="w-3 h-3"
+                              style={{
+                                transform: isNestedExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.15s ease'
+                              }}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Nested submenu items */}
+                        {hasNestedSubmenu && isNestedExpanded && (
+                          <div
+                            className="ml-2 mt-0.5 space-y-0.5 overflow-hidden"
                             style={{
-                              backgroundColor: '#fef3c7',
-                              color: '#92400e',
-                              fontWeight: 600
+                              borderLeft: `1px solid ${colors.border}`,
+                              paddingLeft: '10px',
+                              animation: 'slideDown 0.15s ease-out'
                             }}
                           >
-                            ☕
-                          </span>
+                            {subItem.submenu?.map((nestedItem) => {
+                              const isNestedActive = activeRoute === nestedItem.route;
+                              return (
+                                <button
+                                  key={nestedItem.route}
+                                  onClick={() => nestedItem.route && router.push(nestedItem.route)}
+                                  className="w-full text-left px-2.5 py-1 rounded-md text-xs flex items-center justify-between gap-2"
+                                  style={{
+                                    backgroundColor: isNestedActive ? colors.bg.primary : 'transparent',
+                                    color: isNestedActive ? colors.text.primary : colors.text.secondary,
+                                    fontWeight: isNestedActive ? 500 : 400,
+                                    transition: 'all 0.15s ease',
+                                    border: isNestedActive ? `1px solid ${colors.border}` : '1px solid transparent'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (!isNestedActive) {
+                                      e.currentTarget.style.backgroundColor = colors.bg.primary;
+                                      e.currentTarget.style.color = colors.text.primary;
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isNestedActive) {
+                                      e.currentTarget.style.backgroundColor = 'transparent';
+                                      e.currentTarget.style.color = colors.text.secondary;
+                                    }
+                                  }}
+                                >
+                                  <span>{nestedItem.name}</span>
+                                  {nestedItem.comingSoon && (
+                                    <span
+                                      className="text-[10px] px-1.5 py-0.5 rounded"
+                                      style={{
+                                        backgroundColor: '#fef3c7',
+                                        color: '#92400e',
+                                        fontWeight: 600
+                                      }}
+                                    >
+                                      ☕
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 import { ConfigBlob, Tool } from '@/app/configurations/prompt-editor/types';
+import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -8,13 +9,20 @@ interface ConfigEditorPaneProps {
   configName: string;
   onConfigNameChange: (name: string) => void;
   // Additional props for full functionality
-  savedConfigs: any[];
+  savedConfigs: SavedConfig[];
   selectedConfigId: string;
   onLoadConfig: (configId: string) => void;
   commitMessage: string;
   onCommitMessageChange: (message: string) => void;
   onSave: () => void;
   isSaving?: boolean;
+}
+
+// Group configs by name for nested dropdown
+interface ConfigGroupForDropdown {
+  config_id: string;
+  name: string;
+  versions: SavedConfig[];
 }
 
 // Provider-specific models
@@ -52,9 +60,32 @@ export default function ConfigEditorPane({
   onSave,
   isSaving = false,
 }: ConfigEditorPaneProps) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
   const tools = (params.tools || []) as Tool[];
+
+  // Group configs by config_id for nested dropdown
+  const configGroups = useMemo(() => {
+    const grouped = new Map<string, SavedConfig[]>();
+    savedConfigs.forEach((config) => {
+      const existing = grouped.get(config.config_id) || [];
+      existing.push(config);
+      grouped.set(config.config_id, existing);
+    });
+    return Array.from(grouped.entries()).map(([config_id, versions]) => {
+      const sortedVersions = versions.sort((a, b) => b.version - a.version);
+      return {
+        config_id,
+        name: sortedVersions[0].name,
+        versions: sortedVersions,
+      } as ConfigGroupForDropdown;
+    });
+  }, [savedConfigs]);
+
+  // Find currently selected config
+  const selectedConfig = savedConfigs.find(c => c.id === selectedConfigId);
 
   const handleProviderChange = (newProvider: string) => {
     onConfigChange({
@@ -145,34 +176,149 @@ export default function ConfigEditorPane({
 
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-4">
-          {/* Load Saved Config */}
-          {savedConfigs.length > 0 && (
-            <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
-                Load Saved Config
-              </label>
-              <select
-                value={selectedConfigId}
-                onChange={(e) => onLoadConfig(e.target.value)}
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
+          {/* Load Saved Config - Nested dropdown matching Evaluations page pattern */}
+          <div className="relative">
+            <label
+              className="block text-xs font-semibold mb-2"
+              style={{ color: colors.text.primary }}
+            >
+              Load Configuration
+            </label>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full px-3 py-2.5 rounded-md text-left flex items-center justify-between transition-colors"
+              style={{
+                backgroundColor: colors.bg.primary,
+                border: `1px solid ${selectedConfig ? colors.accent.primary : colors.border}`,
+                color: colors.text.primary,
+              }}
+            >
+              {selectedConfig ? (
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">{selectedConfig.name}</span>
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded flex-shrink-0"
+                      style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                    >
+                      v{selectedConfig.version}
+                    </span>
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                    {selectedConfig.provider}/{selectedConfig.modelName}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-sm" style={{ color: colors.text.secondary }}>+ New Configuration</span>
+              )}
+              <svg
+                className="w-4 h-4 flex-shrink-0 ml-2 transition-transform"
                 style={{
-                  border: `1px solid ${colors.border}`,
+                  color: colors.text.secondary,
+                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div
+                className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto"
+                style={{
                   backgroundColor: colors.bg.primary,
-                  color: colors.text.primary,
+                  border: `1px solid ${colors.border}`,
                 }}
               >
-                <option value="">+ New Config</option>
-                {savedConfigs.map((config) => (
-                  <option key={config.id} value={config.id}>
-                    {config.name} v{config.version} • {config.provider}/{config.modelName}
-                  </option>
+                {/* New Config Option */}
+                <button
+                  onClick={() => {
+                    onLoadConfig('');
+                    setIsDropdownOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 text-left flex items-center gap-2 transition-colors"
+                  style={{
+                    backgroundColor: !selectedConfigId ? colors.bg.secondary : colors.bg.primary,
+                    borderBottom: `1px solid ${colors.border}`,
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = !selectedConfigId ? colors.bg.secondary : colors.bg.primary}
+                >
+                  <svg className="w-4 h-4" style={{ color: colors.accent.primary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="text-sm font-medium" style={{ color: colors.text.primary }}>New Configuration</span>
+                </button>
+
+                {/* Grouped Configs */}
+                {configGroups.map((group) => (
+                  <div key={group.config_id}>
+                    {/* Config group header */}
+                    <div
+                      className="px-3 py-2 text-xs font-medium sticky top-0"
+                      style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                    >
+                      {group.name} ({group.versions.length} version{group.versions.length !== 1 ? 's' : ''})
+                    </div>
+                    {/* Versions */}
+                    {group.versions.map((version) => (
+                      <button
+                        key={version.id}
+                        onClick={() => {
+                          onLoadConfig(version.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-left flex items-center justify-between transition-colors"
+                        style={{
+                          backgroundColor: selectedConfig?.id === version.id ? colors.bg.secondary : colors.bg.primary,
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = selectedConfig?.id === version.id
+                            ? colors.bg.secondary
+                            : colors.bg.primary;
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded"
+                              style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                            >
+                              v{version.version}
+                            </span>
+                            <span className="text-sm truncate" style={{ color: colors.text.primary }}>
+                              {version.commit_message || 'No message'}
+                            </span>
+                          </div>
+                          <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                            {version.provider}/{version.modelName} • {formatRelativeTime(version.timestamp)}
+                          </div>
+                        </div>
+                        {selectedConfig?.id === version.id && (
+                          <svg className="w-4 h-4 flex-shrink-0" style={{ color: colors.status.success }} fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 ))}
-              </select>
-            </div>
-          )}
+              </div>
+            )}
+
+            {/* Click outside to close dropdown */}
+            {isDropdownOpen && (
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsDropdownOpen(false)}
+              />
+            )}
+          </div>
 
           {/* Config Name */}
           <div>

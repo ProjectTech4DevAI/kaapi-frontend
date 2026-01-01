@@ -3,23 +3,20 @@
  *
  * A WYSIWYG editor for managing prompts and configs with linear versioning.
  * Features: save, load, compare configs with backend persistence.
- * Uses backend API for config storage and version management.
+ * Uses shared useConfigs hook for caching.
+ * Supports URL query params for cross-navigation from Config Library/Evaluations.
  */
 
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { colors } from '@/app/lib/colors';
 import { ConfigBlob, Tool } from './types';
-import { hasPromptChanges, hasConfigChanges } from './utils';
+import { hasConfigChanges } from './utils';
 import {
-  ConfigPublic,
-  ConfigVersionPublic,
   ConfigCreate,
   ConfigVersionCreate,
-  ConfigListResponse,
-  ConfigVersionListResponse,
-  ConfigVersionResponse,
 } from '@/app/lib/configTypes';
 import Header from '@/app/components/prompt-editor/Header';
 import HistorySidebar from '@/app/components/prompt-editor/HistorySidebar';
@@ -27,26 +24,24 @@ import PromptEditorPane from '@/app/components/prompt-editor/PromptEditorPane';
 import ConfigEditorPane from '@/app/components/prompt-editor/ConfigEditorPane';
 import DiffView from '@/app/components/prompt-editor/DiffView';
 import { useToast } from '@/app/components/Toast';
+import Loader from '@/app/components/Loader';
+import { useConfigs, invalidateConfigCache, SavedConfig } from '@/app/lib/useConfigs';
 
-// UI representation of a config version (flattened for easier display)
-interface SavedConfig {
-  id: string; // version id
-  config_id: string; // parent config id
-  name: string;
-  version: number;
-  timestamp: string; // ISO datetime from backend
-  instructions: string;
-  promptContent: string;
-  modelName: string;
-  provider: string;
-  temperature: number;
-  tools?: Tool[];
-  commit_message?: string | null;
-}
-
-export default function PromptEditorPage() {
+function PromptEditorContent() {
   const toast = useToast();
+  const searchParams = useSearchParams();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // URL query params for cross-navigation
+  const urlConfigId = searchParams.get('config');
+  const urlVersion = searchParams.get('version');
+  const showHistory = searchParams.get('history') === 'true';
+  const isNewConfig = searchParams.get('new') === 'true';
+
+  // Evaluation context to preserve (when coming from evaluations page)
+  const urlDatasetId = searchParams.get('dataset');
+  const urlExperimentName = searchParams.get('experiment');
+  const fromEvaluations = searchParams.get('from') === 'evaluations';
 
   // Default config for new versions
   const defaultConfig: ConfigBlob = {
@@ -61,16 +56,18 @@ export default function PromptEditorPage() {
     },
   };
 
-  // Saved configurations (from backend)
-  const [savedConfigs, setSavedConfigs] = useState<SavedConfig[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // Use shared configs hook with caching
+  const { configs: savedConfigs, isLoading, refetch: refetchConfigs } = useConfigs();
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const initialLoadComplete = !isLoading && savedConfigs.length >= 0;
 
   // Current working state
   const [currentContent, setCurrentContent] = useState<string>('You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.');
   const [currentConfigBlob, setCurrentConfigBlob] = useState<ConfigBlob>(defaultConfig);
   const [currentConfigName, setCurrentConfigName] = useState<string>('');
   const [selectedConfigId, setSelectedConfigId] = useState<string>(''); // Selected version ID
+  const [currentConfigParentId, setCurrentConfigParentId] = useState<string>(''); // Parent config ID for evaluation
+  const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0); // Version number for evaluation
   const [provider, setProvider] = useState<string>('openai');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [tools, setTools] = useState<Tool[]>([]);
@@ -78,6 +75,7 @@ export default function PromptEditorPage() {
   // UI state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>('');
+  const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true); // Default open, or from URL param
 
   // History viewing state
   const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(null);
@@ -97,104 +95,73 @@ export default function PromptEditorPage() {
     return null;
   };
 
-  // Flatten config version for UI
-  const flattenConfigVersion = (
-    config: ConfigPublic,
-    version: ConfigVersionPublic
-  ): SavedConfig => {
-    const blob = version.config_blob as ConfigBlob;
-    const params = blob.completion.params;
-
-    // Debug: log the params to see what we're getting
-    console.log('Flattening config version:', {
-      configName: config.name,
-      version: version.version,
-      instructions: params.instructions,
-      instructionsLength: params.instructions?.length || 0,
-    });
-
-    return {
-      id: version.id,
-      config_id: config.id,
-      name: config.name,
-      version: version.version,
-      timestamp: version.inserted_at,
-      instructions: params.instructions || '',
-      promptContent: params.instructions || '', // Using instructions as prompt content
-      modelName: params.model || '',
-      provider: blob.completion.provider,
-      temperature: params.temperature || 0.7,
-      tools: params.tools || [],
-      commit_message: version.commit_message,
-    };
-  };
-
-  // Load saved configs from backend
+  // Handle URL query params after configs are loaded
   useEffect(() => {
-    const fetchConfigs = async () => {
-      setIsLoading(true);
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        console.warn('No API key found. Please add an API key in the Keystore.');
-        setIsLoading(false);
-        return;
+    if (!initialLoadComplete || savedConfigs.length === 0) return;
+
+    // If new config is requested, reset to defaults
+    if (isNewConfig) {
+      setCurrentContent('');
+      setCurrentConfigBlob(defaultConfig);
+      setProvider('openai');
+      setTemperature(0.7);
+      setSelectedConfigId('');
+      setCurrentConfigName('');
+      setCurrentConfigParentId('');
+      setCurrentConfigVersion(0);
+      setTools([]);
+      return;
+    }
+
+    // If a specific config/version is requested via URL params
+    if (urlConfigId) {
+      // Find the config by config_id and optionally version
+      let targetConfig: SavedConfig | undefined;
+
+      if (urlVersion) {
+        // Find specific version
+        targetConfig = savedConfigs.find(
+          c => c.config_id === urlConfigId && c.version === parseInt(urlVersion)
+        );
+      } else {
+        // Find latest version for this config
+        const configVersions = savedConfigs.filter(c => c.config_id === urlConfigId);
+        if (configVersions.length > 0) {
+          targetConfig = configVersions.reduce((latest, current) =>
+            current.version > latest.version ? current : latest
+          );
+        }
       }
 
-      try {
-        // Fetch all configs
-        const response = await fetch('/api/configs', {
-          headers: { 'X-API-KEY': apiKey },
+      if (targetConfig) {
+        // Load the config
+        setCurrentContent(targetConfig.promptContent);
+        setCurrentConfigBlob({
+          completion: {
+            provider: targetConfig.provider as any,
+            params: {
+              model: targetConfig.modelName,
+              instructions: targetConfig.instructions,
+              temperature: targetConfig.temperature,
+              tools: targetConfig.tools || [],
+            },
+          },
         });
-        const data: ConfigListResponse = await response.json();
+        setProvider(targetConfig.provider);
+        setTemperature(targetConfig.temperature);
+        setSelectedConfigId(targetConfig.id);
+        setCurrentConfigName(targetConfig.name);
+        setCurrentConfigParentId(targetConfig.config_id);
+        setCurrentConfigVersion(targetConfig.version);
+        setTools(targetConfig.tools || []);
 
-        if (!data.success || !data.data) {
-          console.error('Failed to fetch configs:', data.error);
-          setIsLoading(false);
-          return;
+        // If history is requested, show the history sidebar with this version selected
+        if (showHistory) {
+          setSelectedVersion(targetConfig);
         }
-
-        // For each config, fetch its versions
-        const allVersions: SavedConfig[] = [];
-        for (const config of data.data) {
-          try {
-            const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
-              headers: { 'X-API-KEY': apiKey },
-            });
-            const versionsData: ConfigVersionListResponse = await versionsResponse.json();
-
-            if (versionsData.success && versionsData.data) {
-              // Fetch full version details for each version
-              for (const versionItem of versionsData.data) {
-                try {
-                  const versionResponse = await fetch(
-                    `/api/configs/${config.id}/versions/${versionItem.version}`,
-                    { headers: { 'X-API-KEY': apiKey } }
-                  );
-                  const versionData: ConfigVersionResponse = await versionResponse.json();
-
-                  if (versionData.success && versionData.data) {
-                    allVersions.push(flattenConfigVersion(config, versionData.data));
-                  }
-                } catch (e) {
-                  console.error(`Failed to fetch version ${versionItem.version}:`, e);
-                }
-              }
-            }
-          } catch (e) {
-            console.error(`Failed to fetch versions for config ${config.id}:`, e);
-          }
-        }
-
-        setSavedConfigs(allVersions);
-      } catch (e) {
-        console.error('Failed to load saved configs:', e);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchConfigs();
-  }, []);
+    }
+  }, [initialLoadComplete, savedConfigs, urlConfigId, urlVersion, showHistory, isNewConfig]);
 
   // Detect unsaved changes
   useEffect(() => {
@@ -312,44 +279,9 @@ export default function PromptEditorPage() {
         toast.success(`Configuration "${currentConfigName}" created successfully!`);
       }
 
-      // Refresh configs list
-      const response = await fetch('/api/configs', {
-        headers: { 'X-API-KEY': apiKey },
-      });
-      const data: ConfigListResponse = await response.json();
-
-      if (data.success && data.data) {
-        const allVersions: SavedConfig[] = [];
-        for (const config of data.data) {
-          try {
-            const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
-              headers: { 'X-API-KEY': apiKey },
-            });
-            const versionsData: ConfigVersionListResponse = await versionsResponse.json();
-
-            if (versionsData.success && versionsData.data) {
-              for (const versionItem of versionsData.data) {
-                try {
-                  const versionResponse = await fetch(
-                    `/api/configs/${config.id}/versions/${versionItem.version}`,
-                    { headers: { 'X-API-KEY': apiKey } }
-                  );
-                  const versionData: ConfigVersionResponse = await versionResponse.json();
-
-                  if (versionData.success && versionData.data) {
-                    allVersions.push(flattenConfigVersion(config, versionData.data));
-                  }
-                } catch (e) {
-                  console.error('Failed to fetch version:', e);
-                }
-              }
-            }
-          } catch (e) {
-            console.error('Failed to fetch versions:', e);
-          }
-        }
-        setSavedConfigs(allVersions);
-      }
+      // Invalidate config cache and refresh from shared hook
+      invalidateConfigCache();
+      await refetchConfigs(true);
 
       // Reset unsaved changes flag and commit message after successful save
       setHasUnsavedChanges(false);
@@ -372,6 +304,8 @@ export default function PromptEditorPage() {
       setTemperature(0.7);
       setSelectedConfigId('');
       setCurrentConfigName('');
+      setCurrentConfigParentId('');
+      setCurrentConfigVersion(0);
       setTools([]);
       return;
     }
@@ -395,6 +329,8 @@ export default function PromptEditorPage() {
     setTemperature(config.temperature);
     setSelectedConfigId(config.id);
     setCurrentConfigName(config.name);
+    setCurrentConfigParentId(config.config_id);
+    setCurrentConfigVersion(config.version);
     setTools(config.tools || []);
   };
 
@@ -408,24 +344,51 @@ export default function PromptEditorPage() {
           <Header
             sidebarCollapsed={sidebarCollapsed}
             setSidebarCollapsed={setSidebarCollapsed}
+            currentConfigId={currentConfigParentId}
+            currentConfigVersion={currentConfigVersion}
+            hasUnsavedChanges={hasUnsavedChanges}
+            datasetId={urlDatasetId || undefined}
+            experimentName={urlExperimentName || undefined}
+            fromEvaluations={fromEvaluations}
+            showHistorySidebar={showHistorySidebar}
+            onToggleHistorySidebar={() => setShowHistorySidebar(!showHistorySidebar)}
           />
 
           <div className="flex flex-1 overflow-hidden">
-            <HistorySidebar
-              savedConfigs={savedConfigs}
-              selectedVersion={selectedVersion}
-              onSelectVersion={(version) => {
-                setSelectedVersion(version);
-                setCompareWith(null);
-              }}
-              onBackToEditor={() => {
-                setSelectedVersion(null);
-                setCompareWith(null);
-              }}
-              isLoading={isLoading}
-            />
+            {showHistorySidebar && (
+              <HistorySidebar
+                savedConfigs={savedConfigs}
+                selectedVersion={selectedVersion}
+                currentConfigId={currentConfigParentId || undefined}
+                onSelectVersion={(version) => {
+                  setSelectedVersion(version);
+                  setCompareWith(null);
+                }}
+                onLoadVersion={(version) => {
+                  handleLoadConfigById(version.id);
+                }}
+                onBackToEditor={() => {
+                  setSelectedVersion(null);
+                  setCompareWith(null);
+                }}
+                isLoading={isLoading}
+              />
+            )}
 
-            {!selectedVersion ? (
+            {/* Show DiffView only when comparing versions (sidebar open + version selected) */}
+            {showHistorySidebar && selectedVersion ? (
+              <DiffView
+                selectedCommit={selectedVersion}
+                compareWith={compareWith}
+                commits={savedConfigs}
+                onCompareChange={setCompareWith}
+                onLoadVersion={(versionId) => {
+                  handleLoadConfigById(versionId);
+                  setSelectedVersion(null);
+                  setCompareWith(null);
+                }}
+              />
+            ) : (
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Split View: Prompt (left) + Config (right) */}
                 <div className="flex flex-1 overflow-hidden">
@@ -453,22 +416,19 @@ export default function PromptEditorPage() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <DiffView
-                selectedCommit={selectedVersion}
-                compareWith={compareWith}
-                commits={savedConfigs}
-                onCompareChange={setCompareWith}
-                onLoadVersion={(versionId) => {
-                  handleLoadConfigById(versionId);
-                  setSelectedVersion(null);
-                  setCompareWith(null);
-                }}
-              />
             )}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrapper component with Suspense for useSearchParams
+export default function PromptEditorPage() {
+  return (
+    <Suspense fallback={<Loader size="lg" message="Loading..." fullScreen />}>
+      <PromptEditorContent />
+    </Suspense>
   );
 }

@@ -1,23 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 import PromptDiffPane from './PromptDiffPane';
 import ConfigDiffPane from './ConfigDiffPane';
-
-// SavedConfig interface matching page.tsx and HistorySidebar
-interface SavedConfig {
-  id: string;
-  config_id: string;
-  name: string;
-  version: number;
-  timestamp: string;
-  instructions: string;
-  promptContent: string;
-  modelName: string;
-  provider: string;
-  temperature: number;
-  tools?: any[];
-  commit_message?: string | null;
-}
+import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
 
 interface DiffViewProps {
   selectedCommit: SavedConfig;
@@ -27,6 +12,13 @@ interface DiffViewProps {
   onLoadVersion: (versionId: string) => void;
 }
 
+// Group configs by name for the dropdown
+interface ConfigGroupForCompare {
+  config_id: string;
+  name: string;
+  versions: SavedConfig[];
+}
+
 export default function DiffView({
   selectedCommit,
   compareWith,
@@ -34,19 +26,27 @@ export default function DiffView({
   onCompareChange,
   onLoadVersion
 }: DiffViewProps) {
+  // Group configs by config_id for nested dropdown
+  const configGroups = useMemo(() => {
+    const grouped = new Map<string, SavedConfig[]>();
+    commits.forEach((config) => {
+      const existing = grouped.get(config.config_id) || [];
+      existing.push(config);
+      grouped.set(config.config_id, existing);
+    });
+    return Array.from(grouped.entries()).map(([config_id, versions]) => {
+      const sortedVersions = versions.sort((a, b) => b.version - a.version);
+      return {
+        config_id,
+        name: sortedVersions[0].name,
+        versions: sortedVersions,
+      } as ConfigGroupForCompare;
+    });
+  }, [commits]);
+
   // Format timestamp
   const formatTimestamp = (timestamp: string) => {
-    const now = Date.now();
-    const date = new Date(timestamp).getTime();
-    const diff = now - date;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes} min ago`;
-    if (hours < 24) return `${hours} hr ago`;
-    return `${days} day${days > 1 ? 's' : ''} ago`;
+    return formatRelativeTime(timestamp);
   };
 
   return (
@@ -72,7 +72,7 @@ export default function DiffView({
                 onCompareChange(commit || null);
               }}
               value={compareWith?.id || ''}
-              className="px-3 py-2 rounded-md text-sm"
+              className="px-3 py-2 rounded-md text-sm min-w-[300px]"
               style={{
                 border: `1px solid ${colors.border}`,
                 backgroundColor: colors.bg.primary,
@@ -81,13 +81,17 @@ export default function DiffView({
               }}
             >
               <option value="">Select version to compare...</option>
-              {commits
-                .filter(c => c.id !== selectedCommit.id)
-                .map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} v{c.version} - {formatTimestamp(c.timestamp)}
-                  </option>
-                ))}
+              {configGroups.map(group => (
+                <optgroup key={group.config_id} label={`${group.name} (${group.versions.length} versions)`}>
+                  {group.versions
+                    .filter(v => v.id !== selectedCommit.id)
+                    .map(version => (
+                      <option key={version.id} value={version.id}>
+                        v{version.version} - {version.commit_message || 'No message'} ({formatTimestamp(version.timestamp)})
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
             </select>
             {compareWith && (
               <div className="flex gap-2 ml-auto">

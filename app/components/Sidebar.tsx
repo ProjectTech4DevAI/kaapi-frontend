@@ -85,7 +85,8 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
         </svg>
       ),
       submenu: [
-        { name: 'Prompt Editor', route: '/configurations/prompt-editor', comingSoon: false },
+        { name: 'Library', route: '/configurations' },
+        { name: 'Prompt Editor', route: '/configurations/prompt-editor' },
       ]
     },
     {

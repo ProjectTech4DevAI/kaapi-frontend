@@ -1,36 +1,25 @@
 import React, { useState } from 'react';
 import { colors } from '@/app/lib/colors';
-
-// SavedConfig interface matching page.tsx
-interface SavedConfig {
-  id: string;
-  config_id: string;
-  name: string;
-  version: number;
-  timestamp: string;
-  instructions: string;
-  promptContent: string;
-  modelName: string;
-  provider: string;
-  temperature: number;
-  tools?: any[];
-  commit_message?: string | null;
-}
+import { SavedConfig } from '@/app/lib/useConfigs';
 
 interface HistorySidebarProps {
   savedConfigs: SavedConfig[];
   selectedVersion: SavedConfig | null;
   onSelectVersion: (version: SavedConfig) => void;
+  onLoadVersion: (version: SavedConfig) => void;
   onBackToEditor: () => void;
   isLoading?: boolean;
+  currentConfigId?: string; // To filter versions for current config only
 }
 
 export default function HistorySidebar({
   savedConfigs,
   selectedVersion,
   onSelectVersion,
+  onLoadVersion,
   onBackToEditor,
-  isLoading = false
+  isLoading = false,
+  currentConfigId
 }: HistorySidebarProps) {
   const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(new Set());
 
@@ -45,8 +34,13 @@ export default function HistorySidebar({
     setExpandedConfigs(newExpanded);
   };
 
+  // Filter configs - if currentConfigId is provided, only show that config's versions
+  const filteredConfigs = currentConfigId
+    ? savedConfigs.filter(c => c.config_id === currentConfigId)
+    : savedConfigs;
+
   // Group saved configs by name
-  const groupedConfigs = savedConfigs.reduce((acc, config) => {
+  const groupedConfigs = filteredConfigs.reduce((acc, config) => {
     if (!acc[config.name]) {
       acc[config.name] = [];
     }
@@ -84,9 +78,12 @@ export default function HistorySidebar({
       }}
     >
       <div className="px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-        <div className="text-sm font-semibold mb-1" style={{ color: colors.text.primary }}>Version History</div>
+        <div className="text-sm font-semibold mb-1" style={{ color: colors.text.primary }}>
+          {currentConfigId ? 'Version History' : 'All Configurations'}
+        </div>
         <div className="text-xs" style={{ color: colors.text.secondary }}>
-          {savedConfigs.length} version{savedConfigs.length !== 1 ? 's' : ''} • {Object.keys(groupedConfigs).length} config{Object.keys(groupedConfigs).length !== 1 ? 's' : ''}
+          {filteredConfigs.length} version{filteredConfigs.length !== 1 ? 's' : ''}
+          {!currentConfigId && ` • ${Object.keys(groupedConfigs).length} config${Object.keys(groupedConfigs).length !== 1 ? 's' : ''}`}
         </div>
       </div>
 
@@ -165,8 +162,7 @@ export default function HistorySidebar({
                       {versions.map((version, idx) => (
                         <div
                           key={version.id}
-                          onClick={() => onSelectVersion(version)}
-                          className="p-3 cursor-pointer border-l-2"
+                          className="p-3 border-l-2"
                           style={{
                             backgroundColor: selectedVersion?.id === version.id ? '#f0fdf4' : idx === 0 ? '#fafafa' : colors.bg.primary,
                             borderLeftColor: selectedVersion?.id === version.id ? colors.status.success : idx === 0 ? colors.accent.primary : colors.border,
@@ -174,40 +170,32 @@ export default function HistorySidebar({
                             borderTop: idx > 0 ? `1px solid ${colors.border}` : 'none',
                             transition: 'all 0.15s ease'
                           }}
-                          onMouseEnter={(e) => {
-                            if (selectedVersion?.id !== version.id) {
-                              e.currentTarget.style.backgroundColor = '#fafafa';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (selectedVersion?.id !== version.id) {
-                              e.currentTarget.style.backgroundColor = idx === 0 ? '#fafafa' : colors.bg.primary;
-                            }
-                          }}
                         >
-                          <div className="flex items-start gap-2 mb-2">
-                            <span
-                              className="px-2 py-0.5 rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: colors.bg.secondary,
-                                color: colors.text.primary,
-                                border: `1px solid ${colors.border}`
-                              }}
-                            >
-                              v{version.version}
-                            </span>
-                            {idx === 0 && (
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
                               <span
                                 className="px-2 py-0.5 rounded text-xs font-medium"
                                 style={{
-                                  backgroundColor: '#dcfce7',
-                                  color: '#15803d',
-                                  border: '1px solid #86efac'
+                                  backgroundColor: colors.bg.secondary,
+                                  color: colors.text.primary,
+                                  border: `1px solid ${colors.border}`
                                 }}
                               >
-                                Latest
+                                v{version.version}
                               </span>
-                            )}
+                              {idx === 0 && (
+                                <span
+                                  className="px-2 py-0.5 rounded text-xs font-medium"
+                                  style={{
+                                    backgroundColor: '#dcfce7',
+                                    color: '#15803d',
+                                    border: '1px solid #86efac'
+                                  }}
+                                >
+                                  Latest
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           {version.commit_message && (
@@ -216,8 +204,50 @@ export default function HistorySidebar({
                             </div>
                           )}
 
-                          <div className="text-xs" style={{ color: colors.text.secondary }}>
+                          <div className="text-xs mb-2" style={{ color: colors.text.secondary }}>
                             {formatTimestamp(version.timestamp)} • {version.provider}/{version.modelName}
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onLoadVersion(version);
+                              }}
+                              className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                              style={{
+                                backgroundColor: colors.accent.primary,
+                                color: '#ffffff',
+                                border: 'none'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                            >
+                              Load
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectVersion(version);
+                              }}
+                              className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                              style={{
+                                backgroundColor: colors.bg.secondary,
+                                color: colors.text.secondary,
+                                border: `1px solid ${colors.border}`
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = colors.bg.primary;
+                                e.currentTarget.style.color = colors.text.primary;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = colors.bg.secondary;
+                                e.currentTarget.style.color = colors.text.secondary;
+                              }}
+                            >
+                              Compare
+                            </button>
                           </div>
                         </div>
                       ))}

@@ -20,7 +20,7 @@ import StatusBadge from '../components/StatusBadge';
 import ScoreDisplay from '../components/ScoreDisplay';
 import Sidebar from '../components/Sidebar';
 import TabNavigation from '../components/TabNavigation';
-import SimplifiedConfigEditor from '../components/SimplifiedConfigEditor';
+import ConfigSelector from '../components/ConfigSelector';
 import { useToast } from '../components/Toast';
 import Loader, { LoaderBox } from '../components/Loader';
 
@@ -42,9 +42,11 @@ function SimplifiedEvalContent() {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
-  // Dataset selection
+  // Dataset selection (can be pre-populated from URL params)
   const [storedDatasets, setStoredDatasets] = useState<Dataset[]>([]);
-  const [selectedDatasetId, setSelectedDatasetId] = useState<string>('');
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
+    return searchParams.get('dataset') || '';
+  });
 
   // Upload modal state
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -53,17 +55,19 @@ function SimplifiedEvalContent() {
   const [duplicationFactor, setDuplicationFactor] = useState<string>('1');
   const [isUploading, setIsUploading] = useState(false);
 
-  // Evaluation fields
-  const [experimentName, setExperimentName] = useState<string>('');
-  const [modelName, setModelName] = useState<string>('gpt-4');
-  const [instructions, setInstructions] = useState<string>('You are a helpful FAQ assistant.');
-  // const [temperature, setTemperature] = useState<string>('0.000001'); // TODO: Implement temperature feature later
-  const [vectorStoreIds, setVectorStoreIds] = useState<string>('');
-  const [maxNumResults, setMaxNumResults] = useState<string>('3');
+  // Evaluation fields (can be pre-populated from URL params)
+  const [experimentName, setExperimentName] = useState<string>(() => {
+    return searchParams.get('experiment') || '';
+  });
 
-  // Config reference fields
-  const [selectedConfigId, setSelectedConfigId] = useState<string>('');
-  const [selectedConfigVersion, setSelectedConfigVersion] = useState<number>(0);
+  // Config reference fields (can be pre-populated from URL params)
+  const [selectedConfigId, setSelectedConfigId] = useState<string>(() => {
+    return searchParams.get('config') || '';
+  });
+  const [selectedConfigVersion, setSelectedConfigVersion] = useState<number>(() => {
+    const version = searchParams.get('version');
+    return version ? parseInt(version) : 0;
+  });
 
   // Load API keys from localStorage and auto-select if only one exists
   useEffect(() => {
@@ -355,20 +359,12 @@ function SimplifiedEvalContent() {
                   storedDatasets={storedDatasets}
                   selectedDatasetId={selectedDatasetId}
                   experimentName={experimentName}
-                  modelName={modelName}
-                  instructions={instructions}
-                  // temperature={temperature} // TODO: Implement temperature feature later
-                  vectorStoreIds={vectorStoreIds}
-                  maxNumResults={maxNumResults}
+                  selectedConfigId={selectedConfigId}
+                  selectedConfigVersion={selectedConfigVersion}
                   onKeySelect={setSelectedKeyId}
                   onStoredDatasetSelect={handleStoredDatasetSelect}
                   onOpenUploadModal={() => setIsUploadModalOpen(true)}
                   onExperimentNameChange={setExperimentName}
-                  onModelNameChange={setModelName}
-                  onInstructionsChange={setInstructions}
-                  // onTemperatureChange={setTemperature} // TODO: Implement temperature feature later
-                  onVectorStoreIdsChange={setVectorStoreIds}
-                  onMaxNumResultsChange={setMaxNumResults}
                   onRunEvaluation={handleRunEvaluation}
                   onConfigSelect={(configId, configVersion) => {
                     setSelectedConfigId(configId);
@@ -414,20 +410,12 @@ interface UploadTabProps {
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   experimentName: string;
-  modelName: string;
-  instructions: string;
-  // temperature: string; // TODO: Implement temperature feature later
-  vectorStoreIds: string;
-  maxNumResults: string;
+  selectedConfigId: string;
+  selectedConfigVersion: number;
   onKeySelect: (keyId: string) => void;
   onStoredDatasetSelect: (datasetId: string) => void;
   onOpenUploadModal: () => void;
   onExperimentNameChange: (value: string) => void;
-  onModelNameChange: (value: string) => void;
-  onInstructionsChange: (value: string) => void;
-  // onTemperatureChange: (value: string) => void; // TODO: Implement temperature feature later
-  onVectorStoreIdsChange: (value: string) => void;
-  onMaxNumResultsChange: (value: string) => void;
   onRunEvaluation: () => void;
   onConfigSelect: (configId: string, configVersion: number) => void;
 }
@@ -439,19 +427,12 @@ function UploadTab({
   storedDatasets,
   selectedDatasetId,
   experimentName,
-  modelName,
-  instructions,
-  // temperature, // TODO: Implement temperature feature later
-  vectorStoreIds,
-  maxNumResults,
+  selectedConfigId,
+  selectedConfigVersion,
   onKeySelect,
   onStoredDatasetSelect,
   onOpenUploadModal,
   onExperimentNameChange,
-  onModelNameChange,
-  onInstructionsChange,
-  onVectorStoreIdsChange,
-  onMaxNumResultsChange,
   onRunEvaluation,
   onConfigSelect,
 }: UploadTabProps) {
@@ -723,21 +704,121 @@ function UploadTab({
         </div>
       </div>
 
-      {/* Simplified Config Editor */}
+      {/* Config Selector */}
       {selectedDatasetId && (
-        <SimplifiedConfigEditor
-          experimentName={experimentName}
-          instructions={instructions}
-          modelName={modelName}
-          vectorStoreIds={vectorStoreIds}
-          isEvaluating={isEvaluating}
-          onExperimentNameChange={onExperimentNameChange}
-          onInstructionsChange={onInstructionsChange}
-          onModelNameChange={onModelNameChange}
-          onVectorStoreIdsChange={onVectorStoreIdsChange}
-          onRunEvaluation={onRunEvaluation}
-          onConfigSelect={onConfigSelect}
-        />
+        <>
+          <ConfigSelector
+            selectedConfigId={selectedConfigId}
+            selectedVersion={selectedConfigVersion}
+            onConfigSelect={onConfigSelect}
+            disabled={isEvaluating}
+            datasetId={selectedDatasetId}
+            experimentName={experimentName}
+          />
+
+          {/* Experiment Name & Run Button */}
+          <div className="border rounded-lg p-6" style={{
+            backgroundColor: '#ffffff',
+            borderColor: '#e5e5e5'
+          }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: '#171717' }}>
+              Run Evaluation
+            </h2>
+
+            {/* Experiment Name */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+                Experiment Name <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={experimentName}
+                onChange={(e) => onExperimentNameChange(e.target.value)}
+                placeholder="e.g., test_run_1"
+                disabled={isEvaluating}
+                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
+                style={{
+                  borderColor: experimentName ? '#171717' : '#e5e5e5',
+                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
+                  color: '#171717',
+                  transition: 'all 0.15s ease'
+                }}
+              />
+              <p className="text-xs mt-1" style={{ color: '#737373' }}>
+                Give your evaluation run a descriptive name
+              </p>
+            </div>
+
+            {/* Validation Messages */}
+            {(!selectedConfigId || !selectedConfigVersion) && (
+              <div className="mb-4 border rounded-lg p-4" style={{
+                backgroundColor: '#fffbeb',
+                borderColor: '#fcd34d',
+              }}>
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#f59e0b' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium" style={{ color: '#b45309' }}>
+                      Configuration required
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: '#b45309' }}>
+                      Please select a configuration above before running an evaluation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Run Button */}
+            <button
+              onClick={onRunEvaluation}
+              disabled={!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating}
+              className="w-full py-3 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+              style={{
+                backgroundColor: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
+                  ? '#fafafa'
+                  : '#171717',
+                color: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
+                  ? '#737373'
+                  : '#ffffff',
+                cursor: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
+                  ? 'not-allowed'
+                  : 'pointer',
+                border: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
+                  ? '1px solid #e5e5e5'
+                  : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (experimentName.trim() && selectedConfigId && selectedConfigVersion && !isEvaluating) {
+                  e.currentTarget.style.backgroundColor = '#404040';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (experimentName.trim() && selectedConfigId && selectedConfigVersion && !isEvaluating) {
+                  e.currentTarget.style.backgroundColor = '#171717';
+                }
+              }}
+            >
+              {isEvaluating ? (
+                <>
+                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Running Evaluation...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Run Evaluation
+                </>
+              )}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

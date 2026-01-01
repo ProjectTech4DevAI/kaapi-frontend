@@ -1,21 +1,6 @@
 import React from 'react';
 import { colors } from '@/app/lib/colors';
-
-// SavedConfig interface matching page.tsx
-interface SavedConfig {
-  id: string;
-  config_id: string;
-  name: string;
-  version: number;
-  timestamp: string;
-  instructions: string;
-  promptContent: string;
-  modelName: string;
-  provider: string;
-  temperature: number;
-  tools?: any[];
-  commit_message?: string | null;
-}
+import { SavedConfig } from '@/app/lib/useConfigs';
 
 interface PromptDiffPaneProps {
   selectedCommit: SavedConfig;

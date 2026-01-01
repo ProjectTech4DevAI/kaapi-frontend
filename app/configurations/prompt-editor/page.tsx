@@ -76,6 +76,7 @@ function PromptEditorContent() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>('');
   const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true); // Default open, or from URL param
+  const [showConfigPane, setShowConfigPane] = useState<boolean>(true); // Config pane collapse state
 
   // History viewing state
   const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(null);
@@ -346,34 +347,33 @@ function PromptEditorContent() {
             setSidebarCollapsed={setSidebarCollapsed}
             currentConfigId={currentConfigParentId}
             currentConfigVersion={currentConfigVersion}
+            currentConfigName={currentConfigName}
             hasUnsavedChanges={hasUnsavedChanges}
             datasetId={urlDatasetId || undefined}
             experimentName={urlExperimentName || undefined}
             fromEvaluations={fromEvaluations}
-            showHistorySidebar={showHistorySidebar}
-            onToggleHistorySidebar={() => setShowHistorySidebar(!showHistorySidebar)}
           />
 
           <div className="flex flex-1 overflow-hidden">
-            {showHistorySidebar && (
-              <HistorySidebar
-                savedConfigs={savedConfigs}
-                selectedVersion={selectedVersion}
-                currentConfigId={currentConfigParentId || undefined}
-                onSelectVersion={(version) => {
-                  setSelectedVersion(version);
-                  setCompareWith(null);
-                }}
-                onLoadVersion={(version) => {
-                  handleLoadConfigById(version.id);
-                }}
-                onBackToEditor={() => {
-                  setSelectedVersion(null);
-                  setCompareWith(null);
-                }}
-                isLoading={isLoading}
-              />
-            )}
+            <HistorySidebar
+              savedConfigs={savedConfigs}
+              selectedVersion={selectedVersion}
+              currentConfigId={currentConfigParentId || undefined}
+              collapsed={!showHistorySidebar}
+              onToggle={() => setShowHistorySidebar(!showHistorySidebar)}
+              onSelectVersion={(version) => {
+                setSelectedVersion(version);
+                setCompareWith(null);
+              }}
+              onLoadVersion={(version) => {
+                handleLoadConfigById(version.id);
+              }}
+              onBackToEditor={() => {
+                setSelectedVersion(null);
+                setCompareWith(null);
+              }}
+              isLoading={isLoading}
+            />
 
             {/* Show DiffView only when comparing versions (sidebar open + version selected) */}
             {showHistorySidebar && selectedVersion ? (
@@ -392,28 +392,34 @@ function PromptEditorContent() {
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Split View: Prompt (left) + Config (right) */}
                 <div className="flex flex-1 overflow-hidden">
-                  <div className="flex-1 flex border-r" style={{ borderColor: colors.border }}>
+                  <div
+                    className="flex"
+                    style={{
+                      flex: '1 1 0%',
+                      transition: 'flex 0.2s ease-in-out',
+                    }}
+                  >
                     <PromptEditorPane
                       currentContent={currentContent}
                       onContentChange={setCurrentContent}
                       currentBranch={currentConfigName || 'Unsaved'}
                     />
                   </div>
-                  <div className="flex-1 flex">
-                    <ConfigEditorPane
-                      configBlob={currentConfigBlob}
-                      onConfigChange={setCurrentConfigBlob}
-                      configName={currentConfigName}
-                      onConfigNameChange={setCurrentConfigName}
-                      savedConfigs={savedConfigs}
-                      selectedConfigId={selectedConfigId}
-                      onLoadConfig={handleLoadConfigById}
-                      commitMessage={commitMessage}
-                      onCommitMessageChange={setCommitMessage}
-                      onSave={handleSaveConfig}
-                      isSaving={isSaving}
-                    />
-                  </div>
+                  <ConfigEditorPane
+                    configBlob={currentConfigBlob}
+                    onConfigChange={setCurrentConfigBlob}
+                    configName={currentConfigName}
+                    onConfigNameChange={setCurrentConfigName}
+                    savedConfigs={savedConfigs}
+                    selectedConfigId={selectedConfigId}
+                    onLoadConfig={handleLoadConfigById}
+                    commitMessage={commitMessage}
+                    onCommitMessageChange={setCommitMessage}
+                    onSave={handleSaveConfig}
+                    isSaving={isSaving}
+                    collapsed={!showConfigPane}
+                    onToggle={() => setShowConfigPane(!showConfigPane)}
+                  />
                 </div>
               </div>
             )}

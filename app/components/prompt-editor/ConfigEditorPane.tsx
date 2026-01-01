@@ -16,6 +16,9 @@ interface ConfigEditorPaneProps {
   onCommitMessageChange: (message: string) => void;
   onSave: () => void;
   isSaving?: boolean;
+  // Collapse functionality
+  collapsed?: boolean;
+  onToggle?: () => void;
 }
 
 // Group configs by name for nested dropdown
@@ -59,6 +62,8 @@ export default function ConfigEditorPane({
   onCommitMessageChange,
   onSave,
   isSaving = false,
+  collapsed = false,
+  onToggle,
 }: ConfigEditorPaneProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -167,13 +172,96 @@ export default function ConfigEditorPane({
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-        <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-          Configuration
-        </h3>
+    <div
+      className="flex flex-col overflow-hidden flex-shrink-0 border-l"
+      style={{
+        width: collapsed ? '40px' : '100%',
+        flex: collapsed ? '0 0 40px' : '1 1 0%',
+        backgroundColor: colors.bg.primary,
+        borderColor: colors.border,
+        transition: 'width 0.2s ease-in-out, flex 0.2s ease-in-out',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="border-b flex items-center flex-shrink-0"
+        style={{
+          borderColor: colors.border,
+          padding: collapsed ? '0' : '12px 16px',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          height: collapsed ? '40px' : 'auto',
+          transition: 'padding 0.2s ease-in-out',
+        }}
+      >
+        {/* Title - hidden when collapsed, shown first when expanded */}
+        {!collapsed && (
+          <h3 className="text-sm font-semibold flex-1" style={{ color: colors.text.primary }}>
+            Configuration
+          </h3>
+        )}
+        {/* Toggle button - chevron (on right when expanded, centered when collapsed) */}
+        {onToggle && (
+          <button
+            onClick={onToggle}
+            className="rounded flex-shrink-0 flex items-center justify-center"
+            style={{
+              width: '28px',
+              height: '28px',
+              borderWidth: '1px',
+              borderColor: colors.border,
+              backgroundColor: colors.bg.primary,
+              color: colors.text.secondary,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = colors.bg.secondary;
+              e.currentTarget.style.color = colors.text.primary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = colors.bg.primary;
+              e.currentTarget.style.color = colors.text.secondary;
+            }}
+            title={collapsed ? 'Show configuration' : 'Hide configuration'}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              style={{
+                // When collapsed, chevron points left (to expand); when expanded, points right (to collapse)
+                transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease-in-out',
+              }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
       </div>
 
+      {/* Vertical text when collapsed */}
+      {collapsed && (
+        <div
+          className="flex items-start justify-center pt-4 cursor-pointer"
+          onClick={onToggle}
+          style={{ color: colors.text.secondary }}
+          title="Show configuration"
+        >
+          <span
+            className="text-xs font-medium whitespace-nowrap"
+            style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+            }}
+          >
+            Configuration
+          </span>
+        </div>
+      )}
+
+      {/* Content - hidden when collapsed */}
+      {!collapsed && (
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-4">
           {/* Load Saved Config - Nested dropdown matching Evaluations page pattern */}
@@ -565,6 +653,7 @@ export default function ConfigEditorPane({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

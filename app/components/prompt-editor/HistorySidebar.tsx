@@ -8,6 +8,8 @@ interface HistorySidebarProps {
   onSelectVersion: (version: SavedConfig) => void;
   onLoadVersion: (version: SavedConfig) => void;
   onBackToEditor: () => void;
+  onToggle: () => void; // Callback to toggle the sidebar
+  collapsed: boolean; // Whether the sidebar is collapsed
   isLoading?: boolean;
   currentConfigId?: string; // To filter versions for current config only
 }
@@ -18,6 +20,8 @@ export default function HistorySidebar({
   onSelectVersion,
   onLoadVersion,
   onBackToEditor,
+  onToggle,
+  collapsed,
   isLoading = false,
   currentConfigId
 }: HistorySidebarProps) {
@@ -68,26 +72,104 @@ export default function HistorySidebar({
     return `${days} day${days > 1 ? 's' : ''} ago`;
   };
 
+  const titleText = currentConfigId ? 'Version History' : 'All Configurations';
+
   return (
     <div
-      className="border-r flex flex-col"
+      className="border-r flex flex-col flex-shrink-0"
       style={{
-        width: '320px',
+        width: collapsed ? '40px' : '320px',
         backgroundColor: colors.bg.primary,
-        borderColor: colors.border
+        borderColor: colors.border,
+        transition: 'width 0.2s ease-in-out',
+        overflow: 'hidden',
       }}
     >
-      <div className="px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-        <div className="text-sm font-semibold mb-1" style={{ color: colors.text.primary }}>
-          {currentConfigId ? 'Version History' : 'All Configurations'}
-        </div>
-        <div className="text-xs" style={{ color: colors.text.secondary }}>
-          {filteredConfigs.length} version{filteredConfigs.length !== 1 ? 's' : ''}
-          {!currentConfigId && ` • ${Object.keys(groupedConfigs).length} config${Object.keys(groupedConfigs).length !== 1 ? 's' : ''}`}
-        </div>
+      {/* Header - always visible */}
+      <div
+        className="border-b flex items-center flex-shrink-0"
+        style={{
+          borderColor: colors.border,
+          padding: collapsed ? '0' : '12px 16px',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          height: collapsed ? '40px' : 'auto',
+          transition: 'padding 0.2s ease-in-out',
+        }}
+      >
+        {/* Title - hidden when collapsed */}
+        {!collapsed && (
+          <div className="flex-1 overflow-hidden mr-2">
+            <div className="text-sm font-semibold mb-0.5 whitespace-nowrap" style={{ color: colors.text.primary }}>
+              {titleText}
+            </div>
+            <div className="text-xs whitespace-nowrap" style={{ color: colors.text.secondary }}>
+              {filteredConfigs.length} version{filteredConfigs.length !== 1 ? 's' : ''}
+              {!currentConfigId && ` • ${Object.keys(groupedConfigs).length} config${Object.keys(groupedConfigs).length !== 1 ? 's' : ''}`}
+            </div>
+          </div>
+        )}
+        {/* Toggle button - chevron */}
+        <button
+          onClick={onToggle}
+          className="rounded flex-shrink-0 flex items-center justify-center"
+          style={{
+            width: '28px',
+            height: '28px',
+            borderWidth: '1px',
+            borderColor: colors.border,
+            backgroundColor: colors.bg.primary,
+            color: colors.text.secondary,
+            transition: 'all 0.15s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = colors.bg.secondary;
+            e.currentTarget.style.color = colors.text.primary;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = colors.bg.primary;
+            e.currentTarget.style.color = colors.text.secondary;
+          }}
+          title={collapsed ? 'Show version history' : 'Hide version history'}
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            style={{
+              transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease-in-out',
+            }}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7" />
+          </svg>
+        </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-3">
+      {/* Vertical text when collapsed - at the top */}
+      {collapsed && (
+        <div
+          className="flex items-start justify-center pt-4 cursor-pointer"
+          onClick={onToggle}
+          style={{ color: colors.text.secondary }}
+          title="Show version history"
+        >
+          <span
+            className="text-xs font-medium whitespace-nowrap"
+            style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              transform: 'rotate(180deg)',
+            }}
+          >
+            {titleText}
+          </span>
+        </div>
+      )}
+
+      {/* Content - hidden when collapsed */}
+      {!collapsed && (
+        <div className="flex-1 overflow-auto p-3">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8">
             <div
@@ -258,9 +340,10 @@ export default function HistorySidebar({
             })}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
-      {selectedVersion && (
+      {!collapsed && selectedVersion && (
         <div className="p-3 border-t" style={{ borderColor: colors.border }}>
           <button
             onClick={onBackToEditor}

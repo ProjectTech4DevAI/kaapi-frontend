@@ -68,7 +68,7 @@ function PromptEditorContent() {
   const [selectedConfigId, setSelectedConfigId] = useState<string>(''); // Selected version ID
   const [currentConfigParentId, setCurrentConfigParentId] = useState<string>(''); // Parent config ID for evaluation
   const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0); // Version number for evaluation
-  const [provider, setProvider] = useState<string>('openai');
+  const [provider, setProvider] = useState<string>('openai-native');
   const [temperature, setTemperature] = useState<number>(0.7);
   const [tools, setTools] = useState<Tool[]>([]);
 
@@ -215,7 +215,7 @@ function PromptEditorContent() {
       const configBlob: ConfigBlob = {
         completion: {
           // provider: provider as 'openai' | 'anthropic' | 'google',
-          provider:provider as 'openai',
+          provider:provider as 'openai-native',
           params: {
             model: currentConfigBlob.completion.params.model,
             instructions: currentContent, // Store prompt as instructions

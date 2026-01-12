@@ -102,7 +102,7 @@ const STT_MODELS: ModelConfig[] = [
   { id: 'google-stt:chirp_3', name: 'Chirp 3', provider: 'Google' },
   { id: 'openai:gpt-4o-transcribe', name: 'GPT-4o Transcribe', provider: 'OpenAI' },
   { id: 'openai:whisper-1', name: 'Whisper-1', provider: 'OpenAI' },
-  { id: 'ai4bharat:indic-conformer-600m-multilingual', name: 'Indic Conformer 600M', provider: 'AI4Bharat' },
+  { id: 'ai4b:indic-conformer-600m-multilingual', name: 'Indic Conformer 600M', provider: 'AI4Bharat' },
 ];
 
 // Group models by provider
@@ -763,6 +763,7 @@ export default function SpeechToTextPage() {
       }
 
       toast.success('Evaluation completed');
+      setResultsView('table'); // Switch to table view after evaluation
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Evaluation failed');
     } finally {
@@ -984,6 +985,7 @@ export default function SpeechToTextPage() {
             {evaluationResults.length > 0 && (
               <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: colors.bg.secondary }}>
                 {[
+                  { id: 'table', label: 'Table', icon: 'M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z' },
                   { id: 'cards', label: 'Cards', icon: 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z' },
                   { id: 'diff', label: 'Diff', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
                 ].map(view => (
@@ -1580,6 +1582,178 @@ export default function SpeechToTextPage() {
                       {' • '}
                       {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''} selected
                     </div>
+                  </div>
+                </div>
+              ) : resultsView === 'table' ? (
+                /* Table View */
+                <div className="flex-1 overflow-auto">
+                  <div className="min-w-full">
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr style={{ backgroundColor: colors.bg.primary }}>
+                          <th
+                            className="sticky top-0 left-0 z-20 px-3 py-2 text-left text-xs font-medium border-b border-r"
+                            style={{
+                              color: colors.text.secondary,
+                              borderColor: colors.border,
+                              backgroundColor: colors.bg.primary,
+                              minWidth: '40px',
+                            }}
+                          >
+                            #
+                          </th>
+                          <th
+                            className="sticky top-0 z-10 px-3 py-2 text-left text-xs font-medium border-b border-r"
+                            style={{
+                              color: colors.text.secondary,
+                              borderColor: colors.border,
+                              backgroundColor: colors.bg.primary,
+                              minWidth: '200px',
+                              maxWidth: '300px',
+                            }}
+                          >
+                            Audio File
+                          </th>
+                          {selectedModels.map(modelId => {
+                            const modelConfig = STT_MODELS.find(m => m.id === modelId);
+                            return (
+                              <th
+                                key={modelId}
+                                className="sticky top-0 z-10 px-3 py-2 text-center text-xs font-medium border-b border-r"
+                                style={{
+                                  color: colors.text.secondary,
+                                  borderColor: colors.border,
+                                  backgroundColor: colors.bg.primary,
+                                  minWidth: '120px',
+                                }}
+                              >
+                                <div>{modelConfig?.name || modelId.split(':')[1]}</div>
+                                <div className="text-xs font-normal opacity-60">{modelConfig?.provider}</div>
+                              </th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {evaluationResults.map((result, resultIdx) => {
+                          const { best, worst } = getBestWorstModels(result);
+
+                          return (
+                            <tr
+                              key={result.fileId}
+                              className="hover:bg-gray-50"
+                              style={{ backgroundColor: resultIdx % 2 === 0 ? colors.bg.primary : colors.bg.secondary }}
+                            >
+                              {/* Row Number */}
+                              <td
+                                className="px-3 py-2 text-center border-b border-r"
+                                style={{ borderColor: colors.border, color: colors.text.secondary }}
+                              >
+                                {result.row}
+                              </td>
+
+                              {/* Audio File */}
+                              <td
+                                className="px-3 py-2 border-b border-r"
+                                style={{ borderColor: colors.border, maxWidth: '300px' }}
+                              >
+                                <div
+                                  className="text-sm font-medium truncate"
+                                  style={{ color: colors.text.primary }}
+                                  title={result.audio_url}
+                                >
+                                  {result.audio_url.split('/').pop() || result.audio_url}
+                                </div>
+                                <div
+                                  className="text-xs truncate mt-0.5"
+                                  style={{ color: colors.text.secondary }}
+                                  title={result.ground_truth}
+                                >
+                                  {result.ground_truth.slice(0, 50)}{result.ground_truth.length > 50 ? '...' : ''}
+                                </div>
+                              </td>
+
+                              {/* Model Results */}
+                              {selectedModels.map(modelId => {
+                                const transcription = result.transcriptions[modelId];
+                                const werPercent = transcription?.strict?.wer !== undefined
+                                  ? transcription.strict.wer * 100
+                                  : null;
+                                const isBest = best === modelId;
+                                const isWorst = worst === modelId && best !== worst;
+
+                                // Get WER color
+                                const getWerColor = (wer: number) => {
+                                  if (wer < 5) return colors.status.success;
+                                  if (wer < 10) return '#ca8a04';
+                                  if (wer < 20) return colors.status.warning;
+                                  return colors.status.error;
+                                };
+
+                                return (
+                                  <td
+                                    key={modelId}
+                                    className="px-3 py-2 text-center border-b border-r cursor-pointer hover:bg-gray-100"
+                                    style={{
+                                      borderColor: colors.border,
+                                      backgroundColor: isBest ? 'rgba(22, 163, 74, 0.05)' : undefined,
+                                    }}
+                                    onClick={() => {
+                                      setSelectedResultIndex(resultIdx);
+                                      setSelectedModelForDiff(modelId);
+                                      setResultsView('diff');
+                                    }}
+                                  >
+                                    {transcription?.status === 'pending' ? (
+                                      <div className="flex items-center justify-center">
+                                        <div
+                                          className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                                          style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }}
+                                        />
+                                      </div>
+                                    ) : transcription?.status === 'error' ? (
+                                      <span
+                                        className="text-xs px-1.5 py-0.5 rounded"
+                                        style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                      >
+                                        Error
+                                      </span>
+                                    ) : werPercent !== null ? (
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <span
+                                          className="text-sm font-bold tabular-nums"
+                                          style={{ color: getWerColor(werPercent) }}
+                                        >
+                                          {werPercent.toFixed(1)}%
+                                        </span>
+                                        {isBest && (
+                                          <span
+                                            className="text-xs px-1 py-0.5 rounded"
+                                            style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+                                          >
+                                            Best
+                                          </span>
+                                        )}
+                                        {isWorst && (
+                                          <span
+                                            className="text-xs px-1 py-0.5 rounded"
+                                            style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                          >
+                                            Worst
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span style={{ color: colors.text.secondary }}>—</span>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ) : resultsView === 'cards' ? (

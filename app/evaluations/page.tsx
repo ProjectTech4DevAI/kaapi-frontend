@@ -1157,17 +1157,24 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
             <button
               onClick={() => router.push(`/evaluations/${job.id}`)}
               className="px-4 py-2 rounded-md text-sm font-medium"
+              disabled={job.status?.toLowerCase() !== 'completed'}
               style={{
-                backgroundColor: '#171717',
+                backgroundColor: job.status?.toLowerCase() === 'completed' ? '#171717' : '#a0a0a0',
                 color: '#ffffff',
                 border: 'none',
-                transition: 'all 0.15s ease'
+                transition: 'all 0.15s ease',
+                cursor: job.status?.toLowerCase() === 'completed' ? 'pointer' : 'not-allowed',
+                opacity: job.status?.toLowerCase() === 'completed' ? 1 : 0.6
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#404040';
+                if (job.status?.toLowerCase() === 'completed') {
+                  e.currentTarget.style.backgroundColor = '#404040';
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#171717';
+                if (job.status?.toLowerCase() === 'completed') {
+                  e.currentTarget.style.backgroundColor = '#171717';
+                }
               }}
             >
               View Results

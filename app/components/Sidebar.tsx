@@ -30,8 +30,9 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: SidebarProps) {
   const router = useRouter();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-    'Tasks': true,
+    'Capabilities': true,
     'Evaluations': true,
+    'Documents': true,
     'Configurations': false,
   });
 
@@ -56,7 +57,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
 
   const navItems: MenuItem[] = [
     {
-      name: 'Tasks',
+      name: 'Capabilities',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h6" />
@@ -69,6 +70,12 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
             { name: 'Text Generation', route: '/evaluations' },
             { name: 'Speech-to-Text', route: '/speech-to-text' },
             { name: 'Text-to-Speech', route: '/text-to-speech', comingSoon: true },
+          ]
+        },
+        {
+          name: 'Documents',
+          submenu: [
+            { name: 'Upload', route: '/document' },
           ]
         },
         // { name: 'Model Testing', route: '/model-testing', comingSoon: true },

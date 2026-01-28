@@ -67,8 +67,8 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
           name: 'Evaluations',
           submenu: [
             { name: 'Text Generation', route: '/evaluations' },
-            { name: 'Speech-to-Text', route: '/speech-to-text' },
-            { name: 'Text-to-Speech', route: '/text-to-speech', comingSoon: true },
+            // { name: 'Speech-to-Text', route: '/speech-to-text', comingSoon:true },
+            // { name: 'Text-to-Speech', route: '/text-to-speech', comingSoon: true },
           ]
         },
         // { name: 'Model Testing', route: '/model-testing', comingSoon: true },

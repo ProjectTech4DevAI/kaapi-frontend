@@ -5,16 +5,30 @@ export async function GET(request: Request) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: 'Missing X-API-KEY header' },
+      { status: 401 }
+    );
+  }
+
   try {
     const response = await fetch(`${backendUrl}/api/v1/documents/`, {
       headers: {
-        'X-API-KEY': apiKey || '',
+        'X-API-KEY': apiKey,
       },
     });
 
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
+    // Handle empty responses (204 No Content, etc.)
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : [];
+
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
+    return NextResponse.json(data, { status: response.status });
+  } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message, data: null },
       { status: 500 }
@@ -46,19 +60,20 @@ export async function POST(request: NextRequest) {
       body: formData,
       headers: {
         'X-API-KEY': apiKey,
-       
+
       },
     });
 
-    // Get the response data
-    const data = await response.json();
+    // Handle empty responses (204 No Content, etc.)
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : { success: true };
 
     // Return the response with the same status code
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json(data, { status: response.status });
   } catch (error: any) {
     console.error('Proxy error:', error);
     return NextResponse.json(

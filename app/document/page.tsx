@@ -11,7 +11,7 @@ export interface Document {
   fname: string;  // Filename from backend
   object_store_url: string;
   signed_url?: string;  // Signed URL for accessing the document
- // file_size_kb?: number;  // File size in KB from backend
+  file_size?: number;  // File size in bytes (stored from client upload)
   inserted_at?: string;
   updated_at?: string;
 }
@@ -25,7 +25,6 @@ export default function DocumentPage() {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentName, setDocumentName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +81,16 @@ export default function DocumentPage() {
       const data = await response.json();
       console.log('Fetched documents:', data); // Debug log
       const documentList = Array.isArray(data) ? data : (data.data || []);
-      console.log('Document list:', documentList); // Debug log
-      setDocuments(documentList);
+
+      // Load file sizes from localStorage
+      const fileSizeMap = JSON.parse(localStorage.getItem('document_file_sizes') || '{}');
+      const documentsWithSize = documentList.map((doc: Document) => ({
+        ...doc,
+        file_size: fileSizeMap[doc.id] || doc.file_size
+      }));
+
+      console.log('Document list:', documentsWithSize); // Debug log
+      setDocuments(documentsWithSize);
     } catch (err: any) {
       console.error('Failed to fetch documents:', err);
       setError(err.message || 'Failed to fetch documents');
@@ -97,9 +104,6 @@ export default function DocumentPage() {
     if (!file) return;
 
     setSelectedFile(file);
-    // Auto-fill document name from filename (without extension)
-    const nameFromFile = file.name.replace(/\.[^/.]+$/, '');
-    setDocumentName(nameFromFile);
   };
 
   const handleUpload = async () => {
@@ -129,12 +133,18 @@ export default function DocumentPage() {
       const data = await response.json();
       console.log('Document uploaded successfully:', data);
 
+      // Store file size in localStorage for the uploaded document
+      if (selectedFile && data.data?.id) {
+        const fileSizeMap = JSON.parse(localStorage.getItem('document_file_sizes') || '{}');
+        fileSizeMap[data.data.id] = selectedFile.size;
+        localStorage.setItem('document_file_sizes', JSON.stringify(fileSizeMap));
+      }
+
       // Refresh documents list
       await fetchDocuments();
 
       // Reset form
       setSelectedFile(null);
-      setDocumentName('');
 
       // Close modal
       setIsModalOpen(false);
@@ -213,7 +223,15 @@ export default function DocumentPage() {
 
       const data = await response.json();
       const documentDetails = data.data || data;
-      setSelectedDocument(documentDetails);
+
+      // Load file size from localStorage
+      const fileSizeMap = JSON.parse(localStorage.getItem('document_file_sizes') || '{}');
+      const docWithSize = {
+        ...documentDetails,
+        file_size: fileSizeMap[documentDetails.id] || documentDetails.file_size
+      };
+
+      setSelectedDocument(docWithSize);
     } catch (err) {
       console.error('Failed to fetch document details:', err);
       toast.error('Failed to load document preview');
@@ -308,15 +326,12 @@ export default function DocumentPage() {
       {isModalOpen && (
         <UploadDocumentModal
           selectedFile={selectedFile}
-          documentName={documentName}
           isUploading={isUploading}
           onFileSelect={handleFileSelect}
-          onDocumentNameChange={setDocumentName}
           onUpload={handleUpload}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedFile(null);
-            setDocumentName('');
           }}
         />
       )}
@@ -572,6 +587,13 @@ interface DocumentPreviewProps {
 }
 
 function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  // Reset error state when document changes
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [document?.id]);
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     try {
@@ -663,6 +685,16 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
               <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{getFileExtension(document.fname).toUpperCase() || 'Unknown'}</div>
             </div>
             <div>
+              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>File Size</div>
+              <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                {document.file_size
+                  ? document.file_size < 1024 * 1024
+                    ? `${Math.round(document.file_size / 1024)} KB`
+                    : `${(document.file_size / (1024 * 1024)).toFixed(2)} MB`
+                  : 'N/A'}
+              </div>
+            </div>
+            <div>
               <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Uploaded at</div>
               <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{formatDate(document.inserted_at)}</div>
             </div>
@@ -685,20 +717,24 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
           {document.signed_url ? (
             <>
               {getMimeType(document.fname).startsWith('image/') ? (
-                <img
-                  src={document.signed_url}
-                  alt={document.fname}
-                  className="max-w-full h-auto rounded"
-                  onError={(e) => {
-                    console.error('Failed to load image:', document.signed_url);
-                    e.currentTarget.style.display = 'none';
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<div class="text-center p-8"><p style="color: hsl(330, 3%, 49%)">Failed to load image preview. Check console for details.</p></div>';
-                    }
-                  }}
-                  onLoad={() => console.log('Image loaded successfully')}
-                />
+                imageLoadError ? (
+                  <div className="text-center p-8">
+                    <p style={{ color: 'hsl(330, 3%, 49%)' }}>
+                      Failed to load image preview. Check console for details.
+                    </p>
+                  </div>
+                ) : (
+                  <img
+                    src={document.signed_url}
+                    alt={document.fname}
+                    className="max-w-full h-auto rounded"
+                    onError={() => {
+                      console.error('Failed to load image:', document.signed_url);
+                      setImageLoadError(true);
+                    }}
+                    onLoad={() => console.log('Image loaded successfully')}
+                  />
+                )
               ) : getMimeType(document.fname) === 'application/pdf' ? (
                 <iframe
                   src={document.signed_url}
@@ -790,20 +826,16 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
 // ============ UPLOAD DOCUMENT MODAL ============
 export interface UploadDocumentModalProps {
   selectedFile: File | null;
-  documentName: string;
   isUploading: boolean;
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDocumentNameChange: (value: string) => void;
   onUpload: () => void;
   onClose: () => void;
 }
 
 export function UploadDocumentModal({
   selectedFile,
-  documentName,
   isUploading,
   onFileSelect,
-  onDocumentNameChange,
   onUpload,
   onClose,
 }: UploadDocumentModalProps) {
@@ -911,25 +943,27 @@ export function UploadDocumentModal({
             </div>
           </div>
 
-          {/* Document Name Field */}
+          {/* Document Name Field (Read-only) */}
           {selectedFile && (
             <div className="mt-6">
               <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                Document Name <span style={{ color: 'hsl(8, 86%, 40%)' }}>*</span>
+                Document Name
               </label>
               <input
                 type="text"
-                value={documentName}
-                onChange={(e) => onDocumentNameChange(e.target.value)}
-                placeholder="Enter document name"
-                disabled={isUploading}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none focus:ring-2"
+                value={selectedFile.name}
+                readOnly
+                className="w-full px-4 py-2 rounded-md border text-sm"
                 style={{
-                  borderColor: documentName ? '#171717' : 'hsl(0, 0%, 85%)',
-                  backgroundColor: isUploading ? 'hsl(0, 0%, 97%)' : 'hsl(0, 0%, 100%)',
-                  color: 'hsl(330, 3%, 19%)'
+                  borderColor: 'hsl(0, 0%, 85%)',
+                  backgroundColor: 'hsl(0, 0%, 97%)',
+                  color: 'hsl(330, 3%, 49%)',
+                  cursor: 'not-allowed'
                 }}
               />
+              <p className="text-xs mt-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                The file will be uploaded with this name
+              </p>
             </div>
           )}
         </div>
@@ -952,20 +986,20 @@ export function UploadDocumentModal({
           </button>
           <button
             onClick={onUpload}
-            disabled={!selectedFile || !documentName.trim() || isUploading}
+            disabled={!selectedFile || isUploading}
             className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             style={{
-              backgroundColor: (!selectedFile || !documentName.trim() || isUploading) ? 'hsl(0, 0%, 95%)' : '#171717',
-              color: (!selectedFile || !documentName.trim() || isUploading) ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
-              cursor: (!selectedFile || !documentName.trim() || isUploading) ? 'not-allowed' : 'pointer'
+              backgroundColor: (!selectedFile || isUploading) ? 'hsl(0, 0%, 95%)' : '#171717',
+              color: (!selectedFile || isUploading) ? 'hsl(330, 3%, 49%)' : 'hsl(0, 0%, 100%)',
+              cursor: (!selectedFile || isUploading) ? 'not-allowed' : 'pointer'
             }}
             onMouseEnter={(e) => {
-              if (selectedFile && documentName.trim() && !isUploading) {
+              if (selectedFile && !isUploading) {
                 e.currentTarget.style.backgroundColor = '#404040';
               }
             }}
             onMouseLeave={(e) => {
-              if (selectedFile && documentName.trim() && !isUploading) {
+              if (selectedFile && !isUploading) {
                 e.currentTarget.style.backgroundColor = '#171717';
               }
             }}

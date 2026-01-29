@@ -20,7 +20,7 @@ export interface Dataset {
   duplication_factor: number;
   langfuse_dataset_id: string;
   object_store_url: string;
-} 
+}
 
 // Keep for backward compatibility with evaluations page
 export const DATASETS_STORAGE_KEY = 'kaapi_datasets';

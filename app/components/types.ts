@@ -19,6 +19,16 @@ export interface TraceItem {
   scores: TraceScore[];
 }
 
+export interface GroupedTraceItem {
+  question_id: number;
+  question: string;
+  ground_truth_answer: string;
+  llm_answers: string[];
+  trace_ids: string[];
+  scores: TraceScore[][];
+}
+
+
 // Legacy individual score format (nested structure)
 export interface IndividualScore {
   trace_id: string;
@@ -48,7 +58,7 @@ export interface SummaryScore {
 // New score object with traces array
 export interface NewScoreObjectV2 {
   summary_scores: SummaryScore[];
-  traces: TraceItem[];
+  traces: TraceItem[] | GroupedTraceItem[];
 }
 
 // Original new score object with individual_scores
@@ -143,6 +153,11 @@ export function isLegacyScoreObject(score: ScoreObject | null | undefined): scor
 // Helper to get score object from job
 export function getScoreObject(job: EvalJob): ScoreObject | null {
   return job.scores || job.score || null;
+}
+
+export function isGroupedFormat(traces: TraceItem[] | GroupedTraceItem[]): traces is GroupedTraceItem[] {
+  if (!traces || traces.length === 0) return false;
+  return "llm_answers" in traces[0] && Array.isArray(traces[0].llm_answers);
 }
 
 // Normalize traces to IndividualScore format for backward compatibility

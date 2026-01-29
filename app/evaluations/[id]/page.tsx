@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { APIKey, STORAGE_KEY } from '../../keystore/page';
-import { EvalJob, AssistantConfig, isNewScoreObject, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores } from '../../components/types';
+import { EvalJob, AssistantConfig, isNewScoreObject, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores, GroupedTraceItem, isGroupedFormat } from '../../components/types';
 import { formatDate, getStatusColor } from '../../components/utils';
 import ConfigModal from '../../components/ConfigModal';
 import Sidebar from '../../components/Sidebar';
@@ -41,6 +41,7 @@ export default function EvaluationReport() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configVersionInfo, setConfigVersionInfo] = useState<ConfigVersionInfo | null>(null);
+  const [exportFormat, setExportFormat] = useState<'row' | 'grouped'>('row');
   
 
   // Load API keys from localStorage
@@ -71,8 +72,8 @@ export default function EvaluationReport() {
     setError(null);
 
     try {
-      // Fetch the specific evaluation by ID
-      const response = await fetch(`/api/evaluations/${jobId}`, {
+      // Fetch the specific evaluation by ID with export format
+      const response = await fetch(`/api/evaluations/${jobId}?export_format=${exportFormat}`, {
         method: 'GET',
         headers: {
           'X-API-KEY': selectedKey.key,
@@ -110,7 +111,7 @@ export default function EvaluationReport() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiKeys, selectedKeyId, jobId]);
+  }, [apiKeys, selectedKeyId, jobId, exportFormat]);
 
   // Fetch assistant config
   const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
@@ -192,32 +193,85 @@ export default function EvaluationReport() {
     }
   }, [selectedKeyId, jobId, fetchJobDetails]);
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    if (!job || !scoreObject) {
-      toast.error('No valid data available to export')
-      return;
-    }
+  // Export grouped format CSV (horizontal layout)
+  const exportGroupedCSV = (traces: GroupedTraceItem[]) => {
+    if (!job) return;
 
     try {
-      // Normalize to individual scores format (supports both new formats)
+      const maxAnswers = Math.max(...traces.map(g => g.llm_answers.length));
+      const scoreNames = traces[0]?.scores[0]?.map(s => s.name) || [];
+
+      // Build CSV header
+      let csvContent = 'Question ID,Question,Ground Truth';
+      for (let i = 1; i <= maxAnswers; i++) {
+        csvContent += `,LLM Answer ${i},Trace ID ${i}`;
+        scoreNames.forEach(name => {
+          csvContent += `,${name} (${i})`;
+        });
+      }
+      csvContent += '\n';
+
+      // Build data rows
+      traces.forEach(group => {
+        const row: string[] = [
+          String(group.question_id),
+          `"${(group.question || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+          `"${(group.ground_truth_answer || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+        ];
+
+        for (let i = 0; i < maxAnswers; i++) {
+          // LLM Answer
+          const answer = group.llm_answers[i] || '';
+          row.push(`"${answer.replace(/"/g, '""').replace(/\n/g, ' ')}"`);
+
+          // Trace ID
+          row.push(group.trace_ids[i] || '');
+
+          // Scores
+          scoreNames.forEach(name => {
+            const score = group.scores[i]?.find(s => s.name === name);
+            row.push(score ? String(score.value) : '');
+          });
+        }
+
+        csvContent += row.join(',') + '\n';
+      });
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `evaluation_${job.id}_${job.run_name.replace(/[^a-z0-9]/gi, '_')}_grouped.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.info(`Grouped CSV exported with ${traces.length} questions`);
+    } catch (error) {
+      console.error('Error exporting grouped CSV:', error);
+      toast.error('Failed to export grouped CSV');
+    }
+  };
+
+  // Export row format CSV (individual rows)
+  const exportRowCSV = () => {
+    if (!job || !scoreObject) return;
+
+    try {
       const individual_scores = normalizeToIndividualScores(scoreObject);
 
       if (!individual_scores || individual_scores.length === 0) {
-        toast.error('No valid data available to export')
+        toast.error('No valid data available to export');
         return;
       }
 
-      console.log(`Exporting ${individual_scores.length} rows to CSV`);
-
-      // Build CSV content
       let csvContent = '';
-
-      // Get all score names for header
       const firstItem = individual_scores[0];
       const scoreNames = firstItem?.trace_scores?.map(s => s.name) || [];
 
-      // Header row - Added Counter column
+      // Header row
       csvContent += 'Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,';
       csvContent += 'Question,Answer,Ground Truth,';
       csvContent += scoreNames.map(name => `${name},${name} (comment)`).join(',') + '\n';
@@ -226,7 +280,7 @@ export default function EvaluationReport() {
       let rowCount = 0;
       individual_scores.forEach((item, index) => {
         const row = [
-          index + 1, // Counter starting from 1
+          index + 1,
           item.trace_id || 'N/A',
           job.id,
           `"${job.run_name.replace(/"/g, '""')}"`,
@@ -250,9 +304,6 @@ export default function EvaluationReport() {
         rowCount++;
       });
 
-      console.log(`Successfully created CSV with ${rowCount} data rows`);
-
-      // Create download link using Blob (more reliable than encodeURI for large files)
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -263,8 +314,39 @@ export default function EvaluationReport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-    
-      toast.info(`CSV exported successfully with ${rowCount} rows`)
+      toast.info(`CSV exported successfully with ${rowCount} rows`);
+    } catch (error) {
+      console.error('Error exporting row CSV:', error);
+      toast.error('Failed to export CSV');
+    }
+  };
+
+  // Export to CSV - detects format and calls appropriate export function
+  const handleExportCSV = () => {
+    if (!job || !scoreObject) {
+      toast.error('No valid data available to export');
+      return;
+    }
+
+    try {
+      if (!isNewScoreObjectV2(scoreObject)) {
+        toast.error('Export not available for this score format');
+        return;
+      }
+
+      const traces = scoreObject.traces;
+
+      if (!traces || traces.length === 0) {
+        toast.error('No traces available to export');
+        return;
+      }
+
+      // Check format and export accordingly
+      if (isGroupedFormat(traces)) {
+        exportGroupedCSV(traces);
+      } else {
+        exportRowCSV();
+      }
     } catch (error) {
       console.error('Error exporting CSV:', error);
       toast.error('Failed to export CSV. Please check the console for details.');
@@ -434,6 +516,25 @@ export default function EvaluationReport() {
 
               {/* Action Buttons */}
               <div className="flex items-center gap-3">
+                {/* Format Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium" style={{ color: colors.text.secondary }}>Format:</span>
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value as 'row' | 'grouped')}
+                    className="px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                    style={{
+                      backgroundColor: colors.bg.primary,
+                      borderWidth: '1px',
+                      borderColor: colors.border,
+                      color: colors.text.primary,
+                      outline: 'none'
+                    }}
+                  >
+                    <option value="grouped">Grouped (by Question)</option>
+                    <option value="row">Row (Individual)</option>
+                  </select>
+                </div>
                 <button
                   onClick={() => setIsConfigModalOpen(true)}
                   className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -485,7 +586,7 @@ export default function EvaluationReport() {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex overflow-auto p-6" style={{ backgroundColor: colors.bg.secondary }}>
+          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: colors.bg.secondary }}>
             <div className="max-w-7xl mx-auto space-y-6">
               {/* Summary Section */}
               <div>

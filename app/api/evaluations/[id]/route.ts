@@ -51,10 +51,14 @@ export async function GET(
     // Real backend mode
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
-    // Build URL with default query parameters
+    const searchParams = request.nextUrl.searchParams;
+    const exportFormat = searchParams.get('export_format') || 'row';
+
+    // Build URL with query parameters
     const url = new URL(`${backendUrl}/api/v1/evaluations/${id}`);
     url.searchParams.set('get_trace_info', 'true');
     url.searchParams.set('resync_score', 'false');
+    url.searchParams.set('export_format', exportFormat);
 
     console.log(`[REAL BACKEND] Fetching evaluation ${id} from ${url.toString()}`);
 

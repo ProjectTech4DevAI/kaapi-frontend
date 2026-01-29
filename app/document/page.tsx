@@ -11,7 +11,7 @@ export interface Document {
   fname: string;  // Filename from backend
   object_store_url: string;
   signed_url?: string;  // Signed URL for accessing the document
-  file_size_kb?: number;  // File size in KB from backend
+ // file_size_kb?: number;  // File size in KB from backend
   inserted_at?: string;
   updated_at?: string;
 }
@@ -654,19 +654,13 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
     <div className="h-full overflow-y-auto p-8" style={{ backgroundColor: 'hsl(0, 0%, 98%)' }}>
       <div className="max-w-4xl mx-auto">
         <div className="border rounded-lg p-6 mb-6" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
-          <h2 className="text-2xl font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'hsl(330, 3%, 19%)' }}>
             {document.fname}
           </h2>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>File Type</div>
               <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>{getFileExtension(document.fname).toUpperCase() || 'Unknown'}</div>
-            </div>
-            <div>
-              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>File Size</div>
-              <div className="text-sm font-medium" style={{ color: 'hsl(330, 3%, 19%)' }}>
-                {document.file_size_kb ? `${document.file_size_kb} KB` : 'N/A'}
-              </div>
             </div>
             <div>
               <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>Uploaded at</div>

@@ -52,7 +52,7 @@ export default function CurrentConfigTab({
       ...tools,
       {
         type: 'file_search',
-        vector_store_ids: [''],
+        knowledge_base_ids: [''],
         max_num_results: 20,
       },
     ]);
@@ -64,7 +64,7 @@ export default function CurrentConfigTab({
 
   const updateTool = (index: number, field: keyof Tool, value: any) => {
     const newTools = [...tools];
-    if (field === 'vector_store_ids') {
+    if (field === 'knowledge_base_ids') {
       newTools[index][field] = [value];
     } else {
       (newTools[index] as any)[field] = value;
@@ -397,8 +397,8 @@ export default function CurrentConfigTab({
               </label>
               <input
                 type="text"
-                value={tool.vector_store_ids[0] || ''}
-                onChange={(e) => updateTool(index, 'vector_store_ids', e.target.value)}
+                value={tool.knowledge_base_ids[0] || ''}
+                onChange={(e) => updateTool(index, 'knowledge_base_ids', e.target.value)}
                 placeholder="vs_abc123"
                 style={{
                   width: '100%',

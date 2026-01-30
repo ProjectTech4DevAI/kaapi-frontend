@@ -103,6 +103,22 @@ export default function SimplifiedConfigEditor({
     const blob = version.config_blob;
     const params = blob.completion.params;
 
+    // Backend sends flattened fields (knowledge_base_ids, max_num_results) directly on params
+    // Convert to tools array for frontend UI compatibility
+    const tools: Tool[] = params.tools || [];
+
+    // If no tools array but has flattened fields, create tools array from them
+    // Each knowledge_base_id becomes a separate tool for UI display
+    if (tools.length === 0 && params.knowledge_base_ids && params.knowledge_base_ids.length > 0) {
+      params.knowledge_base_ids.forEach((kbId: string) => {
+        tools.push({
+          type: 'file_search',
+          knowledge_base_ids: [kbId], // Each tool gets one ID for UI
+          max_num_results: params.max_num_results || 20,
+        });
+      });
+    }
+
     return {
       id: version.id,
       config_id: config.id,
@@ -113,8 +129,8 @@ export default function SimplifiedConfigEditor({
       modelName: params.model || '',
       provider: blob.completion.provider,
       temperature: params.temperature || 0.7,
-      vectorStoreIds: params.tools?.[0]?.vector_store_ids?.[0] || '',
-      tools: params.tools || [],
+      vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
+      tools: tools,
       commit_message: version.commit_message,
     };
   };
@@ -228,6 +244,20 @@ export default function SimplifiedConfigEditor({
 
     try {
       // Build config blob
+      // Extract tools array and flatten to direct params fields for backend compatibility
+      // Collect ALL knowledge_base_ids from ALL tools into a single array
+      const allKnowledgeBaseIds: string[] = [];
+      let maxNumResults = 20; // default
+
+      tools.forEach((tool) => {
+        // Add all knowledge_base_ids from this tool
+        allKnowledgeBaseIds.push(...tool.knowledge_base_ids);
+        // Use max_num_results from first tool (could be made configurable)
+        if (allKnowledgeBaseIds.length === tool.knowledge_base_ids.length) {
+          maxNumResults = tool.max_num_results;
+        }
+      });
+
       const configBlob: ConfigBlob = {
         completion: {
           provider: provider as 'openai', // | 'anthropic' | 'google', // Only OpenAI supported for now
@@ -235,7 +265,11 @@ export default function SimplifiedConfigEditor({
             model: modelName,
             instructions: instructions,
             temperature: temperature,
-            ...(tools.length > 0 && { tools }),
+            // Flatten tools array to direct fields for backend - support multiple knowledge bases
+            ...(allKnowledgeBaseIds.length > 0 && {
+              knowledge_base_ids: allKnowledgeBaseIds,
+              max_num_results: maxNumResults,
+            }),
           },
         },
       };

@@ -202,7 +202,7 @@ export default function ConfigDrawer({
       ...tools,
       {
         type: 'file_search' as const,
-        vector_store_ids: [''],
+        knowledge_base_ids: [''],
         max_num_results: 20,
       },
     ];
@@ -216,7 +216,7 @@ export default function ConfigDrawer({
 
   const updateTool = (index: number, field: keyof Tool, value: any) => {
     const newTools = [...tools];
-    if (field === 'vector_store_ids') {
+    if (field === 'knowledge_base_ids') {
       newTools[index][field] = [value];
     } else {
       (newTools[index] as any)[field] = value;
@@ -639,8 +639,8 @@ export default function ConfigDrawer({
                       </label>
                       <input
                         type="text"
-                        value={tool.vector_store_ids[0] || ''}
-                        onChange={(e) => updateTool(index, 'vector_store_ids', e.target.value)}
+                        value={tool.knowledge_base_ids[0] || ''}
+                        onChange={(e) => updateTool(index, 'knowledge_base_ids', e.target.value)}
                         placeholder="vs_abc123"
                         style={{
                           width: '100%',

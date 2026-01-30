@@ -71,7 +71,7 @@ export default function ConfigDiffPane({
       if (value.length === 0) return '[]';
       return value.map((tool, idx) => {
         if (tool.type === 'file_search') {
-          return `File Search (${tool.vector_store_ids?.[0] || 'no store'})`;
+          return `File Search (${tool.knowledge_base_ids?.[0] || 'no store'})`;
         }
         return JSON.stringify(tool);
       }).join(', ');

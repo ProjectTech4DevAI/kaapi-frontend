@@ -163,7 +163,7 @@ interface APIResponse<T> {
       "tools": [
         {
           "type": "file_search",
-          "vector_store_ids": ["vs_692d71f3f5708191b1c46525f3c1e196"],
+          "knowledge_base_ids": ["vs_692d71f3f5708191b1c46525f3c1e196"],
           "max_num_results": 20
         }
       ]

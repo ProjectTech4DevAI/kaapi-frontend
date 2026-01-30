@@ -25,7 +25,7 @@ export interface DiffStats {
 
 export interface Tool {
   type: 'file_search';
-  vector_store_ids: string[];
+  knowledge_base_ids: string[];
   max_num_results: number;
 }
 
@@ -36,7 +36,11 @@ export interface ConfigBlob {
       model: string;
       instructions: string;
       temperature: number;
-      tools: Tool[];
+      // Frontend uses tools array for UI
+      tools?: Tool[];
+      // Backend expects these as direct fields (flattened from tools array)
+      knowledge_base_ids?: string[];
+      max_num_results?: number;
     };
   };
 }

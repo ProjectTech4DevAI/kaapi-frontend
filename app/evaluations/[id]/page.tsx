@@ -87,6 +87,11 @@ export default function EvaluationReport() {
 
       const data = await response.json();
 
+      if (data.success === false && data.error){
+        toast.error(data.error);
+        setExportFormat('row')
+      }
+
       // Backend may return the job directly or wrapped in a data property
       const foundJob = data.data || data;
 

@@ -294,7 +294,11 @@ export default function ConfigSelector({
                             </span>
                           </div>
                           <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-                            {version.provider}/{version.modelName} • {formatRelativeTime(version.timestamp)}
+                            {version.provider}/{version.modelName} • T:{version.temperature.toFixed(2)}
+                            {version.tools && version.tools.length > 0 && (
+                              <> • {version.tools.map(t => t.knowledge_base_ids).flat().length} KB</>
+                            )}
+                            {' • '}{formatRelativeTime(version.timestamp)}
                           </div>
                         </div>
                         {selectedConfig?.id === version.id && (
@@ -316,14 +320,57 @@ export default function ConfigSelector({
               className="mt-4 rounded-md p-4"
               style={{ backgroundColor: colors.bg.secondary }}
             >
-              <div className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
-                Prompt Preview
+              {/* Configuration Details */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                    Provider & Model
+                  </div>
+                  <div className="text-sm font-mono" style={{ color: colors.text.primary }}>
+                    {selectedConfig.provider}/{selectedConfig.modelName}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                    Temperature
+                  </div>
+                  <div className="text-sm font-mono" style={{ color: colors.text.primary }}>
+                    {selectedConfig.temperature.toFixed(2)}
+                  </div>
+                </div>
+                {selectedConfig.tools && selectedConfig.tools.length > 0 && (
+                  <>
+                    <div>
+                      <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                        Knowledge Base IDs
+                      </div>
+                      <div className="text-xs font-mono" style={{ color: colors.text.primary }}>
+                        {selectedConfig.tools.map(tool => tool.knowledge_base_ids).flat().join(', ') || 'None'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                        Max Results
+                      </div>
+                      <div className="text-sm font-mono" style={{ color: colors.text.primary }}>
+                        {selectedConfig.tools[0].max_num_results}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-              <div
-                className="text-xs font-mono line-clamp-3"
-                style={{ color: colors.text.primary }}
-              >
-                {selectedConfig.instructions || 'No instructions set'}
+
+              {/* Prompt Preview */}
+              <div className="border-t pt-3" style={{ borderColor: colors.border }}>
+                <div className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
+                  Prompt Preview
+                </div>
+                <div
+                  className="text-xs font-mono line-clamp-3"
+                  style={{ color: colors.text.primary }}
+                >
+                  {selectedConfig.instructions || 'No instructions set'}
+                </div>
               </div>
             </div>
           )}

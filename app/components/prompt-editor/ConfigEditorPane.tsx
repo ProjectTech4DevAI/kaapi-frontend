@@ -131,7 +131,7 @@ export default function ConfigEditorPane({
       ...tools,
       {
         type: 'file_search' as const,
-        vector_store_ids: [''],
+        knowledge_base_ids: [''],
         max_num_results: 20,
       },
     ];
@@ -157,7 +157,7 @@ export default function ConfigEditorPane({
 
   const handleUpdateTool = (index: number, field: keyof Tool, value: any) => {
     const newTools = [...tools];
-    if (field === 'vector_store_ids') {
+    if (field === 'knowledge_base_ids') {
       newTools[index][field] = [value];
     } else {
       (newTools[index] as any)[field] = value;
@@ -574,9 +574,9 @@ export default function ConfigEditorPane({
                   </label>
                   <input
                     type="text"
-                    value={tool.vector_store_ids[0] || ''}
+                    value={tool.knowledge_base_ids[0] || ''}
                     onChange={(e) =>
-                      handleUpdateTool(index, 'vector_store_ids', e.target.value)
+                      handleUpdateTool(index, 'knowledge_base_ids', e.target.value)
                     }
                     placeholder="vs_abc123"
                     className="w-full px-2 py-1 rounded text-xs focus:outline-none"

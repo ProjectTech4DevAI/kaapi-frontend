@@ -212,18 +212,39 @@ function PromptEditorContent() {
 
     try {
       // Build config blob (store prompt in instructions field)
+      // Extract tools array and flatten to direct params fields for backend compatibility
+      const tools = currentConfigBlob.completion.params.tools || [];
+
+      // Collect ALL knowledge_base_ids from ALL tools into a single array
+      const allKnowledgeBaseIds: string[] = [];
+      let maxNumResults = 20; // default
+
+      tools.forEach((tool) => {
+        // Add all knowledge_base_ids from this tool
+        allKnowledgeBaseIds.push(...tool.knowledge_base_ids);
+        // Use max_num_results from first tool (could be made configurable)
+        if (allKnowledgeBaseIds.length === tool.knowledge_base_ids.length) {
+          maxNumResults = tool.max_num_results;
+        }
+      });
+
       const configBlob: ConfigBlob = {
         completion: {
-          // provider: provider as 'openai' | 'anthropic' | 'google',
-          provider:provider as 'openai',
+          provider: currentConfigBlob.completion.provider,
           params: {
             model: currentConfigBlob.completion.params.model,
             instructions: currentContent, // Store prompt as instructions
-            temperature: temperature,
-            ...(tools.length > 0 && { tools }),
+            temperature: currentConfigBlob.completion.params.temperature,
+            // Flatten tools array to direct fields for backend - support multiple knowledge bases
+            ...(allKnowledgeBaseIds.length > 0 && {
+              knowledge_base_ids: allKnowledgeBaseIds,
+              max_num_results: maxNumResults,
+            }),
           },
         },
       };
+
+      console.log('[DEBUG] Config blob being sent:', JSON.stringify(configBlob, null, 2));
 
       // Check if updating existing config (same name exists)
       const existingConfig = savedConfigs.find(c => c.name === currentConfigName.trim());

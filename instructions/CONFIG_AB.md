@@ -75,7 +75,7 @@ We have a React-based version control system for prompt templates (similar to Gi
         tools: [
           {
             type: 'file_search',
-            vector_store_ids: ['vs_abc123'],
+            knowledge_base_ids: ['vs_abc123'],
             max_num_results: 20
           }
         ]

@@ -90,7 +90,7 @@ export type ScoreObject = NewScoreObjectV2 | NewScoreObject | LegacyScoreObject;
 export interface AssistantConfig {
   name: string;
   model: string;
-  vector_store_ids: string[];
+  knowledge_base_ids: string[];
   project_id: number;
   organization_id: number;
   updated_at: string;

@@ -259,7 +259,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                 ))}
               </div>
               {configVersionInfo.tools.map((tool, idx) => (
-                Array.isArray(tool.vector_store_ids) && tool.vector_store_ids.length > 0 && (
+                Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
                   <div key={`vs-${idx}`} className="mb-4">
                     <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>
                       Vector Store IDs ({tool.type})
@@ -269,7 +269,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                       borderColor: '#e5e5e5',
                       color: '#171717'
                     }}>
-                      {tool.vector_store_ids.join(', ')}
+                      {tool.knowledge_base_ids.join(', ')}
                     </div>
                   </div>
                 )
@@ -297,7 +297,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                 ))}
               </div>
               {job.config.tools.map((tool, idx) => (
-                Array.isArray(tool.vector_store_ids) && tool.vector_store_ids.length > 0 && (
+                Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
                   <div key={`vs-${idx}`} className="mb-4">
                     <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>
                       Vector Store IDs ({tool.type})
@@ -307,7 +307,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                       borderColor: '#e5e5e5',
                       color: '#171717'
                     }}>
-                      {tool.vector_store_ids.join(', ')}
+                      {tool.knowledge_base_ids.join(', ')}
                     </div>
                   </div>
                 )
@@ -315,7 +315,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
             </div>
           )}
 
-          {Array.isArray(assistantConfig?.vector_store_ids) && assistantConfig.vector_store_ids.length > 0 && (
+          {Array.isArray(assistantConfig?.knowledge_base_ids) && assistantConfig.knowledge_base_ids.length > 0 && (
             <div>
               <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Vector Store IDs</div>
               <div className="text-sm font-mono p-3 rounded-md border" style={{
@@ -323,7 +323,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                 borderColor: '#e5e5e5',
                 color: '#171717'
               }}>
-                {assistantConfig.vector_store_ids.join(', ')}
+                {assistantConfig.knowledge_base_ids.join(', ')}
               </div>
             </div>
           )}

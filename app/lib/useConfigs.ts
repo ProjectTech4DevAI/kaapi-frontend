@@ -86,6 +86,22 @@ const flattenConfigVersion = (
   const blob = version.config_blob;
   const params = blob.completion.params;
 
+  // Backend sends flattened fields (knowledge_base_ids, max_num_results) directly on params
+  // Convert to tools array for frontend UI compatibility
+  const tools: Tool[] = params.tools || [];
+
+  // If no tools array but has flattened fields, create tools array from them
+  // Each knowledge_base_id becomes a separate tool for UI display
+  if (tools.length === 0 && params.knowledge_base_ids && params.knowledge_base_ids.length > 0) {
+    params.knowledge_base_ids.forEach((kbId: string) => {
+      tools.push({
+        type: 'file_search',
+        knowledge_base_ids: [kbId], // Each tool gets one ID for UI
+        max_num_results: params.max_num_results || 20,
+      });
+    });
+  }
+
   return {
     id: version.id,
     config_id: config.id,
@@ -98,8 +114,8 @@ const flattenConfigVersion = (
     modelName: params.model || '',
     provider: blob.completion.provider,
     temperature: params.temperature || 0.7,
-    vectorStoreIds: params.tools?.[0]?.vector_store_ids?.[0] || '',
-    tools: params.tools || [],
+    vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
+    tools: tools,
     commit_message: version.commit_message,
   };
 };

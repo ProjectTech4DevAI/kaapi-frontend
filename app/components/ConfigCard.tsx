@@ -154,43 +154,59 @@ export default function ConfigCard({
                 ))}
 
                 {/* Vector Stores Section inside Tools */}
-                {latestVersion.vectorStoreIds && (
-                  <div className="mt-3 pt-2" style={{ borderTop: `1px solid ${colors.border}` }}>
-                    <button
-                      onClick={() => setShowVectorStores(!showVectorStores)}
-                      className="w-full flex items-center justify-between px-2 py-1 rounded-md transition-colors"
-                      style={{
-                        backgroundColor: colors.bg.primary,
-                      }}
-                    >
-                      <span style={{ color: colors.text.secondary, fontSize: '11px' }}>
-                        Vector Store IDs
-                      </span>
-                      <svg
-                        className={`w-3 h-3 transition-transform ${showVectorStores ? 'rotate-180' : ''}`}
-                        style={{ color: colors.text.secondary }}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    {showVectorStores && (
-                      <div
-                        className="mt-1 p-2 rounded-md break-all"
+                {(() => {
+                  // Collect all knowledge_base_ids from all tools
+                  const allVectorStoreIds = latestVersion.tools
+                    .flatMap(tool => tool.knowledge_base_ids || [])
+                    .filter(id => id);
+
+                  return allVectorStoreIds.length > 0 && (
+                    <div className="mt-3 pt-2" style={{ borderTop: `1px solid ${colors.border}` }}>
+                      <button
+                        onClick={() => setShowVectorStores(!showVectorStores)}
+                        className="w-full flex items-center justify-between px-2 py-1 rounded-md transition-colors"
                         style={{
                           backgroundColor: colors.bg.primary,
-                          color: colors.text.primary,
-                          fontFamily: 'monospace',
-                          fontSize: '10px',
                         }}
                       >
-                        {latestVersion.vectorStoreIds}
-                      </div>
-                    )}
-                  </div>
-                )}
+                        <span style={{ color: colors.text.secondary, fontSize: '11px' }}>
+                          Vector Store IDs ({allVectorStoreIds.length})
+                        </span>
+                        <svg
+                          className={`w-3 h-3 transition-transform ${showVectorStores ? 'rotate-180' : ''}`}
+                          style={{ color: colors.text.secondary }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {showVectorStores && (
+                        <div
+                          className="mt-1 p-2 rounded-md space-y-1"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            color: colors.text.primary,
+                          }}
+                        >
+                          {allVectorStoreIds.map((id, idx) => (
+                            <div
+                              key={idx}
+                              className="break-all"
+                              style={{
+                                fontFamily: 'monospace',
+                                fontSize: '10px',
+                              }}
+                            >
+                              {id}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>

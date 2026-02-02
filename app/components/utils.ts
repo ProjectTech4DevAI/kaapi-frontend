@@ -5,14 +5,22 @@
 /**
  * Converts a date string to IST timezone and formats it
  * @param dateString - Date string from backend (in IST format but without timezone info)
- * @returns Formatted date string in en-GB locale with 12-hour format
+ * @returns Formatted date string (e.g., "15 Jan 2024, 14:30")
  */
-export const formatDate = (dateString: string): string => {
-  // Parse the date string and treat it as IST time
-  const date = new Date(dateString);
-  // Add 5.5 hours (IST offset) since the input is already in IST but parsed as UTC
-  const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
-  return istDate.toLocaleString('en-GB', { hour12: true });
+export const formatDate = (dateString?: string): string => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+    const day = istDate.getDate();
+    const month = istDate.toLocaleDateString('en-US', { month: 'short' });
+    const year = istDate.getFullYear();
+    const hours = String(istDate.getHours()).padStart(2, '0');
+    const minutes = String(istDate.getMinutes()).padStart(2, '0');
+    return `${day} ${month} ${year}, ${hours}:${minutes}`;
+  } catch {
+    return dateString;
+  }
 };
 
 /**

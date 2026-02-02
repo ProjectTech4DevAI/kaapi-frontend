@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
-// GET /api/collection/collection_job/[collection_job_id] - Get collection job status
+// GET /api/collections/jobs/[job_id] - Get collection job status
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ collection_job_id: string }> }
+  { params }: { params: Promise<{ job_id: string }> }
 ) {
-  const { collection_job_id } = await params;
+  const { job_id } = await params;
   const apiKey = request.headers.get('X-API-KEY');
 
   if (!apiKey) {
@@ -19,7 +19,7 @@ export async function GET(
 
   try {
     const response = await fetch(
-      `${backendUrl}/api/v1/collection_jobs/${collection_job_id}`,
+      `${backendUrl}/api/v1/collections/jobs/${job_id}`,
       {
         headers: {
           'X-API-KEY': apiKey,

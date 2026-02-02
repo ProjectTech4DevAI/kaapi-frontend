@@ -455,11 +455,11 @@ export default function KnowledgeBasePage() {
             <div className="flex-1 overflow-y-auto px-6 pb-6">
           {isLoading && collections.length === 0 ? (
             <div className="text-center py-8" style={{ color: colors.text.secondary }}>
-              Loading collections...
+              Loading knowledge bases...
             </div>
           ) : collections.length === 0 ? (
             <div className="text-center py-8" style={{ color: colors.text.secondary }}>
-              No collections yet. Create your first one!
+              No knowledge bases yet. Create your first one!
             </div>
           ) : (
             <div className="space-y-3">
@@ -838,7 +838,7 @@ export default function KnowledgeBasePage() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center" style={{ color: colors.text.secondary }}>
-            Select a collection to view details
+            Select a knowledge base to view details
           </div>
         )}
         </div>

@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const apiKey = request.headers.get('X-API-KEY');
 
   try {
-    const response = await fetch(`${backendUrl}/api/v1/configs/`, {
+    const response = await fetch(`${backendUrl}/api/v1/configs`, {
       headers: {
         'X-API-KEY': apiKey || '',
       },
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const body=await request.json();
     const backendUrl=process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
-    const response=await fetch(`${backendUrl}/api/v1/configs/`, {
+    const response=await fetch(`${backendUrl}/api/v1/configs`, {
       method:'POST',
       body:JSON.stringify(body),
       headers:{

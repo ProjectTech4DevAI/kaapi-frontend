@@ -5,7 +5,7 @@
  */
 
 "use client"
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
 import { ConfigGroup, SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
@@ -23,6 +23,8 @@ export default function ConfigCard({
 }: ConfigCardProps) {
   const router = useRouter();
   const { latestVersion, totalVersions } = configGroup;
+  const [showTools, setShowTools] = useState(false);
+  const [showVectorStores, setShowVectorStores] = useState(false);
 
   const handleEdit = () => {
     router.push(`/configurations/prompt-editor?config=${latestVersion.config_id}&version=${latestVersion.version}`);
@@ -100,6 +102,99 @@ export default function ConfigCard({
             <span style={{ color: colors.text.primary, fontWeight: 500 }}>{latestVersion.temperature.toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Tools Dropdown */}
+        {latestVersion.tools && latestVersion.tools.length > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowTools(!showTools)}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors"
+              style={{
+                backgroundColor: colors.bg.secondary,
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              <span style={{ color: colors.text.secondary }}>
+                Tools ({latestVersion.tools.length})
+              </span>
+              <svg
+                className={`w-3 h-3 transition-transform ${showTools ? 'rotate-180' : ''}`}
+                style={{ color: colors.text.secondary }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showTools && (
+              <div
+                className="mt-1 p-2 rounded-md text-xs space-y-2"
+                style={{
+                  backgroundColor: colors.bg.secondary,
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                {latestVersion.tools.map((tool, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div style={{ color: colors.text.primary, fontWeight: 500 }}>
+                      {tool.type}
+                    </div>
+                    {tool.knowledge_base_ids && tool.knowledge_base_ids.length > 0 && (
+                      <div style={{ color: colors.text.secondary }}>
+                        Knowledge Bases: {tool.knowledge_base_ids.length}
+                      </div>
+                    )}
+                    {tool.max_num_results && (
+                      <div style={{ color: colors.text.secondary }}>
+                        Max Results: {tool.max_num_results}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Vector Stores Section inside Tools */}
+                {latestVersion.vectorStoreIds && (
+                  <div className="mt-3 pt-2" style={{ borderTop: `1px solid ${colors.border}` }}>
+                    <button
+                      onClick={() => setShowVectorStores(!showVectorStores)}
+                      className="w-full flex items-center justify-between px-2 py-1 rounded-md transition-colors"
+                      style={{
+                        backgroundColor: colors.bg.primary,
+                      }}
+                    >
+                      <span style={{ color: colors.text.secondary, fontSize: '11px' }}>
+                        Vector Store IDs
+                      </span>
+                      <svg
+                        className={`w-3 h-3 transition-transform ${showVectorStores ? 'rotate-180' : ''}`}
+                        style={{ color: colors.text.secondary }}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {showVectorStores && (
+                      <div
+                        className="mt-1 p-2 rounded-md break-all"
+                        style={{
+                          backgroundColor: colors.bg.primary,
+                          color: colors.text.primary,
+                          fontFamily: 'monospace',
+                          fontSize: '10px',
+                        }}
+                      >
+                        {latestVersion.vectorStoreIds}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Prompt Preview */}
         <div

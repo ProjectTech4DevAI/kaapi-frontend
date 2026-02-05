@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import { formatDate } from '@/app/components/utils';
 import Sidebar from '@/app/components/Sidebar';
@@ -37,14 +37,19 @@ export default function KnowledgeBasePage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showDocumentPicker, setShowDocumentPicker] = useState(false);
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
-  const [showAllDocuments, setShowAllDocuments] = useState(false);
+  const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [apiKey, setApiKey] = useState<APIKey | null>(null);
+
+  // Polling refs — persist across renders, no stale closures
+  const apiKeyRef = useRef<APIKey | null>(null);
+  const activeJobsRef = useRef<Map<string, string>>(new Map()); // collectionId → jobId
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Form state
   const [collectionName, setCollectionName] = useState('');
   const [collectionDescription, setCollectionDescription] = useState('');
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
-  const [batchSize, setBatchSize] = useState(1);
 
   // Helper functions for name cache - using job_id as key
   const CACHE_KEY = 'collection_job_cache';
@@ -183,9 +188,25 @@ export default function KnowledgeBasePage() {
 
         // Enrich collections with cached names and live status
         const enrichedCollections = await Promise.all(
-          collections.map(collection => enrichCollectionWithCache(collection))
+          collections.map((collection: Collection) => enrichCollectionWithCache(collection))
         );
-        setCollections(enrichedCollections);
+        // Preserve optimistic entries not yet replaced by a real collection
+        setCollections((prev) => {
+          const fetchedJobIds = new Set(enrichedCollections.map((c: Collection) => c.job_id).filter(Boolean));
+          const activeOptimistic = prev.filter(
+            (c) => c.id.startsWith('optimistic-') && (!c.job_id || !fetchedJobIds.has(c.job_id))
+          );
+          return [...activeOptimistic, ...enrichedCollections];
+        });
+
+        // If selectedCollection is optimistic and the real one just arrived, swap it in
+        setSelectedCollection((prev) => {
+          if (prev?.id.startsWith('optimistic-') && prev.job_id) {
+            const replacement = enrichedCollections.find((c: Collection) => c.job_id === prev.job_id);
+            if (replacement) return replacement;
+          }
+          return prev;
+        });
       } else {
         const error = await response.json().catch(() => ({}));
         console.error('Failed to fetch collections:', response.status, error);
@@ -225,7 +246,6 @@ export default function KnowledgeBasePage() {
   const fetchCollectionDetails = async (collectionId: string) => {
     if (!apiKey) return;
 
-    setShowAllDocuments(false); // Reset to show only 3 documents
     setIsLoading(true);
     try {
       const response = await fetch(`/api/collections/${collectionId}`, {
@@ -247,6 +267,72 @@ export default function KnowledgeBasePage() {
     }
   };
 
+  // Start the 3-second polling loop (idempotent — safe to call multiple times)
+  const startPolling = () => {
+    if (pollingRef.current) return;
+    if (activeJobsRef.current.size === 0) return;
+
+    pollingRef.current = setInterval(async () => {
+      const currentApiKey = apiKeyRef.current;
+      if (!currentApiKey) return;
+
+      const jobs = activeJobsRef.current;
+      if (jobs.size === 0) {
+        clearInterval(pollingRef.current!);
+        pollingRef.current = null;
+        return;
+      }
+
+      let anyResolved = false;
+
+      for (const [collectionId, jobId] of Array.from(jobs)) {
+        try {
+          const response = await fetch(`/api/collections/jobs/${jobId}`, {
+            headers: { 'X-API-KEY': currentApiKey.key },
+          });
+          if (!response.ok) continue;
+
+          const result = await response.json();
+          const jobData = result.data || result;
+          const status = jobData.status || null;
+          const realCollectionId = jobData.collection?.id || jobData.collection_id || null;
+
+          if (status && status !== 'in_progress' && status !== 'pending') {
+            // Update both the list card and the selected preview
+            setCollections((prev) =>
+              prev.map((c) => (c.id === collectionId ? { ...c, status } : c))
+            );
+            setSelectedCollection((prev) =>
+              prev?.id === collectionId ? { ...prev, status } : prev
+            );
+
+            jobs.delete(collectionId);
+            anyResolved = true;
+
+            // Persist real collectionId so enrichment finds it on next load
+            if (collectionId.startsWith('optimistic-') && realCollectionId) {
+              try {
+                const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+                const existing = cache[jobId] || {};
+                cache[jobId] = { ...existing, collection_id: realCollectionId };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+              } catch (e) {
+                console.error('Failed to update cache:', e);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Polling error for job', jobId, error);
+        }
+      }
+
+      // At least one job finished — refresh the full list to swap in real collections
+      if (anyResolved) {
+        fetchCollections();
+      }
+    }, 3000);
+  };
+
   // Show confirmation dialog
   const handleCreateClick = () => {
     if (!apiKey) {
@@ -266,6 +352,39 @@ export default function KnowledgeBasePage() {
   const handleConfirmCreate = async () => {
     setShowConfirmCreate(false);
     setIsCreating(true);
+
+    // Capture form values before clearing them
+    const nameAtCreation = collectionName;
+    const descriptionAtCreation = collectionDescription;
+    const docsAtCreation = Array.from(selectedDocuments);
+
+    // Immediately clear the form and switch to preview
+    setShowCreateForm(false);
+    setShowDocumentPicker(false);
+    setCollectionName('');
+    setCollectionDescription('');
+    setSelectedDocuments(new Set());
+
+    // Build an optimistic collection and show the preview right away
+    const optimisticId = `optimistic-${Date.now()}`;
+    const now = new Date().toISOString();
+    const optimisticDocuments: Document[] = docsAtCreation
+      .map((id) => availableDocuments.find((d) => d.id === id))
+      .filter((d): d is Document => !!d);
+
+    const optimisticCollection: Collection = {
+      id: optimisticId,
+      name: nameAtCreation,
+      description: descriptionAtCreation,
+      inserted_at: now,
+      updated_at: now,
+      status: 'pending',
+      documents: optimisticDocuments,
+    };
+
+    setCollections((prev) => [optimisticCollection, ...prev]);
+    setSelectedCollection(optimisticCollection);
+
     try {
       const response = await fetch('/api/collections', {
         method: 'POST',
@@ -274,41 +393,51 @@ export default function KnowledgeBasePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: collectionName,
-          description: collectionDescription,
-          documents: Array.from(selectedDocuments),
-          batch_size: batchSize,
+          name: nameAtCreation,
+          description: descriptionAtCreation,
+          documents: docsAtCreation,
           provider: 'openai',
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-
-        // Extract job_id from response (this is the collection job ID)
         const jobId = result.data?.job_id;
 
-        // Save immediately with job_id (don't wait for collection_id as it gets created later)
         if (jobId) {
-          saveCollectionData(jobId, collectionName, collectionDescription);
+          saveCollectionData(jobId, nameAtCreation, descriptionAtCreation);
+
+          // Attach job_id to the optimistic entry so polling picks it up
+          setCollections((prev) =>
+            prev.map((c) =>
+              c.id === optimisticId ? { ...c, job_id: jobId } : c
+            )
+          );
+          setSelectedCollection((prev) =>
+            prev?.id === optimisticId ? { ...prev, job_id: jobId } : prev
+          );
+
+          // Register for polling immediately — don't wait for the next collections render
+          activeJobsRef.current.set(optimisticId, jobId);
+          startPolling();
         } else {
           console.error('No job ID found in response - cannot save name to cache');
         }
 
-        setShowCreateForm(false);
-        setShowDocumentPicker(false);
-        setCollectionName('');
-        setCollectionDescription('');
-        setSelectedDocuments(new Set());
-        setBatchSize(1);
+        // Refresh the real list from the backend (replaces the optimistic entry once the backend knows about it)
         await fetchCollections();
       } else {
         const error = await response.json();
         alert(`Failed to create knowledge base: ${error.error || 'Unknown error'}`);
+        // Remove the optimistic entry on failure
+        setCollections((prev) => prev.filter((c) => c.id !== optimisticId));
+        setSelectedCollection(null);
       }
     } catch (error) {
       console.error('Error creating knowledge base:', error);
       alert('Failed to create knowledge base');
+      setCollections((prev) => prev.filter((c) => c.id !== optimisticId));
+      setSelectedCollection(null);
     } finally {
       setIsCreating(false);
     }
@@ -371,6 +500,39 @@ export default function KnowledgeBasePage() {
     }
   }, [apiKey]);
 
+  // Keep apiKeyRef in sync so polling always has the current key
+  useEffect(() => { apiKeyRef.current = apiKey; }, [apiKey]);
+
+  // Sync activeJobsRef when collections change (picks up in-progress entries on initial load)
+  useEffect(() => {
+    // Remove tracked jobs whose collections no longer exist in the list
+    const currentIds = new Set(collections.map((c) => c.id));
+    for (const [id] of Array.from(activeJobsRef.current)) {
+      if (!currentIds.has(id)) activeJobsRef.current.delete(id);
+    }
+
+    // Add any new pending / in-progress collections
+    let newJobAdded = false;
+    collections.forEach((c) => {
+      if ((c.status === 'in_progress' || c.status === 'pending') && c.job_id && !activeJobsRef.current.has(c.id)) {
+        activeJobsRef.current.set(c.id, c.job_id);
+        newJobAdded = true;
+      }
+    });
+
+    if (newJobAdded && apiKey) startPolling();
+  }, [collections, apiKey]);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <div className="flex h-screen" style={{ backgroundColor: colors.bg.primary }}>
       <Sidebar collapsed={sidebarCollapsed} activeRoute="/knowledge-base" />
@@ -430,7 +592,7 @@ export default function KnowledgeBasePage() {
         <div className="flex-1 overflow-hidden flex">
           {/* Left Panel - Collections List */}
           <div
-            className="w-2/5 border-r flex flex-col"
+            className="w-1/3 border-r flex flex-col"
             style={{ borderColor: colors.border }}
           >
             {/* Create Button */}
@@ -462,7 +624,7 @@ export default function KnowledgeBasePage() {
               No knowledge bases yet. Create your first one!
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {collections.map((collection) => (
                 <div
                   key={collection.id}
@@ -471,26 +633,61 @@ export default function KnowledgeBasePage() {
                     setShowDocumentPicker(false);
                     fetchCollectionDetails(collection.id);
                   }}
-                  className="p-4 rounded-lg border cursor-pointer transition-all"
+                  className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                    selectedCollection?.id === collection.id ? 'ring-2 ring-offset-1' : ''
+                  }`}
                   style={{
-                    backgroundColor: selectedCollection?.id === collection.id ? colors.bg.secondary : 'transparent',
-                    borderColor: selectedCollection?.id === collection.id ? colors.border : 'transparent',
+                    backgroundColor: selectedCollection?.id === collection.id
+                      ? 'hsl(202, 100%, 95%)'
+                      : colors.bg.primary,
+                    borderColor: selectedCollection?.id === collection.id
+                      ? 'hsl(202, 100%, 50%)'
+                      : colors.border,
                   }}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-sm" style={{ color: colors.text.primary }}>
-                        {collection.name}
-                      </h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.primary }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <h3 className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                          {collection.name}
+                        </h3>
+                      </div>
                       {collection.description && (
-                        <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                        <p className="text-xs truncate" style={{ color: colors.text.secondary }}>
                           {collection.description}
                         </p>
                       )}
-                      <p className="text-xs mt-2" style={{ color: colors.text.secondary }}>
-                        Created: {formatDate(collection.inserted_at)}
+                      <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                        {formatDate(collection.inserted_at)}
                       </p>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteCollection(collection.id);
+                      }}
+                      className="p-1.5 rounded-md transition-colors flex-shrink-0"
+                      style={{
+                        borderWidth: '1px',
+                        borderColor: 'hsl(8, 86%, 80%)',
+                        backgroundColor: colors.bg.primary,
+                        color: 'hsl(8, 86%, 40%)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'hsl(8, 86%, 95%)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.bg.primary;
+                      }}
+                      title="Delete Knowledge Base"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -500,7 +697,7 @@ export default function KnowledgeBasePage() {
         </div>
 
         {/* Right Panel - Create Form or Preview */}
-        <div className="w-3/5 flex flex-col">
+        <div className="w-2/3 flex flex-col">
         {showCreateForm ? (
           /* Create Form */
           <div className="flex-1 overflow-y-auto p-6">
@@ -515,7 +712,6 @@ export default function KnowledgeBasePage() {
                   setCollectionName('');
                   setCollectionDescription('');
                   setSelectedDocuments(new Set());
-                  setBatchSize(1);
                 }}
                 className="p-2 rounded-md transition-colors"
                 style={{ color: colors.text.secondary }}
@@ -556,51 +752,6 @@ export default function KnowledgeBasePage() {
                 placeholder="Enter collection description (optional)"
                 rows={3}
                 className="w-full px-4 py-2 rounded-md border text-sm resize-none"
-                style={{
-                  borderColor: colors.border,
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                }}
-              />
-            </div>
-
-            {/* Batch Size Input */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2" style={{ color: colors.text.primary }}>
-                Batch Size
-                <div className="relative group">
-                  <svg
-                    className="w-4 h-4 cursor-help"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <div
-                    className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 rounded-md text-xs z-10"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.primary,
-                      border: `1px solid ${colors.border}`,
-                    }}
-                  >
-                    Number of documents to send to the knowledge base provider in a single transaction.
-                  </div>
-                </div>
-              </label>
-              <input
-                type="number"
-                value={batchSize}
-                onChange={(e) => setBatchSize(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                className="w-full px-4 py-2 rounded-md border text-sm"
                 style={{
                   borderColor: colors.border,
                   backgroundColor: colors.bg.secondary,
@@ -721,7 +872,7 @@ export default function KnowledgeBasePage() {
                     Status:
                   </div>
                   <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                    {selectedCollection.status || 'N/A'}
+                    {(selectedCollection.status || 'N/A').replace(/_/g, ' ').toUpperCase()}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -744,96 +895,28 @@ export default function KnowledgeBasePage() {
             </div>
 
             {/* Documents in Collection */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: colors.text.primary }}>
-                Documents Present ({selectedCollection.documents?.length || 0})
-              </h3>
-              {selectedCollection.documents && selectedCollection.documents.length > 0 ? (
-                <div>
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between py-2 px-3 mb-2 gap-4" style={{ borderBottom: `2px solid ${colors.border}` }}>
-                    <p className="text-xs font-semibold flex-1 pl-4" style={{ color: colors.text.secondary }}>
-                      File Name
-                    </p>
-                    <p className="text-xs font-semibold pr-4" style={{ color: colors.text.secondary }}>
-                      Uploaded At
-                    </p>
-                    <p className="text-xs font-semibold flex-shrink-0 pl-4" style={{ color: colors.text.secondary, width: '70px' }}>
-                      Action
-                    </p>
-                  </div>
-                  {/* Document List */}
-                  <div className="space-y-1">
-                    {(showAllDocuments ? selectedCollection.documents : selectedCollection.documents.slice(0, 3)).map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="flex items-center justify-between py-2 px-3 hover:bg-opacity-50 transition-colors gap-4"
-                        style={{
-                          borderBottom: `1px solid ${colors.border}`,
-                        }}
-                      >
-                        <p className="text-sm flex-1 truncate" style={{ color: colors.text.primary }}>
-                          {doc.fname}
-                        </p>
-                        <p className="text-xs" style={{ color: colors.text.secondary }}>
-                          {doc.inserted_at ? formatDate(doc.inserted_at) : 'N/A'}
-                        </p>
-                        {doc.signed_url && (
-                          <a
-                            href={doc.signed_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs px-3 py-1 rounded-md hover:opacity-80 transition-opacity flex-shrink-0"
-                            style={{
-                              color: colors.text.primary,
-                              backgroundColor: colors.bg.secondary,
-                              border: `1px solid ${colors.border}`,
-                            }}
-                          >
-                            Preview
-                          </a>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {/* Show More Button */}
-                  {selectedCollection.documents.length > 3 && !showAllDocuments && (
-                    <div className="mt-4 text-center">
-                      <button
-                        onClick={() => setShowAllDocuments(true)}
-                        className="text-sm px-4 py-2 rounded-md hover:opacity-80 transition-opacity"
-                        style={{
-                          color: colors.text.primary,
-                          backgroundColor: colors.bg.secondary,
-                          border: `1px solid ${colors.border}`,
-                        }}
-                      >
-                        Show More ({selectedCollection.documents.length - 3} more)
-                      </button>
-                    </div>
-                  )}
-                  {/* Show Less Button */}
-                  {showAllDocuments && selectedCollection.documents.length > 3 && (
-                    <div className="mt-4 text-center">
-                      <button
-                        onClick={() => setShowAllDocuments(false)}
-                        className="text-sm px-4 py-2 rounded-md hover:opacity-80 transition-opacity"
-                        style={{
-                          color: colors.text.primary,
-                          backgroundColor: colors.bg.secondary,
-                          border: `1px solid ${colors.border}`,
-                        }}
-                      >
-                        Show Less
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8" style={{ color: colors.text.secondary }}>
-                  No documents in this collection
-                </div>
-              )}
+            <div className="px-6 pt-6 pb-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  Documents Present ({selectedCollection.documents?.length || 0})
+                </h3>
+                {selectedCollection.documents && selectedCollection.documents.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setPreviewDoc(selectedCollection.documents![0]);
+                      setShowDocPreviewModal(true);
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
+                    style={{
+                      color: colors.text.primary,
+                      backgroundColor: colors.bg.secondary,
+                      border: `1px solid ${colors.border}`,
+                    }}
+                  >
+                    Preview
+                  </button>
+                )}
+              </div>
             </div>
           </>
         ) : (
@@ -985,6 +1068,82 @@ export default function KnowledgeBasePage() {
                 >
                   Done
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Preview Modal */}
+      {showDocPreviewModal && selectedCollection?.documents && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div
+            className="rounded-lg w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden"
+            style={{ backgroundColor: colors.bg.primary }}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${colors.border}` }}>
+              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+                Document Preview
+              </h2>
+              <button
+                onClick={() => {
+                  setShowDocPreviewModal(false);
+                  setPreviewDoc(null);
+                }}
+                className="p-1.5 rounded-md transition-colors"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Two-pane body */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Left pane — doc list */}
+              <div
+                className="w-1/5 flex flex-col overflow-y-auto flex-shrink-0"
+                style={{ borderRight: `1px solid ${colors.border}` }}
+              >
+                {selectedCollection.documents.map((doc) => (
+                  <button
+                    key={doc.id}
+                    onClick={() => setPreviewDoc(doc)}
+                    className="text-left px-4 py-3 flex-shrink-0 transition-colors"
+                    style={{
+                      backgroundColor: previewDoc?.id === doc.id ? colors.bg.secondary : 'transparent',
+                      borderBottom: `1px solid ${colors.border}`,
+                    }}
+                  >
+                    <p className="text-sm truncate" style={{ color: colors.text.primary }}>
+                      {doc.fname}
+                    </p>
+                    {doc.inserted_at && (
+                      <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                        {formatDate(doc.inserted_at)}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right pane — preview content */}
+              <div className="flex-1 overflow-hidden flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+                {previewDoc?.signed_url ? (
+                  <iframe
+                    key={previewDoc.id}
+                    src={previewDoc.signed_url}
+                    title={previewDoc.fname}
+                    className="w-full h-full"
+                    style={{ border: 'none' }}
+                  />
+                ) : (
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>
+                    {previewDoc ? 'No preview available for this document' : 'Select a document to preview'}
+                  </p>
+                )}
               </div>
             </div>
           </div>

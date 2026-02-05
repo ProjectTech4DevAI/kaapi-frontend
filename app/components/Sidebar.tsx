@@ -73,7 +73,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
           ]
         },
         { name: 'Documents', route: '/document' },
-        { name: 'Knowledge base', route: '/knowledge-base' },
+        { name: 'Knowledge Base', route: '/knowledge-base' },
         // { name: 'Model Testing', route: '/model-testing', comingSoon: true },
         // { name: 'Guardrails', route: '/guardrails', comingSoon: true },
         // { name: 'Redteaming', route: '/redteaming', comingSoon: true },

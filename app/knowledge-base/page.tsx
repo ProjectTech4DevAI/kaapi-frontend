@@ -36,7 +36,6 @@ export default function KnowledgeBasePage() {
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showDocumentPicker, setShowDocumentPicker] = useState(false);
-  const [showConfirmCreate, setShowConfirmCreate] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [collectionToDelete, setCollectionToDelete] = useState<string | null>(null);
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
@@ -47,6 +46,7 @@ export default function KnowledgeBasePage() {
   const apiKeyRef = useRef<APIKey | null>(null);
   const activeJobsRef = useRef<Map<string, string>>(new Map()); // collectionId → jobId
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fetchCollectionsRef = useRef<(() => Promise<void>) | null>(null);
 
   // Form state
   const [collectionName, setCollectionName] = useState('');
@@ -331,7 +331,7 @@ export default function KnowledgeBasePage() {
             });
 
             // If job is complete (not pending/in_progress/processing), remove from polling and trigger full refresh
-            const isComplete = !['PENDING','PROCESSING'].includes(status.toLowerCase());
+            const isComplete = !['pending', 'processing'].includes(status.toLowerCase());
             if (isComplete) {
               jobs.delete(collectionId);
               anyResolved = true;
@@ -355,14 +355,14 @@ export default function KnowledgeBasePage() {
       }
 
       // At least one job finished — refresh the full list to swap in real collections
-      if (anyResolved) {
-        fetchCollections();
+      if (anyResolved && fetchCollectionsRef.current) {
+        fetchCollectionsRef.current();
       }
     }, 5000);
   };
 
-  // Show confirmation dialog
-  const handleCreateClick = () => {
+  // Create knowledge base
+  const handleCreateClick = async () => {
     if (!apiKey) {
       alert('No API key found');
       return;
@@ -373,12 +373,6 @@ export default function KnowledgeBasePage() {
       return;
     }
 
-    setShowConfirmCreate(true);
-  };
-
-  // Create knowledge base
-  const handleConfirmCreate = async () => {
-    setShowConfirmCreate(false);
     setIsCreating(true);
 
     // Capture form values before clearing them
@@ -455,7 +449,7 @@ export default function KnowledgeBasePage() {
         // Refresh the real list from the backend (replaces the optimistic entry once the backend knows about it)
         await fetchCollections();
       } else {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
         alert(`Failed to create knowledge base: ${error.error || 'Unknown error'}`);
         // Remove the optimistic entry on failure
         setCollections((prev) => prev.filter((c) => c.id !== optimisticId));
@@ -554,6 +548,9 @@ export default function KnowledgeBasePage() {
   // Keep apiKeyRef in sync so polling always has the current key
   useEffect(() => { apiKeyRef.current = apiKey; }, [apiKey]);
 
+  // Keep fetchCollectionsRef in sync so polling always has the current function
+  useEffect(() => { fetchCollectionsRef.current = fetchCollections; }, [fetchCollections]);
+
   // Sync activeJobsRef when collections change (picks up in-progress entries on initial load)
   useEffect(() => {
     // Remove tracked jobs whose collections no longer exist in the list
@@ -562,10 +559,11 @@ export default function KnowledgeBasePage() {
       if (!currentIds.has(id)) activeJobsRef.current.delete(id);
     }
 
-    // Add any new pending / in-progress / processing collections
+    // Add any new pending / processing collections
     let newJobAdded = false;
     collections.forEach((c) => {
-      const isProcessing = c.status && ['in_progress', 'pending', 'processing'].includes(c.status.toLowerCase());
+      const isProcessing = c.status && ['pending', 'processing'].includes(c.status.toLowerCase());
+
       if (isProcessing && c.job_id && !activeJobsRef.current.has(c.id)) {
         activeJobsRef.current.set(c.id, c.job_id);
         newJobAdded = true;
@@ -716,30 +714,32 @@ export default function KnowledgeBasePage() {
                         {formatDate(collection.inserted_at)}
                       </p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteCollection(collection.id);
-                      }}
-                      className="p-1.5 rounded-md transition-colors flex-shrink-0"
-                      style={{
-                        borderWidth: '1px',
-                        borderColor: 'hsl(8, 86%, 80%)',
-                        backgroundColor: colors.bg.primary,
-                        color: 'hsl(8, 86%, 40%)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'hsl(8, 86%, 95%)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = colors.bg.primary;
-                      }}
-                      title="Delete Knowledge Base"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    {!collection.id.startsWith('optimistic-') && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCollection(collection.id);
+                        }}
+                        className="p-1.5 rounded-md transition-colors flex-shrink-0"
+                        style={{
+                          borderWidth: '1px',
+                          borderColor: 'hsl(8, 86%, 80%)',
+                          backgroundColor: colors.bg.primary,
+                          color: 'hsl(8, 86%, 40%)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'hsl(8, 86%, 95%)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = colors.bg.primary;
+                        }}
+                        title="Delete Knowledge Base"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -904,17 +904,19 @@ export default function KnowledgeBasePage() {
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDeleteCollection(selectedCollection.id)}
-                  className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: '#ef4444',
-                    border: '1px solid #ef4444',
-                  }}
-                >
-                  Delete
-                </button>
+                {!selectedCollection.id.startsWith('optimistic-') && (
+                  <button
+                    onClick={() => handleDeleteCollection(selectedCollection.id)}
+                    className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                    style={{
+                      backgroundColor: 'transparent',
+                      color: '#ef4444',
+                      border: '1px solid #ef4444',
+                    }}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
 
               {/* Metadata */}
@@ -979,47 +981,6 @@ export default function KnowledgeBasePage() {
         </div>
       </div>
       </div>
-
-      {/* Confirm Create Modal */}
-      {showConfirmCreate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            className="rounded-lg p-6 w-full max-w-md"
-            style={{ backgroundColor: colors.bg.primary }}
-          >
-            <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
-              Create Knowledge Base
-            </h2>
-            <p className="text-sm mb-6" style={{ color: colors.text.secondary }}>
-              This will take few seconds.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowConfirmCreate(false)}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: colors.text.secondary,
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmCreate}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Confirm Delete Modal */}
       {showConfirmDelete && (

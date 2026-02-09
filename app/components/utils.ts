@@ -11,6 +11,9 @@ export const formatDate = (dateString?: string): string => {
   if (!dateString) return 'N/A';
   try {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) {
+      return dateString;
+    }
     const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
     const day = istDate.getDate();
     const month = istDate.toLocaleDateString('en-US', { month: 'short' });

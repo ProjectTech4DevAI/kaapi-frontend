@@ -299,7 +299,7 @@ export default function DocumentPage() {
           {/* Content Area - Split View */}
           <div className="flex-1 overflow-hidden flex" style={{ backgroundColor: '#fafafa' }}>
             {/* Left Side: Document List */}
-            <div className="w-2/5 border-r overflow-y-auto" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+            <div className="w-1/3 border-r overflow-y-auto" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
               <DocumentListing
                 documents={currentDocuments}
                 selectedDocument={selectedDocument}

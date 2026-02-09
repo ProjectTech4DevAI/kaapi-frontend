@@ -37,6 +37,8 @@ export default function KnowledgeBasePage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showDocumentPicker, setShowDocumentPicker] = useState(false);
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [collectionToDelete, setCollectionToDelete] = useState<string | null>(null);
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [apiKey, setApiKey] = useState<APIKey | null>(null);
@@ -199,11 +201,15 @@ export default function KnowledgeBasePage() {
           return [...activeOptimistic, ...enrichedCollections];
         });
 
-        // If selectedCollection is optimistic and the real one just arrived, swap it in
+        // If selectedCollection is optimistic and the real one just arrived, swap it in and fetch details
         setSelectedCollection((prev) => {
           if (prev?.id.startsWith('optimistic-') && prev.job_id) {
             const replacement = enrichedCollections.find((c: Collection) => c.job_id === prev.job_id);
-            if (replacement) return replacement;
+            if (replacement) {
+              // Fetch full details including documents for the real collection
+              fetchCollectionDetails(replacement.id);
+              return replacement;
+            }
           }
           return prev;
         });
@@ -245,6 +251,15 @@ export default function KnowledgeBasePage() {
   // Fetch collection details with documents
   const fetchCollectionDetails = async (collectionId: string) => {
     if (!apiKey) return;
+
+    // Don't fetch optimistic collections from the server
+    if (collectionId.startsWith('optimistic-')) {
+      const optimisticCollection = collections.find(c => c.id === collectionId);
+      if (optimisticCollection) {
+        setSelectedCollection(optimisticCollection);
+      }
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -297,27 +312,40 @@ export default function KnowledgeBasePage() {
           const status = jobData.status || null;
           const realCollectionId = jobData.collection?.id || jobData.collection_id || null;
 
-          if (status && status !== 'in_progress' && status !== 'pending') {
-            // Update both the list card and the selected preview
+          if (status) {
+            // Always update status in UI (including in_progress/pending states)
             setCollections((prev) =>
-              prev.map((c) => (c.id === collectionId ? { ...c, status } : c))
+              prev.map((c) => {
+                // Update by collectionId OR by job_id (handles optimistic->real transition)
+                if (c.id === collectionId || c.job_id === jobId) {
+                  return { ...c, status };
+                }
+                return c;
+              })
             );
-            setSelectedCollection((prev) =>
-              prev?.id === collectionId ? { ...prev, status } : prev
-            );
+            setSelectedCollection((prev) => {
+              if (prev?.id === collectionId || prev?.job_id === jobId) {
+                return { ...prev, status };
+              }
+              return prev;
+            });
 
-            jobs.delete(collectionId);
-            anyResolved = true;
+            // If job is complete (not pending/in_progress/processing), remove from polling and trigger full refresh
+            const isComplete = !['PENDING','PROCESSING'].includes(status.toLowerCase());
+            if (isComplete) {
+              jobs.delete(collectionId);
+              anyResolved = true;
 
-            // Persist real collectionId so enrichment finds it on next load
-            if (collectionId.startsWith('optimistic-') && realCollectionId) {
-              try {
-                const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-                const existing = cache[jobId] || {};
-                cache[jobId] = { ...existing, collection_id: realCollectionId };
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-              } catch (e) {
-                console.error('Failed to update cache:', e);
+              // Persist real collectionId so enrichment finds it on next load
+              if (collectionId.startsWith('optimistic-') && realCollectionId) {
+                try {
+                  const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+                  const existing = cache[jobId] || {};
+                  cache[jobId] = { ...existing, collection_id: realCollectionId };
+                  localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+                } catch (e) {
+                  console.error('Failed to update cache:', e);
+                }
               }
             }
           }
@@ -330,7 +358,7 @@ export default function KnowledgeBasePage() {
       if (anyResolved) {
         fetchCollections();
       }
-    }, 3000);
+    }, 5000);
   };
 
   // Show confirmation dialog
@@ -443,10 +471,27 @@ export default function KnowledgeBasePage() {
     }
   };
 
-  // Delete collection
-  const handleDeleteCollection = async (collectionId: string) => {
+  // Delete collection - show confirmation modal
+  const handleDeleteCollection = (collectionId: string) => {
     if (!apiKey) return;
-    if (!confirm('Are you sure you want to delete this collection?')) return;
+    setCollectionToDelete(collectionId);
+    setShowConfirmDelete(true);
+  };
+
+  // Confirm and execute delete
+  const handleConfirmDelete = async () => {
+    if (!collectionToDelete || !apiKey) return;
+
+    setShowConfirmDelete(false);
+    const collectionId = collectionToDelete;
+    setCollectionToDelete(null);
+
+    // Store the deleted collection in case we need to restore it
+    const deletedCollection = collections.find((c) => c.id === collectionId);
+
+    // Optimistically remove from UI immediately
+    setCollections((prev) => prev.filter((c) => c.id !== collectionId));
+    setSelectedCollection(null);
 
     try {
       const response = await fetch(`/api/collections/${collectionId}`, {
@@ -455,15 +500,21 @@ export default function KnowledgeBasePage() {
       });
 
       if (response.ok) {
-        alert('Collection deleted successfully');
-        setSelectedCollection(null);
-        fetchCollections();
+        // Don't refresh - keep the optimistic state
       } else {
         alert('Failed to delete collection');
+        // Restore the collection on failure
+        if (deletedCollection) {
+          setCollections((prev) => [deletedCollection, ...prev]);
+        }
       }
     } catch (error) {
       console.error('Error deleting collection:', error);
       alert('Failed to delete collection');
+      // Restore the collection on error
+      if (deletedCollection) {
+        setCollections((prev) => [deletedCollection, ...prev]);
+      }
     }
   };
 
@@ -511,10 +562,11 @@ export default function KnowledgeBasePage() {
       if (!currentIds.has(id)) activeJobsRef.current.delete(id);
     }
 
-    // Add any new pending / in-progress collections
+    // Add any new pending / in-progress / processing collections
     let newJobAdded = false;
     collections.forEach((c) => {
-      if ((c.status === 'in_progress' || c.status === 'pending') && c.job_id && !activeJobsRef.current.has(c.id)) {
+      const isProcessing = c.status && ['in_progress', 'pending', 'processing'].includes(c.status.toLowerCase());
+      if (isProcessing && c.job_id && !activeJobsRef.current.has(c.id)) {
         activeJobsRef.current.set(c.id, c.job_id);
         newJobAdded = true;
       }
@@ -939,7 +991,7 @@ export default function KnowledgeBasePage() {
               Create Knowledge Base
             </h2>
             <p className="text-sm mb-6" style={{ color: colors.text.secondary }}>
-              This will take few seconds. 
+              This will take few seconds.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -963,6 +1015,50 @@ export default function KnowledgeBasePage() {
                 }}
               >
                 Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div
+            className="rounded-lg p-6 w-full max-w-md"
+            style={{ backgroundColor: colors.bg.primary }}
+          >
+            <h2 className="text-xl font-semibold mb-4" style={{ color: colors.text.primary }}>
+              Delete Collection
+            </h2>
+            <p className="text-sm mb-6" style={{ color: colors.text.secondary }}>
+              Are you sure you want to delete this collection? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowConfirmDelete(false);
+                  setCollectionToDelete(null);
+                }}
+                className="px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: colors.text.secondary,
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: '1px solid #ef4444',
+                }}
+              >
+                Delete
               </button>
             </div>
           </div>

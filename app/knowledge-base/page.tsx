@@ -41,6 +41,7 @@ export default function KnowledgeBasePage() {
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [apiKey, setApiKey] = useState<APIKey | null>(null);
+  const [showAllDocs, setShowAllDocs] = useState(false);
 
   // Polling refs — persist across renders, no stale closures
   const apiKeyRef = useRef<APIKey | null>(null);
@@ -83,7 +84,10 @@ export default function KnowledgeBasePage() {
     }
   };
 
-  const enrichCollectionWithCache = async (collection: Collection): Promise<Collection> => {
+  const enrichCollectionWithCache = async (
+    collection: Collection,
+    jobStatusMap: Map<string, { status: string | null; collectionId: string | null }>
+  ): Promise<Collection> => {
     // First try to look up cached data by collection_id
     let cached = getCollectionDataByCollectionId(collection.id);
 
@@ -93,48 +97,40 @@ export default function KnowledgeBasePage() {
     let description = cached.description;
 
     // If we don't have cached data by collection_id, we need to find it by checking all jobs
-    if (!jobId && apiKey) {
+    if (!jobId) {
       const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
 
       // Try each job_id in the cache to find which one matches this collection
       for (const [cachedJobId, data] of Object.entries(cache)) {
         const cacheData = data as { name: string; description: string; collection_id?: string };
 
-        // If collection_id is not set yet, fetch job info to check
+        // If collection_id is not set yet, check the pre-fetched job status
         if (!cacheData.collection_id) {
-          try {
-            const jobInfo = await fetchJobStatus(cachedJobId);
-            if (jobInfo?.collectionId === collection.id) {
-              jobId = cachedJobId;
-              name = cacheData.name;
-              description = cacheData.description;
-              collectionJobStatus = jobInfo.status;
+          const jobInfo = jobStatusMap.get(cachedJobId);
+          if (jobInfo?.collectionId === collection.id) {
+            jobId = cachedJobId;
+            name = cacheData.name;
+            description = cacheData.description;
+            collectionJobStatus = jobInfo.status;
 
-              // Update cache with collection_id for faster lookup next time
-              saveCollectionData(cachedJobId, cacheData.name, cacheData.description, collection.id);
-              break;
-            }
-          } catch (error) {
-            console.error('Error checking job:', cachedJobId, error);
+            // Update cache with collection_id for faster lookup next time
+            saveCollectionData(cachedJobId, cacheData.name, cacheData.description, collection.id);
+            break;
           }
         }
       }
     }
 
-    // If we have job_id but no status yet, fetch it
-    if (jobId && !collectionJobStatus && apiKey) {
-      try {
-        const jobInfo = await fetchJobStatus(jobId);
-        if (jobInfo?.status) {
-          collectionJobStatus = jobInfo.status;
+    // If we have job_id but no status yet, get it from the map
+    if (jobId && !collectionJobStatus) {
+      const jobInfo = jobStatusMap.get(jobId);
+      if (jobInfo?.status) {
+        collectionJobStatus = jobInfo.status;
 
-          // Update cache with collection_id if not already set
-          if (jobInfo.collectionId && !cached.job_id) {
-            saveCollectionData(jobId, name || '', description || '', jobInfo.collectionId);
-          }
+        // Update cache with collection_id if not already set
+        if (jobInfo.collectionId && !cached.job_id) {
+          saveCollectionData(jobId, name || '', description || '', jobInfo.collectionId);
         }
-      } catch (error) {
-        console.error('Failed to fetch live status:', error);
       }
     }
 
@@ -147,31 +143,67 @@ export default function KnowledgeBasePage() {
     };
   };
 
-  // Fetch job status for a collection
-  const fetchJobStatus = async (jobId: string) => {
-    if (!apiKey) return null;
+  // Pre-fetch job statuses only for entries that need collection_id resolution
+  const preFetchJobStatuses = async (collections: Collection[]): Promise<Map<string, { status: string | null; collectionId: string | null }>> => {
+    if (!apiKey) return new Map();
 
-    try {
-      const response = await fetch(`/api/collections/jobs/${jobId}`, {
-        headers: { 'X-API-KEY': apiKey.key },
-      });
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
 
-      if (response.ok) {
-        const result = await response.json();
-        const jobData = result.data || result;
+    // Only fetch job statuses for entries without collection_id AND that might match our collections
+    const jobIdsToFetch = new Set<string>();
 
-        // Extract collection ID from collection object or collection_id field
-        const collectionId = jobData.collection?.id || jobData.collection_id || null;
-
-        return {
-          status: jobData.status || null,
-          collectionId: collectionId
-        };
+    collections.forEach(collection => {
+      // First check if this collection already has cached data with collection_id
+      const cached = getCollectionDataByCollectionId(collection.id);
+      if (!cached.job_id) {
+        // No cached data found by collection_id, need to check all uncached jobs
+        for (const [jobId, data] of Object.entries(cache)) {
+          const cacheData = data as { name: string; description: string; collection_id?: string };
+          if (!cacheData.collection_id) {
+            jobIdsToFetch.add(jobId);
+          }
+        }
       }
-    } catch (error) {
-      console.error('Error fetching job status:', error);
+    });
+
+    // If no jobs need fetching, return empty map
+    if (jobIdsToFetch.size === 0) {
+      return new Map();
     }
-    return null;
+
+    // Fetch only the necessary job statuses in parallel
+    const results = await Promise.all(
+      Array.from(jobIdsToFetch).map(async (jobId) => {
+        try {
+          const response = await fetch(`/api/collections/jobs/${jobId}`, {
+            headers: { 'X-API-KEY': apiKey.key },
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            const jobData = result.data || result;
+            const collectionId = jobData.collection?.id || jobData.collection_id || null;
+
+            return {
+              jobId,
+              status: jobData.status || null,
+              collectionId: collectionId
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching job status:', error);
+        }
+        return { jobId, status: null, collectionId: null };
+      })
+    );
+
+    // Convert to Map for O(1) lookup
+    const jobStatusMap = new Map();
+    results.forEach(({ jobId, status, collectionId }) => {
+      jobStatusMap.set(jobId, { status, collectionId });
+    });
+
+    return jobStatusMap;
   };
 
   // Fetch collections
@@ -188,9 +220,12 @@ export default function KnowledgeBasePage() {
         const result = await response.json();
         const collections = result.data || [];
 
+        // Pre-fetch job statuses only for collections that need it
+        const jobStatusMap = await preFetchJobStatuses(collections);
+
         // Enrich collections with cached names and live status
         const enrichedCollections = await Promise.all(
-          collections.map((collection: Collection) => enrichCollectionWithCache(collection))
+          collections.map((collection: Collection) => enrichCollectionWithCache(collection, jobStatusMap))
         );
         // Preserve optimistic entries not yet replaced by a real collection
         setCollections((prev) => {
@@ -201,18 +236,24 @@ export default function KnowledgeBasePage() {
           return [...activeOptimistic, ...enrichedCollections];
         });
 
-        // If selectedCollection is optimistic and the real one just arrived, swap it in and fetch details
+        // If selectedCollection is optimistic and the real one just arrived, fetch full details
+        // Extract the logic outside the updater to avoid side effects
+        let replacementId: string | null = null;
         setSelectedCollection((prev) => {
           if (prev?.id.startsWith('optimistic-') && prev.job_id) {
             const replacement = enrichedCollections.find((c: Collection) => c.job_id === prev.job_id);
             if (replacement) {
-              // Fetch full details including documents for the real collection
-              fetchCollectionDetails(replacement.id);
-              return replacement;
+              replacementId = replacement.id;
+              // Don't set the replacement yet - let fetchCollectionDetails do it with full data
             }
           }
           return prev;
         });
+
+        // Fetch full details (including documents) for the replacement
+        if (replacementId) {
+          fetchCollectionDetails(replacementId);
+        }
       } else {
         const error = await response.json().catch(() => ({}));
         console.error('Failed to fetch collections:', response.status, error);
@@ -272,7 +313,36 @@ export default function KnowledgeBasePage() {
 
         // Handle different response formats
         const collectionData = result.data || result;
-        const enrichedCollection = await enrichCollectionWithCache(collectionData);
+
+        // Get cached data to find the job_id
+        const cached = getCollectionDataByCollectionId(collectionId);
+
+        // If we have a job_id, fetch its status
+        let status = undefined;
+        if (cached.job_id) {
+          try {
+            const jobResponse = await fetch(`/api/collections/jobs/${cached.job_id}`, {
+              headers: { 'X-API-KEY': apiKey.key },
+            });
+            if (jobResponse.ok) {
+              const jobResult = await jobResponse.json();
+              const jobData = jobResult.data || jobResult;
+              status = jobData.status || undefined;
+            }
+          } catch (error) {
+            console.error('Error fetching job status for collection details:', error);
+          }
+        }
+
+        // Enrich the collection with cached name/description and live status
+        const enrichedCollection = {
+          ...collectionData,
+          name: cached.name || collectionData.name || 'Untitled Collection',
+          description: cached.description || collectionData.description || '',
+          status: status,
+          job_id: cached.job_id,
+        };
+
         setSelectedCollection(enrichedCollection);
       }
     } catch (error) {
@@ -480,12 +550,16 @@ export default function KnowledgeBasePage() {
     const collectionId = collectionToDelete;
     setCollectionToDelete(null);
 
-    // Store the deleted collection in case we need to restore it
-    const deletedCollection = collections.find((c) => c.id === collectionId);
+    // Store the original collection in case we need to restore it
+    const originalCollection = collections.find((c) => c.id === collectionId);
 
-    // Optimistically remove from UI immediately
-    setCollections((prev) => prev.filter((c) => c.id !== collectionId));
-    setSelectedCollection(null);
+    // Update status to "deleting" instead of removing immediately
+    setCollections((prev) =>
+      prev.map((c) => (c.id === collectionId ? { ...c, status: 'deleting' } : c))
+    );
+    setSelectedCollection((prev) =>
+      prev?.id === collectionId ? { ...prev, status: 'deleting' } : prev
+    );
 
     try {
       const response = await fetch(`/api/collections/${collectionId}`, {
@@ -494,20 +568,101 @@ export default function KnowledgeBasePage() {
       });
 
       if (response.ok) {
-        // Don't refresh - keep the optimistic state
+        const result = await response.json();
+        const jobId = result.data?.job_id;
+
+        if (jobId) {
+          // Poll the delete job status
+          const pollDeleteStatus = async () => {
+            const currentApiKey = apiKeyRef.current;
+            if (!currentApiKey) return;
+
+            try {
+              const jobResponse = await fetch(`/api/collections/jobs/${jobId}`, {
+                headers: { 'X-API-KEY': currentApiKey.key },
+              });
+
+              if (jobResponse.ok) {
+                const jobResult = await jobResponse.json();
+                const jobData = jobResult.data || jobResult;
+                const status = jobData.status;
+                const statusLower = status?.toLowerCase();
+
+                if (statusLower === 'successful') {
+                  // Job completed successfully - remove from UI
+                  setCollections((prev) => prev.filter((c) => c.id !== collectionId));
+                  setSelectedCollection(null);
+                } else if (statusLower === 'failed') {
+                  // Job failed - restore original collection
+                  alert('Failed to delete collection');
+                  if (originalCollection) {
+                    setCollections((prev) =>
+                      prev.map((c) => (c.id === collectionId ? originalCollection : c))
+                    );
+                    setSelectedCollection((prev) =>
+                      prev?.id === collectionId ? originalCollection : prev
+                    );
+                  }
+                } else {
+                  // Still processing - keep status as "deleting" and poll again
+                  setTimeout(pollDeleteStatus, 2000); // Poll every 2 seconds
+                }
+              } else {
+                // Failed to get job status
+                alert('Failed to check delete status');
+                if (originalCollection) {
+                  setCollections((prev) =>
+                    prev.map((c) => (c.id === collectionId ? originalCollection : c))
+                  );
+                  setSelectedCollection((prev) =>
+                    prev?.id === collectionId ? originalCollection : prev
+                  );
+                }
+              }
+            } catch (error) {
+              console.error('Error polling delete status:', error);
+              alert('Failed to check delete status');
+              if (originalCollection) {
+                setCollections((prev) =>
+                  prev.map((c) => (c.id === collectionId ? originalCollection : c))
+                );
+                setSelectedCollection((prev) =>
+                  prev?.id === collectionId ? originalCollection : prev
+                );
+              }
+            }
+          };
+
+          // Start polling
+          pollDeleteStatus();
+        } else {
+          // No job_id returned, assume immediate success
+          setCollections((prev) => prev.filter((c) => c.id !== collectionId));
+          setSelectedCollection(null);
+        }
       } else {
         alert('Failed to delete collection');
-        // Restore the collection on failure
-        if (deletedCollection) {
-          setCollections((prev) => [deletedCollection, ...prev]);
+        // Restore the original collection on failure
+        if (originalCollection) {
+          setCollections((prev) =>
+            prev.map((c) => (c.id === collectionId ? originalCollection : c))
+          );
+          setSelectedCollection((prev) =>
+            prev?.id === collectionId ? originalCollection : prev
+          );
         }
       }
     } catch (error) {
       console.error('Error deleting collection:', error);
       alert('Failed to delete collection');
-      // Restore the collection on error
-      if (deletedCollection) {
-        setCollections((prev) => [deletedCollection, ...prev]);
+      // Restore the original collection on error
+      if (originalCollection) {
+        setCollections((prev) =>
+          prev.map((c) => (c.id === collectionId ? originalCollection : c))
+        );
+        setSelectedCollection((prev) =>
+          prev?.id === collectionId ? originalCollection : prev
+        );
       }
     }
   };
@@ -572,6 +727,11 @@ export default function KnowledgeBasePage() {
 
     if (newJobAdded && apiKey) startPolling();
   }, [collections, apiKey]);
+
+  // Reset showAllDocs when selectedCollection changes
+  useEffect(() => {
+    setShowAllDocs(false);
+  }, [selectedCollection?.id]);
 
   // Cleanup polling interval on unmount
   useEffect(() => {
@@ -949,8 +1109,8 @@ export default function KnowledgeBasePage() {
             </div>
 
             {/* Documents in Collection */}
-            <div className="px-6 pt-6 pb-4">
-              <div className="flex items-center justify-between">
+            <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                   Documents Present ({selectedCollection.documents?.length || 0})
                 </h3>
@@ -971,6 +1131,67 @@ export default function KnowledgeBasePage() {
                   </button>
                 )}
               </div>
+
+              {/* Document List */}
+              {selectedCollection.documents && selectedCollection.documents.length > 0 ? (
+                <div>
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b" style={{ borderColor: colors.border }}>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-semibold uppercase" style={{ color: colors.text.secondary }}>
+                        Name
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <p className="text-[10px] font-semibold uppercase" style={{ color: colors.text.secondary }}>
+                        Uploaded At
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Document Rows */}
+                  <div className="space-y-2">
+                    {selectedCollection.documents
+                      .slice(0, showAllDocs ? selectedCollection.documents.length : 3)
+                      .map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="flex items-center justify-between py-1"
+                        >
+                          <div className="flex-1 min-w-0 mr-4">
+                            <p className="text-sm truncate" style={{ color: colors.text.primary }}>
+                              {doc.fname}
+                            </p>
+                          </div>
+                          <div className="flex-shrink-0">
+                            <p className="text-xs" style={{ color: colors.text.secondary }}>
+                              {doc.inserted_at ? formatDate(doc.inserted_at) : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+
+                  {/* Show More / Show Less Button */}
+                  {selectedCollection.documents.length > 3 && (
+                    <button
+                      onClick={() => setShowAllDocs(!showAllDocs)}
+                      className="w-full py-2 px-4 rounded-md text-sm font-medium transition-colors mt-3"
+                      style={{
+                        backgroundColor: 'transparent',
+                        color: colors.text.secondary,
+                        border: `1px solid ${colors.border}`,
+                      }}
+                    >
+                      {showAllDocs ? 'Show Less' : `Show More (${selectedCollection.documents.length - 3} more)`}
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-center py-8" style={{ color: colors.text.secondary }}>
+                  No documents in this collection
+                </p>
+              )}
             </div>
           </>
         ) : (

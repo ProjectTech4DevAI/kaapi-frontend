@@ -84,6 +84,40 @@ export default function KnowledgeBasePage() {
     }
   };
 
+  const deleteCollectionFromCache = (collectionId: string) => {
+    try {
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+      for (const [jobId, data] of Object.entries(cache)) {
+        const cacheData = data as { collection_id?: string };
+        if (cacheData.collection_id === collectionId) {
+          delete cache[jobId];
+          break;
+        }
+      }
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    } catch (e) {
+      console.error('Failed to delete collection from cache:', e);
+    }
+  };
+
+  const pruneStaleCache = (liveCollectionIds: Set<string>) => {
+    try {
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+      let changed = false;
+      for (const [jobId, data] of Object.entries(cache)) {
+        const cacheData = data as { collection_id?: string };
+        // Only prune entries that have a collection_id but it's no longer in the live list
+        if (cacheData.collection_id && !liveCollectionIds.has(cacheData.collection_id)) {
+          delete cache[jobId];
+          changed = true;
+        }
+      }
+      if (changed) localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+    } catch (e) {
+      console.error('Failed to prune stale cache:', e);
+    }
+  };
+
   const enrichCollectionWithCache = async (
     collection: Collection,
     jobStatusMap: Map<string, { status: string | null; collectionId: string | null }>
@@ -227,6 +261,11 @@ export default function KnowledgeBasePage() {
         const enrichedCollections = await Promise.all(
           collections.map((collection: Collection) => enrichCollectionWithCache(collection, jobStatusMap))
         );
+
+        // Remove cache entries whose collection no longer exists on the backend
+        const liveIds = new Set<string>(enrichedCollections.map((c: Collection) => c.id));
+        pruneStaleCache(liveIds);
+
         // Preserve optimistic entries not yet replaced by a real collection
         setCollections((prev) => {
           const fetchedJobIds = new Set(enrichedCollections.map((c: Collection) => c.job_id).filter(Boolean));
@@ -589,7 +628,8 @@ export default function KnowledgeBasePage() {
                 const statusLower = status?.toLowerCase();
 
                 if (statusLower === 'successful') {
-                  // Job completed successfully - remove from UI
+                  // Job completed successfully - remove from UI and clean up cache
+                  deleteCollectionFromCache(collectionId);
                   setCollections((prev) => prev.filter((c) => c.id !== collectionId));
                   setSelectedCollection(null);
                 } else if (statusLower === 'failed') {
@@ -637,6 +677,7 @@ export default function KnowledgeBasePage() {
           pollDeleteStatus();
         } else {
           // No job_id returned, assume immediate success
+          deleteCollectionFromCache(collectionId);
           setCollections((prev) => prev.filter((c) => c.id !== collectionId));
           setSelectedCollection(null);
         }

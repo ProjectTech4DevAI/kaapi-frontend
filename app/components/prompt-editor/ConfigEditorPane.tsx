@@ -106,6 +106,16 @@ export default function ConfigEditorPane({
     });
   };
 
+  const handleTypeChange = (newType: 'text' | 'stt' | 'tts') => {
+    onConfigChange({
+      ...configBlob,
+      completion: {
+        ...configBlob.completion,
+        type: newType,
+      },
+    });
+  };
+
   const handleModelChange = (model: string) => {
     onConfigChange({
       ...configBlob,
@@ -293,7 +303,7 @@ export default function ConfigEditorPane({
                     </span>
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-                    {selectedConfig.provider}/{selectedConfig.modelName}
+                    {selectedConfig.provider}/{selectedConfig.modelName} • {selectedConfig.type}
                   </div>
                 </div>
               ) : (
@@ -463,6 +473,33 @@ export default function ConfigEditorPane({
               {/* <option value="anthropic">Anthropic</option> */}
               {/* <option value="google">Google</option> */}
             </select>
+          </div>
+
+          {/* Type */}
+          <div>
+            <label
+              className="block text-xs font-semibold mb-2"
+              style={{ color: colors.text.primary }}
+            >
+              Type
+            </label>
+            <select
+              value={configBlob.completion.type || 'text'}
+              onChange={(e) => handleTypeChange(e.target.value as 'text' | 'stt' | 'tts')}
+              className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
+              style={{
+                border: `1px solid ${colors.border}`,
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+              }}
+            >
+              <option value="text">Text Completion</option>
+              <option value="stt" disabled>Speech-to-Text (Coming Soon)</option>
+              <option value="tts" disabled>Text-to-Speech (Coming Soon)</option>
+            </select>
+            <p className="text-xs mt-1.5" style={{ color: colors.text.secondary }}>
+              Standard text-based LLM completion
+            </p>
           </div>
 
           {/* Model */}

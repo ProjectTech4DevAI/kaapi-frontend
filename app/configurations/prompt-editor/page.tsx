@@ -47,6 +47,7 @@ function PromptEditorContent() {
   const defaultConfig: ConfigBlob = {
     completion: {
       provider: 'openai',
+      type: 'text',
       params: {
         model: 'gpt-4o-mini',
         instructions: '',
@@ -231,6 +232,7 @@ function PromptEditorContent() {
       const configBlob: ConfigBlob = {
         completion: {
           provider: currentConfigBlob.completion.provider,
+          type: currentConfigBlob.completion.type || 'text', // Default to 'text'
           params: {
             model: currentConfigBlob.completion.params.model,
             instructions: currentContent, // Store prompt as instructions
@@ -339,6 +341,7 @@ function PromptEditorContent() {
     setCurrentConfigBlob({
       completion: {
         provider: config.provider as any,
+        type: config.type,
         params: {
           model: config.modelName,
           instructions: config.instructions,

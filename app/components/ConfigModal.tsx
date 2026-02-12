@@ -22,6 +22,7 @@ interface ConfigVersionInfo {
   temperature?: number;
   tools?: any[];
   provider?: string;
+  type?: 'text' | 'stt' | 'tts';
 }
 
 export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: ConfigModalProps) {
@@ -90,6 +91,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
             temperature: params.temperature,
             tools: params.tools,
             provider: blob?.completion?.provider,
+            type: blob?.completion?.type || 'text',
           });
         }
       } catch (error) {
@@ -172,6 +174,11 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                     {configVersionInfo.provider && configVersionInfo.model && (
                       <div>
                         <span className="font-medium">Model:</span> {configVersionInfo.provider}/{configVersionInfo.model}
+                      </div>
+                    )}
+                    {configVersionInfo.type && (
+                      <div>
+                        <span className="font-medium">Type:</span> {configVersionInfo.type.toUpperCase()}
                       </div>
                     )}
                     {configVersionInfo.temperature !== undefined && (

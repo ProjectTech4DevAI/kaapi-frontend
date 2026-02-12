@@ -13,7 +13,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { APIKey } from '../keystore/page';
 import { STORAGE_KEY } from '../keystore/page';
 import { Dataset, DATASETS_STORAGE_KEY, UploadDatasetModal } from '../datasets/page';
-import { EvalJob, AssistantConfig, ScoreObject } from '../components/types';
+import { EvalJob, AssistantConfig, ScoreObject, getScoreObject } from '../components/types';
 import { formatDate, getStatusColor } from '../components/utils';
 import ConfigModal from '../components/ConfigModal';
 import StatusBadge from '../components/StatusBadge';
@@ -872,6 +872,21 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
 
       // API may return an array or an object with data property
       const jobs = Array.isArray(data) ? data : (data.data || []);
+
+      // Debug logging for score visibility
+      if (jobs.length > 0) {
+        console.log('[ResultsTab] Sample job data:', {
+          id: jobs[0].id,
+          run_name: jobs[0].run_name,
+          hasScore: !!jobs[0].score,
+          hasScores: !!jobs[0].scores,
+          scoreFromHelper: !!getScoreObject(jobs[0]),
+          scoreKeys: jobs[0].score ? Object.keys(jobs[0].score) : [],
+          scoresKeys: jobs[0].scores ? Object.keys(jobs[0].scores) : [],
+          summaryScoresLength: jobs[0].score?.summary_scores?.length || jobs[0].scores?.summary_scores?.length || 0
+        });
+      }
+
       setEvalJobs(jobs);
     } catch (err: any) {
       console.error('Failed to fetch evaluations:', err);
@@ -1085,7 +1100,7 @@ function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
               <span>•</span>
               <span>{job.total_items} items</span>
               <span>•</span> */}
-              <ScoreDisplay score={job.score} errorMessage={job.error_message} />
+              <ScoreDisplay score={getScoreObject(job)} errorMessage={job.error_message} />
             </div>
           </div>
 

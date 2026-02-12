@@ -24,6 +24,7 @@ export interface CompletionParams {
 
 export interface CompletionConfig {
   provider: 'openai'; // | 'anthropic' | 'google'; // Only OpenAI supported for now
+  type?: 'text' | 'stt' | 'tts'; // Config type - optional for backward compatibility
   params: CompletionParams;
 }
 

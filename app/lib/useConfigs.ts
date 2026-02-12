@@ -32,6 +32,7 @@ export interface SavedConfig {
   promptContent: string; // Same as instructions for compatibility
   modelName: string;
   provider: string;
+  type: 'text' | 'stt' | 'tts'; // Config type - always present in UI (defaults to 'text')
   temperature: number;
   vectorStoreIds: string;
   tools?: Tool[];
@@ -92,13 +93,20 @@ const flattenConfigVersion = (
 
   // If no tools array but has flattened fields, create tools array from them
   // Each knowledge_base_id becomes a separate tool for UI display
-  if (tools.length === 0 && params.knowledge_base_ids && params.knowledge_base_ids.length > 0) {
-    params.knowledge_base_ids.forEach((kbId: string) => {
-      tools.push({
-        type: 'file_search',
-        knowledge_base_ids: [kbId], // Each tool gets one ID for UI
-        max_num_results: params.max_num_results || 20,
-      });
+  if (tools.length === 0 && params.knowledge_base_ids) {
+    // Ensure knowledge_base_ids is an array
+    const kbIds = Array.isArray(params.knowledge_base_ids)
+      ? params.knowledge_base_ids
+      : [params.knowledge_base_ids];
+
+    kbIds.forEach((kbId: string) => {
+      if (kbId) { // Only add non-empty IDs
+        tools.push({
+          type: 'file_search',
+          knowledge_base_ids: [kbId], // Each tool gets one ID for UI
+          max_num_results: params.max_num_results || 20,
+        });
+      }
     });
   }
 
@@ -113,6 +121,7 @@ const flattenConfigVersion = (
     promptContent: params.instructions || '',
     modelName: params.model || '',
     provider: blob.completion.provider,
+    type: blob.completion.type || 'text', // Default to 'text' for backward compatibility
     temperature: params.temperature || 0.7,
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
     tools: tools,

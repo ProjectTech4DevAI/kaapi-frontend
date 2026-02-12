@@ -59,10 +59,32 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
       );
     }
 
-    // Display all summary scores in a compact format
+    // Separate numeric and categorical scores
+    const numericScores = summaryScores.filter(s => s.data_type === 'NUMERIC');
+    const categoricalScores = summaryScores.filter(s => s.data_type === 'CATEGORICAL');
+
+    // If no numeric scores at all, show a message
+    if (numericScores.length === 0 && categoricalScores.length === 0) {
+      return (
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
+          style={{
+            backgroundColor: 'hsl(0, 0%, 95%)',
+            borderWidth: '1px',
+            borderColor: 'hsl(0, 0%, 85%)',
+            color: 'hsl(330, 3%, 49%)'
+          }}
+        >
+          <span className="font-medium">Score:</span>
+          <span>No numeric scores available</span>
+        </div>
+      );
+    }
+
+    // Display numeric scores in a compact format
     return (
       <div className="inline-flex items-center gap-3 flex-wrap">
-        {summaryScores.filter(s => s.data_type === 'NUMERIC').map((summary) => (
+        {numericScores.map((summary) => (
           <div
             key={summary.name}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"

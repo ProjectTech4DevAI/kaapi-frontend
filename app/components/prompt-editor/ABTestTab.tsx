@@ -211,6 +211,9 @@ export default function ABTestTab({
                   }}
                 >
                   <div>
+                    <strong>Type:</strong> {config.config_blob.completion.type || 'text'}
+                  </div>
+                  <div>
                     <strong>Model:</strong> {config.config_blob.completion.params.model}
                   </div>
                   <div>

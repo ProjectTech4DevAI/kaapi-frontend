@@ -91,6 +91,17 @@ export default function ConfigCard({
             className="px-2.5 py-1 rounded-md text-xs"
             style={{ backgroundColor: colors.bg.secondary }}
           >
+            <span style={{ color: colors.text.secondary }}>Type: </span>
+            <span style={{ color: colors.text.primary, fontWeight: 500 }}>
+              {latestVersion.type === 'text' && '📝 Text'}
+              {latestVersion.type === 'stt' && '🎤 STT'}
+              {latestVersion.type === 'tts' && '🔊 TTS'}
+            </span>
+          </div>
+          <div
+            className="px-2.5 py-1 rounded-md text-xs"
+            style={{ backgroundColor: colors.bg.secondary }}
+          >
             <span style={{ color: colors.text.secondary }}>Model: </span>
             <span style={{ color: colors.text.primary, fontWeight: 500 }}>{latestVersion.modelName}</span>
           </div>

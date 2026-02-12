@@ -32,6 +32,7 @@ export interface Tool {
 export interface ConfigBlob {
   completion: {
     provider: 'openai'; // | 'anthropic' | 'google'; // Only OpenAI supported for now
+    type?: 'text' | 'stt' | 'tts'; // Config type - optional for backward compatibility
     params: {
       model: string;
       instructions: string;

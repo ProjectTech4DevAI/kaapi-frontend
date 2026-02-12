@@ -101,7 +101,7 @@ export default function HistoryTab({
                 marginBottom: '6px',
               }}
             >
-              {config.config_blob.completion.params.model} • temp:{' '}
+              {config.config_blob.completion.type || 'text'} • {config.config_blob.completion.params.model} • temp:{' '}
               {config.config_blob.completion.params.temperature}
             </div>
             {config.commitMessage && (

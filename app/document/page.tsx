@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { APIKey, STORAGE_KEY } from '../keystore/page';
 import Sidebar from '../components/Sidebar';
 import { useToast } from '../components/Toast';
+import { formatDate } from '../components/utils';
 
 // Backend response interface
 export interface Document {
@@ -298,7 +299,7 @@ export default function DocumentPage() {
           {/* Content Area - Split View */}
           <div className="flex-1 overflow-hidden flex" style={{ backgroundColor: '#fafafa' }}>
             {/* Left Side: Document List */}
-            <div className="w-2/5 border-r overflow-y-auto" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
+            <div className="w-1/3 border-r overflow-y-auto" style={{ borderColor: 'hsl(0, 0%, 85%)' }}>
               <DocumentListing
                 documents={currentDocuments}
                 selectedDocument={selectedDocument}
@@ -367,22 +368,6 @@ function DocumentListing({
   currentPage,
   onPageChange,
 }: DocumentListingProps) {
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
-      const day = istDate.getDate();
-      const month = istDate.toLocaleDateString('en-US', { month: 'short' });
-      const year = istDate.getFullYear();
-      const hours = String(istDate.getHours()).padStart(2, '0');
-      const minutes = String(istDate.getMinutes()).padStart(2, '0');
-      return `${day} ${month} ${year}, ${hours}:${minutes}`;
-    } catch {
-      return dateString;
-    }
-  };
-
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b" style={{ backgroundColor: 'hsl(0, 0%, 100%)', borderColor: 'hsl(0, 0%, 85%)' }}>
@@ -593,23 +578,6 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
   useEffect(() => {
     setImageLoadError(false);
   }, [document?.id]);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      // Add 5.5 hours (IST offset) since the input is already in IST but parsed as UTC
-      const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
-      const day = istDate.getDate();
-      const month = istDate.toLocaleDateString('en-US', { month: 'short' });
-      const year = istDate.getFullYear();
-      const hours = String(istDate.getHours()).padStart(2, '0');
-      const minutes = String(istDate.getMinutes()).padStart(2, '0');
-      return `${day} ${month} ${year}, ${hours}:${minutes}`;
-    } catch {
-      return dateString;
-    }
-  };
 
   const getFileExtension = (filename: string) => {
     const parts = filename.split('.');

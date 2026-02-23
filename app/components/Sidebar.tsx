@@ -1,5 +1,5 @@
 /**
- * Sidebar - Navigation sidebar with collapse/expand functionality
+ * Sidebad  - Navigation sidebar with collapse/expand functionality
  * Provides hierarchical navigation with expandable submenus
  */
 
@@ -68,7 +68,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
           name: 'Evaluations',
           submenu: [
             { name: 'Text Generation', route: '/evaluations' },
-            // { name: 'Speech-to-Text', route: '/speech-to-text', comingSoon:true },
+            { name: 'Speech-to-Text', route: '/speech-to-text' },
             // { name: 'Text-to-Speech', route: '/text-to-speech', comingSoon: true },
           ]
         },

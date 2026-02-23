@@ -2,7 +2,8 @@ import { NextResponse, NextRequest } from 'next/server';
 
 
 
-export async function GET(request: Request) {
+export async function GET(request: 
+  Request) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
@@ -14,10 +15,10 @@ export async function GET(request: Request) {
     });
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message, data: null },
+      { success: false, error: error, data: null },
       { status: 500 }
     );
   }
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      {error:'Failed to forward request', details:error.message},
+      {error:'Failed to forward request', details:error},
       {status:500}
     );
   }

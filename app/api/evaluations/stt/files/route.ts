@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error.message },
+      { error: 'Failed to forward request to backend', details: error },
       { status: 500 }
     );
   }

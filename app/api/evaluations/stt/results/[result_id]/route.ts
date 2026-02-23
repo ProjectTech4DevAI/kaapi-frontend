@@ -19,7 +19,7 @@ export async function GET(
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch config', data: null },
+      { success: false, error: 'Failed to fetch results', data: null },
       { status: 500 }
     );
   }

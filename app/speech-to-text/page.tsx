@@ -1,44 +1,22 @@
 /**
- * Speech-to-Text Evaluation Page - Redesigned
+ * Speech-to-Text Evaluation Page
  *
- * Split-panel workbench layout:
- * - Left Panel: Input configuration (audio files, model selection)
- * - Right Panel: Live results with model comparison cards and diff viewer
- *
- * Features:
- * - Real-time streaming results
- * - Model comparison cards with best performer highlighting
- * - Inline diff viewer for transcription comparison
- * - Floating action bar
+ * Tab 1 - Datasets: Create datasets with audio uploads
+ * Tab 2 - Evaluations: Run and monitor STT evaluations
  */
 
 "use client"
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import Sidebar from '@/app/components/Sidebar';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
-import ModelComparisonCard from '@/app/components/speech-to-text/ModelComparisonCard';
-import TranscriptionDiffViewer from '@/app/components/speech-to-text/TranscriptionDiffViewer';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
 
-// Types
-interface AudioNerdStats {
-  format: string;
-  codec: string;
-  mimeType: string;
-  durationMs: number;
-  durationFormatted: string;
-  sampleRate: number | null;
-  channels: number | null;
-  bitrate: number | null;
-  fileSize: number;
-  fileSizeFormatted: string;
-  base64Length: number;
-  compressionRatio: number | null;
-}
+type Tab = 'datasets' | 'evaluations';
 
-interface UploadedAudioFile {
+// Types
+interface AudioFile {
   id: string;
   file: File;
   name: string;
@@ -46,77 +24,65 @@ interface UploadedAudioFile {
   base64: string;
   mediaType: string;
   groundTruth: string;
+  fileId?: string; // Backend file ID after upload
 }
 
-interface ParsedRow {
-  status: 'success' | 'error';
-  row: number;
-  audio_url: string;
-  ground_truth: string;
-  audio_base64?: string;
-  media_type?: string;
-  file_size?: number;
-  error?: string;
-}
-
-interface ModelConfig {
-  id: string;
+interface Dataset {
+  id: number;
   name: string;
+  description?: string;
+  type: string;
+  language_id: number | null;
+  object_store_url: string | null;
+  dataset_metadata: {
+    sample_count?: number;
+    [key: string]: any;
+  };
+  organization_id: number;
+  project_id: number;
+  inserted_at: string;
+  updated_at: string;
+}
+
+interface STTRun {
+  id: number;
+  run_name: string;
+  dataset_name: string;
+  dataset_id: number;
+  type: string;
+  language_id: number | null;
+  models: string[] | null;
+  status: string;
+  total_items: number;
+  score: {
+    [key: string]: any;
+  } | null;
+  error_message: string | null;
+  organization_id: number;
+  project_id: number;
+  inserted_at: string;
+  updated_at: string;
+}
+
+interface STTResult {
+  id: number;
+  transcription: string | null;
   provider: string;
+  status: string;
+  score: {
+    [key: string]: any;
+  } | null;
+  is_correct: boolean | null;
+  comment: string | null;
+  error_message: string | null;
+  stt_sample_id: number;
+  evaluation_run_id: number;
+  organization_id: number;
+  project_id: number;
+  inserted_at: string;
+  updated_at: string;
+  sampleName?: string; // Enriched field
 }
-
-interface WerMetrics {
-  wer: number;
-  substitutions: number;
-  deletions: number;
-  insertions: number;
-  semantic_errors: number;
-  reference_word_count: number;
-  hypothesis_word_count: number;
-}
-
-interface TranscriptionResult {
-  model: string;
-  text: string;
-  strict?: WerMetrics;
-  lenient?: WerMetrics;
-  status: 'success' | 'error' | 'pending';
-  error?: string;
-}
-
-interface EvaluationResult {
-  row: number;
-  fileId: string;
-  audio_url: string;
-  ground_truth: string;
-  transcriptions: Record<string, TranscriptionResult>;
-}
-
-type InputMode = 'single' | 'batch';
-type ResultsView = 'cards' | 'table' | 'diff';
-
-// Available STT Models
-const STT_MODELS: ModelConfig[] = [
-  { id: 'gemini:gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'Google' },
-  { id: 'gemini:gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'Google' },
-  { id: 'google-stt:chirp_3', name: 'Chirp 3', provider: 'Google' },
-  { id: 'openai:gpt-4o-transcribe', name: 'GPT-4o Transcribe', provider: 'OpenAI' },
-  { id: 'openai:whisper-1', name: 'Whisper-1', provider: 'OpenAI' },
-  { id: 'ai4b:indic-conformer-600m-multilingual', name: 'Indic Conformer 600M', provider: 'AI4Bharat' },
-];
-
-// Group models by provider
-const MODEL_GROUPS = STT_MODELS.reduce((acc, model) => {
-  if (!acc[model.provider]) acc[model.provider] = [];
-  acc[model.provider].push(model);
-  return acc;
-}, {} as Record<string, ModelConfig[]>);
-
-// Parse model ID
-const parseModelId = (modelId: string) => {
-  const [provider, model] = modelId.split(':');
-  return { provider, model };
-};
 
 // Audio Player Component with Waveform
 function AudioPlayer({
@@ -227,44 +193,78 @@ function AudioPlayer({
   );
 }
 
+// Helper function to map language ID to language name
+const getLanguageName = (languageId: number | null): string => {
+  const languageMap: Record<number, string> = {
+    1: 'English',
+    2: 'Hindi',
+  };
+  return languageId ? languageMap[languageId] || 'Unknown' : 'N/A';
+};
+
+// Helper function to map language code to language ID
+const getLanguageId = (languageCode: string): number => {
+  const languageCodeToIdMap: Record<string, number> = {
+    'en': 1, // English
+    'hi': 2, // Hindi
+  };
+  return languageCodeToIdMap[languageCode] || 1; // Default to English if not found
+};
+
+// Helper function to format status
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'completed':
+      return { bg: colors.bg.primary, border: colors.status.success, text: colors.status.success };
+    case 'failed':
+      return { bg: colors.bg.primary, border: colors.status.error, text: colors.status.error };
+    case 'running':
+    case 'processing':
+      return { bg: colors.bg.primary, border: colors.accent.primary, text: colors.accent.primary };
+    default:
+      return { bg: colors.bg.primary, border: colors.border, text: colors.text.secondary };
+  }
+};
+
 export default function SpeechToTextPage() {
   const toast = useToast();
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<Tab>('datasets');
+
   // UI State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(380);
-  const [inputMode, setInputMode] = useState<InputMode>('single');
-  const [resultsView, setResultsView] = useState<ResultsView>('cards');
+  const [leftPanelWidth] = useState(450);
 
   // API Keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
 
-  // Single file mode
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedAudioFile[]>([]);
+  // Dataset form (Tab 1)
+  const [datasetName, setDatasetName] = useState('');
+  const [datasetDescription, setDatasetDescription] = useState('');
+  const [datasetLanguage, setDatasetLanguage] = useState('en');
+  const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
   const [playingFileId, setPlayingFileId] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Batch mode
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
-  const [isParsing, setIsParsing] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  // Datasets list (both tabs)
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
 
-  // Model selection
-  const [selectedModels, setSelectedModels] = useState<string[]>(['openai:whisper-1']);
+  // Evaluation form (Tab 2)
+  const [evaluationName, setEvaluationName] = useState('');
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null);
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-pro');
+  const [isRunning, setIsRunning] = useState(false);
 
-  // Processing state
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const [evaluationResults, setEvaluationResults] = useState<EvaluationResult[]>([]);
-  const [transcriptionProgress, setTranscriptionProgress] = useState({ current: 0, total: 0 });
+  // Evaluation runs (Tab 2)
+  const [runs, setRuns] = useState<STTRun[]>([]);
+  const [isLoadingRuns, setIsLoadingRuns] = useState(false);
 
-  // Selected result for diff view
-  const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
-  const [selectedModelForDiff, setSelectedModelForDiff] = useState<string | null>(null);
-
-  // Expanded file details in batch mode
-  const [expandedFileId, setExpandedFileId] = useState<string | null>(null);
-  const [fileNerdStats, setFileNerdStats] = useState<Map<string, AudioNerdStats>>(new Map());
+  // Result viewing
+  const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
+  const [results, setResults] = useState<STTResult[]>([]);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
 
   // Load API keys
   useEffect(() => {
@@ -278,71 +278,204 @@ export default function SpeechToTextPage() {
     }
   }, []);
 
-  // Get ready file count
-  const readyFileCount = useMemo(() => {
-    if (inputMode === 'single') {
-      return uploadedFiles.filter(f => f.groundTruth.trim()).length;
+  // Load datasets
+  const loadDatasets = async () => {
+    if (apiKeys.length === 0) return;
+
+    setIsLoadingDatasets(true);
+    try {
+      const response = await fetch('/api/evaluations/stt/datasets', {
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
+
+      if (!response.ok) throw new Error('Failed to load datasets');
+
+      const data = await response.json();
+
+      let datasetsList = [];
+      if (Array.isArray(data)) {
+        datasetsList = data;
+      } else if (data.datasets && Array.isArray(data.datasets)) {
+        datasetsList = data.datasets;
+      } else if (data.data && Array.isArray(data.data)) {
+        datasetsList = data.data;
+      }
+
+      setDatasets(datasetsList);
+    } catch (error) {
+      console.error('Failed to load datasets:', error);
+      toast.error('Failed to load datasets');
+      setDatasets([]);
+    } finally {
+      setIsLoadingDatasets(false);
     }
-    return parsedRows.filter(r => r.status === 'success' && selectedRows.has(r.row)).length;
-  }, [inputMode, uploadedFiles, parsedRows, selectedRows]);
+  };
 
-  // Find best/worst model for a result
-  const getBestWorstModels = useCallback((result: EvaluationResult) => {
-    const models = Object.entries(result.transcriptions)
-      .filter(([_, t]) => t.status === 'success' && t.strict)
-      .map(([id, t]) => ({ id, wer: t.strict!.wer }));
+  // Load evaluation runs
+  const loadRuns = async () => {
+    if (apiKeys.length === 0) return;
 
-    if (models.length === 0) return { best: null, worst: null };
+    setIsLoadingRuns(true);
+    try {
+      const response = await fetch('/api/evaluations/stt/runs', {
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
 
-    const sorted = models.sort((a, b) => a.wer - b.wer);
-    return {
-      best: sorted[0]?.id || null,
-      worst: sorted[sorted.length - 1]?.id || null,
-    };
-  }, []);
+      if (!response.ok) throw new Error('Failed to load runs');
 
-  // Handle file upload
-  const handleAudioFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+      const data = await response.json();
 
-    const validTypes = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.webm'];
-    const validFiles = Array.from(files).filter(file =>
-      validTypes.some(ext => file.name.toLowerCase().endsWith(ext))
+      let runsList = [];
+      if (Array.isArray(data)) {
+        runsList = data;
+      } else if (data.runs && Array.isArray(data.runs)) {
+        runsList = data.runs;
+      } else if (data.data && Array.isArray(data.data)) {
+        runsList = data.data;
+      }
+
+      setRuns(runsList);
+    } catch (error) {
+      console.error('Failed to load runs:', error);
+      toast.error('Failed to load evaluation runs');
+      setRuns([]);
+    } finally {
+      setIsLoadingRuns(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDatasets();
+    if (activeTab === 'evaluations') {
+      loadRuns();
+    }
+  }, [apiKeys, activeTab]);
+
+  // Auto-refresh runs every 10 seconds if there are running evaluations
+  useEffect(() => {
+    if (activeTab !== 'evaluations') return;
+
+    const hasRunningEvals = runs.some(run =>
+      run.status === 'running' || run.status === 'processing' || run.status === 'pending'
     );
 
-    if (validFiles.length === 0) {
-      toast.error('Please select valid audio files (mp3, wav, m4a, ogg, flac, webm)');
+    if (hasRunningEvals) {
+      const interval = setInterval(() => {
+        loadRuns();
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [runs, activeTab]);
+
+  // Handle audio file selection and upload
+  const handleAudioFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+
+    if (!files || files.length === 0) return;
+
+    if (apiKeys.length === 0) {
+      toast.error('Please add an API key in Keystore first');
       return;
     }
 
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64 = result.split(',')[1];
+    const validTypes = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.webm'];
 
-        setUploadedFiles(prev => [...prev, {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    for (const file of Array.from(files)) {
+      if (!validTypes.some(ext => file.name.toLowerCase().endsWith(ext))) {
+        toast.error(`${file.name}: Invalid file type`);
+        continue;
+      }
+
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      try {
+        const base64 = await base64Promise;
+        const localId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+
+        setAudioFiles(prev => [...prev, {
+          id: localId,
           file,
           name: file.name,
           size: file.size,
           base64,
           mediaType: file.type || 'audio/mpeg',
           groundTruth: '',
+          fileId: undefined,
         }]);
-      };
-      reader.readAsDataURL(file);
-    });
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const uploadResponse = await fetch('/api/evaluations/stt/files', {
+          method: 'POST',
+          headers: { 'X-API-KEY': apiKeys[0].key },
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error(`Upload failed with status ${uploadResponse.status}:`, errorText);
+          throw new Error(`Upload failed: ${uploadResponse.status}`);
+        }
+
+        const uploadData = await uploadResponse.json();
+        console.log('Backend upload response:', uploadData);
+
+        const backendFileId = uploadData.file_id || uploadData.id || uploadData.data?.file_id || uploadData.data?.id;
+
+        if (!backendFileId) {
+          console.error('No file ID found in response. Full response:', JSON.stringify(uploadData, null, 2));
+          throw new Error(`No file ID returned from backend. Response: ${JSON.stringify(uploadData)}`);
+        }
+
+        setAudioFiles(prev => prev.map(f =>
+          f.id === localId ? { ...f, fileId: backendFileId } : f
+        ));
+
+        toast.success(`${file.name} uploaded`);
+      } catch (error) {
+        console.error(`Error uploading ${file.name}:`, error);
+        toast.error(`Failed to upload ${file.name}`);
+        setAudioFiles(prev => prev.filter(f => f.name !== file.name));
+      }
+    }
 
     event.target.value = '';
   };
 
-  // Handle CSV upload
-  const handleCsvFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !file.name.toLowerCase().endsWith('.csv')) {
-      toast.error('Please select a CSV file');
+  const triggerAudioUpload = () => {
+    const input = document.getElementById('audio-upload') as HTMLInputElement;
+    if (input) input.click();
+  };
+
+  const removeAudioFile = (id: string) => {
+    setAudioFiles(prev => prev.filter(f => f.id !== id));
+    if (playingFileId === id) setPlayingFileId(null);
+  };
+
+  const updateGroundTruth = (id: string, groundTruth: string) => {
+    setAudioFiles(prev => prev.map(f =>
+      f.id === id ? { ...f, groundTruth } : f
+    ));
+  };
+
+  const handleCreateDataset = async () => {
+    if (!datasetName.trim()) {
+      toast.error('Please enter a dataset name');
+      return;
+    }
+
+    if (audioFiles.length === 0) {
+      toast.error('Please add at least one audio file');
       return;
     }
 
@@ -351,604 +484,196 @@ export default function SpeechToTextPage() {
       return;
     }
 
-    setCsvFile(file);
-    setParsedRows([]);
-    setSelectedRows(new Set());
-    setIsParsing(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/speech-to-text/parse-csv', {
-        method: 'POST',
-        headers: { 'X-API-KEY': apiKeys[0].key },
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error(`Failed to parse CSV: ${response.status}`);
-
-      const data = await response.json();
-      setParsedRows(data.rows || []);
-
-      const successfulRows = (data.rows || []).filter((r: ParsedRow) => r.status === 'success');
-      setSelectedRows(new Set(successfulRows.map((r: ParsedRow) => r.row)));
-
-      toast.success(`Parsed ${successfulRows.length} audio files`);
-    } catch (error) {
-      toast.error('Failed to parse CSV file');
-    } finally {
-      setIsParsing(false);
-    }
-  };
-
-  // Toggle model selection - triggers evaluation for new models if results exist
-  const toggleModel = async (modelId: string) => {
-    const isAdding = !selectedModels.includes(modelId);
-
-    // Update selection immediately
-    setSelectedModels(prev =>
-      prev.includes(modelId) ? prev.filter(id => id !== modelId) : [...prev, modelId]
-    );
-
-    // If we're adding a model and have existing results, run evaluation for this model
-    if (isAdding && evaluationResults.length > 0) {
-      await evaluateNewModel(modelId);
-    }
-  };
-
-  // Evaluate a single new model against existing files
-  const evaluateNewModel = async (modelId: string) => {
-    if (apiKeys.length === 0) {
-      toast.error('Please add an API key in Keystore first');
+    const filesNotUploaded = audioFiles.filter(f => !f.fileId);
+    if (filesNotUploaded.length > 0) {
+      toast.error(`${filesNotUploaded.length} file(s) still uploading. Please wait...`);
       return;
     }
 
-    // Get files from existing results
-    const files = evaluationResults.map(result => {
-      // Find the original file data
-      if (inputMode === 'single') {
-        const file = uploadedFiles.find(f => f.id === result.fileId);
-        return file ? {
-          file_id: result.fileId,
-          audio_base64: file.base64,
-          ground_truth: result.ground_truth,
-        } : null;
-      } else {
-        const row = parsedRows.find(r => `row-${r.row}` === result.fileId);
-        return row ? {
-          file_id: result.fileId,
-          audio_base64: row.audio_base64 || '',
-          ground_truth: result.ground_truth,
-        } : null;
-      }
-    }).filter(Boolean) as { file_id: string; audio_base64: string; ground_truth: string }[];
-
-    if (files.length === 0) return;
-
-    // Add pending state for new model to existing results
-    setEvaluationResults(prev => prev.map(result => ({
-      ...result,
-      transcriptions: {
-        ...result.transcriptions,
-        [modelId]: {
-          model: modelId,
-          text: '',
-          status: 'pending' as const,
-        },
-      },
-    })));
-
-    const provider = parseModelId(modelId);
+    setIsCreating(true);
 
     try {
-      // Step 1: Transcription for new model only
-      const transcribeResponse = await fetch('/api/v1/audio/transcriptions', {
+      const samples = audioFiles.map(audioFile => ({
+        file_id: audioFile.fileId!,
+        ground_truth: audioFile.groundTruth.trim() || undefined,
+      }));
+
+      const createDatasetResponse = await fetch('/api/evaluations/stt/datasets', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-API-KEY': apiKeys[0].key,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          files: files.map(f => ({ file_id: f.file_id, audio_base64: f.audio_base64 })),
-          providers: [provider],
+          name: datasetName.trim(),
+          description: datasetDescription.trim() || undefined,
+          language_id: getLanguageId(datasetLanguage),
+          samples: samples,
         }),
       });
 
-      if (!transcribeResponse.ok) {
-        throw new Error('Transcription failed');
+      if (!createDatasetResponse.ok) {
+        const errorData = await createDatasetResponse.json();
+        throw new Error(errorData.error || 'Failed to create dataset');
       }
 
-      const transcribeData = await transcribeResponse.json();
+      await createDatasetResponse.json();
 
-      // Update results with transcriptions
-      setEvaluationResults(prev => {
-        const updated = [...prev];
+      toast.success(`Dataset "${datasetName}" created successfully!`);
 
-        (transcribeData.data?.success || []).forEach((result: any) => {
-          const resultIdx = updated.findIndex(r => r.fileId === result.file_id);
-          if (resultIdx !== -1) {
-            const modelKey = `${result.provider}:${result.model}`;
-            updated[resultIdx] = {
-              ...updated[resultIdx],
-              transcriptions: {
-                ...updated[resultIdx].transcriptions,
-                [modelKey]: {
-                  model: modelKey,
-                  text: result.transcript,
-                  status: 'success',
-                },
-              },
-            };
-          }
-        });
+      setDatasetName('');
+      setDatasetDescription('');
+      setDatasetLanguage('en');
+      setAudioFiles([]);
 
-        (transcribeData.data?.errors || []).forEach((result: any) => {
-          const resultIdx = updated.findIndex(r => r.fileId === result.file_id);
-          if (resultIdx !== -1) {
-            const modelKey = `${result.provider}:${result.model}`;
-            updated[resultIdx] = {
-              ...updated[resultIdx],
-              transcriptions: {
-                ...updated[resultIdx].transcriptions,
-                [modelKey]: {
-                  model: modelKey,
-                  text: '',
-                  status: 'error',
-                  error: result.error,
-                },
-              },
-            };
-          }
-        });
-
-        return updated;
-      });
-
-      // Step 2: WER Evaluation for new model
-      // Get updated results to build WER items
-      const currentResults = evaluationResults;
-      const werItems = files.map(f => {
-        const result = currentResults.find(r => r.fileId === f.file_id);
-        // Find the transcription from the API response
-        const successResult = (transcribeData.data?.success || []).find(
-          (s: any) => s.file_id === f.file_id
-        );
-
-        if (!successResult || !f.ground_truth) return null;
-
-        return {
-          id: `${f.file_id}_${modelId}`,
-          ground_truth: f.ground_truth,
-          hypothesis: successResult.transcript,
-          model: modelId.replace(':', '/'),
-        };
-      }).filter(Boolean);
-
-      if (werItems.length > 0) {
-        const werResponse = await fetch('/api/v1/evaluations/stt/wer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': apiKeys[0].key,
-          },
-          body: JSON.stringify({
-            items: werItems,
-            mode: 'both',
-          }),
-        });
-
-        if (werResponse.ok) {
-          const werData = await werResponse.json();
-
-          const werResultsMap = new Map<string, { strict: WerMetrics; lenient: WerMetrics }>();
-          (werData.data?.results || []).forEach((result: any) => {
-            werResultsMap.set(result.id, { strict: result.strict, lenient: result.lenient });
-          });
-
-          // Update with WER metrics
-          setEvaluationResults(prev => prev.map(result => {
-            const werId = `${result.fileId}_${modelId}`;
-            const werResult = werResultsMap.get(werId);
-
-            if (werResult && result.transcriptions[modelId]) {
-              return {
-                ...result,
-                transcriptions: {
-                  ...result.transcriptions,
-                  [modelId]: {
-                    ...result.transcriptions[modelId],
-                    strict: werResult.strict,
-                    lenient: werResult.lenient,
-                  },
-                },
-              };
-            }
-            return result;
-          }));
-        }
-      }
-
-      toast.success(`Added ${STT_MODELS.find(m => m.id === modelId)?.name || modelId}`);
+      await loadDatasets();
     } catch (error) {
-      // Mark as error on failure
-      setEvaluationResults(prev => prev.map(result => ({
-        ...result,
-        transcriptions: {
-          ...result.transcriptions,
-          [modelId]: {
-            model: modelId,
-            text: '',
-            status: 'error',
-            error: error instanceof Error ? error.message : 'Failed to evaluate',
-          },
-        },
-      })));
-      toast.error(`Failed to evaluate ${STT_MODELS.find(m => m.id === modelId)?.name || modelId}`);
+      console.error('Failed to create dataset:', error);
+      toast.error(error);
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  // Run transcription and evaluation
-  const runEvaluation = async () => {
-    if (selectedModels.length === 0) {
-      toast.error('Please select at least one model');
-      return;
-    }
-
+  const handleRunEvaluation = async () => {
     if (apiKeys.length === 0) {
       toast.error('Please add an API key in Keystore first');
       return;
     }
 
-    // Prepare files
-    const files = inputMode === 'single'
-      ? uploadedFiles.filter(f => f.groundTruth.trim()).map(f => ({
-          file_id: f.id,
-          audio_base64: f.base64,
-          ground_truth: f.groundTruth,
-          audio_url: f.name,
-        }))
-      : parsedRows
-          .filter(r => r.status === 'success' && selectedRows.has(r.row))
-          .map(r => ({
-            file_id: `row-${r.row}`,
-            audio_base64: r.audio_base64 || '',
-            ground_truth: r.ground_truth,
-            audio_url: r.audio_url,
-          }));
-
-    if (files.length === 0) {
-      toast.error('No files ready for evaluation');
+    if (!selectedDatasetId) {
+      toast.error('Please select a dataset');
       return;
     }
 
-    setIsTranscribing(true);
-    setEvaluationResults([]);
-    setSelectedResultIndex(0);
-    setSelectedModelForDiff(null);
+    if (!evaluationName.trim()) {
+      toast.error('Please enter an evaluation name');
+      return;
+    }
 
-    // Initialize results with pending state
-    const initialResults: EvaluationResult[] = files.map((f, idx) => ({
-      row: idx + 1,
-      fileId: f.file_id,
-      audio_url: f.audio_url,
-      ground_truth: f.ground_truth,
-      transcriptions: Object.fromEntries(
-        selectedModels.map(modelId => [modelId, {
-          model: modelId,
-          text: '',
-          status: 'pending' as const,
-        }])
-      ),
-    }));
-    setEvaluationResults(initialResults);
-
-    const providers = selectedModels.map(modelId => parseModelId(modelId));
-    const totalTasks = files.length * providers.length;
-    setTranscriptionProgress({ current: 0, total: totalTasks });
+    setIsRunning(true);
 
     try {
-      // Step 1: Transcription
-      const transcribeResponse = await fetch('/api/v1/audio/transcriptions', {
+      const response = await fetch('/api/evaluations/stt/runs', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-API-KEY': apiKeys[0].key,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          files: files.map(f => ({ file_id: f.file_id, audio_base64: f.audio_base64 })),
-          providers,
+          run_name: evaluationName.trim(),
+          dataset_id: selectedDatasetId,
+          model: selectedModel,
         }),
       });
 
-      if (!transcribeResponse.ok) {
-        throw new Error('Transcription failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start evaluation');
       }
 
-      const transcribeData = await transcribeResponse.json();
-      setTranscriptionProgress({ current: totalTasks, total: totalTasks });
+      await response.json();
 
-      // Update results with transcriptions
-      const updatedResults = [...initialResults];
+      toast.success(`Evaluation "${evaluationName}" started successfully!`);
+      setSelectedModel('gemini-2.5-pro');
 
-      (transcribeData.data?.success || []).forEach((result: any) => {
-        const resultIdx = updatedResults.findIndex(r => r.fileId === result.file_id);
-        if (resultIdx !== -1) {
-          const modelKey = `${result.provider}:${result.model}`;
-          updatedResults[resultIdx].transcriptions[modelKey] = {
-            model: modelKey,
-            text: result.transcript,
-            status: 'success',
-          };
-        }
-      });
+      setEvaluationName('');
+      setSelectedDatasetId(null);
 
-      (transcribeData.data?.errors || []).forEach((result: any) => {
-        const resultIdx = updatedResults.findIndex(r => r.fileId === result.file_id);
-        if (resultIdx !== -1) {
-          const modelKey = `${result.provider}:${result.model}`;
-          updatedResults[resultIdx].transcriptions[modelKey] = {
-            model: modelKey,
-            text: '',
-            status: 'error',
-            error: result.error,
-          };
-        }
-      });
-
-      setEvaluationResults(updatedResults);
-      setIsTranscribing(false);
-
-      // Step 2: WER Evaluation
-      setIsEvaluating(true);
-
-      const werItems = updatedResults.flatMap(result =>
-        Object.entries(result.transcriptions)
-          .filter(([_, t]) => t.status === 'success' && result.ground_truth)
-          .map(([modelKey, t]) => ({
-            id: `${result.fileId}_${modelKey}`,
-            ground_truth: result.ground_truth,
-            hypothesis: t.text,
-            model: modelKey.replace(':', '/'),
-            file_id: result.fileId,
-            model_key: modelKey,
-          }))
-      );
-
-      if (werItems.length > 0) {
-        const werResponse = await fetch('/api/v1/evaluations/stt/wer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-KEY': apiKeys[0].key,
-          },
-          body: JSON.stringify({
-            items: werItems.map(item => ({
-              id: item.id,
-              ground_truth: item.ground_truth,
-              hypothesis: item.hypothesis,
-              model: item.model,
-            })),
-            mode: 'both',
-          }),
-        });
-
-        if (werResponse.ok) {
-          const werData = await werResponse.json();
-
-          const werResultsMap = new Map<string, { strict: WerMetrics; lenient: WerMetrics }>();
-          (werData.data?.results || []).forEach((result: any) => {
-            werResultsMap.set(result.id, { strict: result.strict, lenient: result.lenient });
-          });
-
-          // Update with WER metrics
-          const finalResults = updatedResults.map(result => {
-            const newTranscriptions = { ...result.transcriptions };
-            Object.keys(newTranscriptions).forEach(modelKey => {
-              const werId = `${result.fileId}_${modelKey}`;
-              const werResult = werResultsMap.get(werId);
-              if (werResult) {
-                newTranscriptions[modelKey] = {
-                  ...newTranscriptions[modelKey],
-                  strict: werResult.strict,
-                  lenient: werResult.lenient,
-                };
-              }
-            });
-            return { ...result, transcriptions: newTranscriptions };
-          });
-
-          setEvaluationResults(finalResults);
-        }
-      }
-
-      toast.success('Evaluation completed');
-      setResultsView('table'); // Switch to table view after evaluation
+      await loadRuns();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Evaluation failed');
+      console.error('Failed to run evaluation:', error);
+      toast.error(error);
     } finally {
-      setIsTranscribing(false);
-      setIsEvaluating(false);
+      setIsRunning(false);
     }
   };
 
-  // Download results
-  const downloadResultsCSV = () => {
-    if (evaluationResults.length === 0) return;
-
-    const escapeCSV = (value: any) => {
-      if (value === undefined || value === null) return '';
-      const str = String(value);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
-
-    // Build comprehensive headers for each model
-    const modelHeaders = selectedModels.flatMap(m => {
-      const name = STT_MODELS.find(model => model.id === m)?.name || m.split(':')[1];
-      return [
-        // Strict mode metrics
-        `${name}_Strict_WER`,
-        `${name}_Strict_Substitutions`,
-        `${name}_Strict_Deletions`,
-        `${name}_Strict_Insertions`,
-        `${name}_Strict_Semantic_Errors`,
-        // Lenient mode metrics
-        `${name}_Lenient_WER`,
-        `${name}_Lenient_Substitutions`,
-        `${name}_Lenient_Deletions`,
-        `${name}_Lenient_Insertions`,
-        `${name}_Lenient_Semantic_Errors`,
-        // Word counts
-        `${name}_Reference_Words`,
-        `${name}_Hypothesis_Words`,
-        // Transcription
-        `${name}_Transcription`,
-      ];
-    });
-
-    const headers = ['Row', 'Audio_URL', 'Ground_Truth', ...modelHeaders];
-
-    const rows = evaluationResults.map(result => {
-      const modelValues = selectedModels.flatMap(m => {
-        const t = result.transcriptions[m];
-        const strict = t?.strict;
-        const lenient = t?.lenient;
-
-        return [
-          // Strict mode metrics
-          strict?.wer !== undefined ? (strict.wer * 100).toFixed(2) : 'N/A',
-          strict?.substitutions ?? 'N/A',
-          strict?.deletions ?? 'N/A',
-          strict?.insertions ?? 'N/A',
-          strict?.semantic_errors ?? 'N/A',
-          // Lenient mode metrics
-          lenient?.wer !== undefined ? (lenient.wer * 100).toFixed(2) : 'N/A',
-          lenient?.substitutions ?? 'N/A',
-          lenient?.deletions ?? 'N/A',
-          lenient?.insertions ?? 'N/A',
-          lenient?.semantic_errors ?? 'N/A',
-          // Word counts
-          strict?.reference_word_count ?? 'N/A',
-          strict?.hypothesis_word_count ?? 'N/A',
-          // Transcription
-          escapeCSV(t?.text || ''),
-        ];
-      });
-
-      return [result.row, escapeCSV(result.audio_url), escapeCSV(result.ground_truth), ...modelValues].join(',');
-    });
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `stt-evaluation-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Format file size
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Compute nerd stats from audio base64 (client-side)
-  const computeNerdStats = async (fileId: string, audioBase64: string, mediaType: string) => {
-    if (fileNerdStats.has(fileId)) return; // Already computed
+  // Load results for a specific run
+  const loadResults = async (runId: number) => {
+    if (apiKeys.length === 0) return;
 
+    setIsLoadingResults(true);
     try {
-      // Get codec info from media type
-      const getCodecInfo = (type: string): { format: string; codec: string } => {
-        const typeMap: Record<string, { format: string; codec: string }> = {
-          'audio/ogg': { format: 'OGG', codec: 'Opus/Vorbis' },
-          'audio/opus': { format: 'OGG', codec: 'Opus' },
-          'audio/mpeg': { format: 'MP3', codec: 'MPEG Layer III' },
-          'audio/mp3': { format: 'MP3', codec: 'MPEG Layer III' },
-          'audio/wav': { format: 'WAV', codec: 'PCM' },
-          'audio/wave': { format: 'WAV', codec: 'PCM' },
-          'audio/x-wav': { format: 'WAV', codec: 'PCM' },
-          'audio/webm': { format: 'WebM', codec: 'Opus/Vorbis' },
-          'audio/flac': { format: 'FLAC', codec: 'FLAC' },
-          'audio/x-flac': { format: 'FLAC', codec: 'FLAC' },
-          'audio/aac': { format: 'AAC', codec: 'AAC-LC' },
-          'audio/mp4': { format: 'M4A', codec: 'AAC' },
-          'audio/x-m4a': { format: 'M4A', codec: 'AAC' },
-        };
-        return typeMap[type.toLowerCase()] || { format: type.split('/')[1]?.toUpperCase() || 'Unknown', codec: 'Unknown' };
-      };
-
-      // Decode base64 to get file size
-      const binaryString = atob(audioBase64);
-      const fileSize = binaryString.length;
-
-      // Create audio element to get duration
-      const audio = new Audio(`data:${mediaType};base64,${audioBase64}`);
-
-      await new Promise<void>((resolve, reject) => {
-        audio.addEventListener('loadedmetadata', () => resolve());
-        audio.addEventListener('error', () => reject(new Error('Failed to load audio')));
+      // Fetch run details with results
+      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true`, {
+        headers: { 'X-API-KEY': apiKeys[0].key },
       });
 
-      const { format, codec } = getCodecInfo(mediaType);
-      const durationMs = Math.round(audio.duration * 1000);
-      const bitrate = audio.duration > 0 ? Math.round((fileSize * 8) / audio.duration) : null;
+      if (!runResponse.ok) throw new Error('Failed to load results');
 
-      // Format duration as mm:ss.ms
-      const mins = Math.floor(audio.duration / 60);
-      const secs = Math.floor(audio.duration % 60);
-      const ms = Math.round((audio.duration % 1) * 1000);
-      const durationFormatted = `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+      const runData = await runResponse.json();
+      console.log('Run API Response:', runData);
 
-      // Format file size
-      const formatSize = (bytes: number) => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-      };
-
-      const stats: AudioNerdStats = {
-        format,
-        codec,
-        mimeType: mediaType,
-        durationMs,
-        durationFormatted,
-        sampleRate: null, // Web Audio API doesn't expose this easily
-        channels: null,
-        bitrate,
-        fileSize,
-        fileSizeFormatted: formatSize(fileSize),
-        base64Length: audioBase64.length,
-        compressionRatio: null,
-      };
-
-      setFileNerdStats(prev => new Map(prev).set(fileId, stats));
-    } catch (error) {
-      console.error('Failed to compute nerd stats:', error);
-    }
-  };
-
-  // Toggle file details expansion
-  const toggleFileDetails = (fileId: string, audioBase64?: string, mediaType?: string) => {
-    if (expandedFileId === fileId) {
-      setExpandedFileId(null);
-    } else {
-      setExpandedFileId(fileId);
-      if (audioBase64 && mediaType && !fileNerdStats.has(fileId)) {
-        computeNerdStats(fileId, audioBase64, mediaType);
+      // Extract results
+      let resultsList = [];
+      if (Array.isArray(runData)) {
+        resultsList = runData;
+      } else if (runData.results && Array.isArray(runData.results)) {
+        resultsList = runData.results;
+      } else if (runData.data && Array.isArray(runData.data)) {
+        resultsList = runData.data;
+      } else if (runData.data && runData.data.results && Array.isArray(runData.data.results)) {
+        resultsList = runData.data.results;
       }
+
+      // Get dataset_id from the run
+      const datasetId = runData.dataset_id || runData.data?.dataset_id;
+
+      if (datasetId) {
+        // Fetch dataset with samples
+        const datasetResponse = await fetch(`/api/evaluations/stt/datasets/${datasetId}?include_samples=true`, {
+          headers: { 'X-API-KEY': apiKeys[0].key },
+        });
+
+        if (datasetResponse.ok) {
+          const datasetData = await datasetResponse.json();
+          console.log('Dataset API Response:', datasetData);
+
+          // Extract samples
+          let samples = [];
+          if (datasetData.samples && Array.isArray(datasetData.samples)) {
+            samples = datasetData.samples;
+          } else if (datasetData.data && datasetData.data.samples && Array.isArray(datasetData.data.samples)) {
+            samples = datasetData.data.samples;
+          }
+
+          // Create a map of sample_id to sample name
+          const sampleMap = new Map();
+          samples.forEach((sample: any) => {
+            const sampleName = sample.sample_metadata?.original_filename ||
+                             sample.metadata?.original_filename ||
+                             `Sample ${sample.id}`;
+            sampleMap.set(sample.id, sampleName);
+          });
+
+          // Enrich results with sample names
+          resultsList = resultsList.map((result: any) => ({
+            ...result,
+            sampleName: sampleMap.get(result.stt_sample_id) || '-'
+          }));
+        }
+      }
+
+      console.log('Enriched results:', resultsList);
+      setResults(resultsList);
+      setSelectedRunId(runId);
+    } catch (error) {
+      console.error('Failed to load results:', error);
+      toast.error('Failed to load evaluation results');
+      setResults([]);
+    } finally {
+      setIsLoadingResults(false);
     }
   };
 
-  // Current result for diff view
-  const currentResult = evaluationResults[selectedResultIndex];
+  const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
 
   return (
     <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
@@ -980,1109 +705,924 @@ export default function SpeechToTextPage() {
                 </p>
               </div>
             </div>
-
-            {/* Results View Toggle */}
-            {evaluationResults.length > 0 && (
-              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: colors.bg.secondary }}>
-                {[
-                  { id: 'table', label: 'Table', icon: 'M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z' },
-                  { id: 'cards', label: 'Cards', icon: 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z' },
-                  { id: 'diff', label: 'Diff', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-                ].map(view => (
-                  <button
-                    key={view.id}
-                    onClick={() => setResultsView(view.id as ResultsView)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5"
-                    style={{
-                      backgroundColor: resultsView === view.id ? colors.bg.primary : 'transparent',
-                      color: resultsView === view.id ? colors.text.primary : colors.text.secondary,
-                      boxShadow: resultsView === view.id ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                    }}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d={view.icon} />
-                    </svg>
-                    {view.label}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* Main Content - Split Panel */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Left Panel - Configuration */}
-            <div
-              className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+          {/* Tab Navigation */}
+          <div
+            className="border-b flex gap-1 px-4"
+            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+          >
+            <button
+              onClick={() => setActiveTab('datasets')}
+              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
               style={{
-                width: `${leftPanelWidth}px`,
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
+                borderColor: activeTab === 'datasets' ? colors.accent.primary : 'transparent',
+                color: activeTab === 'datasets' ? colors.accent.primary : colors.text.secondary,
               }}
             >
-              {/* Input Mode Tabs */}
-              <div className="flex border-b" style={{ borderColor: colors.border }}>
-                {(['single', 'batch'] as InputMode[]).map(mode => (
-                  <button
-                    key={mode}
-                    onClick={() => setInputMode(mode)}
-                    className="flex-1 px-4 py-2.5 text-sm font-medium"
-                    style={{
-                      backgroundColor: inputMode === mode ? colors.bg.primary : colors.bg.secondary,
-                      color: inputMode === mode ? colors.text.primary : colors.text.secondary,
-                      borderBottom: inputMode === mode ? `2px solid ${colors.accent.primary}` : '2px solid transparent',
-                    }}
-                  >
-                    {mode === 'single' ? 'Single Files' : 'Batch CSV'}
-                  </button>
-                ))}
+              Datasets
+            </button>
+            <button
+              onClick={() => setActiveTab('evaluations')}
+              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
+              style={{
+                borderColor: activeTab === 'evaluations' ? colors.accent.primary : 'transparent',
+                color: activeTab === 'evaluations' ? colors.accent.primary : colors.text.secondary,
+              }}
+            >
+              Evaluations
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'datasets' ? (
+            <DatasetsTab
+              leftPanelWidth={leftPanelWidth}
+              datasetName={datasetName}
+              setDatasetName={setDatasetName}
+              datasetDescription={datasetDescription}
+              setDatasetDescription={setDatasetDescription}
+              datasetLanguage={datasetLanguage}
+              setDatasetLanguage={setDatasetLanguage}
+              audioFiles={audioFiles}
+              playingFileId={playingFileId}
+              setPlayingFileId={setPlayingFileId}
+              handleAudioFileSelect={handleAudioFileSelect}
+              triggerAudioUpload={triggerAudioUpload}
+              removeAudioFile={removeAudioFile}
+              updateGroundTruth={updateGroundTruth}
+              formatFileSize={formatFileSize}
+              isCreating={isCreating}
+              handleCreateDataset={handleCreateDataset}
+              datasets={datasets}
+              isLoadingDatasets={isLoadingDatasets}
+              loadDatasets={loadDatasets}
+              onRunEvaluation={() => setActiveTab('evaluations')}
+            />
+          ) : (
+            <EvaluationsTab
+              leftPanelWidth={leftPanelWidth}
+              evaluationName={evaluationName}
+              setEvaluationName={setEvaluationName}
+              datasets={datasets}
+              isLoadingDatasets={isLoadingDatasets}
+              selectedDatasetId={selectedDatasetId}
+              setSelectedDatasetId={setSelectedDatasetId}
+              selectedDataset={selectedDataset}
+              selectedModel={selectedModel}
+              setSelectedModel={setSelectedModel}
+              isRunning={isRunning}
+              handleRunEvaluation={handleRunEvaluation}
+              runs={runs}
+              isLoadingRuns={isLoadingRuns}
+              loadRuns={loadRuns}
+              selectedRunId={selectedRunId}
+              setSelectedRunId={setSelectedRunId}
+              results={results}
+              isLoadingResults={isLoadingResults}
+              loadResults={loadResults}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ DATASETS TAB COMPONENT ============
+interface DatasetsTabProps {
+  leftPanelWidth: number;
+  datasetName: string;
+  setDatasetName: (name: string) => void;
+  datasetDescription: string;
+  setDatasetDescription: (desc: string) => void;
+  datasetLanguage: string;
+  setDatasetLanguage: (lang: string) => void;
+  audioFiles: AudioFile[];
+  playingFileId: string | null;
+  setPlayingFileId: (id: string | null) => void;
+  handleAudioFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  triggerAudioUpload: () => void;
+  removeAudioFile: (id: string) => void;
+  updateGroundTruth: (id: string, groundTruth: string) => void;
+  formatFileSize: (bytes: number) => string;
+  isCreating: boolean;
+  handleCreateDataset: () => void;
+  datasets: Dataset[];
+  isLoadingDatasets: boolean;
+  loadDatasets: () => void;
+  onRunEvaluation: () => void;
+}
+
+function DatasetsTab({
+  leftPanelWidth,
+  datasetName,
+  setDatasetName,
+  datasetDescription,
+  setDatasetDescription,
+  datasetLanguage,
+  setDatasetLanguage,
+  audioFiles,
+  playingFileId,
+  setPlayingFileId,
+  handleAudioFileSelect,
+  triggerAudioUpload,
+  removeAudioFile,
+  updateGroundTruth,
+  formatFileSize,
+  isCreating,
+  handleCreateDataset,
+  datasets,
+  isLoadingDatasets,
+  loadDatasets,
+  onRunEvaluation,
+}: DatasetsTabProps) {
+  return (
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Dataset Creation Form */}
+      <div
+        className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+        style={{
+          width: `${leftPanelWidth}px`,
+          backgroundColor: colors.bg.primary,
+          borderColor: colors.border,
+        }}
+      >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* Dataset Information */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              Dataset Name *
+            </label>
+            <input
+              type="text"
+              value={datasetName}
+              onChange={e => setDatasetName(e.target.value)}
+              placeholder="e.g., English Podcast Dataset"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              Description
+            </label>
+            <textarea
+              value={datasetDescription}
+              onChange={e => setDatasetDescription(e.target.value)}
+              placeholder="Optional description for this dataset"
+              rows={3}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+                resize: 'vertical',
+              }}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              Language *
+            </label>
+            <select
+              value={datasetLanguage}
+              onChange={e => setDatasetLanguage(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
+            >
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+            </select>
+          </div>
+
+          {/* Audio Files Section */}
+          <div className="pt-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: colors.text.primary }}>
+              Audio Files *
+            </label>
+
+            <input
+              id="audio-upload"
+              type="file"
+              accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
+              multiple
+              onChange={handleAudioFileSelect}
+              className="hidden"
+            />
+
+            {audioFiles.length === 0 ? (
+              <div
+                onClick={triggerAudioUpload}
+                className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors"
+                style={{
+                  borderColor: colors.border,
+                  backgroundColor: colors.bg.primary,
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+              >
+                <svg className="w-8 h-8 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                  Click to upload audio files
+                </p>
+                <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                  Supports MP3, WAV, M4A, OGG, FLAC, WebM
+                </p>
               </div>
-
-              {/* Panel Content */}
-              <div className="flex-1 overflow-auto p-4 space-y-4">
-                {/* Upload Section */}
-                {inputMode === 'single' ? (
-                  <div className="space-y-3">
+            ) : (
+              <>
+                <div className="space-y-3 mb-3">
+                  {audioFiles.map((audioFile, idx) => (
                     <div
-                      className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer"
-                      style={{ borderColor: colors.border }}
-                      onClick={() => document.getElementById('audio-upload')?.click()}
+                      key={audioFile.id}
+                      className="border rounded-lg overflow-hidden"
+                      style={{
+                        borderColor: audioFile.groundTruth.trim() ? colors.status.success : colors.border,
+                        backgroundColor: audioFile.groundTruth.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.primary,
+                      }}
                     >
-                      <input
-                        id="audio-upload"
-                        type="file"
-                        accept=".mp3,.wav,.m4a,.ogg,.flac,.webm"
-                        onChange={handleAudioFileSelect}
-                        className="hidden"
-                        multiple
-                      />
-                      <svg className="w-6 h-6 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      <p className="text-sm" style={{ color: colors.text.secondary }}>
-                        Add audio files
-                      </p>
-                    </div>
-
-                    {/* Uploaded Files */}
-                    {uploadedFiles.map((file, idx) => {
-                      const isExpanded = expandedFileId === file.id;
-                      const stats = fileNerdStats.get(file.id);
-
-                      return (
-                        <div
-                          key={file.id}
-                          className="border rounded-lg overflow-hidden"
-                          style={{
-                            borderColor: file.groundTruth.trim() ? colors.status.success : colors.border,
-                            backgroundColor: file.groundTruth.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.primary,
-                          }}
-                        >
-                          {/* Compact View */}
-                          <div className="p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <span
-                                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                                  style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
-                                >
-                                  {idx + 1}
-                                </span>
-                                <span className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
-                                  {file.name}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => toggleFileDetails(file.id, file.base64, file.mediaType)}
-                                  className="p-1 rounded"
-                                  style={{ color: colors.text.secondary }}
-                                  title={isExpanded ? 'Hide details' : 'Show details'}
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    style={{
-                                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                      transition: 'transform 0.2s ease',
-                                    }}
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => setUploadedFiles(prev => prev.filter(f => f.id !== file.id))}
-                                  className="p-1 rounded"
-                                  style={{ color: colors.text.secondary }}
-                                >
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-
-                            <AudioPlayer
-                              audioBase64={file.base64}
-                              mediaType={file.mediaType}
-                              isPlaying={playingFileId === file.id}
-                              onPlayToggle={() => setPlayingFileId(prev => prev === file.id ? null : file.id)}
-                            />
-
-                            {!isExpanded && (
-                              <textarea
-                                value={file.groundTruth}
-                                onChange={e => setUploadedFiles(prev =>
-                                  prev.map(f => f.id === file.id ? { ...f, groundTruth: e.target.value } : f)
-                                )}
-                                placeholder="Enter ground truth..."
-                                rows={2}
-                                className="w-full mt-2 px-2 py-1.5 border rounded text-sm"
-                                style={{
-                                  backgroundColor: colors.bg.primary,
-                                  borderColor: colors.border,
-                                  color: colors.text.primary,
-                                  resize: 'vertical',
-                                }}
-                              />
+                      <div className="p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-medium"
+                              style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                            >
+                              {idx + 1}
+                            </span>
+                            <span className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
+                              {audioFile.name}
+                            </span>
+                            {audioFile.fileId && (
+                              <span
+                                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: 'rgba(22, 163, 74, 0.1)', color: colors.status.success }}
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Uploaded
+                              </span>
+                            )}
+                            {!audioFile.fileId && (
+                              <span
+                                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: colors.accent.primary }}
+                              >
+                                <div className="w-2 h-2 border border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.accent.primary, borderTopColor: 'transparent' }} />
+                                Uploading...
+                              </span>
                             )}
                           </div>
-
-                          {/* Expanded Details */}
-                          {isExpanded && (
-                            <div
-                              className="border-t px-3 pb-3 pt-2 space-y-3"
-                              style={{ borderColor: colors.border, backgroundColor: colors.bg.secondary }}
-                            >
-                              {/* Ground truth - full view */}
-                              <div>
-                                <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
-                                  Ground Truth
-                                </div>
-                                <textarea
-                                  value={file.groundTruth}
-                                  onChange={e => setUploadedFiles(prev =>
-                                    prev.map(f => f.id === file.id ? { ...f, groundTruth: e.target.value } : f)
-                                  )}
-                                  placeholder="Enter ground truth transcription..."
-                                  rows={3}
-                                  className="w-full px-2 py-1.5 border rounded text-xs"
-                                  style={{
-                                    backgroundColor: colors.bg.primary,
-                                    borderColor: colors.border,
-                                    color: colors.text.primary,
-                                    resize: 'vertical',
-                                  }}
-                                />
-                              </div>
-
-                              {/* Nerd Stats */}
-                              {stats ? (
-                                <div>
-                                  <div className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
-                                    Audio Details
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                      <span style={{ color: colors.text.secondary }}>Format</span>
-                                      <span className="font-mono" style={{ color: colors.text.primary }}>{stats.format}</span>
-                                    </div>
-                                    <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                      <span style={{ color: colors.text.secondary }}>Codec</span>
-                                      <span className="font-mono" style={{ color: colors.text.primary }}>{stats.codec}</span>
-                                    </div>
-                                    <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                      <span style={{ color: colors.text.secondary }}>Duration</span>
-                                      <span className="font-mono" style={{ color: colors.text.primary }}>{stats.durationFormatted}</span>
-                                    </div>
-                                    <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                      <span style={{ color: colors.text.secondary }}>Size</span>
-                                      <span className="font-mono" style={{ color: colors.text.primary }}>{stats.fileSizeFormatted}</span>
-                                    </div>
-                                    {stats.sampleRate && (
-                                      <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                        <span style={{ color: colors.text.secondary }}>Sample Rate</span>
-                                        <span className="font-mono" style={{ color: colors.text.primary }}>{(stats.sampleRate / 1000).toFixed(1)} kHz</span>
-                                      </div>
-                                    )}
-                                    {stats.channels && (
-                                      <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                        <span style={{ color: colors.text.secondary }}>Channels</span>
-                                        <span className="font-mono" style={{ color: colors.text.primary }}>{stats.channels}</span>
-                                      </div>
-                                    )}
-                                    {stats.bitrate && (
-                                      <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                        <span style={{ color: colors.text.secondary }}>Bitrate</span>
-                                        <span className="font-mono" style={{ color: colors.text.primary }}>{(stats.bitrate / 1000).toFixed(0)} kbps</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center py-3">
-                                  <div
-                                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                                    style={{ borderColor: colors.text.secondary }}
-                                  />
-                                  <span className="text-xs ml-2" style={{ color: colors.text.secondary }}>
-                                    Loading audio details...
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div
-                      className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer"
-                      style={{
-                        borderColor: csvFile ? colors.status.success : colors.border,
-                        backgroundColor: csvFile ? 'rgba(22, 163, 74, 0.02)' : 'transparent',
-                      }}
-                      onClick={() => document.getElementById('csv-upload')?.click()}
-                    >
-                      <input
-                        id="csv-upload"
-                        type="file"
-                        accept=".csv"
-                        onChange={handleCsvFileSelect}
-                        className="hidden"
-                        disabled={isParsing}
-                      />
-                      {isParsing ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div
-                            className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                            style={{ borderColor: colors.text.secondary }}
-                          />
-                          <span className="text-sm" style={{ color: colors.text.secondary }}>Parsing...</span>
-                        </div>
-                      ) : csvFile ? (
-                        <div>
-                          <svg className="w-6 h-6 mx-auto mb-1" style={{ color: colors.status.success }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <p className="text-sm font-medium" style={{ color: colors.text.primary }}>{csvFile.name}</p>
-                          <p className="text-xs" style={{ color: colors.text.secondary }}>
-                            {parsedRows.filter(r => r.status === 'success').length} files ready
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          <svg className="w-6 h-6 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <p className="text-sm" style={{ color: colors.text.secondary }}>Upload CSV file</p>
-                          <p className="text-xs" style={{ color: colors.text.secondary }}>audio_url, ground_truth</p>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Parsed rows list */}
-                    {parsedRows.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs" style={{ color: colors.text.secondary }}>
-                          <span>
-                            {selectedRows.size} / {parsedRows.filter(r => r.status === 'success').length} selected
-                          </span>
                           <button
-                            onClick={() => {
-                              const successRows = parsedRows.filter(r => r.status === 'success');
-                              const allSelected = successRows.every(r => selectedRows.has(r.row));
-                              setSelectedRows(allSelected ? new Set() : new Set(successRows.map(r => r.row)));
-                            }}
-                            className="text-xs underline"
-                            style={{ color: colors.accent.primary }}
+                            onClick={() => removeAudioFile(audioFile.id)}
+                            className="p-1 rounded flex-shrink-0"
+                            style={{ color: colors.text.secondary }}
                           >
-                            {parsedRows.filter(r => r.status === 'success').every(r => selectedRows.has(r.row))
-                              ? 'Deselect all'
-                              : 'Select all'}
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
                           </button>
                         </div>
 
-                        {/* Files List */}
-                        <div className="space-y-2 max-h-96 overflow-auto">
-                          {parsedRows.map((row, idx) => {
-                            if (row.status === 'error') {
-                              return (
-                                <div
-                                  key={`row-${row.row}`}
-                                  className="border rounded-lg p-2"
-                                  style={{
-                                    borderColor: colors.status.error,
-                                    backgroundColor: '#fef2f2',
-                                  }}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs" style={{ color: colors.text.secondary }}>#{row.row}</span>
-                                    <span className="text-xs flex-1 truncate" style={{ color: colors.status.error }}>
-                                      {row.error || 'Failed to parse'}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            }
+                        <AudioPlayer
+                          audioBase64={audioFile.base64}
+                          mediaType={audioFile.mediaType}
+                          isPlaying={playingFileId === audioFile.id}
+                          onPlayToggle={() => setPlayingFileId(playingFileId === audioFile.id ? null : audioFile.id)}
+                        />
 
-                            const isSelected = selectedRows.has(row.row);
-                            const fileId = `row-${row.row}`;
-                            const isExpanded = expandedFileId === fileId;
-                            const stats = fileNerdStats.get(fileId);
+                        <div className="mt-3">
+                          <label className="block text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                            Ground Truth (optional)
+                          </label>
+                          <textarea
+                            value={audioFile.groundTruth}
+                            onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
+                            placeholder="Enter the expected transcription (optional)..."
+                            rows={3}
+                            className="w-full px-2 py-1.5 border rounded text-sm"
+                            style={{
+                              backgroundColor: colors.bg.primary,
+                              borderColor: colors.border,
+                              color: colors.text.primary,
+                              resize: 'vertical',
+                            }}
+                          />
+                        </div>
 
-                            return (
-                              <div
-                                key={fileId}
-                                className="border rounded-lg overflow-hidden"
-                                style={{
-                                  borderColor: isSelected ? colors.status.success : colors.border,
-                                  backgroundColor: isSelected ? 'rgba(22, 163, 74, 0.02)' : colors.bg.primary,
-                                }}
-                              >
-                                {/* Compact View */}
-                                <div className="p-3">
-                                  <div className="flex items-start gap-2">
-                                    <button
-                                      onClick={() => {
-                                        setSelectedRows(prev => {
-                                          const next = new Set(prev);
-                                          if (next.has(row.row)) {
-                                            next.delete(row.row);
-                                          } else {
-                                            next.add(row.row);
-                                          }
-                                          return next;
-                                        });
-                                      }}
-                                      className="w-4 h-4 border rounded flex items-center justify-center flex-shrink-0 mt-0.5"
-                                      style={{
-                                        borderColor: isSelected ? colors.accent.primary : colors.border,
-                                        backgroundColor: isSelected ? colors.accent.primary : 'transparent',
-                                      }}
-                                    >
-                                      {isSelected && (
-                                        <svg className="w-3 h-3" style={{ color: '#fff' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                      )}
-                                    </button>
-
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
-                                        <span
-                                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs"
-                                          style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
-                                        >
-                                          {row.row}
-                                        </span>
-                                        <span className="text-xs font-medium truncate" style={{ color: colors.text.primary }}>
-                                          {row.audio_url.split('/').pop() || row.audio_url}
-                                        </span>
-                                      </div>
-
-                                      {row.audio_base64 && (
-                                        <AudioPlayer
-                                          audioBase64={row.audio_base64}
-                                          mediaType={row.media_type || 'audio/mpeg'}
-                                          isPlaying={playingFileId === fileId}
-                                          onPlayToggle={() => setPlayingFileId(prev => prev === fileId ? null : fileId)}
-                                        />
-                                      )}
-
-                                      {/* Quick stats */}
-                                      {!isExpanded && (
-                                        <div className="flex items-center gap-3 text-xs mt-2" style={{ color: colors.text.secondary }}>
-                                          {row.file_size && <span>{formatFileSize(row.file_size)}</span>}
-                                          <span>{row.ground_truth.split(' ').length} words</span>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    <button
-                                      onClick={() => toggleFileDetails(fileId, row.audio_base64, row.media_type || 'audio/mpeg')}
-                                      className="p-1 rounded flex-shrink-0"
-                                      style={{ color: colors.text.secondary }}
-                                      title={isExpanded ? 'Hide details' : 'Show details'}
-                                    >
-                                      <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        style={{
-                                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                          transition: 'transform 0.2s ease',
-                                        }}
-                                      >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Expanded Details */}
-                                {isExpanded && (
-                                  <div
-                                    className="border-t px-3 pb-3 pt-2 space-y-3"
-                                    style={{ borderColor: colors.border, backgroundColor: colors.bg.secondary }}
-                                  >
-                                    {/* Ground truth */}
-                                    <div>
-                                      <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
-                                        Ground Truth
-                                      </div>
-                                      <div className="text-xs p-2 rounded" style={{ backgroundColor: colors.bg.primary, color: colors.text.primary }}>
-                                        {row.ground_truth}
-                                      </div>
-                                    </div>
-
-                                    {/* Nerd Stats */}
-                                    {stats ? (
-                                      <div>
-                                        <div className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
-                                          Audio Details
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                          <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                            <span style={{ color: colors.text.secondary }}>Format</span>
-                                            <span className="font-mono" style={{ color: colors.text.primary }}>{stats.format}</span>
-                                          </div>
-                                          <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                            <span style={{ color: colors.text.secondary }}>Codec</span>
-                                            <span className="font-mono" style={{ color: colors.text.primary }}>{stats.codec}</span>
-                                          </div>
-                                          <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                            <span style={{ color: colors.text.secondary }}>Duration</span>
-                                            <span className="font-mono" style={{ color: colors.text.primary }}>{stats.durationFormatted}</span>
-                                          </div>
-                                          <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                            <span style={{ color: colors.text.secondary }}>Size</span>
-                                            <span className="font-mono" style={{ color: colors.text.primary }}>{stats.fileSizeFormatted}</span>
-                                          </div>
-                                          {stats.sampleRate && (
-                                            <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                              <span style={{ color: colors.text.secondary }}>Sample Rate</span>
-                                              <span className="font-mono" style={{ color: colors.text.primary }}>{(stats.sampleRate / 1000).toFixed(1)} kHz</span>
-                                            </div>
-                                          )}
-                                          {stats.channels && (
-                                            <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                              <span style={{ color: colors.text.secondary }}>Channels</span>
-                                              <span className="font-mono" style={{ color: colors.text.primary }}>{stats.channels}</span>
-                                            </div>
-                                          )}
-                                          {stats.bitrate && (
-                                            <div className="flex justify-between p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                                              <span style={{ color: colors.text.secondary }}>Bitrate</span>
-                                              <span className="font-mono" style={{ color: colors.text.primary }}>{(stats.bitrate / 1000).toFixed(0)} kbps</span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="flex items-center justify-center py-3">
-                                        <div
-                                          className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                                          style={{ borderColor: colors.text.secondary }}
-                                        />
-                                        <span className="text-xs ml-2" style={{ color: colors.text.secondary }}>
-                                          Loading audio details...
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                        <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                          <span>{formatFileSize(audioFile.size)}</span>
+                          {audioFile.groundTruth.trim() && (
+                            <span>{audioFile.groundTruth.trim().split(/\s+/).length} words</span>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
 
-                {/* Model Selection */}
-                <div>
-                  <h3 className="text-sm font-medium mb-2" style={{ color: colors.text.primary }}>
-                    Models
-                  </h3>
-                  <div className="space-y-2">
-                    {Object.entries(MODEL_GROUPS).map(([provider, models]) => (
-                      <div key={provider}>
-                        <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
-                          {provider}
-                        </div>
-                        <div className="space-y-1">
-                          {models.map(model => (
-                            <label
-                              key={model.id}
-                              className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer"
-                              style={{
-                                backgroundColor: selectedModels.includes(model.id) ? colors.bg.secondary : 'transparent',
-                              }}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedModels.includes(model.id)}
-                                onChange={() => toggleModel(model.id)}
-                                className="sr-only"
-                              />
-                              <div
-                                className="w-4 h-4 border rounded flex items-center justify-center flex-shrink-0"
-                                style={{
-                                  borderColor: selectedModels.includes(model.id) ? colors.accent.primary : colors.border,
-                                  backgroundColor: selectedModels.includes(model.id) ? colors.accent.primary : 'transparent',
-                                }}
-                              >
-                                {selectedModels.includes(model.id) && (
-                                  <svg className="w-3 h-3" style={{ color: '#fff' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                              <span className="text-sm" style={{ color: colors.text.primary }}>{model.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                <button
+                  onClick={triggerAudioUpload}
+                  className="w-full py-2 border-2 border-dashed rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    borderColor: colors.border,
+                    color: colors.text.secondary,
+                    backgroundColor: colors.bg.primary,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.bg.secondary;
+                    e.currentTarget.style.borderColor = colors.accent.primary;
+                    e.currentTarget.style.color = colors.accent.primary;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = colors.bg.primary;
+                    e.currentTarget.style.borderColor = colors.border;
+                    e.currentTarget.style.color = colors.text.secondary;
+                  }}
+                >
+                  + Add more audio files
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div
+          className="flex-shrink-0 border-t px-4 py-3 flex gap-3"
+          style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+        >
+          <button
+            onClick={() => {
+              setDatasetName('');
+              setDatasetDescription('');
+              setDatasetLanguage('en');
+            }}
+            disabled={isCreating}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border"
+            style={{
+              backgroundColor: colors.bg.primary,
+              borderColor: colors.border,
+              color: colors.text.primary,
+              cursor: isCreating ? 'not-allowed' : 'pointer',
+              opacity: isCreating ? 0.5 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateDataset}
+            disabled={isCreating || !datasetName.trim() || audioFiles.length === 0}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: isCreating || !datasetName.trim() || audioFiles.length === 0
+                ? colors.bg.secondary
+                : colors.accent.primary,
+              color: isCreating || !datasetName.trim() || audioFiles.length === 0
+                ? colors.text.secondary
+                : '#fff',
+              cursor: isCreating || !datasetName.trim() || audioFiles.length === 0
+                ? 'not-allowed'
+                : 'pointer',
+            }}
+          >
+            {isCreating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Creating Dataset...
+              </>
+            ) : (
+              'Create Dataset'
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Right Panel - Datasets List */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              Datasets
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={loadDatasets}
+                disabled={isLoadingDatasets}
+                className="p-1.5 rounded"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg
+                  className={`w-4 h-4 ${isLoadingDatasets ? 'animate-spin' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-lg border overflow-hidden" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+            {isLoadingDatasets ? (
+              <div className="p-16 text-center">
+                <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                <p className="text-sm" style={{ color: colors.text.secondary }}>Loading datasets...</p>
+              </div>
+            ) : datasets.length === 0 ? (
+              <div className="p-16 text-center">
+                <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16M10 12h4" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No datasets yet</p>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset to get started</p>
+              </div>
+            ) : (
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: colors.bg.secondary }}>
+                    <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      Name
+                    </th>
+                    <th className="py-2.5 pl-2 pr-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      No. of Samples
+                    </th>
+                    <th className="py-2.5 pl-2 pr-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      Language
+                    </th>
+                    <th className="py-2.5 pr-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, paddingLeft: '2rem' }}>
+                      Created At
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {datasets.map((dataset, idx) => (
+                    <tr
+                      key={dataset.id}
+                      className="hover:bg-opacity-50"
+                      style={{
+                        backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                      }}
+                    >
+                      <td className="py-3 px-4 font-medium border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
+                        {dataset.name}
+                      </td>
+                      <td className="py-3 pl-2 pr-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                        {dataset.dataset_metadata?.sample_count || 0}
+                      </td>
+                      <td className="py-3 pl-2 pr-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                        {getLanguageName(dataset.language_id)}
+                      </td>
+                      <td className="py-3 pr-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary, paddingLeft: '2rem' }}>
+                        {new Date(dataset.inserted_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Footer with Run Evaluation Button */}
+        <div
+          className="flex-shrink-0 border-t px-4 py-3 flex justify-end"
+          style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+        >
+          <button
+            onClick={onRunEvaluation}
+            disabled={datasets.length === 0}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: datasets.length === 0 ? colors.bg.secondary : colors.accent.primary,
+              color: datasets.length === 0 ? colors.text.secondary : '#fff',
+              cursor: datasets.length === 0 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            Run Evaluation
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ EVALUATIONS TAB COMPONENT ============
+interface EvaluationsTabProps {
+  leftPanelWidth: number;
+  evaluationName: string;
+  setEvaluationName: (name: string) => void;
+  datasets: Dataset[];
+  isLoadingDatasets: boolean;
+  selectedDatasetId: number | null;
+  setSelectedDatasetId: (id: number | null) => void;
+  selectedDataset: Dataset | undefined;
+  selectedModel: string;
+  setSelectedModel: (model: string) => void;
+  isRunning: boolean;
+  handleRunEvaluation: () => void;
+  runs: STTRun[];
+  isLoadingRuns: boolean;
+  loadRuns: () => void;
+  selectedRunId: number | null;
+  setSelectedRunId: (id: number | null) => void;
+  results: STTResult[];
+  isLoadingResults: boolean;
+  loadResults: (runId: number) => void;
+}
+
+function EvaluationsTab({
+  leftPanelWidth,
+  evaluationName,
+  setEvaluationName,
+  datasets,
+  isLoadingDatasets,
+  selectedDatasetId,
+  setSelectedDatasetId,
+  selectedDataset,
+  selectedModel,
+  setSelectedModel,
+  isRunning,
+  handleRunEvaluation,
+  runs,
+  isLoadingRuns,
+  loadRuns,
+  selectedRunId,
+  setSelectedRunId,
+  results,
+  isLoadingResults,
+  loadResults,
+}: EvaluationsTabProps) {
+  return (
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Evaluation Configuration */}
+      {selectedRunId === null && (
+        <div
+          className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+          style={{
+            width: `${leftPanelWidth}px`,
+            backgroundColor: colors.bg.primary,
+            borderColor: colors.border,
+          }}
+        >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* Evaluation Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              Evaluation Name *
+            </label>
+            <input
+              type="text"
+              value={evaluationName}
+              onChange={e => setEvaluationName(e.target.value)}
+              placeholder="e.g., English Podcast Evaluation v1"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
+            />
+          </div>
+
+          {/* Model Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              Model *
+            </label>
+            <select
+              value={selectedModel}
+              onChange={e => setSelectedModel(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
+            >
+              <option value="gemini-2.0-flash-exp">gemini-2.5-pro</option>
+            </select>
+          </div>
+
+          {/* Dataset Selection */}
+          <div className="pt-2">
+            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              Select Dataset *
+            </label>
+            {isLoadingDatasets ? (
+              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
+              </div>
+            ) : datasets.length === 0 ? (
+              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
+                <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                  Create a dataset first in the Datasets tab
+                </p>
+              </div>
+            ) : (
+              <select
+                value={selectedDatasetId || ''}
+                onChange={e => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full px-3 py-2 border rounded-md text-sm"
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  borderColor: colors.border,
+                  color: colors.text.primary,
+                }}
+              >
+                <option value="">-- Select a dataset --</option>
+                {datasets.map(dataset => (
+                  <option key={dataset.id} value={dataset.id}>
+                    {dataset.name} ({dataset.dataset_metadata?.sample_count || 0} samples)
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Selected Dataset Info */}
+          {selectedDataset && (
+            <div
+              className="border rounded-lg p-3"
+              style={{
+                borderColor: colors.status.success,
+                backgroundColor: 'rgba(22, 163, 74, 0.02)',
+              }}
+            >
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                    {selectedDataset.name}
+                  </p>
+                  <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
+                    <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
+                    <div>Language: {getLanguageName(selectedDataset.language_id)}</div>
+                    {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
                   </div>
                 </div>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Right Panel - Results */}
-            <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
-              {evaluationResults.length === 0 ? (
-                /* Empty State */
-                <div className="flex-1 flex items-center justify-center p-8">
-                  <div className="text-center max-w-md">
-                    <svg className="w-16 h-16 mx-auto mb-4" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                    <h3 className="text-lg font-medium mb-2" style={{ color: colors.text.primary }}>
-                      Ready to Evaluate
-                    </h3>
-                    <p className="text-sm mb-4" style={{ color: colors.text.secondary }}>
-                      Upload audio files, add ground truth text, select models, then run evaluation to see results here.
-                    </p>
-                    <div className="text-xs" style={{ color: colors.text.secondary }}>
-                      {readyFileCount > 0 ? (
-                        <span style={{ color: colors.status.success }}>
-                          {readyFileCount} file{readyFileCount !== 1 ? 's' : ''} ready
-                        </span>
-                      ) : (
-                        'No files ready yet'
-                      )}
-                      {' • '}
-                      {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''} selected
-                    </div>
-                  </div>
-                </div>
-              ) : resultsView === 'table' ? (
-                /* Table View */
-                <div className="flex-1 overflow-auto">
-                  <div className="min-w-full">
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr style={{ backgroundColor: colors.bg.primary }}>
-                          <th
-                            className="sticky top-0 left-0 z-20 px-3 py-2 text-left text-xs font-medium border-b border-r"
-                            style={{
-                              color: colors.text.secondary,
-                              borderColor: colors.border,
-                              backgroundColor: colors.bg.primary,
-                              minWidth: '40px',
-                            }}
-                          >
-                            #
-                          </th>
-                          <th
-                            className="sticky top-0 z-10 px-3 py-2 text-left text-xs font-medium border-b border-r"
-                            style={{
-                              color: colors.text.secondary,
-                              borderColor: colors.border,
-                              backgroundColor: colors.bg.primary,
-                              minWidth: '200px',
-                              maxWidth: '300px',
-                            }}
-                          >
-                            Audio File
-                          </th>
-                          {selectedModels.map(modelId => {
-                            const modelConfig = STT_MODELS.find(m => m.id === modelId);
-                            return (
-                              <th
-                                key={modelId}
-                                className="sticky top-0 z-10 px-3 py-2 text-center text-xs font-medium border-b border-r"
-                                style={{
-                                  color: colors.text.secondary,
-                                  borderColor: colors.border,
-                                  backgroundColor: colors.bg.primary,
-                                  minWidth: '120px',
-                                }}
-                              >
-                                <div>{modelConfig?.name || modelId.split(':')[1]}</div>
-                                <div className="text-xs font-normal opacity-60">{modelConfig?.provider}</div>
-                              </th>
-                            );
-                          })}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {evaluationResults.map((result, resultIdx) => {
-                          const { best, worst } = getBestWorstModels(result);
 
-                          return (
-                            <tr
-                              key={result.fileId}
-                              className="hover:bg-gray-50"
-                              style={{ backgroundColor: resultIdx % 2 === 0 ? colors.bg.primary : colors.bg.secondary }}
-                            >
-                              {/* Row Number */}
-                              <td
-                                className="px-3 py-2 text-center border-b border-r"
-                                style={{ borderColor: colors.border, color: colors.text.secondary }}
-                              >
-                                {result.row}
-                              </td>
 
-                              {/* Audio File */}
-                              <td
-                                className="px-3 py-2 border-b border-r"
-                                style={{ borderColor: colors.border, maxWidth: '300px' }}
-                              >
-                                <div
-                                  className="text-sm font-medium truncate"
-                                  style={{ color: colors.text.primary }}
-                                  title={result.audio_url}
-                                >
-                                  {result.audio_url.split('/').pop() || result.audio_url}
-                                </div>
-                                <div
-                                  className="text-xs truncate mt-0.5"
-                                  style={{ color: colors.text.secondary }}
-                                  title={result.ground_truth}
-                                >
-                                  {result.ground_truth.slice(0, 50)}{result.ground_truth.length > 50 ? '...' : ''}
-                                </div>
-                              </td>
-
-                              {/* Model Results */}
-                              {selectedModels.map(modelId => {
-                                const transcription = result.transcriptions[modelId];
-                                const werPercent = transcription?.strict?.wer !== undefined
-                                  ? transcription.strict.wer * 100
-                                  : null;
-                                const isBest = best === modelId;
-                                const isWorst = worst === modelId && best !== worst;
-
-                                // Get WER color
-                                const getWerColor = (wer: number) => {
-                                  if (wer < 5) return colors.status.success;
-                                  if (wer < 10) return '#ca8a04';
-                                  if (wer < 20) return colors.status.warning;
-                                  return colors.status.error;
-                                };
-
-                                return (
-                                  <td
-                                    key={modelId}
-                                    className="px-3 py-2 text-center border-b border-r cursor-pointer hover:bg-gray-100"
-                                    style={{
-                                      borderColor: colors.border,
-                                      backgroundColor: isBest ? 'rgba(22, 163, 74, 0.05)' : undefined,
-                                    }}
-                                    onClick={() => {
-                                      setSelectedResultIndex(resultIdx);
-                                      setSelectedModelForDiff(modelId);
-                                      setResultsView('diff');
-                                    }}
-                                  >
-                                    {transcription?.status === 'pending' ? (
-                                      <div className="flex items-center justify-center">
-                                        <div
-                                          className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                                          style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }}
-                                        />
-                                      </div>
-                                    ) : transcription?.status === 'error' ? (
-                                      <span
-                                        className="text-xs px-1.5 py-0.5 rounded"
-                                        style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
-                                      >
-                                        Error
-                                      </span>
-                                    ) : werPercent !== null ? (
-                                      <div className="flex flex-col items-center gap-0.5">
-                                        <span
-                                          className="text-sm font-bold tabular-nums"
-                                          style={{ color: getWerColor(werPercent) }}
-                                        >
-                                          {werPercent.toFixed(1)}%
-                                        </span>
-                                        {isBest && (
-                                          <span
-                                            className="text-xs px-1 py-0.5 rounded"
-                                            style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
-                                          >
-                                            Best
-                                          </span>
-                                        )}
-                                        {isWorst && (
-                                          <span
-                                            className="text-xs px-1 py-0.5 rounded"
-                                            style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
-                                          >
-                                            Worst
-                                          </span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span style={{ color: colors.text.secondary }}>—</span>
-                                    )}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : resultsView === 'cards' ? (
-                /* Cards View */
-                <div className="flex-1 overflow-auto p-4">
-                  <div className="space-y-6">
-                    {evaluationResults.map((result, resultIdx) => {
-                      const { best, worst } = getBestWorstModels(result);
-
-                      return (
-                        <div key={result.fileId} className="space-y-3">
-                          {/* File Header */}
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                              style={{ backgroundColor: colors.accent.primary, color: '#fff' }}
-                            >
-                              {result.row}
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
-                                {result.audio_url}
-                              </p>
-                              <p className="text-xs truncate" style={{ color: colors.text.secondary }}>
-                                Ground truth: {result.ground_truth || 'Not provided'}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => {
-                                setSelectedResultIndex(resultIdx);
-                                setResultsView('diff');
-                              }}
-                              className="px-2 py-1 text-xs rounded"
-                              style={{
-                                backgroundColor: colors.bg.primary,
-                                color: colors.text.secondary,
-                                border: `1px solid ${colors.border}`,
-                              }}
-                            >
-                              View Diff
-                            </button>
-                          </div>
-
-                          {/* Model Cards Grid */}
-                          <div
-                            className="grid gap-3"
-                            style={{
-                              gridTemplateColumns: `repeat(${Math.min(selectedModels.length, 3)}, 1fr)`,
-                              alignItems: 'start',
-                            }}
-                          >
-                            {selectedModels.map(modelId => {
-                              const transcription = result.transcriptions[modelId];
-                              const modelConfig = STT_MODELS.find(m => m.id === modelId);
-
-                              return (
-                                <ModelComparisonCard
-                                  key={modelId}
-                                  modelId={modelId}
-                                  modelName={modelConfig?.name || modelId.split(':')[1]}
-                                  provider={modelConfig?.provider || modelId.split(':')[0]}
-                                  transcript={transcription?.text || ''}
-                                  status={transcription?.status || 'pending'}
-                                  error={transcription?.error}
-                                  strictMetrics={transcription?.strict}
-                                  lenientMetrics={transcription?.lenient}
-                                  isBest={best === modelId}
-                                  isWorst={worst === modelId && best !== worst}
-                                  onClick={() => {
-                                    setSelectedResultIndex(resultIdx);
-                                    setSelectedModelForDiff(modelId);
-                                    setResultsView('diff');
-                                  }}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                /* Diff View */
-                <div className="flex-1 overflow-auto p-4">
-                  {currentResult && (
-                    <div className="space-y-4">
-                      {/* Result Selector */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => setSelectedResultIndex(prev => Math.max(0, prev - 1))}
-                          disabled={selectedResultIndex === 0}
-                          className="p-1.5 rounded"
-                          style={{
-                            backgroundColor: colors.bg.primary,
-                            color: selectedResultIndex === 0 ? colors.text.secondary : colors.text.primary,
-                            opacity: selectedResultIndex === 0 ? 0.5 : 1,
-                          }}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                        </button>
-
-                        <div className="flex-1">
-                          <select
-                            value={selectedResultIndex}
-                            onChange={e => setSelectedResultIndex(Number(e.target.value))}
-                            className="w-full px-3 py-2 rounded-md text-sm"
-                            style={{
-                              backgroundColor: colors.bg.primary,
-                              border: `1px solid ${colors.border}`,
-                              color: colors.text.primary,
-                            }}
-                          >
-                            {evaluationResults.map((r, idx) => (
-                              <option key={r.fileId} value={idx}>
-                                {idx + 1}. {r.audio_url}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <button
-                          onClick={() => setSelectedResultIndex(prev => Math.min(evaluationResults.length - 1, prev + 1))}
-                          disabled={selectedResultIndex === evaluationResults.length - 1}
-                          className="p-1.5 rounded"
-                          style={{
-                            backgroundColor: colors.bg.primary,
-                            color: selectedResultIndex === evaluationResults.length - 1 ? colors.text.secondary : colors.text.primary,
-                            opacity: selectedResultIndex === evaluationResults.length - 1 ? 0.5 : 1,
-                          }}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      {/* Model Tabs */}
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedModels.map(modelId => {
-                          const transcription = currentResult.transcriptions[modelId];
-                          const modelConfig = STT_MODELS.find(m => m.id === modelId);
-                          const isSelected = selectedModelForDiff === modelId;
-                          const werPercent = transcription?.strict?.wer !== undefined
-                            ? (transcription.strict.wer * 100).toFixed(1)
-                            : null;
-
-                          return (
-                            <button
-                              key={modelId}
-                              onClick={() => setSelectedModelForDiff(modelId)}
-                              className="px-3 py-1.5 rounded-md text-sm flex items-center gap-2"
-                              style={{
-                                backgroundColor: isSelected ? colors.accent.primary : colors.bg.primary,
-                                color: isSelected ? '#fff' : colors.text.primary,
-                                border: `1px solid ${isSelected ? colors.accent.primary : colors.border}`,
-                              }}
-                            >
-                              {modelConfig?.name || modelId.split(':')[1]}
-                              {werPercent && (
-                                <span
-                                  className="text-xs px-1.5 py-0.5 rounded"
-                                  style={{
-                                    backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : colors.bg.secondary,
-                                  }}
-                                >
-                                  {werPercent}%
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Diff Content */}
-                      {selectedModelForDiff && currentResult.transcriptions[selectedModelForDiff] && (
-                        <div
-                          className="rounded-lg border p-4"
-                          style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
-                        >
-                          <TranscriptionDiffViewer
-                            groundTruth={currentResult.ground_truth}
-                            hypothesis={currentResult.transcriptions[selectedModelForDiff].text}
-                          />
-
-                          {/* Metrics */}
-                          {currentResult.transcriptions[selectedModelForDiff].strict && (
-                            <div
-                              className="mt-4 pt-4 border-t grid grid-cols-2 gap-4"
-                              style={{ borderColor: colors.border }}
-                            >
-                              <div>
-                                <h4 className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
-                                  Strict Mode
-                                </h4>
-                                <div className="grid grid-cols-4 gap-2 text-center">
-                                  {['wer', 'substitutions', 'deletions', 'insertions'].map(metric => (
-                                    <div key={metric}>
-                                      <div className="text-xs" style={{ color: colors.text.secondary }}>
-                                        {metric === 'wer' ? 'WER' : metric.charAt(0).toUpperCase() + metric.slice(1, 3)}
-                                      </div>
-                                      <div className="text-lg font-bold" style={{ color: colors.text.primary }}>
-                                        {metric === 'wer'
-                                          ? `${(currentResult.transcriptions[selectedModelForDiff].strict![metric] * 100).toFixed(1)}%`
-                                          : currentResult.transcriptions[selectedModelForDiff].strict![metric as keyof WerMetrics]}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
-                                  Lenient Mode
-                                </h4>
-                                <div className="grid grid-cols-4 gap-2 text-center">
-                                  {['wer', 'substitutions', 'deletions', 'insertions'].map(metric => (
-                                    <div key={metric}>
-                                      <div className="text-xs" style={{ color: colors.text.secondary }}>
-                                        {metric === 'wer' ? 'WER' : metric.charAt(0).toUpperCase() + metric.slice(1, 3)}
-                                      </div>
-                                      <div className="text-lg font-bold" style={{ color: colors.text.primary }}>
-                                        {metric === 'wer'
-                                          ? `${(currentResult.transcriptions[selectedModelForDiff].lenient![metric] * 100).toFixed(1)}%`
-                                          : currentResult.transcriptions[selectedModelForDiff].lenient![metric as keyof WerMetrics]}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {!selectedModelForDiff && (
-                        <div
-                          className="rounded-lg border p-8 text-center"
-                          style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
-                        >
-                          <p style={{ color: colors.text.secondary }}>
-                            Select a model above to view the diff comparison
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Floating Action Bar */}
-          <div
-            className="border-t px-4 py-3 flex items-center justify-between flex-shrink-0"
-            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+        {/* Run Evaluation Button */}
+        <div
+          className="flex-shrink-0 border-t px-4 py-3"
+          style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+        >
+          <button
+            onClick={handleRunEvaluation}
+            disabled={isRunning || !evaluationName.trim() || !selectedDatasetId}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: isRunning || !evaluationName.trim() || !selectedDatasetId
+                ? colors.bg.secondary
+                : colors.accent.primary,
+              color: isRunning || !evaluationName.trim() || !selectedDatasetId
+                ? colors.text.secondary
+                : '#fff',
+              cursor: isRunning || !evaluationName.trim() || !selectedDatasetId
+                ? 'not-allowed'
+                : 'pointer',
+            }}
           >
-            <div className="flex items-center gap-4 text-sm" style={{ color: colors.text.secondary }}>
-              <span>
-                {readyFileCount} file{readyFileCount !== 1 ? 's' : ''} ready
-              </span>
-              <span>•</span>
-              <span>
-                {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''} selected
-              </span>
-              {evaluationResults.length > 0 && (
-                <>
-                  <span>•</span>
-                  <span style={{ color: colors.status.success }}>
-                    {evaluationResults.length} result{evaluationResults.length !== 1 ? 's' : ''}
-                  </span>
-                </>
-              )}
-            </div>
+            {isRunning ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Starting Evaluation...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Run Evaluation
+              </>
+            )}
+          </button>
+        </div>
+        </div>
+      )}
 
+      {/* Right Panel - Evaluation Runs List or Results */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-4">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {evaluationResults.length > 0 && (
+              {selectedRunId !== null && (
                 <button
-                  onClick={downloadResultsCSV}
-                  className="px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5"
-                  style={{
-                    backgroundColor: colors.bg.secondary,
-                    color: colors.text.primary,
-                    border: `1px solid ${colors.border}`,
-                  }}
+                  onClick={() => setSelectedRunId(null)}
+                  className="p-1.5 rounded hover:bg-opacity-10"
+                  style={{ color: colors.text.secondary }}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Export CSV
                 </button>
               )}
-
-              <button
-                onClick={runEvaluation}
-                disabled={isTranscribing || isEvaluating || readyFileCount === 0 || selectedModels.length === 0}
-                className="px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2"
-                style={{
-                  backgroundColor: (isTranscribing || isEvaluating || readyFileCount === 0 || selectedModels.length === 0)
-                    ? colors.bg.secondary
-                    : colors.accent.primary,
-                  color: (isTranscribing || isEvaluating || readyFileCount === 0 || selectedModels.length === 0)
-                    ? colors.text.secondary
-                    : '#fff',
-                  cursor: (isTranscribing || isEvaluating || readyFileCount === 0 || selectedModels.length === 0)
-                    ? 'not-allowed'
-                    : 'pointer',
-                }}
-              >
-                {isTranscribing || isEvaluating ? (
-                  <>
-                    <div
-                      className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                      style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }}
-                    />
-                    {isTranscribing ? `Transcribing (${transcriptionProgress.current}/${transcriptionProgress.total})` : 'Evaluating...'}
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Run Evaluation
-                  </>
-                )}
-              </button>
+              <h2 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                {selectedRunId !== null
+                  ? `Results - ${runs.find(r => r.id === selectedRunId)?.run_name}`
+                  : 'Evaluation Runs'}
+              </h2>
             </div>
+            {selectedRunId === null && (
+              <button
+                onClick={loadRuns}
+                disabled={isLoadingRuns}
+                className="p-1.5 rounded"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg
+                  className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="rounded-lg border overflow-hidden" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+            {selectedRunId !== null ? (
+              // Results View
+              isLoadingResults ? (
+                <div className="p-16 text-center">
+                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading results...</p>
+                </div>
+              ) : results.length === 0 ? (
+                <div className="p-16 text-center">
+                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No results found</p>
+                  <p className="text-xs" style={{ color: colors.text.secondary }}>This evaluation has no results yet</p>
+                </div>
+              ) : (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: colors.bg.secondary }}>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Sample
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Transcription
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Score
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Is Correct
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((result, idx) => (
+                      <tr
+                        key={result.id}
+                        style={{
+                          backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                        }}
+                      >
+                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                          {result.sampleName || '-'}
+                        </td>
+                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
+                          {result.transcription || '-'}
+                        </td>
+                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                          {result.score ? JSON.stringify(result.score) : '-'}
+                        </td>
+                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border }}>
+                          {result.is_correct !== null ? (
+                            <span
+                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: result.is_correct ? 'rgba(22, 163, 74, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                color: result.is_correct ? colors.status.success : colors.status.error,
+                              }}
+                            >
+                              {result.is_correct ? 'Yes' : 'No'}
+                            </span>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            ) : (
+              // Runs List View
+              isLoadingRuns ? (
+                <div className="p-16 text-center">
+                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading evaluation runs...</p>
+                </div>
+              ) : runs.length === 0 ? (
+                <div className="p-16 text-center">
+                  <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
+                  <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
+                </div>
+              ) : (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr style={{ backgroundColor: colors.bg.secondary }}>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Evaluation Name
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Dataset
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Language
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, paddingLeft: '2rem' }}>
+                        Status
+                      </th>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                        Created At
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {runs.map((run, idx) => {
+                      const statusColors = getStatusColor(run.status);
+                      return (
+                        <tr
+                          key={run.id}
+                          className="hover:bg-opacity-50"
+                          style={{
+                            backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                          }}
+                        >
+                          <td className="py-3 px-4 font-medium border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
+                            <button
+                              onClick={() => loadResults(run.id)}
+                              className="hover:underline cursor-pointer text-left"
+                              style={{ color: colors.accent.primary }}
+                            >
+                              {run.run_name}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                            {run.dataset_name}
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                            {getLanguageName(run.language_id)}
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, paddingLeft: '2rem' }}>
+                            <span
+                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: statusColors.bg,
+                                borderWidth: '1px',
+                                borderColor: statusColors.border,
+                                color: statusColors.text,
+                              }}
+                            >
+                              {run.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                            {new Date(run.inserted_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )
+            )}
           </div>
         </div>
       </div>

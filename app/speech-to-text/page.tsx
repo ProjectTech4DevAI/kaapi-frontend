@@ -779,8 +779,11 @@ export default function SpeechToTextPage() {
               selectedRunId={selectedRunId}
               setSelectedRunId={setSelectedRunId}
               results={results}
+              setResults={setResults}
               isLoadingResults={isLoadingResults}
               loadResults={loadResults}
+              apiKeys={apiKeys}
+              toast={toast}
             />
           )}
         </div>
@@ -1245,8 +1248,11 @@ interface EvaluationsTabProps {
   selectedRunId: number | null;
   setSelectedRunId: (id: number | null) => void;
   results: STTResult[];
+  setResults: React.Dispatch<React.SetStateAction<STTResult[]>>;
   isLoadingResults: boolean;
   loadResults: (runId: number) => void;
+  apiKeys: APIKey[];
+  toast: any;
 }
 
 function EvaluationsTab({
@@ -1268,9 +1274,55 @@ function EvaluationsTab({
   selectedRunId,
   setSelectedRunId,
   results,
+  setResults,
   isLoadingResults,
   loadResults,
+  apiKeys,
+  toast,
 }: EvaluationsTabProps) {
+  const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
+
+  const toggleTranscription = (resultId: number) => {
+    setExpandedTranscriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(resultId)) {
+        newSet.delete(resultId);
+      } else {
+        newSet.add(resultId);
+      }
+      return newSet;
+    });
+  };
+
+  const updateFeedback = async (resultId: number, isCorrect: boolean) => {
+    if (apiKeys.length === 0) return;
+
+    try {
+      const response = await fetch(`/api/evaluations/stt/results/${resultId}`, {
+        method: 'PATCH',
+        headers: {
+          'X-API-KEY': apiKeys[0].key,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_correct: isCorrect,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update feedback');
+
+      // Update local state
+      setResults(prev => prev.map(r =>
+        r.id === resultId ? { ...r, is_correct: isCorrect } : r
+      ));
+
+      toast.success('Feedback updated successfully');
+    } catch (error) {
+      console.error('Failed to update feedback:', error);
+      toast.error('Failed to update feedback');
+    }
+  };
+
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left Panel - Evaluation Configuration */}
@@ -1487,54 +1539,99 @@ function EvaluationsTab({
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary }}>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '20%' }}>
                         Sample
                       </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '40%' }}>
                         Transcription
                       </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '20%', paddingLeft: '4rem' }}>
                         Score
                       </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
+                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '20%' }}>
                         Is Correct
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((result, idx) => (
-                      <tr
-                        key={result.id}
-                        style={{
-                          backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
-                        }}
-                      >
-                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                          {result.sampleName || '-'}
-                        </td>
-                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
-                          {result.transcription || '-'}
-                        </td>
-                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                          {result.score ? JSON.stringify(result.score) : '-'}
-                        </td>
-                        <td className="py-3 px-4 border-t" style={{ borderColor: colors.border }}>
-                          {result.is_correct !== null ? (
-                            <span
-                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                    {results.map((result, idx) => {
+                      const isExpanded = expandedTranscriptions.has(result.id);
+                      const transcription = result.transcription || '-';
+                      const needsExpansion = transcription.length > 100;
+
+                      return (
+                        <tr
+                          key={result.id}
+                          style={{
+                            backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                          }}
+                        >
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
+                            {result.sampleName || '-'}
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
+                            <div>
+                              <div
+                                style={{
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: isExpanded ? 'unset' : 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                {transcription}
+                              </div>
+                              {needsExpansion && (
+                                <button
+                                  onClick={() => toggleTranscription(result.id)}
+                                  className="text-xs mt-1 hover:underline"
+                                  style={{ color: colors.accent.primary }}
+                                >
+                                  {isExpanded ? 'Show less' : 'Read more'}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary, paddingLeft: '4rem' }}>
+                            {result.score ? JSON.stringify(result.score) : '-'}
+                          </td>
+                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border }}>
+                            <select
+                              value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '') return;
+                                updateFeedback(result.id, value === 'true');
+                              }}
+                              className="px-2 py-1 border rounded text-xs font-medium"
                               style={{
-                                backgroundColor: result.is_correct ? 'rgba(22, 163, 74, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                color: result.is_correct ? colors.status.success : colors.status.error,
+                                backgroundColor: result.is_correct === null
+                                  ? colors.bg.primary
+                                  : result.is_correct
+                                    ? 'rgba(22, 163, 74, 0.1)'
+                                    : 'rgba(239, 68, 68, 0.1)',
+                                borderColor: result.is_correct === null
+                                  ? colors.border
+                                  : result.is_correct
+                                    ? colors.status.success
+                                    : colors.status.error,
+                                color: result.is_correct === null
+                                  ? colors.text.primary
+                                  : result.is_correct
+                                    ? colors.status.success
+                                    : colors.status.error,
+                                cursor: 'pointer',
                               }}
                             >
-                              {result.is_correct ? 'Yes' : 'No'}
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                              <option value="">-</option>
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )

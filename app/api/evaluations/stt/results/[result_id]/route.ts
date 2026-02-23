@@ -25,6 +25,7 @@ export async function GET(
   }
 }
 
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ result_id: string }> }
@@ -32,6 +33,13 @@ export async function PATCH(
   const { result_id } = await params;
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
+
+  if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Missing X-API-KEY header' },
+        { status: 401 }
+      );
+  }
 
   try {
     const body = await request.json();

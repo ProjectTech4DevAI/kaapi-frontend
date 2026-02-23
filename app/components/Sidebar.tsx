@@ -1,5 +1,5 @@
 /**
- * Sidebad  - Navigation sidebar with collapse/expand functionality
+ * Sidebar  - Navigation sidebar with collapse/expand functionality
  * Provides hierarchical navigation with expandable submenus
  */
 

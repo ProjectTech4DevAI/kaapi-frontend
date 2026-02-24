@@ -12,6 +12,7 @@ import Sidebar from '@/app/components/Sidebar';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
+import { formatDate } from '@/app/components/utils';
 
 type Tab = 'datasets' | 'evaluations';
 
@@ -757,7 +758,7 @@ export default function SpeechToTextPage() {
               datasets={datasets}
               isLoadingDatasets={isLoadingDatasets}
               loadDatasets={loadDatasets}
-              onRunEvaluation={() => setActiveTab('evaluations')}
+              apiKeys={apiKeys}
             />
           ) : (
             <EvaluationsTab
@@ -784,6 +785,7 @@ export default function SpeechToTextPage() {
               loadResults={loadResults}
               apiKeys={apiKeys}
               toast={toast}
+              setActiveTab={setActiveTab}
             />
           )}
         </div>
@@ -814,7 +816,7 @@ interface DatasetsTabProps {
   datasets: Dataset[];
   isLoadingDatasets: boolean;
   loadDatasets: () => void;
-  onRunEvaluation: () => void;
+  apiKeys: APIKey[];
 }
 
 function DatasetsTab({
@@ -838,7 +840,7 @@ function DatasetsTab({
   datasets,
   isLoadingDatasets,
   loadDatasets,
-  onRunEvaluation,
+  apiKeys,
 }: DatasetsTabProps) {
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -926,23 +928,25 @@ function DatasetsTab({
 
             {audioFiles.length === 0 ? (
               <div
-                onClick={triggerAudioUpload}
-                className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors"
+                onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                className="border-2 border-dashed rounded-lg p-6 text-center transition-colors"
                 style={{
                   borderColor: colors.border,
                   backgroundColor: colors.bg.primary,
+                  cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                  opacity: apiKeys.length > 0 ? 1 : 0.5,
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+                onMouseEnter={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
+                onMouseLeave={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.primary)}
               >
                 <svg className="w-8 h-8 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
                 </svg>
                 <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                  Click to upload audio files
+                  {apiKeys.length > 0 ? 'Click to upload audio files' : 'Add an API key to upload audio files'}
                 </p>
                 <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                  Supports MP3, WAV, M4A, OGG, FLAC, WebM
+                  {apiKeys.length > 0 ? 'Supports MP3, WAV, M4A, OGG, FLAC, WebM' : 'Go to Keystore to add an API key first'}
                 </p>
               </div>
             ) : (
@@ -1027,34 +1031,35 @@ function DatasetsTab({
                           />
                         </div>
 
-                        <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
-                          <span>{formatFileSize(audioFile.size)}</span>
-                          {audioFile.groundTruth.trim() && (
-                            <span>{audioFile.groundTruth.trim().split(/\s+/).length} words</span>
-                          )}
-                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 <button
-                  onClick={triggerAudioUpload}
+                  onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                  disabled={apiKeys.length === 0}
                   className="w-full py-2 border-2 border-dashed rounded-lg text-sm font-medium transition-colors"
                   style={{
                     borderColor: colors.border,
                     color: colors.text.secondary,
                     backgroundColor: colors.bg.primary,
+                    cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                    opacity: apiKeys.length > 0 ? 1 : 0.5,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.bg.secondary;
-                    e.currentTarget.style.borderColor = colors.accent.primary;
-                    e.currentTarget.style.color = colors.accent.primary;
+                    if (apiKeys.length > 0) {
+                      e.currentTarget.style.backgroundColor = colors.bg.secondary;
+                      e.currentTarget.style.borderColor = colors.accent.primary;
+                      e.currentTarget.style.color = colors.accent.primary;
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.bg.primary;
-                    e.currentTarget.style.borderColor = colors.border;
-                    e.currentTarget.style.color = colors.text.secondary;
+                    if (apiKeys.length > 0) {
+                      e.currentTarget.style.backgroundColor = colors.bg.primary;
+                      e.currentTarget.style.borderColor = colors.border;
+                      e.currentTarget.style.color = colors.text.secondary;
+                    }
                   }}
                 >
                   + Add more audio files
@@ -1156,72 +1161,51 @@ function DatasetsTab({
                 <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset to get started</p>
               </div>
             ) : (
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr style={{ backgroundColor: colors.bg.secondary }}>
-                    <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                      Name
-                    </th>
-                    <th className="py-2.5 pl-2 pr-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                      No. of Samples
-                    </th>
-                    <th className="py-2.5 pl-2 pr-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                      Language
-                    </th>
-                    <th className="py-2.5 pr-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, paddingLeft: '2rem' }}>
-                      Created At
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {datasets.map((dataset, idx) => (
-                    <tr
+              <div>
+                <div className="grid grid-cols-4 gap-4 px-4 py-2.5" style={{ backgroundColor: colors.bg.secondary }}>
+                  <div className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+                    Name
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+                    No. of Samples
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+                    Language
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+                    Created At
+                  </div>
+                </div>
+                <div className="p-3 space-y-3">
+                  {datasets.map((dataset) => (
+                    <div
                       key={dataset.id}
-                      className="hover:bg-opacity-50"
+                      className="border rounded-lg p-3"
                       style={{
-                        backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
+                        borderColor: colors.border,
+                        backgroundColor: colors.bg.secondary,
                       }}
                     >
-                      <td className="py-3 px-4 font-medium border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
-                        {dataset.name}
-                      </td>
-                      <td className="py-3 pl-2 pr-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                        {dataset.dataset_metadata?.sample_count || 0}
-                      </td>
-                      <td className="py-3 pl-2 pr-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                        {getLanguageName(dataset.language_id)}
-                      </td>
-                      <td className="py-3 pr-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary, paddingLeft: '2rem' }}>
-                        {new Date(dataset.inserted_at).toLocaleDateString()}
-                      </td>
-                    </tr>
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                          {dataset.name}
+                        </div>
+                        <div className="text-sm" style={{ color: colors.text.primary }}>
+                          {dataset.dataset_metadata?.sample_count || 0}
+                        </div>
+                        <div className="text-sm" style={{ color: colors.text.primary }}>
+                          {getLanguageName(dataset.language_id)}
+                        </div>
+                        <div className="text-sm" style={{ color: colors.text.primary }}>
+                          {formatDate(dataset.inserted_at)}
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Footer with Run Evaluation Button */}
-        <div
-          className="flex-shrink-0 border-t px-4 py-3 flex justify-end"
-          style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
-        >
-          <button
-            onClick={onRunEvaluation}
-            disabled={datasets.length === 0}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
-            style={{
-              backgroundColor: datasets.length === 0 ? colors.bg.secondary : colors.accent.primary,
-              color: datasets.length === 0 ? colors.text.secondary : '#fff',
-              cursor: datasets.length === 0 ? 'not-allowed' : 'pointer',
-            }}
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            Run Evaluation
-          </button>
         </div>
       </div>
     </div>
@@ -1253,6 +1237,7 @@ interface EvaluationsTabProps {
   loadResults: (runId: number) => void;
   apiKeys: APIKey[];
   toast: any;
+  setActiveTab: (tab: Tab) => void;
 }
 
 function EvaluationsTab({
@@ -1279,6 +1264,7 @@ function EvaluationsTab({
   loadResults,
   apiKeys,
   toast,
+  setActiveTab,
 }: EvaluationsTabProps) {
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
 
@@ -1294,26 +1280,28 @@ function EvaluationsTab({
     });
   };
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean) => {
+  const updateFeedback = async (resultId: number, isCorrect: boolean, comment?: string) => {
     if (apiKeys.length === 0) return;
 
     try {
+      const payload: { is_correct?: boolean; comment?: string } = {};
+      if (isCorrect !== undefined) payload.is_correct = isCorrect;
+      if (comment !== undefined) payload.comment = comment;
+
       const response = await fetch(`/api/evaluations/stt/results/${resultId}`, {
         method: 'PATCH',
         headers: {
           'X-API-KEY': apiKeys[0].key,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          is_correct: isCorrect,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error('Failed to update feedback');
 
       // Update local state
       setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, is_correct: isCorrect } : r
+        r.id === resultId ? { ...r, ...(isCorrect !== undefined && { is_correct: isCorrect }), ...(comment !== undefined && { comment }) } : r
       ));
 
       toast.success('Feedback updated successfully');
@@ -1426,9 +1414,9 @@ function EvaluationsTab({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1">
-                  <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                  <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
                     {selectedDataset.name}
-                  </p>
+                  </div>
                   <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
                     <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
                     <div>Language: {getLanguageName(selectedDataset.language_id)}</div>
@@ -1497,7 +1485,7 @@ function EvaluationsTab({
                   </svg>
                 </button>
               )}
-              <h2 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
                 {selectedRunId !== null
                   ? `Results - ${runs.find(r => r.id === selectedRunId)?.run_name}`
                   : 'Evaluation Runs'}
@@ -1536,102 +1524,103 @@ function EvaluationsTab({
                   <p className="text-xs" style={{ color: colors.text.secondary }}>This evaluation has no results yet</p>
                 </div>
               ) : (
-                <table className="w-full border-collapse text-sm">
+                <table className="w-full">
                   <thead>
-                    <tr style={{ backgroundColor: colors.bg.secondary }}>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '20%' }}>
-                        Sample
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '40%' }}>
-                        Transcription
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '20%', paddingLeft: '4rem' }}>
-                        Score
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, width: '20%' }}>
-                        Is Correct
-                      </th>
+                    <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '20%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '35%' }}>Transcription</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '10%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '35%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((result, idx) => {
-                      const isExpanded = expandedTranscriptions.has(result.id);
-                      const transcription = result.transcription || '-';
-                      const needsExpansion = transcription.length > 100;
-
-                      return (
-                        <tr
-                          key={result.id}
-                          style={{
-                            backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
-                          }}
-                        >
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                            {result.sampleName || '-'}
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
-                            <div>
-                              <div
-                                style={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: isExpanded ? 'unset' : 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
-                              >
-                                {transcription}
-                              </div>
-                              {needsExpansion && (
-                                <button
-                                  onClick={() => toggleTranscription(result.id)}
-                                  className="text-xs mt-1 hover:underline"
-                                  style={{ color: colors.accent.primary }}
-                                >
-                                  {isExpanded ? 'Show less' : 'Read more'}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary, paddingLeft: '4rem' }}>
-                            {result.score ? JSON.stringify(result.score) : '-'}
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border }}>
-                            <select
-                              value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === '') return;
-                                updateFeedback(result.id, value === 'true');
-                              }}
-                              className="px-2 py-1 border rounded text-xs font-medium"
+                    {results.map((result) => (
+                      <tr key={result.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
+                          {result.sampleName || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
+                          <div>
+                            <div
                               style={{
-                                backgroundColor: result.is_correct === null
-                                  ? colors.bg.primary
-                                  : result.is_correct
-                                    ? 'rgba(22, 163, 74, 0.1)'
-                                    : 'rgba(239, 68, 68, 0.1)',
-                                borderColor: result.is_correct === null
-                                  ? colors.border
-                                  : result.is_correct
-                                    ? colors.status.success
-                                    : colors.status.error,
-                                color: result.is_correct === null
-                                  ? colors.text.primary
-                                  : result.is_correct
-                                    ? colors.status.success
-                                    : colors.status.error,
-                                cursor: 'pointer',
+                                display: expandedTranscriptions.has(result.id) ? 'block' : '-webkit-box',
+                                WebkitLineClamp: expandedTranscriptions.has(result.id) ? 'unset' : 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
                               }}
                             >
-                              <option value="">-</option>
-                              <option value="true">Yes</option>
-                              <option value="false">No</option>
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              {result.transcription || '-'}
+                            </div>
+                            {result.transcription && result.transcription.length > 80 && (
+                              <button
+                                onClick={() => toggleTranscription(result.id)}
+                                className="text-xs mt-1"
+                                style={{ color: colors.accent.primary, cursor: 'pointer' }}
+                              >
+                                {expandedTranscriptions.has(result.id) ? 'Show less' : 'Read more'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm align-top">
+                          <select
+                            value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '') return;
+                              updateFeedback(result.id, value === 'true');
+                            }}
+                            className="px-3 py-1.5 border rounded text-xs font-medium"
+                            style={{
+                              backgroundColor: result.is_correct === null
+                                ? colors.bg.primary
+                                : result.is_correct
+                                  ? 'rgba(22, 163, 74, 0.1)'
+                                  : 'rgba(239, 68, 68, 0.1)',
+                              borderColor: result.is_correct === null
+                                ? colors.border
+                                : result.is_correct
+                                  ? colors.status.success
+                                  : colors.status.error,
+                              color: result.is_correct === null
+                                ? colors.text.primary
+                                : result.is_correct
+                                  ? colors.status.success
+                                  : colors.status.error,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <option value="">-</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-3 text-sm align-top">
+                          <div className="flex items-start gap-2">
+                            <textarea
+                              value={result.comment || ''}
+                              onChange={(e) => {
+                                setResults(prev => prev.map(r =>
+                                  r.id === result.id ? { ...r, comment: e.target.value } : r
+                                ));
+                              }}
+                              onBlur={(e) => {
+                                updateFeedback(result.id, result.is_correct!, e.target.value);
+                              }}
+                              placeholder="Add your comment..."
+                              rows={2}
+                              className="flex-1 px-3 py-2 border rounded text-sm"
+                              style={{
+                                backgroundColor: colors.bg.primary,
+                                borderColor: colors.border,
+                                color: colors.text.primary,
+                                resize: 'vertical',
+                              }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               )
@@ -1651,55 +1640,59 @@ function EvaluationsTab({
                   <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
                 </div>
               ) : (
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr style={{ backgroundColor: colors.bg.secondary }}>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                        Evaluation Name
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                        Dataset
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                        Language
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary, paddingLeft: '2rem' }}>
-                        Status
-                      </th>
-                      <th className="py-2.5 px-4 text-xs font-medium text-left" style={{ color: colors.text.secondary }}>
-                        Created At
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {runs.map((run, idx) => {
-                      const statusColors = getStatusColor(run.status);
-                      return (
-                        <tr
-                          key={run.id}
-                          className="hover:bg-opacity-50"
-                          style={{
-                            backgroundColor: idx % 2 === 0 ? colors.bg.primary : colors.bg.secondary,
-                          }}
-                        >
-                          <td className="py-3 px-4 font-medium border-t" style={{ borderColor: colors.border, color: colors.text.primary }}>
+                <div className="p-3 space-y-3">
+                  {runs.map((run) => {
+                    const statusColors = getStatusColor(run.status);
+                    const isCompleted = run.status.toLowerCase() === 'completed';
+                    return (
+                      <div
+                        key={run.id}
+                        className="border rounded-lg p-5"
+                        style={{
+                          borderColor: colors.border,
+                          backgroundColor: colors.bg.secondary,
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className="flex-1">
                             <button
-                              onClick={() => loadResults(run.id)}
-                              className="hover:underline cursor-pointer text-left"
-                              style={{ color: colors.accent.primary }}
+                              onClick={isCompleted ? () => loadResults(run.id) : undefined}
+                              disabled={!isCompleted}
+                              className="text-left text-base font-medium"
+                              style={{
+                                color: isCompleted ? colors.text.primary : colors.text.secondary,
+                                cursor: isCompleted ? 'pointer' : 'not-allowed',
+                                opacity: isCompleted ? 1 : 0.6,
+                              }}
+                              onMouseEnter={(e) => {
+                                if (isCompleted) {
+                                  e.currentTarget.style.textDecoration = 'underline';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.textDecoration = 'none';
+                              }}
                             >
                               {run.run_name}
                             </button>
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                            {run.dataset_name}
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                            {getLanguageName(run.language_id)}
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, paddingLeft: '2rem' }}>
+                          </div>
+                          <div className="text-sm text-right" style={{ color: colors.text.secondary }}>
+                            <span className="font-medium">Last Updated At:</span> {formatDate(run.updated_at)}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-6 text-sm" style={{ color: colors.text.secondary }}>
+                            <div>
+                              <span className="font-medium">Started At:</span> {formatDate(run.inserted_at)}
+                            </div>
+                            <div>
+                              <span className="font-medium">Dataset:</span> {run.dataset_name}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
                             <span
-                              className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                              className="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium"
                               style={{
                                 backgroundColor: statusColors.bg,
                                 borderWidth: '1px',
@@ -1709,15 +1702,26 @@ function EvaluationsTab({
                             >
                               {run.status.toUpperCase()}
                             </span>
-                          </td>
-                          <td className="py-3 px-4 border-t" style={{ borderColor: colors.border, color: colors.text.secondary }}>
-                            {new Date(run.inserted_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            <button
+                              onClick={isCompleted ? () => loadResults(run.id) : undefined}
+                              disabled={!isCompleted}
+                              className="px-4 py-2 rounded-lg text-sm font-medium border"
+                              style={{
+                                backgroundColor: isCompleted ? colors.bg.primary : colors.bg.secondary,
+                                borderColor: colors.border,
+                                color: isCompleted ? colors.text.primary : colors.text.secondary,
+                                cursor: isCompleted ? 'pointer' : 'not-allowed',
+                                opacity: isCompleted ? 1 : 0.6,
+                              }}
+                            >
+                              View Results
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )
             )}
           </div>

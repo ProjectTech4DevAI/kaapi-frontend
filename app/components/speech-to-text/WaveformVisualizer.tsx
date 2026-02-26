@@ -60,16 +60,25 @@ export default function WaveformVisualizer({
     if (!ctx) return;
 
     if (!isPlaying || !analyserRef.current) {
-      // Draw static bars when not playing
+      // Draw static bars when not playing - nice wave pattern
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const barCount = 16;
+      const barCount = 40;
       const barWidth = canvas.width / barCount;
       const gap = 2;
 
       for (let i = 0; i < barCount; i++) {
-        const barHeight = 4 + Math.random() * 4;
-        ctx.fillStyle = colors.text.secondary;
-        ctx.fillRect(i * barWidth + gap / 2, (canvas.height - barHeight) / 2, barWidth - gap, barHeight);
+        // Create a nice wave pattern using sine wave
+        const wavePhase = (i / barCount) * Math.PI * 2;
+        const waveHeight = Math.sin(wavePhase) * 0.5 + 0.5; // Normalize to 0-1
+        const barHeight = 3 + waveHeight * (canvas.height * 0.6);
+
+        ctx.fillStyle = colors.border;
+        ctx.fillRect(
+          i * barWidth + gap / 2,
+          (canvas.height - barHeight) / 2,
+          barWidth - gap,
+          barHeight
+        );
       }
       return;
     }

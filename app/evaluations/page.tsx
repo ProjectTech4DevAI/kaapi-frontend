@@ -341,8 +341,8 @@ function SimplifiedEvalContent() {
           {/* Tab Navigation */}
           <TabNavigation
             tabs={[
-              { id: 'upload', label: '1. Upload & Run' },
-              { id: 'results', label: '2. Results' }
+              { id: 'upload', label: 'Datasets' },
+              { id: 'results', label: 'Evaluations' }
             ]}
             activeTab={activeTab}
             onTabChange={(tabId) => setActiveTab(tabId as Tab)}

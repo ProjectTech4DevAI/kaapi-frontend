@@ -122,7 +122,7 @@ const flattenConfigVersion = (
     modelName: params.model || '',
     provider: blob.completion.provider,
     type: blob.completion.type || 'text', // Default to 'text' for backward compatibility
-    temperature: params.temperature || 0.7,
+    temperature: params.temperature ?? 0.7,
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
     tools: tools,
     commit_message: version.commit_message,

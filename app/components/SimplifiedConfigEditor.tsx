@@ -128,7 +128,7 @@ export default function SimplifiedConfigEditor({
       instructions: params.instructions || '',
       modelName: params.model || '',
       provider: blob.completion.provider,
-      temperature: params.temperature || 0.7,
+      temperature: params.temperature ?? 0.7,
       vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
       tools: tools,
       commit_message: version.commit_message,

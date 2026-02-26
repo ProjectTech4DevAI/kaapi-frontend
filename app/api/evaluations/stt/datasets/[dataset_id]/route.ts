@@ -9,7 +9,21 @@ export async function GET(
   const apiKey = request.headers.get('X-API-KEY');
 
   try {
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}`, {
+    // Get query parameters from the request
+    const { searchParams } = new URL(request.url);
+    const includeSamples = searchParams.get('include_samples');
+    const includeAudio = searchParams.get('include_audio');
+
+    // Build backend URL with query parameters
+    const backendParams = new URLSearchParams();
+    if (includeSamples) backendParams.append('include_samples', includeSamples);
+    if (includeAudio) backendParams.append('include_audio', includeAudio);
+
+    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${
+      backendParams.toString() ? `?${backendParams.toString()}` : ''
+    }`;
+
+    const response = await fetch(backendUrlWithParams, {
       headers: {
         'X-API-KEY': apiKey || '',
       },

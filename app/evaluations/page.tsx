@@ -23,6 +23,7 @@ import TabNavigation from '../components/TabNavigation';
 import ConfigSelector from '../components/ConfigSelector';
 import { useToast } from '../components/Toast';
 import Loader, { LoaderBox } from '../components/Loader';
+import ErrorModal from '../components/ErrorModal';
 
 type Tab = 'upload' | 'results';
 
@@ -54,6 +55,10 @@ function SimplifiedEvalContent() {
   const [datasetName, setDatasetName] = useState<string>('');
   const [duplicationFactor, setDuplicationFactor] = useState<string>('1');
   const [isUploading, setIsUploading] = useState(false);
+
+  // Error modal state
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState('');
 
   // Evaluation fields (can be pre-populated from URL params)
   const [experimentName, setExperimentName] = useState<string>(() => {
@@ -199,7 +204,9 @@ function SimplifiedEvalContent() {
       toast.success('Dataset uploaded successfully!');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while uploading the dataset';
+      setErrorModalMessage(errorMessage);
+      setErrorModalOpen(true);
     } finally {
       setIsUploading(false);
     }
@@ -274,7 +281,9 @@ function SimplifiedEvalContent() {
       toast.success(`Evaluation job created successfully! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
     } catch(error: any) {
       console.error('Error:', error);
-      toast.error(`Failed to run evaluation: ${error.message || 'Unknown error'}`);
+      const errorMessage = error.message || 'An unknown error occurred while starting the evaluation';
+      setErrorModalMessage(errorMessage);
+      setErrorModalOpen(true);
       setIsEvaluating(false);
     }
   };
@@ -341,8 +350,8 @@ function SimplifiedEvalContent() {
           {/* Tab Navigation */}
           <TabNavigation
             tabs={[
-              { id: 'upload', label: '1. Upload & Run' },
-              { id: 'results', label: '2. Results' }
+              { id: 'upload', label: 'Datasets' },
+              { id: 'results', label: 'Evaluations' }
             ]}
             activeTab={activeTab}
             onTabChange={(tabId) => setActiveTab(tabId as Tab)}
@@ -398,6 +407,14 @@ function SimplifiedEvalContent() {
           }}
         />
       )}
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        title="Error"
+        message={errorModalMessage}
+      />
     </div>
   );
 }

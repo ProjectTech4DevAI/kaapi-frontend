@@ -534,13 +534,13 @@ export default function ConfigEditorPane({
               className="block text-xs font-semibold mb-2"
               style={{ color: colors.text.primary }}
             >
-              Temperature: {(params.temperature ?? 0.7).toFixed(1)}
+              Temperature: {(params.temperature ?? 0.7).toFixed(2)}
             </label>
             <input
               type="range"
               min="0"
               max="1"
-              step="0.1"
+              step="0.01"
               value={params.temperature ?? 0.7}
               onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
               className="w-full"

@@ -551,8 +551,7 @@ export default function ConfigEditorPane({
               style={{ color: colors.text.secondary }}
             >
               <span>Focused (0)</span>
-              <span>Balanced (0.5)</span>
-              <span>Creative (1)</span>
+              <span>Creative (2)</span>
             </div>
           </div>
 

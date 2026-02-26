@@ -539,7 +539,7 @@ export default function ConfigEditorPane({
             <input
               type="range"
               min="0"
-              max="1"
+              max="2"
               step="0.01"
               value={params.temperature ?? 0.7}
               onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}

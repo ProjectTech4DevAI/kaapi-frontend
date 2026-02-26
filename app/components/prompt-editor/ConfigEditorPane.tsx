@@ -550,8 +550,8 @@ export default function ConfigEditorPane({
               className="flex justify-between text-xs mt-1"
               style={{ color: colors.text.secondary }}
             >
-              <span>Focused (0)</span>
-              <span>Creative (2)</span>
+              <span>0</span>
+              <span>2</span>
             </div>
           </div>
 

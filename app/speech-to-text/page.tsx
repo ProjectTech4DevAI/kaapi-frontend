@@ -85,6 +85,8 @@ interface STTResult {
   updated_at: string;
   sampleName?: string; // Enriched field
   groundTruth?: string; // Enriched field
+  fileId?: string; // Enriched field - file ID from sample
+  signedUrl?: string; // Enriched field - signed URL for audio playback
 }
 
 // Audio Player Component with Waveform
@@ -189,6 +191,101 @@ function AudioPlayer({
             width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
             backgroundColor: colors.accent.primary,
             transition: 'width 0.1s linear',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Audio Player Component for URL-based playback
+function AudioPlayerFromUrl({
+  signedUrl,
+  isPlaying,
+  onPlayToggle,
+  sampleName,
+}: {
+  signedUrl: string;
+  isPlaying: boolean;
+  onPlayToggle: () => void;
+  sampleName?: string;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleEnded = () => onPlayToggle();
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [onPlayToggle]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(console.error);
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  return (
+    <div className="w-full">
+      <audio ref={audioRef} src={signedUrl} preload="metadata" />
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onPlayToggle}
+          className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 border-2"
+          style={{
+            borderColor: colors.accent.primary,
+            backgroundColor: 'transparent',
+            color: colors.accent.primary,
+          }}
+        >
+          {isPlaying ? (
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="7" y="5" width="3" height="14" />
+              <rect x="14" y="5" width="3" height="14" />
+            </svg>
+          ) : (
+            <svg className="w-2.5 h-2.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {sampleName && (
+          <div className="flex-1 font-medium" style={{ color: colors.text.primary }}>
+            {sampleName}
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div
+        className="h-1 rounded-full overflow-hidden mt-2"
+        style={{ backgroundColor: colors.bg.secondary }}
+      >
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
+            backgroundColor: colors.accent.primary,
+            transition: 'width 0.05s ease-out',
           }}
         />
       </div>
@@ -656,24 +753,50 @@ export default function SpeechToTextPage() {
             samples = datasetData.data.samples;
           }
 
-          // Create a map of sample_id to sample data (name and ground truth)
+          // Create a map of sample_id to sample data (name, ground truth, and file_id)
           const sampleMap = new Map();
           samples.forEach((sample: any) => {
             const sampleName = sample.sample_metadata?.original_filename ||
                              sample.metadata?.original_filename ||
                              `Sample ${sample.id}`;
             const groundTruth = sample.ground_truth || sample.sample_metadata?.ground_truth || sample.metadata?.ground_truth || '';
+            const fileId = sample.file_id;
 
-            sampleMap.set(sample.id, { sampleName, groundTruth });
+            sampleMap.set(sample.id, { sampleName, groundTruth, fileId });
           });
 
-          // Enrich results with sample names and ground truth
+          // Fetch file data for each sample to get signed URLs
+          const fileDataMap = new Map();
+          for (const sample of samples) {
+            if (sample.file_id) {
+              try {
+                const fileResponse = await fetch(`/api/evaluations/stt/files/${sample.file_id}`, {
+                  headers: { 'X-API-KEY': apiKeys[0].key },
+                });
+
+                if (fileResponse.ok) {
+                  const fileData = await fileResponse.json();
+                  const signedUrl = fileData.signed_url || fileData.data?.signed_url || fileData.url;
+                  if (signedUrl) {
+                    fileDataMap.set(sample.id, signedUrl);
+                  }
+                }
+              } catch (error) {
+                console.error(`Failed to fetch file data for sample ${sample.id}:`, error);
+              }
+            }
+          }
+
+          // Enrich results with sample names, ground truth, file IDs, and signed URLs
           resultsList = resultsList.map((result: any) => {
             const sampleData = sampleMap.get(result.stt_sample_id);
+            const signedUrl = fileDataMap.get(result.stt_sample_id);
             return {
               ...result,
               sampleName: sampleData?.sampleName || '-',
-              groundTruth: sampleData?.groundTruth || ''
+              groundTruth: sampleData?.groundTruth || '',
+              fileId: sampleData?.fileId,
+              signedUrl: signedUrl
             };
           });
         }
@@ -1223,6 +1346,7 @@ function EvaluationsTab({
   setActiveTab,
 }: EvaluationsTabProps) {
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
+  const [playingResultId, setPlayingResultId] = useState<number | null>(null);
 
   const toggleTranscription = (resultId: number) => {
     setExpandedTranscriptions(prev => {
@@ -1482,18 +1606,29 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '15%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Sample</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '20%' }}>Ground Truth</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Transcription</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '10%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '30%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '20%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map((result) => (
                       <tr key={result.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
-                          {result.sampleName || '-'}
+                        <td className="px-4 py-3 text-sm align-top">
+                          {result.signedUrl ? (
+                            <AudioPlayerFromUrl
+                              signedUrl={result.signedUrl}
+                              sampleName={result.sampleName}
+                              isPlaying={playingResultId === result.id}
+                              onPlayToggle={() => setPlayingResultId(playingResultId === result.id ? null : result.id)}
+                            />
+                          ) : (
+                            <div className="font-medium" style={{ color: colors.text.primary }}>
+                              {result.sampleName || '-'}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.secondary }}>
                           <div

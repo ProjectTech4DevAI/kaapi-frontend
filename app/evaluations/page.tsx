@@ -871,7 +871,10 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
       const data = await response.json();
 
       // API may return an array or an object with data property
-      const jobs = Array.isArray(data) ? data : (data.data || []);
+      let jobs = Array.isArray(data) ? data : (data.data || []);
+
+      // Filter to only show jobs with type: "text"
+      jobs = jobs.filter((job: any) => job.type === 'text');
 
       // Debug logging for score visibility
       if (jobs.length > 0) {

@@ -22,27 +22,25 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    // Log the structure to help debug score visibility issues
+    // Log the structure to help debug score visibility issues - only for text type evaluations
     //TODO Fix it later
+    let items = [];
     if (data && Array.isArray(data)) {
-      console.log('[GET /api/evaluations] Sample evaluation structure:', {
-        firstItem: data[0] ? {
-          id: data[0].id,
-          hasScore: !!data[0].score,
-          hasScores: !!data[0].scores,
-          scoreKeys: data[0].score ? Object.keys(data[0].score) : [],
-          scoresKeys: data[0].scores ? Object.keys(data[0].scores) : []
-        } : 'No items'
-      });
+      items = data.filter((item: any) => item.type === 'text');
     } else if (data && data.data && Array.isArray(data.data)) {
-      console.log('[GET /api/evaluations] Sample evaluation structure (nested):', {
-        firstItem: data.data[0] ? {
-          id: data.data[0].id,
-          hasScore: !!data.data[0].score,
-          hasScores: !!data.data[0].scores,
-          scoreKeys: data.data[0].score ? Object.keys(data.data[0].score) : [],
-          scoresKeys: data.data[0].scores ? Object.keys(data.data[0].scores) : []
-        } : 'No items'
+      items = data.data.filter((item: any) => item.type === 'text');
+    }
+
+    if (items.length > 0) {
+      console.log('[GET /api/evaluations] Sample text evaluation structure:', {
+        firstItem: {
+          id: items[0].id,
+          type: items[0].type,
+          hasScore: !!items[0].score,
+          hasScores: !!items[0].scores,
+          scoreKeys: items[0].score ? Object.keys(items[0].score) : [],
+          scoresKeys: items[0].scores ? Object.keys(items[0].scores) : []
+        }
       });
     }
 

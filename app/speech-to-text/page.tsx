@@ -532,7 +532,6 @@ export default function SpeechToTextPage() {
         }
 
         const uploadData = await uploadResponse.json();
-        console.log('Backend upload response:', uploadData);
 
         const backendFileId = uploadData.file_id || uploadData.id || uploadData.data?.file_id || uploadData.data?.id;
 
@@ -712,14 +711,13 @@ export default function SpeechToTextPage() {
     setIsLoadingResults(true);
     try {
       // Fetch run details with results
-      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true`, {
+      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true&include_url=true`, {
         headers: { 'X-API-KEY': apiKeys[0].key },
       });
 
       if (!runResponse.ok) throw new Error('Failed to load results');
 
       const runData = await runResponse.json();
-      console.log('Run API Response:', runData);
 
       // Extract results
       let resultsList = [];
@@ -733,74 +731,33 @@ export default function SpeechToTextPage() {
         resultsList = runData.data.results;
       }
 
-      // Get dataset_id from the run
-      const datasetId = runData.dataset_id || runData.data?.dataset_id;
 
-      if (datasetId) {
-        // Fetch dataset with samples
-        const datasetResponse = await fetch(`/api/evaluations/stt/datasets/${datasetId}?include_samples=true`, {
-          headers: { 'X-API-KEY': apiKeys[0].key },
-        });
+      // Enrich results with sample data (filename, ground truth, signed URL)
+      // The structure is: data.results[].sample contains all sample information
+      resultsList = resultsList.map((result: any) => {
+        const sample = result.sample;
 
-        if (datasetResponse.ok) {
-          const datasetData = await datasetResponse.json();
+        // Extract sample name from sample_metadata.original_filename
+        const sampleName = sample?.sample_metadata?.original_filename ||
+                          `Sample ${result.stt_sample_id}`;
 
-          // Extract samples
-          let samples = [];
-          if (datasetData.samples && Array.isArray(datasetData.samples)) {
-            samples = datasetData.samples;
-          } else if (datasetData.data && datasetData.data.samples && Array.isArray(datasetData.data.samples)) {
-            samples = datasetData.data.samples;
-          }
+        // Extract ground truth
+        const groundTruth = sample?.ground_truth || '';
 
-          // Create a map of sample_id to sample data (name, ground truth, and file_id)
-          const sampleMap = new Map();
-          samples.forEach((sample: any) => {
-            const sampleName = sample.sample_metadata?.original_filename ||
-                             sample.metadata?.original_filename ||
-                             `Sample ${sample.id}`;
-            const groundTruth = sample.ground_truth || sample.sample_metadata?.ground_truth || sample.metadata?.ground_truth || '';
-            const fileId = sample.file_id;
+        // Extract signed URL
+        const signedUrl = sample?.signed_url || '';
 
-            sampleMap.set(sample.id, { sampleName, groundTruth, fileId });
-          });
+        // Extract file ID
+        const fileId = sample?.file_id;
 
-          // Fetch file data for each sample to get signed URLs
-          const fileDataMap = new Map();
-          for (const sample of samples) {
-            if (sample.file_id) {
-              try {
-                const fileResponse = await fetch(`/api/evaluations/stt/files/${sample.file_id}`, {
-                  headers: { 'X-API-KEY': apiKeys[0].key },
-                });
-
-                if (fileResponse.ok) {
-                  const fileData = await fileResponse.json();
-                  const signedUrl = fileData.signed_url || fileData.data?.signed_url || fileData.url;
-                  if (signedUrl) {
-                    fileDataMap.set(sample.id, signedUrl);
-                  }
-                }
-              } catch (error) {
-                console.error(`Failed to fetch file data for sample ${sample.id}:`, error);
-              }
-            }
-          }
-
-          // Enrich results with sample names, ground truth, file IDs, and signed URLs
-          resultsList = resultsList.map((result: any) => {
-            const sampleData = sampleMap.get(result.stt_sample_id);
-            const signedUrl = fileDataMap.get(result.stt_sample_id);
-            return {
-              ...result,
-              sampleName: sampleData?.sampleName || '-',
-              groundTruth: sampleData?.groundTruth || '',
-              fileId: sampleData?.fileId,
-              signedUrl: signedUrl
-            };
-          });
-        }
-      }
+        return {
+          ...result,
+          sampleName,
+          groundTruth,
+          fileId,
+          signedUrl
+        };
+      });
 
       setResults(resultsList);
       setSelectedRunId(runId);
@@ -1630,7 +1587,7 @@ function EvaluationsTab({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.secondary }}>
+                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
                           <div
                             style={{
                               display: '-webkit-box',

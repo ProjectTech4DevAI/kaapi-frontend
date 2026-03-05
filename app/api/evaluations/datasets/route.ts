@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    // Filter to only return text datasets
+    // Filter to only return text datasets 
     const filteredData = Array.isArray(data)
       ? data.filter((dataset: any) => dataset.type === 'text')
       : data.data

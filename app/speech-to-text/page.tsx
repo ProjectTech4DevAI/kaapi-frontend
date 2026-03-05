@@ -711,7 +711,7 @@ export default function SpeechToTextPage() {
     setIsLoadingResults(true);
     try {
       // Fetch run details with results
-      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true&include_url=true`, {
+      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true&include_signed_url=true`, {
         headers: { 'X-API-KEY': apiKeys[0].key },
       });
 

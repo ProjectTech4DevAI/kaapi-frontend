@@ -86,6 +86,8 @@ interface STTResult {
   updated_at: string;
   sampleName?: string; // Enriched field
   groundTruth?: string; // Enriched field
+  fileId?: string; // Enriched field - file ID from sample
+  signedUrl?: string; // Enriched field - signed URL for audio playback
 }
 
 // Audio Player Component with Waveform
@@ -190,6 +192,101 @@ function AudioPlayer({
             width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
             backgroundColor: colors.accent.primary,
             transition: 'width 0.1s linear',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Audio Player Component for URL-based playback
+function AudioPlayerFromUrl({
+  signedUrl,
+  isPlaying,
+  onPlayToggle,
+  sampleName,
+}: {
+  signedUrl: string;
+  isPlaying: boolean;
+  onPlayToggle: () => void;
+  sampleName?: string;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleEnded = () => onPlayToggle();
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [onPlayToggle]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(console.error);
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  return (
+    <div className="w-full">
+      <audio ref={audioRef} src={signedUrl} preload="metadata" />
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onPlayToggle}
+          className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 border-2"
+          style={{
+            borderColor: colors.accent.primary,
+            backgroundColor: 'transparent',
+            color: colors.accent.primary,
+          }}
+        >
+          {isPlaying ? (
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="7" y="5" width="3" height="14" />
+              <rect x="14" y="5" width="3" height="14" />
+            </svg>
+          ) : (
+            <svg className="w-2.5 h-2.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {sampleName && (
+          <div className="flex-1 font-medium" style={{ color: colors.text.primary }}>
+            {sampleName}
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div
+        className="h-1 rounded-full overflow-hidden mt-2"
+        style={{ backgroundColor: colors.bg.secondary }}
+      >
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
+            backgroundColor: colors.accent.primary,
+            transition: 'width 0.05s ease-out',
           }}
         />
       </div>
@@ -436,7 +533,6 @@ export default function SpeechToTextPage() {
         }
 
         const uploadData = await uploadResponse.json();
-        console.log('Backend upload response:', uploadData);
 
         const backendFileId = uploadData.file_id || uploadData.id || uploadData.data?.file_id || uploadData.data?.id;
 
@@ -616,14 +712,13 @@ export default function SpeechToTextPage() {
     setIsLoadingResults(true);
     try {
       // Fetch run details with results
-      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true`, {
+      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true&include_signed_url=true`, {
         headers: { 'X-API-KEY': apiKeys[0].key },
       });
 
       if (!runResponse.ok) throw new Error('Failed to load results');
 
       const runData = await runResponse.json();
-      console.log('Run API Response:', runData);
 
       // Extract results
       let resultsList = [];
@@ -637,48 +732,33 @@ export default function SpeechToTextPage() {
         resultsList = runData.data.results;
       }
 
-      // Get dataset_id from the run
-      const datasetId = runData.dataset_id || runData.data?.dataset_id;
 
-      if (datasetId) {
-        // Fetch dataset with samples
-        const datasetResponse = await fetch(`/api/evaluations/stt/datasets/${datasetId}?include_samples=true`, {
-          headers: { 'X-API-KEY': apiKeys[0].key },
-        });
+      // Enrich results with sample data (filename, ground truth, signed URL)
+      // The structure is: data.results[].sample contains all sample information
+      resultsList = resultsList.map((result: any) => {
+        const sample = result.sample;
 
-        if (datasetResponse.ok) {
-          const datasetData = await datasetResponse.json();
+        // Extract sample name from sample_metadata.original_filename
+        const sampleName = sample?.sample_metadata?.original_filename ||
+                          `Sample ${result.stt_sample_id}`;
 
-          // Extract samples
-          let samples = [];
-          if (datasetData.samples && Array.isArray(datasetData.samples)) {
-            samples = datasetData.samples;
-          } else if (datasetData.data && datasetData.data.samples && Array.isArray(datasetData.data.samples)) {
-            samples = datasetData.data.samples;
-          }
+        // Extract ground truth
+        const groundTruth = sample?.ground_truth || '';
 
-          // Create a map of sample_id to sample data (name and ground truth)
-          const sampleMap = new Map();
-          samples.forEach((sample: any) => {
-            const sampleName = sample.sample_metadata?.original_filename ||
-                             sample.metadata?.original_filename ||
-                             `Sample ${sample.id}`;
-            const groundTruth = sample.ground_truth || sample.sample_metadata?.ground_truth || sample.metadata?.ground_truth || '';
+        // Extract signed URL
+        const signedUrl = sample?.signed_url || '';
 
-            sampleMap.set(sample.id, { sampleName, groundTruth });
-          });
+        // Extract file ID
+        const fileId = sample?.file_id;
 
-          // Enrich results with sample names and ground truth
-          resultsList = resultsList.map((result: any) => {
-            const sampleData = sampleMap.get(result.stt_sample_id);
-            return {
-              ...result,
-              sampleName: sampleData?.sampleName || '-',
-              groundTruth: sampleData?.groundTruth || ''
-            };
-          });
-        }
-      }
+        return {
+          ...result,
+          sampleName,
+          groundTruth,
+          fileId,
+          signedUrl
+        };
+      });
 
       setResults(resultsList);
       setSelectedRunId(runId);
@@ -1225,6 +1305,7 @@ function EvaluationsTab({
 }: EvaluationsTabProps) {
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
   const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
+  const [playingResultId, setPlayingResultId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!openScoreInfo) return;
@@ -1581,9 +1662,21 @@ function EvaluationsTab({
                   <tbody>
                     {results.map((result) => (
                       <tr key={result.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
-                          {result.sampleName || '-'}
+                        <td className="px-4 py-3 text-sm align-top">
+                          {result.signedUrl ? (
+                            <AudioPlayerFromUrl
+                              signedUrl={result.signedUrl}
+                              sampleName={result.sampleName}
+                              isPlaying={playingResultId === result.id}
+                              onPlayToggle={() => setPlayingResultId(playingResultId === result.id ? null : result.id)}
+                            />
+                          ) : (
+                            <div className="font-medium" style={{ color: colors.text.primary }}>
+                              {result.sampleName || '-'}
+                            </div>
+                          )}
                         </td>
+<<<<<<< HEAD
                         <td className="px-4 py-3 text-sm align-top">
                           {result.groundTruth && result.transcription ? (() => {
                             const segments = computeWordDiff(result.groundTruth, result.transcription);

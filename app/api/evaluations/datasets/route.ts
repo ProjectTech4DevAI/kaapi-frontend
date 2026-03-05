@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * GET /api/evaluations/datasets
  *
- * Proxy endpoint to fetch all datasets from the backend.
+ * Proxy endpoint to fetch text datasets only from the backend.
+ * This endpoint filters and returns only datasets with type='text'.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    return NextResponse.json(data, { status: 200 });
+    // Filter to only return text datasets
+    const filteredData = Array.isArray(data)
+      ? data.filter((dataset: any) => dataset.type === 'text')
+      : data.data
+        ? { ...data, data: data.data.filter((dataset: any) => dataset.type === 'text') }
+        : data;
+
+    return NextResponse.json(filteredData, { status: 200 });
   } catch (error: any) {
     console.error('Proxy error:', error);
     return NextResponse.json(

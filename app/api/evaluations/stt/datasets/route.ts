@@ -1,8 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 
-
-
-export async function GET(request: 
+/**
+ * GET /api/evaluations/stt/datasets
+ *
+ * Proxy endpoint to fetch STT datasets only from the backend.
+ * This endpoint filters and returns only datasets with type='stt'.
+ */
+export async function GET(request:
   Request) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
@@ -15,7 +19,19 @@ export async function GET(request:
     });
 
     const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
+    // Filter to only return STT datasets (additional safety check)
+    const filteredData = Array.isArray(data)
+      ? data.filter((dataset: any) => dataset.type === 'stt')
+      : data.data
+        ? { ...data, data: data.data.filter((dataset: any) => dataset.type === 'stt') }
+        : data;
+
+    return NextResponse.json(filteredData, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error, data: null },

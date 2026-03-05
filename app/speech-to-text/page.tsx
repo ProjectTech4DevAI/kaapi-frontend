@@ -1224,6 +1224,14 @@ function EvaluationsTab({
   setActiveTab,
 }: EvaluationsTabProps) {
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
+  const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openScoreInfo) return;
+    const handleClick = () => setOpenScoreInfo(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openScoreInfo]);
 
   const toggleTranscription = (resultId: number) => {
     setExpandedTranscriptions(prev => {
@@ -1483,8 +1491,8 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '12%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '48%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '40%' }}>
                         <div>
                           <div>Ground Truth vs Transcription</div>
                           <div className="flex items-center gap-2 font-normal mt-1">
@@ -1503,8 +1511,71 @@ function EvaluationsTab({
                           </div>
                         </div>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '10%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '30%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                        <span className="inline-flex items-center gap-1 relative">
+                          Score
+                          <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            onClick={(e) => { e.stopPropagation(); setOpenScoreInfo(openScoreInfo ? null : 'accuracy'); }}
+                          >
+                            i
+                          </span>
+                          {openScoreInfo && (() => {
+                            const metrics = [
+                              { key: 'accuracy', title: 'Accuracy (Word Information Preserved)', desc: 'Measures how much of the original information was correctly captured.', formula: 'WIP = (C / N) × (C / H)', formulaDesc: 'C = correct words\nN = total words in reference\nH = total words in hypothesis', example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat" (H=5)\nC = 3 (cat, on, mat)\n\nWIP = (3/6) × (3/5)\n    = 0.5 × 0.6 = 0.30 = 30%`, direction: 'Higher is better.', directionColor: colors.status.success },
+                              { key: 'wer', title: 'WER (Word Error Rate)', desc: 'The most widely used metric in STT evaluation.', formula: 'WER = (S + D + I) / N', formulaDesc: 'S = substitutions, D = deletions\nI = insertions, N = total words in reference', example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat"\n\nthe → a    (Substitution)\ncat → cat  (Correct)\nsat → sit  (Substitution)\non  → on   (Correct)\nthe → ∅    (Deletion)\nmat → mat  (Correct)\n\nS=2, D=1, I=0\nWER = (2+1+0) / 6 = 0.50 = 50%`, direction: 'Lower is better.', directionColor: colors.status.error },
+                              { key: 'cer', title: 'CER (Character Error Rate)', desc: 'Same concept as WER but at the character level — more granular, catches partial word errors.', formula: 'CER = (S + D + I) / N', formulaDesc: 'S, D, I = character-level errors\nN = total characters in reference', example: `Reference:  "the cat sat" (N=11 chars)\nHypothesis: "the bat set"\n\nt → t  (Correct)\nh → h  (Correct)\ne → e  (Correct)\n· → ·  (Correct)\nc → b  (Substitution)\na → a  (Correct)\nt → t  (Correct)\n· → ·  (Correct)\ns → s  (Correct)\na → e  (Substitution)\nt → t  (Correct)\n\nS=2, D=0, I=0\nCER = 2/11 = 0.18 = 18%`, direction: 'Lower is better.', directionColor: colors.status.error },
+                              { key: 'lenient_wer', title: 'Lenient WER', desc: 'Same as WER but ignores differences in casing and punctuation — useful when exact formatting doesn\'t matter.', formula: 'Same as WER after normalizing text', formulaDesc: 'Normalization: lowercase + remove punctuation', example: `Reference:  "Hello, World!"\nHypothesis: "hello world"\n\nAfter normalization:\n"hello world" vs "hello world"\n→ exact match\n\nLenient WER = 0%\n(strict WER would be higher)`, direction: 'Lower is better.', directionColor: colors.status.error },
+                            ];
+                            const currentIdx = metrics.findIndex(m => m.key === openScoreInfo);
+                            const current = metrics[currentIdx >= 0 ? currentIdx : 0];
+                            return (
+                              <div
+                                className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs"
+                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px' }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {/* Tab navigation */}
+                                <div className="flex border-b" style={{ borderColor: colors.border }}>
+                                  {metrics.map((m, idx) => (
+                                    <button
+                                      key={m.key}
+                                      className="flex-1 px-2 py-2 text-xs font-medium"
+                                      style={{
+                                        color: openScoreInfo === m.key ? colors.accent.primary : colors.text.secondary,
+                                        borderBottom: openScoreInfo === m.key ? `2px solid ${colors.accent.primary}` : '2px solid transparent',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                      }}
+                                      onClick={() => setOpenScoreInfo(m.key)}
+                                    >
+                                      {m.key === 'accuracy' ? 'Accuracy' : m.key === 'wer' ? 'WER' : m.key === 'cer' ? 'CER' : 'Lenient WER'}
+                                    </button>
+                                  ))}
+                                </div>
+                                {/* Content */}
+                                <div className="p-3" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
+                                  <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>{current.title}</div>
+                                  <p className="mb-2" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>{current.desc}</p>
+                                  <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Formula</div>
+                                  <div className="mb-2 p-2 rounded whitespace-pre-wrap" style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary }}>
+                                    {current.formula}{'\n'}
+                                    <span style={{ color: colors.text.secondary }}>{current.formulaDesc}</span>
+                                  </div>
+                                  <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Example</div>
+                                  <div className="p-2 rounded whitespace-pre-wrap" style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary, lineHeight: '1.6' }}>
+                                    {current.example}
+                                  </div>
+                                  <div className="mt-2 font-semibold" style={{ color: current.directionColor }}>{current.direction}</div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </span>
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1648,6 +1719,33 @@ function EvaluationsTab({
                               <div>{result.groundTruth || '-'}</div>
                               <div>{result.transcription || '-'}</div>
                             </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-xs align-top">
+                          {result.score ? (
+                            <div className="space-y-2">
+                              <div className="flex justify-between gap-2">
+                                <span style={{ color: colors.text.secondary }}>Accuracy</span>
+                                <span className="font-mono font-medium" style={{ color: result.score.wip >= 0.9 ? colors.status.success : result.score.wip >= 0.7 ? '#ca8a04' : colors.status.error }}>{(result.score.wip * 100).toFixed(1)}%</span>
+                              </div>
+                              <div>
+                                <div className="mb-1" style={{ color: colors.text.secondary, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Errors</div>
+                                <div className="space-y-1 pl-1" style={{ borderLeft: `2px solid ${colors.border}` }}>
+                                  {[
+                                    { label: 'WER', value: result.score.wer },
+                                    { label: 'CER', value: result.score.cer },
+                                    { label: 'Lenient WER', value: result.score.lenient_wer },
+                                  ].map(({ label, value }) => (
+                                    <div key={label} className="flex justify-between gap-2 pl-1.5">
+                                      <span style={{ color: colors.text.secondary }}>{label}</span>
+                                      <span className="font-mono font-medium" style={{ color: value >= 0.8 ? colors.status.error : value >= 0.4 ? '#ca8a04' : colors.status.success }}>{(value * 100).toFixed(1)}%</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ color: colors.text.secondary }}>-</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">

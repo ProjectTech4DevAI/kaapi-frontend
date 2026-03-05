@@ -682,7 +682,7 @@ export default function SpeechToTextPage() {
 
       await response.json();
 
-     // toast.success(`Evaluation "${evaluationName}" started successfully!`);
+      // toast.success(`Evaluation "${evaluationName}" started successfully!`);
       setSelectedModel('gemini-2.5-pro');
 
       setEvaluationName('');
@@ -740,7 +740,7 @@ export default function SpeechToTextPage() {
 
         // Extract sample name from sample_metadata.original_filename
         const sampleName = sample?.sample_metadata?.original_filename ||
-                          `Sample ${result.stt_sample_id}`;
+          `Sample ${result.stt_sample_id}`;
 
         // Extract ground truth
         const groundTruth = sample?.ground_truth || '';
@@ -1350,7 +1350,7 @@ function EvaluationsTab({
         r.id === resultId ? { ...r, ...(isCorrect !== undefined && { is_correct: isCorrect }), ...(comment !== undefined && { comment }) } : r
       ));
 
-   //   toast.success('Feedback updated successfully');
+      //   toast.success('Feedback updated successfully');
     } catch (error) {
       console.error('Failed to update feedback:', error);
       toast.error('Failed to update feedback');
@@ -1369,66 +1369,34 @@ function EvaluationsTab({
             borderColor: colors.border,
           }}
         >
-        <div className="flex-1 overflow-auto p-4 space-y-4">
-          {/* Evaluation Name */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-              Evaluation Name *
-            </label>
-            <input
-              type="text"
-              value={evaluationName}
-              onChange={e => setEvaluationName(e.target.value)}
-              placeholder="e.g., English Podcast Evaluation v1"
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
-                color: colors.text.primary,
-              }}
-            />
-          </div>
+          <div className="flex-1 overflow-auto p-4 space-y-4">
+            {/* Evaluation Name */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                Evaluation Name *
+              </label>
+              <input
+                type="text"
+                value={evaluationName}
+                onChange={e => setEvaluationName(e.target.value)}
+                placeholder="e.g., English Podcast Evaluation v1"
+                className="w-full px-3 py-2 border rounded-md text-sm"
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  borderColor: colors.border,
+                  color: colors.text.primary,
+                }}
+              />
+            </div>
 
-          {/* Model Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-              Model *
-            </label>
-            <select
-              value={selectedModel}
-              onChange={e => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
-                color: colors.text.primary,
-              }}
-            >
-              <option value="gemini-2.0-flash-exp">gemini-2.5-pro</option>
-            </select>
-          </div>
-
-          {/* Dataset Selection */}
-          <div className="pt-2">
-            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-              Select Dataset *
-            </label>
-            {isLoadingDatasets ? (
-              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
-              </div>
-            ) : datasets.length === 0 ? (
-              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
-                <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                  Create a dataset first in the Datasets tab
-                </p>
-              </div>
-            ) : (
+            {/* Model Selection */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                Model *
+              </label>
               <select
-                value={selectedDatasetId || ''}
-                onChange={e => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
+                value={selectedModel}
+                onChange={e => setSelectedModel(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 style={{
                   backgroundColor: colors.bg.primary,
@@ -1436,81 +1404,113 @@ function EvaluationsTab({
                   color: colors.text.primary,
                 }}
               >
-                <option value="">-- Select a dataset --</option>
-                {datasets.map(dataset => (
-                  <option key={dataset.id} value={dataset.id}>
-                    {dataset.name} ({dataset.dataset_metadata?.sample_count || 0} samples)
-                  </option>
-                ))}
+                <option value="gemini-2.0-flash-exp">gemini-2.5-pro</option>
               </select>
-            )}
-          </div>
+            </div>
 
-          {/* Selected Dataset Info */}
-          {selectedDataset && (
-            <div
-              className="border rounded-lg p-3"
-              style={{
-                borderColor: colors.status.success,
-                backgroundColor: 'rgba(22, 163, 74, 0.02)',
-              }}
-            >
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex-1">
-                  <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                    {selectedDataset.name}
-                  </div>
-                  <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
-                    <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
-                    {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+            {/* Dataset Selection */}
+            <div className="pt-2">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                Select Dataset *
+              </label>
+              {isLoadingDatasets ? (
+                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
+                </div>
+              ) : datasets.length === 0 ? (
+                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
+                  <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                    Create a dataset first in the Datasets tab
+                  </p>
+                </div>
+              ) : (
+                <select
+                  value={selectedDatasetId || ''}
+                  onChange={e => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                  }}
+                >
+                  <option value="">-- Select a dataset --</option>
+                  {datasets.map(dataset => (
+                    <option key={dataset.id} value={dataset.id}>
+                      {dataset.name} ({dataset.dataset_metadata?.sample_count || 0} samples)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Selected Dataset Info */}
+            {selectedDataset && (
+              <div
+                className="border rounded-lg p-3"
+                style={{
+                  borderColor: colors.status.success,
+                  backgroundColor: 'rgba(22, 163, 74, 0.02)',
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                      {selectedDataset.name}
+                    </div>
+                    <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
+                      <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
+                      {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-
-
-        {/* Run Evaluation Button */}
-        <div
-          className="flex-shrink-0 border-t px-4 py-3"
-          style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
-        >
-          <button
-            onClick={handleRunEvaluation}
-            disabled={isRunning || !evaluationName.trim() || !selectedDatasetId}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
-            style={{
-              backgroundColor: isRunning || !evaluationName.trim() || !selectedDatasetId
-                ? colors.bg.secondary
-                : colors.accent.primary,
-              color: isRunning || !evaluationName.trim() || !selectedDatasetId
-                ? colors.text.secondary
-                : '#fff',
-              cursor: isRunning || !evaluationName.trim() || !selectedDatasetId
-                ? 'not-allowed'
-                : 'pointer',
-            }}
-          >
-            {isRunning ? (
-              <>
-                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                Starting Evaluation...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Run Evaluation
-              </>
             )}
-          </button>
-        </div>
+          </div>
+
+
+
+          {/* Run Evaluation Button */}
+          <div
+            className="flex-shrink-0 border-t px-4 py-3"
+            style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+          >
+            <button
+              onClick={handleRunEvaluation}
+              disabled={isRunning || !evaluationName.trim() || !selectedDatasetId}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
+              style={{
+                backgroundColor: isRunning || !evaluationName.trim() || !selectedDatasetId
+                  ? colors.bg.secondary
+                  : colors.accent.primary,
+                color: isRunning || !evaluationName.trim() || !selectedDatasetId
+                  ? colors.text.secondary
+                  : '#fff',
+                cursor: isRunning || !evaluationName.trim() || !selectedDatasetId
+                  ? 'not-allowed'
+                  : 'pointer',
+              }}
+            >
+              {isRunning ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  Starting Evaluation...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Run Evaluation
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1555,7 +1555,7 @@ function EvaluationsTab({
             )}
           </div>
 
-          <div className="rounded-lg border overflow-hidden" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <div className={`rounded-lg border ${openScoreInfo ? '' : 'overflow-hidden'}`} style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
@@ -1676,7 +1676,6 @@ function EvaluationsTab({
                             </div>
                           )}
                         </td>
-<<<<<<< HEAD
                         <td className="px-4 py-3 text-sm align-top">
                           {result.groundTruth && result.transcription ? (() => {
                             const segments = computeWordDiff(result.groundTruth, result.transcription);
@@ -1717,8 +1716,8 @@ function EvaluationsTab({
                                               style={{
                                                 backgroundColor:
                                                   seg.type === 'substitution' ? '#fef3c7' :
-                                                  seg.type === 'deletion' ? '#fee2e2' :
-                                                  'transparent',
+                                                    seg.type === 'deletion' ? '#fee2e2' :
+                                                      'transparent',
                                                 textDecoration: seg.type === 'deletion' ? 'line-through' : 'none',
                                                 color: seg.type === 'deletion' ? '#dc2626' : colors.text.primary,
                                               }}
@@ -1775,16 +1774,16 @@ function EvaluationsTab({
                                               style={{
                                                 backgroundColor:
                                                   seg.type === 'substitution' ? '#fef3c7' :
-                                                  seg.type === 'insertion' ? '#dcfce7' :
-                                                  'transparent',
+                                                    seg.type === 'insertion' ? '#dcfce7' :
+                                                      'transparent',
                                                 color:
                                                   seg.type === 'insertion' ? '#16a34a' :
-                                                  colors.text.primary,
+                                                    colors.text.primary,
                                                 fontWeight: seg.type === 'insertion' ? 500 : 'normal',
                                               }}
                                               title={
                                                 seg.type === 'substitution' ? `Was: "${seg.reference}"` :
-                                                seg.type === 'insertion' ? 'Inserted' : undefined
+                                                  seg.type === 'insertion' ? 'Inserted' : undefined
                                               }
                                             >
                                               {seg.type === 'insertion' && '+ '}{word}

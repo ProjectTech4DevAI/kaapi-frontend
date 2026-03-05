@@ -1801,7 +1801,7 @@ function EvaluationsTab({
                                     className="text-xs mt-1.5"
                                     style={{ color: colors.accent.primary, cursor: 'pointer' }}
                                   >
-                                    {isExpanded ? 'Show less' : 'Expand diff'}
+                                    {isExpanded ? 'Show less' : 'Expand'}
                                   </button>
                                 )}
                               </div>

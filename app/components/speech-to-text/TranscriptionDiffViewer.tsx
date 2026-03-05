@@ -8,7 +8,7 @@
 import React, { useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 
-interface DiffSegment {
+export interface DiffSegment {
   type: 'match' | 'substitution' | 'deletion' | 'insertion';
   reference?: string;
   hypothesis?: string;
@@ -22,7 +22,7 @@ interface TranscriptionDiffViewerProps {
 }
 
 // Simple word-level diff algorithm
-function computeWordDiff(reference: string, hypothesis: string): DiffSegment[] {
+export function computeWordDiff(reference: string, hypothesis: string): DiffSegment[] {
   const refWords = reference.trim().split(/\s+/).filter(w => w.length > 0);
   const hypWords = hypothesis.trim().split(/\s+/).filter(w => w.length > 0);
 

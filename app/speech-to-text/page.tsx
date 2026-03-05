@@ -12,6 +12,7 @@ import Sidebar from '@/app/components/Sidebar';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
+import { computeWordDiff, DiffSegment } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
 import { formatDate } from '@/app/components/utils';
 import ErrorModal from '@/app/components/ErrorModal';
 
@@ -1482,11 +1483,28 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '15%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '20%' }}>Ground Truth</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Transcription</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '10%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '30%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '12%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '48%' }}>
+                        <div>
+                          <div>Ground Truth vs Transcription</div>
+                          <div className="flex items-center gap-2 font-normal mt-1">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#fee2e2' }} />
+                              <span style={{ color: colors.text.secondary }}>Deletion</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#dcfce7' }} />
+                              <span style={{ color: colors.text.secondary }}>Insertion</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#fef3c7' }} />
+                              <span style={{ color: colors.text.secondary }}>Substitution</span>
+                            </span>
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '10%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '30%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1495,41 +1513,142 @@ function EvaluationsTab({
                         <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
                           {result.sampleName || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.secondary }}>
-                          <div
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                            title={result.groundTruth || 'No ground truth provided'}
-                          >
-                            {result.groundTruth || '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
-                          <div>
-                            <div
-                              style={{
-                                display: expandedTranscriptions.has(result.id) ? 'block' : '-webkit-box',
-                                WebkitLineClamp: expandedTranscriptions.has(result.id) ? 'unset' : 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              {result.transcription || '-'}
+                        <td className="px-4 py-3 text-sm align-top">
+                          {result.groundTruth && result.transcription ? (() => {
+                            const segments = computeWordDiff(result.groundTruth, result.transcription);
+                            const isExpanded = expandedTranscriptions.has(result.id);
+                            return (
+                              <div>
+                                <div
+                                  className="grid grid-cols-2 rounded-md overflow-hidden border"
+                                  style={{ borderColor: colors.border, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '12px' }}
+                                >
+                                  {/* Left Panel - Ground Truth */}
+                                  <div>
+                                    <div
+                                      className="px-2 py-1.5 text-xs font-semibold border-b"
+                                      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border, color: colors.text.secondary }}
+                                    >
+                                      Ground Truth
+                                    </div>
+                                    <div
+                                      className="px-3 py-2 leading-relaxed"
+                                      style={{
+                                        backgroundColor: colors.bg.primary,
+                                        ...(!isExpanded ? {
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 3,
+                                          WebkitBoxOrient: 'vertical' as const,
+                                          overflow: 'hidden',
+                                        } : {}),
+                                      }}
+                                    >
+                                      {segments.map((seg, idx) => {
+                                        if (seg.type === 'insertion') return null;
+                                        const word = seg.reference || '';
+                                        return (
+                                          <span key={idx}>
+                                            <span
+                                              className="px-0.5 rounded"
+                                              style={{
+                                                backgroundColor:
+                                                  seg.type === 'substitution' ? '#fef3c7' :
+                                                  seg.type === 'deletion' ? '#fee2e2' :
+                                                  'transparent',
+                                                textDecoration: seg.type === 'deletion' ? 'line-through' : 'none',
+                                                color: seg.type === 'deletion' ? '#dc2626' : colors.text.primary,
+                                              }}
+                                              title={seg.type === 'substitution' ? `→ "${seg.hypothesis}"` : undefined}
+                                            >
+                                              {seg.type === 'deletion' && '- '}{word}
+                                            </span>
+                                            {' '}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  {/* Right Panel - Transcription */}
+                                  <div className="border-l" style={{ borderColor: colors.border }}>
+                                    <div
+                                      className="px-2 py-1.5 text-xs font-semibold border-b"
+                                      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border, color: colors.text.secondary }}
+                                    >
+                                      Transcription
+                                    </div>
+                                    <div
+                                      className="px-3 py-2 leading-relaxed"
+                                      style={{
+                                        backgroundColor: colors.bg.primary,
+                                        ...(!isExpanded ? {
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 3,
+                                          WebkitBoxOrient: 'vertical' as const,
+                                          overflow: 'hidden',
+                                        } : {}),
+                                      }}
+                                    >
+                                      {segments.map((seg, idx) => {
+                                        if (seg.type === 'deletion') {
+                                          return (
+                                            <span key={idx}>
+                                              <span
+                                                className="px-0.5 rounded"
+                                                style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                                title={`Missing: "${seg.reference}"`}
+                                              >
+                                                ___
+                                              </span>
+                                              {' '}
+                                            </span>
+                                          );
+                                        }
+                                        const word = seg.hypothesis || seg.reference || '';
+                                        return (
+                                          <span key={idx}>
+                                            <span
+                                              className="px-0.5 rounded"
+                                              style={{
+                                                backgroundColor:
+                                                  seg.type === 'substitution' ? '#fef3c7' :
+                                                  seg.type === 'insertion' ? '#dcfce7' :
+                                                  'transparent',
+                                                color:
+                                                  seg.type === 'insertion' ? '#16a34a' :
+                                                  colors.text.primary,
+                                                fontWeight: seg.type === 'insertion' ? 500 : 'normal',
+                                              }}
+                                              title={
+                                                seg.type === 'substitution' ? `Was: "${seg.reference}"` :
+                                                seg.type === 'insertion' ? 'Inserted' : undefined
+                                              }
+                                            >
+                                              {seg.type === 'insertion' && '+ '}{word}
+                                            </span>
+                                            {' '}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                                {(result.groundTruth.length > 100 || result.transcription.length > 100) && (
+                                  <button
+                                    onClick={() => toggleTranscription(result.id)}
+                                    className="text-xs mt-1.5"
+                                    style={{ color: colors.accent.primary, cursor: 'pointer' }}
+                                  >
+                                    {isExpanded ? 'Show less' : 'Expand diff'}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })() : (
+                            <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: colors.text.secondary }}>
+                              <div>{result.groundTruth || '-'}</div>
+                              <div>{result.transcription || '-'}</div>
                             </div>
-                            {result.transcription && result.transcription.length > 80 && (
-                              <button
-                                onClick={() => toggleTranscription(result.id)}
-                                className="text-xs mt-1"
-                                style={{ color: colors.accent.primary, cursor: 'pointer' }}
-                              >
-                                {expandedTranscriptions.has(result.id) ? 'Show less' : 'Read more'}
-                              </button>
-                            )}
-                          </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">
                           <select

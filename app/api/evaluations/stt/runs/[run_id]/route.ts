@@ -8,8 +8,17 @@ export async function GET(
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
+  // Extract query parameters from the request URL
+  const { searchParams } = new URL(request.url);
+  const queryString = searchParams.toString();
+
   try {
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/stt/runs/${run_id}`, {
+    // Forward query parameters to the backend
+    const backendUrlWithParams = queryString
+      ? `${backendUrl}/api/v1/evaluations/stt/runs/${run_id}?${queryString}`
+      : `${backendUrl}/api/v1/evaluations/stt/runs/${run_id}`;
+
+    const response = await fetch(backendUrlWithParams, {
       headers: {
         'X-API-KEY': apiKey || '',
       },

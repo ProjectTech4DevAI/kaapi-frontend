@@ -4,7 +4,7 @@
  */
 
 "use client"
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
 import { useConfigs, SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
@@ -30,16 +30,31 @@ export default function ConfigSelector({
   const router = useRouter();
   const { configs, configGroups, isLoading, error } = useConfigs();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Find currently selected config
   const selectedConfig = configs.find(
     c => c.config_id === selectedConfigId && c.version === selectedVersion
   );
 
+  // Filter config groups based on search query
+  const filteredConfigGroups = searchQuery.trim()
+    ? configGroups.filter(group =>
+        group.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : configGroups;
+
   // Handle config selection
   const handleSelect = (config: SavedConfig) => {
     onConfigSelect(config.config_id, config.version);
     setIsDropdownOpen(false);
+    setSearchQuery(''); // Clear search on selection
+  };
+
+  // Handle dropdown close
+  const handleCloseDropdown = () => {
+    setIsDropdownOpen(false);
+    setSearchQuery(''); // Clear search on close
   };
 
   // Build URL params preserving evaluation context
@@ -204,48 +219,82 @@ export default function ConfigSelector({
         <>
           {/* Dropdown Selector */}
           <div className="relative">
-            <button
-              onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
-              disabled={disabled}
-              className="w-full px-4 py-3 rounded-md text-left flex items-center justify-between transition-colors"
-              style={{
-                backgroundColor: disabled ? colors.bg.secondary : colors.bg.primary,
-                border: `1px solid ${selectedConfig ? colors.accent.primary : colors.border}`,
-                color: colors.text.primary,
-                cursor: disabled ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {selectedConfig ? (
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium truncate">{selectedConfig.name}</span>
-                    <span
-                      className="text-xs px-1.5 py-0.5 rounded"
-                      style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
-                    >
-                      v{selectedConfig.version}
-                    </span>
-                  </div>
-                  <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-                    {selectedConfig.provider}/{selectedConfig.modelName} • T:{selectedConfig.temperature.toFixed(2)}
-                  </div>
-                </div>
-              ) : (
-                <span style={{ color: colors.text.secondary }}>Select a configuration...</span>
-              )}
-              <svg
-                className="w-5 h-5 flex-shrink-0 ml-2 transition-transform"
+            {isDropdownOpen ? (
+              /* Search Input when dropdown is open */
+              <div
+                className="w-full px-4 py-3 rounded-md flex items-center justify-between"
                 style={{
-                  color: colors.text.secondary,
-                  transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                  backgroundColor: colors.bg.primary,
+                  border: `1px solid ${colors.accent.primary}`,
                 }}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search configurations..."
+                  className="flex-1 bg-transparent text-sm focus:outline-none"
+                  style={{ color: colors.text.primary }}
+                  autoFocus
+                />
+                <svg
+                  className="w-5 h-5 flex-shrink-0 ml-2 transition-transform"
+                  style={{
+                    color: colors.text.secondary,
+                    transform: 'rotate(180deg)'
+                  }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            ) : (
+              /* Button when dropdown is closed */
+              <button
+                onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
+                disabled={disabled}
+                className="w-full px-4 py-3 rounded-md text-left flex items-center justify-between transition-colors"
+                style={{
+                  backgroundColor: disabled ? colors.bg.secondary : colors.bg.primary,
+                  border: `1px solid ${selectedConfig ? colors.accent.primary : colors.border}`,
+                  color: colors.text.primary,
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {selectedConfig ? (
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{selectedConfig.name}</span>
+                      <span
+                        className="text-xs px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                      >
+                        v{selectedConfig.version}
+                      </span>
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                      {selectedConfig.provider}/{selectedConfig.modelName} • T:{selectedConfig.temperature.toFixed(2)}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ color: colors.text.secondary }}>Select a configuration...</span>
+                )}
+                <svg
+                  className="w-5 h-5 flex-shrink-0 ml-2 transition-transform"
+                  style={{
+                    color: colors.text.secondary,
+                    transform: 'rotate(0deg)'
+                  }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
@@ -256,7 +305,12 @@ export default function ConfigSelector({
                   border: `1px solid ${colors.border}`,
                 }}
               >
-                {configGroups.map((group) => (
+                {filteredConfigGroups.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-sm" style={{ color: colors.text.secondary }}>
+                    {searchQuery ? `No configurations match "${searchQuery}"` : 'No configurations available'}
+                  </div>
+                ) : (
+                  filteredConfigGroups.map((group) => (
                   <div key={group.config_id}>
                     {/* Config group header */}
                     <div
@@ -309,7 +363,7 @@ export default function ConfigSelector({
                       </button>
                     ))}
                   </div>
-                ))}
+                )))}
               </div>
             )}
           </div>
@@ -381,7 +435,7 @@ export default function ConfigSelector({
       {isDropdownOpen && (
         <div
           className="fixed inset-0 z-40"
-          onClick={() => setIsDropdownOpen(false)}
+          onClick={handleCloseDropdown}
         />
       )}
     </div>

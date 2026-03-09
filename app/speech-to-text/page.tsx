@@ -1447,11 +1447,11 @@ function EvaluationsTab({
     });
   };
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean, comment?: string) => {
+  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string) => {
     if (apiKeys.length === 0) return;
 
     try {
-      const payload: { is_correct?: boolean; comment?: string } = {};
+      const payload: { is_correct?: boolean | null; comment?: string } = {};
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
 
@@ -1468,7 +1468,7 @@ function EvaluationsTab({
 
       // Update local state
       setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, ...(isCorrect !== undefined && { is_correct: isCorrect }), ...(comment !== undefined && { comment }) } : r
+        r.id === resultId ? { ...r, ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}), ...(comment !== undefined && { comment }) } : r
       ));
 
       //   toast.success('Feedback updated successfully');
@@ -1966,8 +1966,7 @@ function EvaluationsTab({
                             value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (value === '') return;
-                              updateFeedback(result.id, value === 'true');
+                              updateFeedback(result.id, value === '' ? null : value === 'true');
                             }}
                             className="px-3 py-1.5 border rounded text-xs font-medium"
                             style={{

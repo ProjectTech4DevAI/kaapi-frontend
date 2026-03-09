@@ -67,6 +67,11 @@ export interface NewScoreObject {
   individual_scores: IndividualScore[];
 }
 
+// Basic score object with only summary scores (no individual scores or traces)
+export interface BasicScoreObject {
+  summary_scores: SummaryScore[];
+}
+
 // Legacy score structure (for backward compatibility)
 export interface PerItemScore {
   trace_id: string;
@@ -85,7 +90,7 @@ export interface LegacyScoreObject {
 }
 
 // Union type to support both old and new structures
-export type ScoreObject = NewScoreObjectV2 | NewScoreObject | LegacyScoreObject;
+export type ScoreObject = NewScoreObjectV2 | NewScoreObject | BasicScoreObject | LegacyScoreObject;
 
 export interface AssistantConfig {
   name: string;
@@ -140,9 +145,16 @@ export function isNewScoreObjectV2(score: ScoreObject | null | undefined): score
   return 'summary_scores' in score && 'traces' in score;
 }
 
+// V1 with individual_scores
 export function isNewScoreObject(score: ScoreObject | null | undefined): score is NewScoreObject {
   if (!score) return false;
   return 'summary_scores' in score && 'individual_scores' in score;
+}
+
+// NEW: Fallback for scores with only summary_scores
+export function isBasicScoreObject(score: ScoreObject | null | undefined): score is BasicScoreObject {
+  if (!score) return false;
+  return 'summary_scores' in score && !('individual_scores' in score) && !('traces' in score);
 }
 
 export function isLegacyScoreObject(score: ScoreObject | null | undefined): score is LegacyScoreObject {

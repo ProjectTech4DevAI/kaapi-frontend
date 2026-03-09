@@ -266,7 +266,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                   {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
                     <div className="mb-3">
                       <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
-                        Vector Store IDs ({tool.type})
+                        Knowledge Base IDs ({tool.type})
                       </div>
                       <div className="text-sm font-mono p-3 rounded-md border" style={{
                         backgroundColor: '#fafafa',
@@ -320,7 +320,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                   {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
                     <div className="mb-3">
                       <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
-                        Vector Store IDs ({tool.type})
+                        Knowledge Base IDs ({tool.type})
                       </div>
                       <div className="text-sm font-mono p-3 rounded-md border" style={{
                         backgroundColor: '#fafafa',
@@ -352,7 +352,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
 
           {Array.isArray(assistantConfig?.knowledge_base_ids) && assistantConfig.knowledge_base_ids.length > 0 && (
             <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>Vector Store IDs</div>
+              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>Knowledge Base IDs</div>
               <div className="text-sm font-mono p-3 rounded-md border" style={{
                 backgroundColor: '#fafafa',
                 borderColor: '#e5e5e5',

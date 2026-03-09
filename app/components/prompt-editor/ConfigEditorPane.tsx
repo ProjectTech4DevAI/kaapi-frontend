@@ -607,7 +607,7 @@ export default function ConfigEditorPane({
                     className="block text-xs mb-1"
                     style={{ color: '#000000' }}
                   >
-                    Vector Store ID
+                    Knowledge Base ID
                   </label>
                   <input
                     type="text"

@@ -635,7 +635,7 @@ export default function ConfigDrawer({
                           marginBottom: '4px',
                         }}
                       >
-                        Vector Store ID
+                        Knowledge Base ID
                       </label>
                       <input
                         type="text"

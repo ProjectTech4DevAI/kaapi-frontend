@@ -61,17 +61,6 @@ export interface NewScoreObjectV2 {
   traces: TraceItem[] | GroupedTraceItem[];
 }
 
-// Original new score object with individual_scores
-export interface NewScoreObject {
-  summary_scores: SummaryScore[];
-  individual_scores: IndividualScore[];
-}
-
-// Basic score object with only summary scores (no individual scores or traces)
-export interface BasicScoreObject {
-  summary_scores: SummaryScore[];
-}
-
 // Legacy score structure (for backward compatibility)
 export interface PerItemScore {
   trace_id: string;
@@ -89,8 +78,13 @@ export interface LegacyScoreObject {
   cosine_similarity: CosineSimilarity;
 }
 
+// Basic score object with only summary scores (no individual scores or traces)
+export interface BasicScoreObject {
+  summary_scores: SummaryScore[];
+}
+
 // Union type to support both old and new structures
-export type ScoreObject = NewScoreObjectV2 | NewScoreObject | BasicScoreObject | LegacyScoreObject;
+export type ScoreObject = NewScoreObjectV2 | BasicScoreObject | LegacyScoreObject;
 
 export interface AssistantConfig {
   name: string;
@@ -140,22 +134,30 @@ export interface EvalJob {
 }
 
 // Type guard functions
-// V2 with traces
+
+// Shared guard: Check if score has summary_scores and intelligently narrow to NewScoreObjectV2 or BasicScoreObject
+// Priority: If it has traces → NewScoreObjectV2, otherwise → BasicScoreObject
+export function hasSummaryScores(score: ScoreObject | null | undefined): score is NewScoreObjectV2 | BasicScoreObject {
+  if (!score) return false;
+  if (!('summary_scores' in score)) return false;
+
+  // Prioritize traces format if available
+  if ('traces' in score) {
+    return true; 
+  }
+
+  // Otherwise, it's BasicScoreObject (summary_scores only, no traces, no individual_scores)
+  return true;
+}
+
 export function isNewScoreObjectV2(score: ScoreObject | null | undefined): score is NewScoreObjectV2 {
   if (!score) return false;
   return 'summary_scores' in score && 'traces' in score;
 }
 
-// V1 with individual_scores
-export function isNewScoreObject(score: ScoreObject | null | undefined): score is NewScoreObject {
-  if (!score) return false;
-  return 'summary_scores' in score && 'individual_scores' in score;
-}
-
-// Fallback for scores with only summary_scores
 export function isBasicScoreObject(score: ScoreObject | null | undefined): score is BasicScoreObject {
   if (!score) return false;
-  return 'summary_scores' in score && !('individual_scores' in score) && !('traces' in score);
+  return 'summary_scores' in score && !('traces' in score);
 }
 
 export function isLegacyScoreObject(score: ScoreObject | null | undefined): score is LegacyScoreObject {
@@ -173,23 +175,30 @@ export function isGroupedFormat(traces: TraceItem[] | GroupedTraceItem[]): trace
   return "llm_answers" in traces[0] && Array.isArray(traces[0].llm_answers);
 }
 
-// Normalize traces to IndividualScore format for backward compatibility
+// Normalize traces to IndividualScore format for table display
 export function normalizeToIndividualScores(score: ScoreObject | null | undefined): IndividualScore[] {
   if (!score) return [];
 
   if (isNewScoreObjectV2(score)) {
-    // Convert TraceItem[] to IndividualScore[]
-    return score.traces.map(trace => ({
-      trace_id: trace.trace_id,
-      input: { question: trace.question },
-      output: { answer: trace.llm_answer },
-      metadata: { ground_truth: trace.ground_truth_answer },
-      trace_scores: trace.scores
-    }));
-  }
-
-  if (isNewScoreObject(score)) {
-    return score.individual_scores;
+    // Convert TraceItem[] to IndividualScore[] for table display
+    // Note: Grouped traces should be detected earlier and handled separately
+    return score.traces.map((trace: TraceItem | GroupedTraceItem) => {
+      // Handle regular TraceItem format
+      if ('llm_answer' in trace) {
+        return {
+          trace_id: trace.trace_id,
+          input: { question: trace.question },
+          output: { answer: trace.llm_answer },
+          metadata: { ground_truth: trace.ground_truth_answer },
+          trace_scores: trace.scores
+        };
+      }
+      // Should not reach here if grouped format is handled properly
+      return {
+        trace_id: '',
+        trace_scores: []
+      };
+    });
   }
 
   return [];

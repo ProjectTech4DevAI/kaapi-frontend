@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { APIKey, STORAGE_KEY } from '../../keystore/page';
-import { EvalJob, AssistantConfig, isNewScoreObject, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores, GroupedTraceItem, isGroupedFormat } from '../../components/types';
+import { EvalJob, AssistantConfig, hasSummaryScores, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores, GroupedTraceItem, isGroupedFormat } from '../../components/types';
 import { formatDate, getStatusColor } from '../../components/utils';
 import ConfigModal from '../../components/ConfigModal';
 import Sidebar from '../../components/Sidebar';
@@ -369,7 +369,7 @@ export default function EvaluationReport() {
 
     try {
       // Fetch with resync_score=true to trigger backend resync
-      const response = await fetch(`/api/evaluations/${jobId}?export_format=${exportFormat}&resync_score=true&get_trace_info=true`, {
+      const response = await fetch(`/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`, {
         method: 'GET',
         headers: {
           'X-API-KEY': selectedKey.key,
@@ -457,11 +457,11 @@ export default function EvaluationReport() {
   const hasScore = !!scoreObject;
   const statusColors = getStatusColor(job.status);
 
-  // Check if we have new score structure (V1 or V2)
-  const isNewFormat = isNewScoreObject(scoreObject) || isNewScoreObjectV2(scoreObject);
+  // Check if we have new score structure (V1, V2, or Basic)
+  const isNewFormat = hasSummaryScores(scoreObject);
 
   // Safe access to summary scores
-  const summaryScores = (isNewFormat && scoreObject && 'summary_scores' in scoreObject)
+  const summaryScores = (isNewFormat && scoreObject)
     ? scoreObject.summary_scores || []
     : [];
 

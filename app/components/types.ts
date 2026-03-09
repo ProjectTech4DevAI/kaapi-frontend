@@ -140,6 +140,7 @@ export interface EvalJob {
 }
 
 // Type guard functions
+// V2 with traces
 export function isNewScoreObjectV2(score: ScoreObject | null | undefined): score is NewScoreObjectV2 {
   if (!score) return false;
   return 'summary_scores' in score && 'traces' in score;
@@ -151,7 +152,7 @@ export function isNewScoreObject(score: ScoreObject | null | undefined): score i
   return 'summary_scores' in score && 'individual_scores' in score;
 }
 
-// NEW: Fallback for scores with only summary_scores
+// Fallback for scores with only summary_scores
 export function isBasicScoreObject(score: ScoreObject | null | undefined): score is BasicScoreObject {
   if (!score) return false;
   return 'summary_scores' in score && !('individual_scores' in score) && !('traces' in score);

@@ -1085,6 +1085,8 @@ function DatasetsTab({
                   onChange={e => {
                     const newId = Number(e.target.value);
                     setDatasetLanguageId(newId);
+                    // Update all existing audio files to the new dataset language
+                    setAudioFiles(prev => prev.map(f => ({ ...f, languageId: newId })));
                   }}
                   className="w-full px-3 py-2 border rounded-md text-sm"
                   style={{

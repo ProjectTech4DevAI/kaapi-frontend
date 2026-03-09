@@ -1798,8 +1798,9 @@ function EvaluationsTab({
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">
-                          {result.groundTruth && result.transcription ? (() => {
-                            const segments = computeWordDiff(result.groundTruth, result.transcription);
+                          {(() => {
+                            const hasBoth = result.groundTruth && result.transcription;
+                            const segments = hasBoth ? computeWordDiff(result.groundTruth, result.transcription) : [];
                             const isExpanded = expandedTranscriptions.has(result.id);
                             return (
                               <div>
@@ -1827,7 +1828,7 @@ function EvaluationsTab({
                                         } : {}),
                                       }}
                                     >
-                                      {segments.map((seg, idx) => {
+                                      {hasBoth ? segments.map((seg, idx) => {
                                         if (seg.type === 'insertion') return null;
                                         const word = seg.reference || '';
                                         return (
@@ -1849,7 +1850,9 @@ function EvaluationsTab({
                                             {' '}
                                           </span>
                                         );
-                                      })}
+                                      }) : (
+                                        <span style={{ color: colors.text.secondary }}>{result.groundTruth || '-'}</span>
+                                      )}
                                     </div>
                                   </div>
                                   {/* Right Panel - Transcription */}
@@ -1872,7 +1875,7 @@ function EvaluationsTab({
                                         } : {}),
                                       }}
                                     >
-                                      {segments.map((seg, idx) => {
+                                      {hasBoth ? segments.map((seg, idx) => {
                                         if (seg.type === 'deletion') {
                                           return (
                                             <span key={idx}>
@@ -1912,11 +1915,13 @@ function EvaluationsTab({
                                             {' '}
                                           </span>
                                         );
-                                      })}
+                                      }) : (
+                                        <span style={{ color: colors.text.secondary }}>{result.transcription || '-'}</span>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
-                                {(result.groundTruth.length > 100 || result.transcription.length > 100) && (
+                                {hasBoth && (result.groundTruth!.length > 100 || result.transcription!.length > 100) && (
                                   <button
                                     onClick={() => toggleTranscription(result.id)}
                                     className="text-xs mt-1.5"
@@ -1927,12 +1932,7 @@ function EvaluationsTab({
                                 )}
                               </div>
                             );
-                          })() : (
-                            <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: colors.text.secondary }}>
-                              <div>{result.groundTruth || '-'}</div>
-                              <div>{result.transcription || '-'}</div>
-                            </div>
-                          )}
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-xs align-top">
                           {result.score ? (

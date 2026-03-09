@@ -383,7 +383,7 @@ export default function EvaluationReport() {
                 {error || 'Evaluation job not found'}
               </p>
               <button
-                onClick={() => router.push('/evaluations?tab=results')}
+                onClick={() => router.push('/evaluations?tab=evaluations')}
                 className="px-4 py-2 rounded-md text-sm font-medium"
                 style={{
                   backgroundColor: '#171717',
@@ -463,7 +463,7 @@ export default function EvaluationReport() {
 
               {/* Back Button */}
               <button
-                onClick={() => router.push('/evaluations?tab=results')}
+                onClick={() => router.push('/evaluations?tab=evaluations')}
                 className="p-2 rounded-md transition-colors flex items-center gap-2"
                 style={{
                   borderWidth: '1px',
@@ -487,7 +487,7 @@ export default function EvaluationReport() {
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                <span className="text-sm font-medium">Back to Results</span>
+                <span className="text-sm font-medium">Back to Evaluations</span>
               </button>
 
               <div className="flex-1">

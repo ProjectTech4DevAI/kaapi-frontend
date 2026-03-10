@@ -1024,6 +1024,15 @@ function DatasetsTab({
   apiKeys,
   languages,
 }: DatasetsTabProps) {
+  const [showLanguageInfo, setShowLanguageInfo] = useState(false);
+
+  useEffect(() => {
+    if (!showLanguageInfo) return;
+    const handleClick = () => setShowLanguageInfo(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [showLanguageInfo]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex-1 overflow-auto p-6">
@@ -1077,8 +1086,29 @@ function DatasetsTab({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Language *
+                <label className="text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                  <span className="inline-flex items-center gap-1 relative">
+                    Language *
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                      style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowLanguageInfo(!showLanguageInfo); }}
+                    >
+                      i
+                    </span>
+                    {showLanguageInfo && (
+                      <div
+                        className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs p-3"
+                        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
+                        <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
+                          This is the default language applied to all samples in the dataset. You can override the language for individual samples in the audio files section below.
+                        </p>
+                      </div>
+                    )}
+                  </span>
                 </label>
                 <select
                   value={datasetLanguageId}

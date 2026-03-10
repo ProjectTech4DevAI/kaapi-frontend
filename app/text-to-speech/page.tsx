@@ -6,7 +6,7 @@
  */
 
 "use client"
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import Sidebar from '@/app/components/Sidebar';
 import { useToast } from '@/app/components/Toast';
@@ -19,7 +19,6 @@ type Tab = 'datasets' | 'evaluations';
 interface TextSample {
   id: string;
   text: string;
-  language: string; // per-sample language override
 }
 
 interface TTSDataset {
@@ -27,7 +26,6 @@ interface TTSDataset {
   name: string;
   description?: string;
   type: string;
-  language_id: number | null;
   object_store_url: string | null;
   dataset_metadata: {
     sample_count?: number;
@@ -45,7 +43,6 @@ interface TTSRun {
   dataset_name: string;
   dataset_id: number;
   type: string;
-  language_id: number | null;
   models: string[] | null;
   status: string;
   total_items: number;
@@ -83,16 +80,128 @@ interface TTSResult {
   project_id: number;
   inserted_at: string;
   updated_at: string;
+  signedUrl?: string; // Enriched field - signed URL for audio playback
 }
 
-// Helper function to map language code to language ID
-const getLanguageId = (languageCode: string): number => {
-  const languageCodeToIdMap: Record<string, number> = {
-    'en': 1,
-    'hi': 2,
+// Audio Player Component for URL-based playback
+function AudioPlayerFromUrl({
+  signedUrl,
+  isPlaying,
+  onPlayToggle,
+  sampleLabel,
+  durationSeconds,
+  sizeBytes,
+}: {
+  signedUrl: string;
+  isPlaying: boolean;
+  onPlayToggle: () => void;
+  sampleLabel?: string;
+  durationSeconds?: number | null;
+  sizeBytes?: number | null;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleEnded = () => onPlayToggle();
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [onPlayToggle]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(console.error);
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
   };
-  return languageCodeToIdMap[languageCode] || 1;
-};
+
+  return (
+    <div className="w-full">
+      <audio ref={audioRef} src={signedUrl} preload="metadata" />
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onPlayToggle}
+          className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 border-2"
+          style={{
+            borderColor: colors.accent.primary,
+            backgroundColor: 'transparent',
+            color: colors.accent.primary,
+          }}
+        >
+          {isPlaying ? (
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="7" y="5" width="3" height="14" />
+              <rect x="14" y="5" width="3" height="14" />
+            </svg>
+          ) : (
+            <svg className="w-2.5 h-2.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        {sampleLabel && (
+          <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+            {sampleLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div
+        className="h-1 rounded-full overflow-hidden mt-2"
+        style={{ backgroundColor: colors.bg.secondary }}
+      >
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
+            backgroundColor: colors.accent.primary,
+            transition: 'width 0.05s ease-out',
+          }}
+        />
+      </div>
+
+      {/* Meta info */}
+      {(durationSeconds != null || sizeBytes != null) && (
+        <div className="flex items-center gap-3 mt-1.5">
+          {durationSeconds != null && (
+            <span className="text-xs tabular-nums" style={{ color: colors.text.secondary }}>
+              {durationSeconds.toFixed(1)}s
+            </span>
+          )}
+          {sizeBytes != null && (
+            <span className="text-xs tabular-nums" style={{ color: colors.text.secondary }}>
+              {formatSize(sizeBytes)}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Helper function to format status
 const getStatusColor = (status: string) => {
@@ -125,7 +234,6 @@ export default function TextToSpeechPage() {
   // Dataset form (Tab 1)
   const [datasetName, setDatasetName] = useState('');
   const [datasetDescription, setDatasetDescription] = useState('');
-  const [datasetLanguage, setDatasetLanguage] = useState('en');
   const [textSamples, setTextSamples] = useState<TextSample[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -258,7 +366,6 @@ export default function TextToSpeechPage() {
     setTextSamples(prev => [...prev, {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       text: '',
-      language: datasetLanguage,
     }]);
   };
 
@@ -271,13 +378,6 @@ export default function TextToSpeechPage() {
   const updateSampleText = (id: string, text: string) => {
     setTextSamples(prev => prev.map(s =>
       s.id === id ? { ...s, text } : s
-    ));
-  };
-
-  // Update text sample language
-  const updateSampleLanguage = (id: string, language: string) => {
-    setTextSamples(prev => prev.map(s =>
-      s.id === id ? { ...s, language } : s
     ));
   };
 
@@ -315,7 +415,6 @@ export default function TextToSpeechPage() {
         body: JSON.stringify({
           name: datasetName.trim(),
           description: datasetDescription.trim() || undefined,
-          language_id: getLanguageId(datasetLanguage),
           samples,
         }),
       });
@@ -332,7 +431,6 @@ export default function TextToSpeechPage() {
 
       setDatasetName('');
       setDatasetDescription('');
-      setDatasetLanguage('en');
       setTextSamples([]);
 
       await loadDatasets();
@@ -407,7 +505,7 @@ export default function TextToSpeechPage() {
 
     setIsLoadingResults(true);
     try {
-      const runResponse = await fetch(`/api/evaluations/tts/runs/${runId}?include_results=true`, {
+      const runResponse = await fetch(`/api/evaluations/tts/runs/${runId}?include_results=true&include_signed_url=true`, {
         headers: { 'X-API-KEY': apiKeys[0].key },
       });
 
@@ -425,6 +523,15 @@ export default function TextToSpeechPage() {
       } else if (runData.data && runData.data.results && Array.isArray(runData.data.results)) {
         resultsList = runData.data.results;
       }
+
+      // Enrich results with signed URL for audio playback
+      resultsList = resultsList.map((result: any) => {
+        const signedUrl = result.signed_url || result.sample?.signed_url || '';
+        return {
+          ...result,
+          signedUrl,
+        };
+      });
 
       setResults(resultsList);
       setSelectedRunId(runId);
@@ -505,19 +612,15 @@ export default function TextToSpeechPage() {
               setDatasetName={setDatasetName}
               datasetDescription={datasetDescription}
               setDatasetDescription={setDatasetDescription}
-              datasetLanguage={datasetLanguage}
-              setDatasetLanguage={setDatasetLanguage}
               textSamples={textSamples}
               addTextSample={addTextSample}
               removeTextSample={removeTextSample}
               updateSampleText={updateSampleText}
-              updateSampleLanguage={updateSampleLanguage}
               isCreating={isCreating}
               handleCreateDataset={handleCreateDataset}
               resetForm={() => {
                 setDatasetName('');
                 setDatasetDescription('');
-                setDatasetLanguage('en');
                 setTextSamples([]);
               }}
               apiKeys={apiKeys}
@@ -570,13 +673,10 @@ interface DatasetsTabProps {
   setDatasetName: (name: string) => void;
   datasetDescription: string;
   setDatasetDescription: (desc: string) => void;
-  datasetLanguage: string;
-  setDatasetLanguage: (lang: string) => void;
   textSamples: TextSample[];
   addTextSample: () => void;
   removeTextSample: (id: string) => void;
   updateSampleText: (id: string, text: string) => void;
-  updateSampleLanguage: (id: string, language: string) => void;
   isCreating: boolean;
   handleCreateDataset: () => void;
   resetForm: () => void;
@@ -588,13 +688,10 @@ function DatasetsTab({
   setDatasetName,
   datasetDescription,
   setDatasetDescription,
-  datasetLanguage,
-  setDatasetLanguage,
   textSamples,
   addTextSample,
   removeTextSample,
   updateSampleText,
-  updateSampleLanguage,
   isCreating,
   handleCreateDataset,
   resetForm,
@@ -615,7 +712,7 @@ function DatasetsTab({
             <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
               Dataset Information
             </h2>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
                   Dataset Name *
@@ -650,25 +747,6 @@ function DatasetsTab({
                     color: colors.text.primary,
                   }}
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Default Language
-                </label>
-                <select
-                  value={datasetLanguage}
-                  onChange={e => setDatasetLanguage(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                >
-                  <option value="en">English</option>
-                  <option value="hi">Hindi</option>
-                </select>
               </div>
             </div>
           </div>
@@ -733,30 +811,15 @@ function DatasetsTab({
                               Sample {idx + 1}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={sample.language}
-                              onChange={e => updateSampleLanguage(sample.id, e.target.value)}
-                              className="px-2 py-1 border rounded text-xs"
-                              style={{
-                                backgroundColor: colors.bg.primary,
-                                borderColor: colors.border,
-                                color: colors.text.primary,
-                              }}
-                            >
-                              <option value="en">English</option>
-                              <option value="hi">Hindi</option>
-                            </select>
-                            <button
-                              onClick={() => removeTextSample(sample.id)}
-                              className="p-1 rounded flex-shrink-0"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => removeTextSample(sample.id)}
+                            className="p-1 rounded flex-shrink-0"
+                            style={{ color: colors.text.secondary }}
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
 
                         <textarea
@@ -890,6 +953,7 @@ function EvaluationsTab({
   toast,
   setActiveTab,
 }: EvaluationsTabProps) {
+  const [playingResultId, setPlayingResultId] = useState<number | null>(null);
 
   const updateFeedback = async (resultId: number, isCorrect: boolean, comment?: string) => {
     if (apiKeys.length === 0) return;
@@ -1134,13 +1198,13 @@ function EvaluationsTab({
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
                       <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '35%' }}>Text</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Object Store URL</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Audio</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '15%' }}>Is Correct</th>
                       <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((result) => {
+                    {results.map((result, idx) => {
                       return (
                         <tr key={result.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
                           <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
@@ -1157,25 +1221,19 @@ function EvaluationsTab({
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm align-top">
-                            {result.object_store_url ? (
-                              <div
-                                className="text-xs font-mono break-all"
-                                style={{ color: colors.text.secondary }}
-                                title={result.object_store_url}
-                              >
-                                <div
-                                  style={{
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 2,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden',
-                                  }}
-                                >
-                                  {result.object_store_url}
-                                </div>
-                              </div>
+                            {result.signedUrl ? (
+                              <AudioPlayerFromUrl
+                                signedUrl={result.signedUrl}
+                                isPlaying={playingResultId === result.id}
+                                onPlayToggle={() => setPlayingResultId(playingResultId === result.id ? null : result.id)}
+                                sampleLabel={`Sample ${idx + 1}`}
+                                durationSeconds={result.duration_seconds}
+                                sizeBytes={result.size_bytes}
+                              />
                             ) : (
-                              <span style={{ color: colors.text.secondary }}>-</span>
+                              <span className="text-xs" style={{ color: colors.text.secondary }}>
+                                {result.status === 'SUCCESS' ? 'No audio available' : '-'}
+                              </span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-sm align-top">

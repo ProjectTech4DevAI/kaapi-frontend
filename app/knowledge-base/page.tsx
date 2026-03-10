@@ -429,6 +429,7 @@ export default function KnowledgeBasePage() {
           const jobData = result.data || result;
           const status = jobData.status || null;
           const realCollectionId = jobData.collection?.id || jobData.collection_id || null;
+          const knowledgeBaseId = jobData.collection?.knowledge_base_id || null;
 
           if (status) {
             // Always update status in UI (including in_progress/pending states)
@@ -436,14 +437,14 @@ export default function KnowledgeBasePage() {
               prev.map((c) => {
                 // Update by collectionId OR by job_id (handles optimistic->real transition)
                 if (c.id === collectionId || c.job_id === jobId) {
-                  return { ...c, status };
+                  return { ...c, status, knowledge_base_id: knowledgeBaseId || c.knowledge_base_id };
                 }
                 return c;
               })
             );
             setSelectedCollection((prev) => {
               if (prev?.id === collectionId || prev?.job_id === jobId) {
-                return { ...prev, status };
+                return { ...prev, status, knowledge_base_id: knowledgeBaseId || prev?.knowledge_base_id };
               }
               return prev;
             });
@@ -464,35 +465,6 @@ export default function KnowledgeBasePage() {
                 } catch (e) {
                   console.error('Failed to update cache:', e);
                 }
-
-                // If this collection is currently selected, fetch its full details to get knowledge_base_id
-                setSelectedCollection((prev) => {
-                  if (prev?.id === collectionId || prev?.job_id === jobId) {
-                    // Trigger a fetch of full collection details
-                    if (realCollectionId && currentApiKey) {
-                      fetch(`/api/collections/${realCollectionId}`, {
-                        headers: { 'X-API-KEY': currentApiKey.key },
-                      })
-                        .then(response => response.json())
-                        .then(result => {
-                          const collectionData = result.data || result;
-                          // Get cached data from localStorage
-                          const cacheData = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-                          const cached = cacheData[jobId] || {};
-                          const enrichedCollection = {
-                            ...collectionData,
-                            name: cached.name || collectionData.name || 'Untitled Collection',
-                            description: cached.description || collectionData.description || '',
-                            status: status,
-                            job_id: jobId,
-                          };
-                          setSelectedCollection(enrichedCollection);
-                        })
-                        .catch(err => console.error('Failed to fetch full collection details:', err));
-                    }
-                  }
-                  return prev;
-                });
               }
             }
           }

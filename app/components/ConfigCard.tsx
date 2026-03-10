@@ -181,7 +181,7 @@ export default function ConfigCard({
                         }}
                       >
                         <span style={{ color: colors.text.secondary, fontSize: '11px' }}>
-                          Vector Store IDs ({allVectorStoreIds.length})
+                          Knowledge Base IDs ({allVectorStoreIds.length})
                         </span>
                         <svg
                           className={`w-3 h-3 transition-transform ${showVectorStores ? 'rotate-180' : ''}`}

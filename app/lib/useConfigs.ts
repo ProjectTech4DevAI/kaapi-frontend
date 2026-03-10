@@ -455,11 +455,21 @@ async function fetchAllConfigs(apiKey: string): Promise<FetchResult> {
 // ============ UTILITY FUNCTIONS ============
 
 // Format timestamp as relative time
+// Handles UTC timestamps from the database and converts them to local time
 export const formatRelativeTime = (timestamp: string | number): string => {
   const now = Date.now();
-  const date = typeof timestamp === 'string'
-    ? new Date(timestamp).getTime()
-    : timestamp;
+
+  let date: number;
+  if (typeof timestamp === 'string') {
+    // If timestamp doesn't include timezone info, assume it's UTC
+    // and append 'Z' to ensure it's interpreted as UTC
+    const utcTimestamp = timestamp.endsWith('Z') || timestamp.includes('+') || timestamp.includes('T') && timestamp.split('T')[1].includes('-')
+      ? timestamp
+      : timestamp + 'Z';
+    date = new Date(utcTimestamp).getTime();
+  } else {
+    date = timestamp;
+  }
 
   const diff = now - date;
   const minutes = Math.floor(diff / 60000);

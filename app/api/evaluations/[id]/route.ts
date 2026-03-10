@@ -53,11 +53,12 @@ export async function GET(
 
     const searchParams = request.nextUrl.searchParams;
     const exportFormat = searchParams.get('export_format') || 'row';
+    const resyncScore = searchParams.get('resync_score') || 'false';
 
     // Build URL with query parameters
     const url = new URL(`${backendUrl}/api/v1/evaluations/${id}`);
     url.searchParams.set('get_trace_info', 'true');
-    url.searchParams.set('resync_score', 'false');
+    url.searchParams.set('resync_score', resyncScore);
     url.searchParams.set('export_format', exportFormat);
 
     console.log(`[REAL BACKEND] Fetching evaluation ${id} from ${url.toString()}`);

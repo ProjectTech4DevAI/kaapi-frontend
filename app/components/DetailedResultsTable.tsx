@@ -5,7 +5,7 @@
  * Supports both row format (individual traces) and grouped format (multiple answers per question)
  */
 
-import { IndividualScore, TraceScore, getScoreObject, normalizeToIndividualScores, isNewScoreObject, isNewScoreObjectV2, isGroupedFormat, GroupedTraceItem } from './types';
+import { IndividualScore, TraceScore, getScoreObject, normalizeToIndividualScores, hasSummaryScores, isNewScoreObjectV2, isGroupedFormat, GroupedTraceItem } from './types';
 import { EvalJob } from './types';
 
 interface DetailedResultsTableProps {
@@ -15,7 +15,8 @@ interface DetailedResultsTableProps {
 export default function DetailedResultsTable({ job }: DetailedResultsTableProps) {
   const scoreObject = getScoreObject(job);
 
-  if (!scoreObject || (!isNewScoreObject(scoreObject) && !isNewScoreObjectV2(scoreObject))) {
+  // 1. First check: Does it have summary_scores at all?
+  if (!scoreObject || !hasSummaryScores(scoreObject)) {
     return (
       <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
         <p className="text-sm" style={{ color: '#92400e' }}>
@@ -25,19 +26,25 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
     );
   }
 
-  // Check if grouped format
-  if (isNewScoreObjectV2(scoreObject) && isGroupedFormat(scoreObject.traces)) {
-    return <GroupedResultsTable traces={scoreObject.traces as GroupedTraceItem[]} />;
+  // 2. Second check: Does it have traces? (NewScoreObjectV2)
+  if (isNewScoreObjectV2(scoreObject)) {
+    // Check if grouped format
+    if (isGroupedFormat(scoreObject.traces)) {
+      return <GroupedResultsTable traces={scoreObject.traces as GroupedTraceItem[]} />;
+    }
+    // Otherwise show row format
   }
 
-  // Normalize to IndividualScore format for backward compatibility
+  // 3. Try to normalize to IndividualScore format
+  // This handles NewScoreObjectV2 (with traces)
   const individual_scores = normalizeToIndividualScores(scoreObject);
 
+  // 4. If no individual scores available (e.g., BasicScoreObject with only summary_scores)
   if (!individual_scores || individual_scores.length === 0) {
     return (
       <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
         <p className="text-sm" style={{ color: '#92400e' }}>
-          No individual scores available
+          No individual scores available. Only summary metrics are available for this evaluation.
         </p>
       </div>
     );

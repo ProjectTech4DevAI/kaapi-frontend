@@ -20,6 +20,7 @@ export interface Collection {
   id: string;
   name?: string;
   description?: string;
+  knowledge_base_id?:string,
   inserted_at: string;
   updated_at: string;
   status?: string;
@@ -463,6 +464,35 @@ export default function KnowledgeBasePage() {
                 } catch (e) {
                   console.error('Failed to update cache:', e);
                 }
+
+                // If this collection is currently selected, fetch its full details to get knowledge_base_id
+                setSelectedCollection((prev) => {
+                  if (prev?.id === collectionId || prev?.job_id === jobId) {
+                    // Trigger a fetch of full collection details
+                    if (realCollectionId && currentApiKey) {
+                      fetch(`/api/collections/${realCollectionId}`, {
+                        headers: { 'X-API-KEY': currentApiKey.key },
+                      })
+                        .then(response => response.json())
+                        .then(result => {
+                          const collectionData = result.data || result;
+                          // Get cached data from localStorage
+                          const cacheData = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+                          const cached = cacheData[jobId] || {};
+                          const enrichedCollection = {
+                            ...collectionData,
+                            name: cached.name || collectionData.name || 'Untitled Collection',
+                            description: cached.description || collectionData.description || '',
+                            status: status,
+                            job_id: jobId,
+                          };
+                          setSelectedCollection(enrichedCollection);
+                        })
+                        .catch(err => console.error('Failed to fetch full collection details:', err));
+                    }
+                  }
+                  return prev;
+                });
               }
             }
           }
@@ -1136,6 +1166,14 @@ export default function KnowledgeBasePage() {
                   </div>
                   <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                     {(selectedCollection.status || 'N/A').replace(/_/g, ' ').toUpperCase()}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs uppercase font-semibold" style={{ color: colors.text.secondary }}>
+                    Knowledge Base ID:
+                  </div>
+                  <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                    {selectedCollection.knowledge_base_id || 'N/A'}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

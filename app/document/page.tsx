@@ -90,8 +90,13 @@ export default function DocumentPage() {
         file_size: fileSizeMap[doc.id] || doc.file_size
       }));
 
-      console.log('Document list:', documentsWithSize); // Debug log
-      setDocuments(documentsWithSize);
+      // Sort by inserted_at in descending order (latest first)
+      const sortedDocuments = documentsWithSize.sort((a: Document, b: Document) =>
+        new Date(b.inserted_at || 0).getTime() - new Date(a.inserted_at || 0).getTime()
+      );
+
+      console.log('Document list:', sortedDocuments); // Debug log
+      setDocuments(sortedDocuments);
     } catch (err: any) {
       console.error('Failed to fetch documents:', err);
       setError(err.message || 'Failed to fetch documents');

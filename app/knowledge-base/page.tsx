@@ -272,7 +272,9 @@ export default function KnowledgeBasePage() {
           const activeOptimistic = prev.filter(
             (c) => c.id.startsWith('optimistic-') && (!c.job_id || !fetchedJobIds.has(c.job_id))
           );
-          return [...activeOptimistic, ...enrichedCollections];
+          // Sort by inserted_at in descending order (latest first)
+          const combined = [...activeOptimistic, ...enrichedCollections];
+          return combined.sort((a, b) => new Date(b.inserted_at).getTime() - new Date(a.inserted_at).getTime());
         });
 
         // If selectedCollection is optimistic and the real one just arrived, fetch full details
@@ -318,7 +320,13 @@ export default function KnowledgeBasePage() {
 
         // Handle both direct array and wrapped response
         const documentList = Array.isArray(result) ? result : (result.data || []);
-        setAvailableDocuments(documentList);
+
+        // Sort by inserted_at in descending order (latest first)
+        const sortedDocuments = documentList.sort((a: Document, b: Document) =>
+          new Date(b.inserted_at || 0).getTime() - new Date(a.inserted_at || 0).getTime()
+        );
+
+        setAvailableDocuments(sortedDocuments);
       } else {
         const error = await response.json().catch(() => ({}));
         console.error('Failed to fetch documents:', response.status, error);
@@ -455,6 +463,11 @@ export default function KnowledgeBasePage() {
                 } catch (e) {
                   console.error('Failed to update cache:', e);
                 }
+              }
+
+              // If status is successful, refresh the page
+              if (status.toLowerCase() === 'successful') {
+                window.location.reload();
               }
             }
           }

@@ -19,7 +19,7 @@ export async function GET(
 
   try {
     const response = await fetch(
-      `${backendUrl}/api/v1/collections/${collection_id}?include_docs=true`,
+      `${backendUrl}/api/v1/collections/${collection_id}?include_docs=true&include_url=true`,
       {
         headers: {
           'X-API-KEY': apiKey,

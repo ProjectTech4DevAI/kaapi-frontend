@@ -272,7 +272,9 @@ export default function KnowledgeBasePage() {
           const activeOptimistic = prev.filter(
             (c) => c.id.startsWith('optimistic-') && (!c.job_id || !fetchedJobIds.has(c.job_id))
           );
-          return [...activeOptimistic, ...enrichedCollections];
+          // Sort by inserted_at in descending order (latest first)
+          const combined = [...activeOptimistic, ...enrichedCollections];
+          return combined.sort((a, b) => new Date(b.inserted_at).getTime() - new Date(a.inserted_at).getTime());
         });
 
         // If selectedCollection is optimistic and the real one just arrived, fetch full details
@@ -318,7 +320,13 @@ export default function KnowledgeBasePage() {
 
         // Handle both direct array and wrapped response
         const documentList = Array.isArray(result) ? result : (result.data || []);
-        setAvailableDocuments(documentList);
+
+        // Sort by inserted_at in descending order (latest first)
+        const sortedDocuments = documentList.sort((a: Document, b: Document) =>
+          new Date(b.inserted_at || 0).getTime() - new Date(a.inserted_at || 0).getTime()
+        );
+
+        setAvailableDocuments(sortedDocuments);
       } else {
         const error = await response.json().catch(() => ({}));
         console.error('Failed to fetch documents:', response.status, error);
@@ -1157,9 +1165,30 @@ export default function KnowledgeBasePage() {
                 </h3>
                 {selectedCollection.documents && selectedCollection.documents.length > 0 && (
                   <button
-                    onClick={() => {
-                      setPreviewDoc(selectedCollection.documents![0]);
+                    onClick={async () => {
                       setShowDocPreviewModal(true);
+                      // Fetch the first document with signed_url
+                      const firstDoc = selectedCollection.documents![0];
+                      setPreviewDoc(firstDoc);
+
+                      if (apiKey) {
+                        try {
+                          const response = await fetch(`/api/document/${firstDoc.id}`, {
+                            method: 'GET',
+                            headers: {
+                              'X-API-KEY': apiKey.key,
+                            },
+                          });
+
+                          if (response.ok) {
+                            const data = await response.json();
+                            const documentDetails = data.data || data;
+                            setPreviewDoc(documentDetails);
+                          }
+                        } catch (err) {
+                          console.error('Failed to fetch document details for preview:', err);
+                        }
+                      }
                     }}
                     className="text-xs px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
                     style={{
@@ -1429,7 +1458,29 @@ export default function KnowledgeBasePage() {
                 {selectedCollection.documents.map((doc) => (
                   <button
                     key={doc.id}
-                    onClick={() => setPreviewDoc(doc)}
+                    onClick={async () => {
+                      setPreviewDoc(doc);
+
+                      // Fetch the document with signed_url
+                      if (apiKey) {
+                        try {
+                          const response = await fetch(`/api/document/${doc.id}`, {
+                            method: 'GET',
+                            headers: {
+                              'X-API-KEY': apiKey.key,
+                            },
+                          });
+
+                          if (response.ok) {
+                            const data = await response.json();
+                            const documentDetails = data.data || data;
+                            setPreviewDoc(documentDetails);
+                          }
+                        } catch (err) {
+                          console.error('Failed to fetch document details for preview:', err);
+                        }
+                      }
+                    }}
                     className="text-left px-4 py-3 flex-shrink-0 transition-colors"
                     style={{
                       backgroundColor: previewDoc?.id === doc.id ? colors.bg.secondary : 'transparent',

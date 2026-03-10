@@ -23,6 +23,7 @@ import HistorySidebar from '@/app/components/prompt-editor/HistorySidebar';
 import PromptEditorPane from '@/app/components/prompt-editor/PromptEditorPane';
 import ConfigEditorPane from '@/app/components/prompt-editor/ConfigEditorPane';
 import DiffView from '@/app/components/prompt-editor/DiffView';
+import ValidatorListPane, { Validator } from '@/app/components/prompt-editor/ValidatorListPane';
 import { useToast } from '@/app/components/Toast';
 import Loader from '@/app/components/Loader';
 import { useConfigs, invalidateConfigCache, SavedConfig } from '@/app/lib/useConfigs';
@@ -82,6 +83,11 @@ function PromptEditorContent() {
   // History viewing state
   const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(null);
   const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
+
+  // Guardrails state
+  const [isGuardrailsMode, setIsGuardrailsMode] = useState<boolean>(false);
+  const [selectedValidator, setSelectedValidator] = useState<string | null>(null);
+  const [savedValidators, setSavedValidators] = useState<Validator[]>([]);
 
   // Get API key from localStorage
   const getApiKey = (): string | null => {
@@ -359,6 +365,30 @@ function PromptEditorContent() {
     setTools(config.tools || []);
   };
 
+  // Guardrails handlers
+  const handleEnterGuardrailsMode = () => {
+    setIsGuardrailsMode(true);
+    setSelectedValidator(null);
+  };
+
+  const handleExitGuardrailsMode = () => {
+    setIsGuardrailsMode(false);
+    setSelectedValidator(null);
+  };
+
+  const handleSelectValidator = (validatorId: string) => {
+    setSelectedValidator(validatorId);
+  };
+
+  const handleSaveValidator = (validator: Validator) => {
+    setSavedValidators([...savedValidators, validator]);
+    setSelectedValidator(null);
+  };
+
+  const handleRemoveValidator = (index: number) => {
+    setSavedValidators(savedValidators.filter((_, i) => i !== index));
+  };
+
 
   return (
     <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
@@ -414,8 +444,9 @@ function PromptEditorContent() {
               />
             ) : (
               <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Split View: Prompt (left) + Config (right) */}
+                {/* Split View: Prompt (left) + Config (right) OR Validators (left) + Config (right) */}
                 <div className="flex flex-1 overflow-hidden">
+                  {/* Left Panel - Conditionally render Prompt Editor or Validator List */}
                   <div
                     className="flex"
                     style={{
@@ -423,12 +454,20 @@ function PromptEditorContent() {
                       transition: 'flex 0.2s ease-in-out',
                     }}
                   >
-                    <PromptEditorPane
-                      currentContent={currentContent}
-                      onContentChange={setCurrentContent}
-                      currentBranch={currentConfigName || 'Unsaved'}
-                    />
+                    {isGuardrailsMode ? (
+                      <ValidatorListPane
+                        selectedValidator={selectedValidator}
+                        onSelectValidator={handleSelectValidator}
+                      />
+                    ) : (
+                      <PromptEditorPane
+                        currentContent={currentContent}
+                        onContentChange={setCurrentContent}
+                        currentBranch={currentConfigName || 'Unsaved'}
+                      />
+                    )}
                   </div>
+                  {/* Right Panel - Config Editor */}
                   <ConfigEditorPane
                     configBlob={currentConfigBlob}
                     onConfigChange={setCurrentConfigBlob}
@@ -443,6 +482,13 @@ function PromptEditorContent() {
                     isSaving={isSaving}
                     collapsed={!showConfigPane}
                     onToggle={() => setShowConfigPane(!showConfigPane)}
+                    isGuardrailsMode={isGuardrailsMode}
+                    onEnterGuardrailsMode={handleEnterGuardrailsMode}
+                    onExitGuardrailsMode={handleExitGuardrailsMode}
+                    selectedValidator={selectedValidator}
+                    savedValidators={savedValidators}
+                    onSaveValidator={handleSaveValidator}
+                    onRemoveValidator={handleRemoveValidator}
                   />
                 </div>
               </div>

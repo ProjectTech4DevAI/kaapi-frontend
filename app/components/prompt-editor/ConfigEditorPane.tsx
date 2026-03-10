@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 import { ConfigBlob, Tool } from '@/app/configurations/prompt-editor/types';
 import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { Validator, AVAILABLE_VALIDATORS } from './ValidatorListPane';
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -19,6 +20,14 @@ interface ConfigEditorPaneProps {
   // Collapse functionality
   collapsed?: boolean;
   onToggle?: () => void;
+  // Guardrails mode
+  isGuardrailsMode?: boolean;
+  onEnterGuardrailsMode?: () => void;
+  onExitGuardrailsMode?: () => void;
+  selectedValidator?: string | null;
+  savedValidators?: Validator[];
+  onSaveValidator?: (validator: Validator) => void;
+  onRemoveValidator?: (index: number) => void;
 }
 
 // Group configs by name for nested dropdown
@@ -64,9 +73,17 @@ export default function ConfigEditorPane({
   isSaving = false,
   collapsed = false,
   onToggle,
+  isGuardrailsMode = false,
+  onEnterGuardrailsMode,
+  onExitGuardrailsMode,
+  selectedValidator = null,
+  savedValidators = [],
+  onSaveValidator,
+  onRemoveValidator,
 }: ConfigEditorPaneProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState<number | null>(null);
+  const [validatorConfig, setValidatorConfig] = useState<any>({});
 
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
@@ -272,7 +289,7 @@ export default function ConfigEditorPane({
       )}
 
       {/* Content - hidden when collapsed */}
-      {!collapsed && (
+      {!collapsed && !isGuardrailsMode && (
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-4">
           {/* Load Saved Config - Nested dropdown matching Evaluations page pattern */}
@@ -727,6 +744,23 @@ export default function ConfigEditorPane({
             />
           </div>
 
+          {/* Add Guardrails Button */}
+          <button
+            onClick={onEnterGuardrailsMode}
+            className="w-full px-4 py-2 rounded-md text-sm font-semibold"
+            style={{
+              backgroundColor: colors.bg.primary,
+              color: colors.text.primary,
+              border: `1px solid ${colors.border}`,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+          >
+            Add Guardrails
+          </button>
+
           {/* Save Button */}
           <button
             onClick={onSave}
@@ -744,6 +778,147 @@ export default function ConfigEditorPane({
           </button>
         </div>
       </div>
+      )}
+
+      {/* Guardrails Mode - Configuration Panel Only */}
+      {!collapsed && isGuardrailsMode && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-auto p-4">
+            {/* Validator Configuration Form */}
+            {selectedValidator && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold mb-3" style={{ color: colors.text.primary }}>
+                  Configure {AVAILABLE_VALIDATORS.find(v => v.id === selectedValidator)?.name}
+                </h3>
+                <div
+                  className="p-4 rounded-lg space-y-3"
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    backgroundColor: colors.bg.secondary,
+                  }}
+                >
+                  <div>
+                    <label className="flex items-center gap-2 text-sm" style={{ color: colors.text.primary }}>
+                      <input
+                        type="checkbox"
+                        checked={validatorConfig.enabled || false}
+                        onChange={(e) => setValidatorConfig({ ...validatorConfig, enabled: e.target.checked })}
+                        style={{ accentColor: colors.accent.primary }}
+                      />
+                      Enabled
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-2" style={{ color: colors.text.primary }}>
+                      Threshold: {validatorConfig.threshold || 0.8}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={validatorConfig.threshold || 0.8}
+                      onChange={(e) => setValidatorConfig({ ...validatorConfig, threshold: parseFloat(e.target.value) })}
+                      className="w-full"
+                      style={{ accentColor: colors.accent.primary }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      const validator = AVAILABLE_VALIDATORS.find(v => v.id === selectedValidator);
+                      if (validator && onSaveValidator) {
+                        onSaveValidator({ ...validator, config: validatorConfig });
+                        setValidatorConfig({});
+                      }
+                    }}
+                    className="w-full px-4 py-2 rounded-md text-sm font-semibold"
+                    style={{
+                      backgroundColor: colors.status.success,
+                      color: '#ffffff',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Save Validator
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Saved Validators */}
+            {savedValidators.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-3" style={{ color: colors.text.primary }}>
+                  Configured Validators ({savedValidators.length})
+                </h3>
+                <div className="space-y-2">
+                  {savedValidators.map((validator, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-lg"
+                      style={{
+                        border: `1px solid ${colors.border}`,
+                        backgroundColor: colors.bg.primary,
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-2">
+                          <div>
+                            <div className="font-semibold text-sm" style={{ color: colors.text.primary }}>
+                              {validator.name}
+                            </div>
+                            <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                              Threshold: {validator.config?.threshold || 0.8} • {validator.config?.enabled ? 'Enabled' : 'Disabled'}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onRemoveValidator && onRemoveValidator(idx)}
+                          className="text-xs"
+                          style={{
+                            color: colors.status.error,
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Back Button */}
+          <div
+            className="p-4 border-t"
+            style={{ borderColor: colors.border }}
+          >
+            <button
+              onClick={() => {
+                if (onExitGuardrailsMode) {
+                  onExitGuardrailsMode();
+                  setValidatorConfig({});
+                }
+              }}
+              className="w-full px-4 py-2 rounded-md text-sm font-semibold"
+              style={{
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+                border: `1px solid ${colors.border}`,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+            >
+              ← Back to Main Config
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

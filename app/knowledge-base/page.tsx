@@ -464,11 +464,6 @@ export default function KnowledgeBasePage() {
                   console.error('Failed to update cache:', e);
                 }
               }
-
-              // If status is successful, refresh the page
-              if (status.toLowerCase() === 'successful') {
-                window.location.reload();
-              }
             }
           }
         } catch (error) {
@@ -1170,9 +1165,30 @@ export default function KnowledgeBasePage() {
                 </h3>
                 {selectedCollection.documents && selectedCollection.documents.length > 0 && (
                   <button
-                    onClick={() => {
-                      setPreviewDoc(selectedCollection.documents![0]);
+                    onClick={async () => {
                       setShowDocPreviewModal(true);
+                      // Fetch the first document with signed_url
+                      const firstDoc = selectedCollection.documents![0];
+                      setPreviewDoc(firstDoc);
+
+                      if (apiKey) {
+                        try {
+                          const response = await fetch(`/api/document/${firstDoc.id}`, {
+                            method: 'GET',
+                            headers: {
+                              'X-API-KEY': apiKey.key,
+                            },
+                          });
+
+                          if (response.ok) {
+                            const data = await response.json();
+                            const documentDetails = data.data || data;
+                            setPreviewDoc(documentDetails);
+                          }
+                        } catch (err) {
+                          console.error('Failed to fetch document details for preview:', err);
+                        }
+                      }
                     }}
                     className="text-xs px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
                     style={{
@@ -1442,7 +1458,29 @@ export default function KnowledgeBasePage() {
                 {selectedCollection.documents.map((doc) => (
                   <button
                     key={doc.id}
-                    onClick={() => setPreviewDoc(doc)}
+                    onClick={async () => {
+                      setPreviewDoc(doc);
+
+                      // Fetch the document with signed_url
+                      if (apiKey) {
+                        try {
+                          const response = await fetch(`/api/document/${doc.id}`, {
+                            method: 'GET',
+                            headers: {
+                              'X-API-KEY': apiKey.key,
+                            },
+                          });
+
+                          if (response.ok) {
+                            const data = await response.json();
+                            const documentDetails = data.data || data;
+                            setPreviewDoc(documentDetails);
+                          }
+                        } catch (err) {
+                          console.error('Failed to fetch document details for preview:', err);
+                        }
+                      }
+                    }}
                     className="text-left px-4 py-3 flex-shrink-0 transition-colors"
                     style={{
                       backgroundColor: previewDoc?.id === doc.id ? colors.bg.secondary : 'transparent',

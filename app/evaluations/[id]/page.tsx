@@ -396,6 +396,7 @@ export default function EvaluationReport() {
       // If no traces in new data, show modal and don't update
       if (!hasTraces) {
         setShowNoTracesModal(true);
+        setIsResyncing(false);
         return;
       }
 

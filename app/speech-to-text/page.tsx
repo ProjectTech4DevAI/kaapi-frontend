@@ -1024,6 +1024,15 @@ function DatasetsTab({
   apiKeys,
   languages,
 }: DatasetsTabProps) {
+  const [showLanguageInfo, setShowLanguageInfo] = useState(false);
+
+  useEffect(() => {
+    if (!showLanguageInfo) return;
+    const handleClick = () => setShowLanguageInfo(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [showLanguageInfo]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex-1 overflow-auto p-6">
@@ -1077,14 +1086,37 @@ function DatasetsTab({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Language *
+                <label className="text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                  <span className="inline-flex items-center gap-1 relative">
+                    Language *
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                      style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowLanguageInfo(!showLanguageInfo); }}
+                    >
+                      i
+                    </span>
+                    {showLanguageInfo && (
+                      <div
+                        className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs p-3"
+                        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
+                        <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
+                          This is the default language applied to all samples in the dataset. You can override the language for individual samples in the audio files section below.
+                        </p>
+                      </div>
+                    )}
+                  </span>
                 </label>
                 <select
                   value={datasetLanguageId}
                   onChange={e => {
                     const newId = Number(e.target.value);
                     setDatasetLanguageId(newId);
+                    // Update all existing audio files to the new dataset language
+                    setAudioFiles(prev => prev.map(f => ({ ...f, languageId: newId })));
                   }}
                   className="w-full px-3 py-2 border rounded-md text-sm"
                   style={{
@@ -1445,11 +1477,11 @@ function EvaluationsTab({
     });
   };
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean, comment?: string) => {
+  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string) => {
     if (apiKeys.length === 0) return;
 
     try {
-      const payload: { is_correct?: boolean; comment?: string } = {};
+      const payload: { is_correct?: boolean | null; comment?: string } = {};
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
 
@@ -1466,7 +1498,7 @@ function EvaluationsTab({
 
       // Update local state
       setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, ...(isCorrect !== undefined && { is_correct: isCorrect }), ...(comment !== undefined && { comment }) } : r
+        r.id === resultId ? { ...r, ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}), ...(comment !== undefined && { comment }) } : r
       ));
 
       //   toast.success('Feedback updated successfully');
@@ -1796,8 +1828,9 @@ function EvaluationsTab({
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">
-                          {result.groundTruth && result.transcription ? (() => {
-                            const segments = computeWordDiff(result.groundTruth, result.transcription);
+                          {(() => {
+                            const hasBoth = result.groundTruth && result.transcription;
+                            const segments = hasBoth ? computeWordDiff(result.groundTruth, result.transcription) : [];
                             const isExpanded = expandedTranscriptions.has(result.id);
                             return (
                               <div>
@@ -1825,7 +1858,7 @@ function EvaluationsTab({
                                         } : {}),
                                       }}
                                     >
-                                      {segments.map((seg, idx) => {
+                                      {hasBoth ? segments.map((seg, idx) => {
                                         if (seg.type === 'insertion') return null;
                                         const word = seg.reference || '';
                                         return (
@@ -1847,7 +1880,9 @@ function EvaluationsTab({
                                             {' '}
                                           </span>
                                         );
-                                      })}
+                                      }) : (
+                                        <span style={{ color: colors.text.secondary }}>{result.groundTruth || '-'}</span>
+                                      )}
                                     </div>
                                   </div>
                                   {/* Right Panel - Transcription */}
@@ -1870,7 +1905,7 @@ function EvaluationsTab({
                                         } : {}),
                                       }}
                                     >
-                                      {segments.map((seg, idx) => {
+                                      {hasBoth ? segments.map((seg, idx) => {
                                         if (seg.type === 'deletion') {
                                           return (
                                             <span key={idx}>
@@ -1910,11 +1945,13 @@ function EvaluationsTab({
                                             {' '}
                                           </span>
                                         );
-                                      })}
+                                      }) : (
+                                        <span style={{ color: colors.text.secondary }}>{result.transcription || '-'}</span>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
-                                {(result.groundTruth.length > 100 || result.transcription.length > 100) && (
+                                {hasBoth && (result.groundTruth!.length > 100 || result.transcription!.length > 100) && (
                                   <button
                                     onClick={() => toggleTranscription(result.id)}
                                     className="text-xs mt-1.5"
@@ -1925,12 +1962,7 @@ function EvaluationsTab({
                                 )}
                               </div>
                             );
-                          })() : (
-                            <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: colors.text.secondary }}>
-                              <div>{result.groundTruth || '-'}</div>
-                              <div>{result.transcription || '-'}</div>
-                            </div>
-                          )}
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-xs align-top">
                           {result.score ? (
@@ -1964,8 +1996,7 @@ function EvaluationsTab({
                             value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (value === '') return;
-                              updateFeedback(result.id, value === 'true');
+                              updateFeedback(result.id, value === '' ? null : value === 'true');
                             }}
                             className="px-3 py-1.5 border rounded text-xs font-medium"
                             style={{

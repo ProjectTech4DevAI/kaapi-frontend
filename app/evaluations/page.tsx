@@ -2,8 +2,8 @@
  * SimplifiedEval.tsx - Simplified One-Click Evaluation Flow
  *
  * Two-tab structure:
- * 1. Upload Tab: Upload QnA dataset → Run evaluation
- * 2. Results Tab: View evaluation results with metrics and detailed logs
+ * 1. Datasets Tab: Upload QnA dataset → Run evaluation
+ * 2. Evaluations Tab: View evaluation results with metrics and detailed logs
  */
 
 "use client"
@@ -24,17 +24,17 @@ import ConfigSelector from '../components/ConfigSelector';
 import { useToast } from '../components/Toast';
 import Loader, { LoaderBox } from '../components/Loader';
 
-type Tab = 'upload' | 'results';
+type Tab = 'datasets' | 'evaluations';
 
 function SimplifiedEvalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
 
-  // Initialize activeTab from URL query parameter, default to 'upload'
+  // Initialize activeTab from URL query parameter, default to 'datasets'
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get('tab');
-    return (tabParam === 'results' || tabParam === 'upload') ? tabParam as Tab : 'upload';
+    return (tabParam === 'evaluations' || tabParam === 'datasets') ? tabParam as Tab : 'datasets';
   });
 
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -266,9 +266,9 @@ function SimplifiedEvalContent() {
       // Extract the evaluation ID from response (could be data.id or data.data.id or data.eval_id)
       const evalId = data.id || data.data?.id || data.eval_id || 'unknown';
 
-      // Redirect to results tab to view evaluation status
+      // Redirect to evaluations tab to view evaluation status
       setIsEvaluating(false);
-      setActiveTab('results');
+      setActiveTab('evaluations');
 
       // Show success message
       toast.success(`Evaluation job created successfully! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
@@ -341,8 +341,8 @@ function SimplifiedEvalContent() {
           {/* Tab Navigation */}
           <TabNavigation
             tabs={[
-              { id: 'upload', label: 'Datasets' },
-              { id: 'results', label: 'Evaluations' }
+              { id: 'datasets', label: 'Datasets' },
+              { id: 'evaluations', label: 'Evaluations' }
             ]}
             activeTab={activeTab}
             onTabChange={(tabId) => setActiveTab(tabId as Tab)}
@@ -351,8 +351,8 @@ function SimplifiedEvalContent() {
           {/* Tab Content */}
           <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: '#fafafa' }}>
             <div className="max-w-7xl mx-auto space-y-6 page-transition">
-              {activeTab === 'upload' ? (
-                <UploadTab
+              {activeTab === 'datasets' ? (
+                <DatasetsTab
                   isEvaluating={isEvaluating}
                   apiKeys={apiKeys}
                   selectedKeyId={selectedKeyId}
@@ -372,7 +372,7 @@ function SimplifiedEvalContent() {
                   }}
                 />
               ) : (
-                <ResultsTab apiKeys={apiKeys} selectedKeyId={selectedKeyId} />
+                <EvaluationsTab apiKeys={apiKeys} selectedKeyId={selectedKeyId} />
               )}
             </div>
           </div>
@@ -402,8 +402,8 @@ function SimplifiedEvalContent() {
   );
 }
 
-// ============ UPLOAD TAB COMPONENT ============
-interface UploadTabProps {
+// ============ DATASETS TAB COMPONENT ============
+interface DatasetsTabProps {
   isEvaluating: boolean;
   apiKeys: APIKey[];
   selectedKeyId: string;
@@ -420,7 +420,7 @@ interface UploadTabProps {
   onConfigSelect: (configId: string, configVersion: number) => void;
 }
 
-function UploadTab({
+function DatasetsTab({
   isEvaluating,
   apiKeys,
   selectedKeyId,
@@ -435,7 +435,7 @@ function UploadTab({
   onExperimentNameChange,
   onRunEvaluation,
   onConfigSelect,
-}: UploadTabProps) {
+}: DatasetsTabProps) {
   const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
   const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
 
@@ -480,8 +480,8 @@ function UploadTab({
                   <li>Select a stored dataset or upload a new CSV file (format: question,answer columns)</li>
                   <li>Configure evaluation settings (experiment name required, other fields optional)</li>
                   <li>Click <blockquote>Run Evaluation </blockquote> to start the evaluation process</li>
-                  <li>Wait for processing to complete (automatic redirect to results)</li>
-                  <li>View detailed results and metrics in the Results tab</li>
+                  <li>Wait for processing to complete (automatic redirect to evaluations tab)</li>
+                  <li>View detailed results and metrics in the Evaluations tab</li>
                 </ol>
               </div>
             )}
@@ -827,13 +827,13 @@ function UploadTab({
 // ============ TYPES ============
 // Types are now imported from '../components/types'
 
-// ============ RESULTS TAB COMPONENT ============
-interface ResultsTabProps {
+// ============ EVALUATIONS TAB COMPONENT ============
+interface EvaluationsTabProps {
   apiKeys: APIKey[];
   selectedKeyId: string;
 }
 
-function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
+function EvaluationsTab({ apiKeys, selectedKeyId }: EvaluationsTabProps) {
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -875,7 +875,7 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
 
       // Debug logging for score visibility
       if (jobs.length > 0) {
-        console.log('[ResultsTab] Sample job data:', {
+        console.log('[EvaluationsTab] Sample job data:', {
           id: jobs[0].id,
           run_name: jobs[0].run_name,
           hasScore: !!jobs[0].score,
@@ -1014,7 +1014,7 @@ function ResultsTab({ apiKeys, selectedKeyId }: ResultsTabProps) {
           borderColor: '#e5e5e5',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
         }}>
-          <p style={{ color: '#737373' }}>No evaluation jobs found. Create one from the Upload tab!</p>
+          <p style={{ color: '#737373' }}>No evaluation jobs found. Create one from the Datasets tab!</p>
         </div>
       )}
 

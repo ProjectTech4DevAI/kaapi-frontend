@@ -212,10 +212,10 @@ export default function DiffView({
                         <div className="text-sm space-y-2">
                           {selectedCommit.tools.map((tool, idx) => (
                             <div key={idx} className="p-2 rounded" style={{ backgroundColor: colors.bg.secondary }}>
-                              <div className="text-xs font-semibold">{tool.type}</div>
+                              <div className="text-xs font-semibold" style={{ color: colors.text.secondary }}>{tool.type}</div>
                               {tool.knowledge_base_ids && (
                                 <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                                  Vector Store: {tool.knowledge_base_ids[0]}
+                                  Knowledge Base: {tool.knowledge_base_ids[0]}
                                 </div>
                               )}
                             </div>

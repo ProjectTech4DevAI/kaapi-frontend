@@ -5,7 +5,7 @@
 
 "use client"
 import React from 'react';
-import { ScoreObject, isNewScoreObject, isNewScoreObjectV2 } from './types';
+import { ScoreObject, hasSummaryScores } from './types';
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;
@@ -36,10 +36,8 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
     );
   }
 
-  // Handle new score format (V1 or V2) - show summary scores
-  const isNewFormat = isNewScoreObject(score) || isNewScoreObjectV2(score);
-
-  if (isNewFormat && 'summary_scores' in score) {
+  // Handle score format with summary_scores (V1, V2, or Basic)
+  if (hasSummaryScores(score)) {
     const summaryScores = score.summary_scores || [];
 
     if (summaryScores.length === 0) {
@@ -81,33 +79,32 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
       );
     }
 
-    // Display numeric scores in a compact format
+    // Display each numeric score in its own box
     return (
-      <div className="inline-flex items-center gap-3 flex-wrap">
-        {numericScores.map((summary) => (
-          <div
-            key={summary.name}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
-            style={{
-              backgroundColor: 'hsl(0, 0%, 98%)',
-              borderWidth: '1px',
-              borderColor: 'hsl(0, 0%, 85%)',
-              color: 'hsl(330, 3%, 19%)'
-            }}
-          >
-            <span className="font-medium text-xs" style={{ color: 'hsl(330, 3%, 49%)' }}>
-              {summary.name}:
-            </span>
-            <span className="font-semibold">
-              {summary.avg !== undefined ? summary.avg.toFixed(2) : 'N/A'}
-            </span>
-            {summary.std !== undefined && (
-              <span className="text-xs" style={{ color: 'hsl(330, 3%, 49%)' }}>
-                ±{summary.std.toFixed(2)}
-              </span>
-            )}
-          </div>
-        ))}
+      <div className="inline-flex items-center gap-3">
+        {numericScores.map((summary, idx) => {
+          const value = summary.avg !== undefined ? summary.avg.toFixed(2) : 'N/A';
+          const std = summary.std !== undefined ? summary.std.toFixed(2) : null;
+
+          return (
+            <div
+              key={idx}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm"
+              style={{
+                backgroundColor: '#ffffff',
+                borderWidth: '1px',
+                borderColor: '#e5e5e5',
+                color: '#737373'
+              }}
+            >
+              <span>{summary.name}:</span>
+              <span className="font-bold" style={{ color: '#171717' }}>{value}</span>
+              {std !== null && (
+                <span>±{std}</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }

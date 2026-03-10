@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { APIKey, STORAGE_KEY } from '../../keystore/page';
-import { EvalJob, AssistantConfig, isNewScoreObject, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores, GroupedTraceItem, isGroupedFormat } from '../../components/types';
+import { EvalJob, AssistantConfig, hasSummaryScores, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores, GroupedTraceItem, isGroupedFormat } from '../../components/types';
 import { formatDate, getStatusColor } from '../../components/utils';
 import ConfigModal from '../../components/ConfigModal';
 import Sidebar from '../../components/Sidebar';
@@ -42,7 +42,8 @@ export default function EvaluationReport() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [configVersionInfo, setConfigVersionInfo] = useState<ConfigVersionInfo | null>(null);
   const [exportFormat, setExportFormat] = useState<'row' | 'grouped'>('row');
-  
+  const [isResyncing, setIsResyncing] = useState(false);
+  const [showNoTracesModal, setShowNoTracesModal] = useState(false);
 
   // Load API keys from localStorage
   useEffect(() => {
@@ -253,7 +254,7 @@ export default function EvaluationReport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.info(`Grouped CSV exported with ${traces.length} questions`);
+      toast.success(`Grouped CSV exported with ${traces.length} questions`);
     } catch (error) {
       console.error('Error exporting grouped CSV:', error);
       toast.error('Failed to export grouped CSV');
@@ -319,7 +320,7 @@ export default function EvaluationReport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.info(`CSV exported successfully with ${rowCount} rows`);
+      toast.success(`CSV exported successfully with ${rowCount} rows`);
     } catch (error) {
       console.error('Error exporting row CSV:', error);
       toast.error('Failed to export CSV');
@@ -358,6 +359,68 @@ export default function EvaluationReport() {
     }
   };
 
+  // Resync metrics from backend
+  const handleResync = async () => {
+    if (!selectedKeyId || !jobId) return;
+
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) return;
+
+    setIsResyncing(true);
+
+    try {
+      // Fetch with resync_score=true to trigger backend resync
+      const response = await fetch(`/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`, {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': selectedKey.key,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || `Failed to resync: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const foundJob = data.data || data;
+
+      if (!foundJob) {
+        throw new Error('Evaluation job not found');
+      }
+
+      // Check if the new data has traces
+      const newScoreObject = getScoreObject(foundJob);
+      const hasTraces = newScoreObject && isNewScoreObjectV2(newScoreObject);
+
+      // If no traces in new data, show modal and don't update
+      if (!hasTraces) {
+        setShowNoTracesModal(true);
+        setIsResyncing(false);
+        return;
+      }
+
+      setJob(foundJob);
+
+      // Fetch assistant config if assistant_id exists
+      if (foundJob.assistant_id) {
+        fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
+      }
+
+      // Fetch config info if config_id exists
+      if (foundJob.config_id && foundJob.config_version) {
+        fetchConfigInfo(foundJob.config_id, foundJob.config_version, selectedKey.key);
+      }
+
+      toast.success('Metrics resynced successfully');
+    } catch (error: any) {
+      console.error('Resync error:', error);
+      toast.error(`Failed to resync metrics: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsResyncing(false);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -383,7 +446,7 @@ export default function EvaluationReport() {
                 {error || 'Evaluation job not found'}
               </p>
               <button
-                onClick={() => router.push('/evaluations?tab=results')}
+                onClick={() => router.push('/evaluations?tab=evaluations')}
                 className="px-4 py-2 rounded-md text-sm font-medium"
                 style={{
                   backgroundColor: '#171717',
@@ -406,11 +469,11 @@ export default function EvaluationReport() {
   const hasScore = !!scoreObject;
   const statusColors = getStatusColor(job.status);
 
-  // Check if we have new score structure (V1 or V2)
-  const isNewFormat = isNewScoreObject(scoreObject) || isNewScoreObjectV2(scoreObject);
+  // Check if we have new score structure (V1, V2, or Basic)
+  const isNewFormat = hasSummaryScores(scoreObject);
 
   // Safe access to summary scores
-  const summaryScores = (isNewFormat && scoreObject && 'summary_scores' in scoreObject)
+  const summaryScores = (isNewFormat && scoreObject)
     ? scoreObject.summary_scores || []
     : [];
 
@@ -463,7 +526,7 @@ export default function EvaluationReport() {
 
               {/* Back Button */}
               <button
-                onClick={() => router.push('/evaluations?tab=results')}
+                onClick={() => router.push('/evaluations?tab=evaluations')}
                 className="p-2 rounded-md transition-colors flex items-center gap-2"
                 style={{
                   borderWidth: '1px',
@@ -487,7 +550,7 @@ export default function EvaluationReport() {
                     d="M15 19l-7-7 7-7"
                   />
                 </svg>
-                <span className="text-sm font-medium">Back to Results</span>
+                <span className="text-sm font-medium">Back to Evaluations</span>
               </button>
 
               <div className="flex-1">
@@ -512,6 +575,16 @@ export default function EvaluationReport() {
                               {configVersionInfo.provider}/{configVersionInfo.model}
                             </span>
                           )}
+                          {configVersionInfo.tools && configVersionInfo.tools.length > 0 && (() => {
+                            const knowledgeBaseIds = configVersionInfo.tools
+                              .filter(tool => Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0)
+                              .flatMap(tool => tool.knowledge_base_ids);
+                            return knowledgeBaseIds.length > 0 ? (
+                              <span className="text-[10px]" style={{ color: '#0369a1', opacity: 0.8 }}>
+                                KB: {knowledgeBaseIds.join(', ')}
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
                       </div>
                     </>
@@ -638,11 +711,33 @@ export default function EvaluationReport() {
               {/* Metrics Section */}
               {hasScore && isNewFormat ? (
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Metrics Overview</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Metrics Overview</h3>
+                    </div>
+                    <button
+                      onClick={handleResync}
+                      disabled={isResyncing}
+                      className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: isResyncing ? colors.bg.secondary : colors.bg.primary,
+                        borderWidth: '1px',
+                        borderColor: colors.border,
+                        color: isResyncing ? colors.text.secondary : colors.text.primary,
+                        cursor: isResyncing ? 'not-allowed' : 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isResyncing) e.currentTarget.style.backgroundColor = colors.bg.secondary;
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isResyncing) e.currentTarget.style.backgroundColor = colors.bg.primary;
+                      }}
+                    >
+                      {isResyncing ? 'Resyncing...' : 'Resync'}
+                    </button>
                   </div>
                   <div className="border rounded-lg p-6" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
                     {summaryScores.length > 0 ? (
@@ -733,6 +828,46 @@ export default function EvaluationReport() {
         job={job}
         assistantConfig={assistantConfig}
       />
+
+      {/* No Traces Modal */}
+      {showNoTracesModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setShowNoTracesModal(false)}
+        >
+          <div
+            className="rounded-lg shadow-lg p-6 max-w-md mx-4"
+            style={{ backgroundColor: colors.bg.primary }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold mb-2" style={{ color: colors.text.primary }}>
+                No Langfuse Traces Available
+              </h3>
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                This evaluation does not have Langfuse traces.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowNoTracesModal(false)}
+                className="px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: colors.accent.primary,
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.accent.hover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.accent.primary}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

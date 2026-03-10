@@ -12,6 +12,7 @@ import Sidebar from '@/app/components/Sidebar';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
+import { computeWordDiff, DiffSegment } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
 import { formatDate } from '@/app/components/utils';
 import ErrorModal from '@/app/components/ErrorModal';
 
@@ -26,6 +27,7 @@ interface AudioFile {
   base64: string;
   mediaType: string;
   groundTruth: string;
+  languageId: number;
   fileId?: string; // Backend file ID after upload
 }
 
@@ -293,22 +295,27 @@ function AudioPlayerFromUrl({
   );
 }
 
+interface Language {
+  id: number;
+  code: string;
+  name: string;
+}
+
+const DEFAULT_LANGUAGES: Language[] = [
+  { id: 1, code: 'en', name: 'English' },
+  { id: 2, code: 'hi', name: 'Hindi' },
+];
+
 // Helper function to map language ID to language name
-const getLanguageName = (languageId: number | null): string => {
-  const languageMap: Record<number, string> = {
-    1: 'English',
-    2: 'Hindi',
-  };
-  return languageId ? languageMap[languageId] || 'Unknown' : 'N/A';
+const getLanguageName = (languageId: number | null, languages: Language[] = DEFAULT_LANGUAGES): string => {
+  const lang = languages.find(l => l.id === languageId);
+  return lang ? lang.name : languageId ? 'Unknown' : 'N/A';
 };
 
 // Helper function to map language code to language ID
-const getLanguageId = (languageCode: string): number => {
-  const languageCodeToIdMap: Record<string, number> = {
-    'en': 1, // English
-    'hi': 2, // Hindi
-  };
-  return languageCodeToIdMap[languageCode] || 1; // Default to English if not found
+const getLanguageId = (languageCode: string, languages: Language[] = DEFAULT_LANGUAGES): number => {
+  const lang = languages.find(l => l.code === languageCode);
+  return lang ? lang.id : 1;
 };
 
 // Helper function to format status
@@ -339,10 +346,13 @@ export default function SpeechToTextPage() {
   // API Keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
 
+  // Languages
+  const [languages, setLanguages] = useState<Language[]>([]);
+
   // Dataset form (Tab 1)
   const [datasetName, setDatasetName] = useState('');
   const [datasetDescription, setDatasetDescription] = useState('');
-  const [datasetLanguage, setDatasetLanguage] = useState('en');
+  const [datasetLanguageId, setDatasetLanguageId] = useState<number>(1);
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
   const [playingFileId, setPlayingFileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -381,6 +391,53 @@ export default function SpeechToTextPage() {
       }
     }
   }, []);
+
+  // Load languages
+  const loadLanguages = async () => {
+    if (apiKeys.length === 0) return;
+
+    try {
+      const response = await fetch('/api/languages', {
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
+
+      if (!response.ok) throw new Error('Failed to load languages');
+
+      const data = await response.json();
+
+      let rawList: any[] = [];
+      if (Array.isArray(data)) {
+        rawList = data;
+      } else if (data.data?.data && Array.isArray(data.data.data)) {
+        rawList = data.data.data;
+      } else if (data.data && Array.isArray(data.data)) {
+        rawList = data.data;
+      } else if (data.languages && Array.isArray(data.languages)) {
+        rawList = data.languages;
+      }
+
+      const languagesList: Language[] = rawList
+        .filter((l: any) => l.is_active !== false)
+        .map((l: any) => ({
+          id: l.id,
+          code: l.locale || l.code || '',
+          name: l.label || l.name || '',
+        }));
+
+      if (languagesList.length > 0) {
+        setLanguages(languagesList);
+        // Default dataset language to first available if not already set
+        if (languagesList[0]?.id) {
+          setDatasetLanguageId(languagesList[0].id);
+        }
+      } else {
+        setLanguages(DEFAULT_LANGUAGES);
+      }
+    } catch (error) {
+      console.error('Failed to load languages:', error);
+      setLanguages(DEFAULT_LANGUAGES);
+    }
+  };
 
   // Load datasets
   const loadDatasets = async () => {
@@ -449,6 +506,7 @@ export default function SpeechToTextPage() {
   };
 
   useEffect(() => {
+    loadLanguages();
     loadDatasets();
     if (activeTab === 'evaluations') {
       loadRuns();
@@ -513,6 +571,7 @@ export default function SpeechToTextPage() {
           base64,
           mediaType: file.type || 'audio/mpeg',
           groundTruth: '',
+          languageId: datasetLanguageId,
           fileId: undefined,
         }]);
 
@@ -571,6 +630,12 @@ export default function SpeechToTextPage() {
     ));
   };
 
+  const updateFileLanguage = (id: string, languageId: number) => {
+    setAudioFiles(prev => prev.map(f =>
+      f.id === id ? { ...f, languageId } : f
+    ));
+  };
+
   const handleCreateDataset = async () => {
     if (!datasetName.trim()) {
       toast.error('Please enter a dataset name');
@@ -599,7 +664,16 @@ export default function SpeechToTextPage() {
       const samples = audioFiles.map(audioFile => ({
         file_id: audioFile.fileId!,
         ground_truth: audioFile.groundTruth.trim() || undefined,
+        language_id: audioFile.languageId,
       }));
+
+      const payload = {
+        name: datasetName.trim(),
+        description: datasetDescription.trim() || undefined,
+        language_id: datasetLanguageId,
+        samples: samples,
+      };
+      console.log('Create dataset payload:', JSON.stringify(payload, null, 2));
 
       const createDatasetResponse = await fetch('/api/evaluations/stt/datasets', {
         method: 'POST',
@@ -607,12 +681,7 @@ export default function SpeechToTextPage() {
           'X-API-KEY': apiKeys[0].key,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: datasetName.trim(),
-          description: datasetDescription.trim() || undefined,
-          language_id: 1,
-          samples: samples,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!createDatasetResponse.ok) {
@@ -627,7 +696,7 @@ export default function SpeechToTextPage() {
 
       setDatasetName('');
       setDatasetDescription('');
-      setDatasetLanguage('en');
+      setDatasetLanguageId(1);
       setAudioFiles([]);
 
       await loadDatasets();
@@ -681,7 +750,7 @@ export default function SpeechToTextPage() {
 
       await response.json();
 
-     // toast.success(`Evaluation "${evaluationName}" started successfully!`);
+      // toast.success(`Evaluation "${evaluationName}" started successfully!`);
       setSelectedModel('gemini-2.5-pro');
 
       setEvaluationName('');
@@ -739,7 +808,7 @@ export default function SpeechToTextPage() {
 
         // Extract sample name from sample_metadata.original_filename
         const sampleName = sample?.sample_metadata?.original_filename ||
-                          `Sample ${result.stt_sample_id}`;
+          `Sample ${result.stt_sample_id}`;
 
         // Extract ground truth
         const groundTruth = sample?.ground_truth || '';
@@ -839,8 +908,8 @@ export default function SpeechToTextPage() {
               setDatasetName={setDatasetName}
               datasetDescription={datasetDescription}
               setDatasetDescription={setDatasetDescription}
-              datasetLanguage={datasetLanguage}
-              setDatasetLanguage={setDatasetLanguage}
+              datasetLanguageId={datasetLanguageId}
+              setDatasetLanguageId={setDatasetLanguageId}
               audioFiles={audioFiles}
               setAudioFiles={setAudioFiles}
               playingFileId={playingFileId}
@@ -849,6 +918,7 @@ export default function SpeechToTextPage() {
               triggerAudioUpload={triggerAudioUpload}
               removeAudioFile={removeAudioFile}
               updateGroundTruth={updateGroundTruth}
+              updateFileLanguage={updateFileLanguage}
               formatFileSize={formatFileSize}
               isCreating={isCreating}
               handleCreateDataset={handleCreateDataset}
@@ -856,6 +926,7 @@ export default function SpeechToTextPage() {
               isLoadingDatasets={isLoadingDatasets}
               loadDatasets={loadDatasets}
               apiKeys={apiKeys}
+              languages={languages}
             />
           ) : (
             <EvaluationsTab
@@ -906,8 +977,8 @@ interface DatasetsTabProps {
   setDatasetName: (name: string) => void;
   datasetDescription: string;
   setDatasetDescription: (desc: string) => void;
-  datasetLanguage: string;
-  setDatasetLanguage: (lang: string) => void;
+  datasetLanguageId: number;
+  setDatasetLanguageId: (id: number) => void;
   audioFiles: AudioFile[];
   setAudioFiles: React.Dispatch<React.SetStateAction<AudioFile[]>>;
   playingFileId: string | null;
@@ -916,6 +987,7 @@ interface DatasetsTabProps {
   triggerAudioUpload: () => void;
   removeAudioFile: (id: string) => void;
   updateGroundTruth: (id: string, groundTruth: string) => void;
+  updateFileLanguage: (id: string, languageId: number) => void;
   formatFileSize: (bytes: number) => string;
   isCreating: boolean;
   handleCreateDataset: () => void;
@@ -923,6 +995,7 @@ interface DatasetsTabProps {
   isLoadingDatasets: boolean;
   loadDatasets: () => void;
   apiKeys: APIKey[];
+  languages: Language[];
 }
 
 function DatasetsTab({
@@ -931,8 +1004,8 @@ function DatasetsTab({
   setDatasetName,
   datasetDescription,
   setDatasetDescription,
-  datasetLanguage,
-  setDatasetLanguage,
+  datasetLanguageId,
+  setDatasetLanguageId,
   audioFiles,
   setAudioFiles,
   playingFileId,
@@ -941,6 +1014,7 @@ function DatasetsTab({
   triggerAudioUpload,
   removeAudioFile,
   updateGroundTruth,
+  updateFileLanguage,
   formatFileSize,
   isCreating,
   handleCreateDataset,
@@ -948,7 +1022,17 @@ function DatasetsTab({
   isLoadingDatasets,
   loadDatasets,
   apiKeys,
+  languages,
 }: DatasetsTabProps) {
+  const [showLanguageInfo, setShowLanguageInfo] = useState(false);
+
+  useEffect(() => {
+    if (!showLanguageInfo) return;
+    const handleClick = () => setShowLanguageInfo(false);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [showLanguageInfo]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex-1 overflow-auto p-6">
@@ -964,7 +1048,7 @@ function DatasetsTab({
             <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
               Dataset Information
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
                   Dataset Name *
@@ -999,6 +1083,52 @@ function DatasetsTab({
                     color: colors.text.primary,
                   }}
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                  <span className="inline-flex items-center gap-1 relative">
+                    Language *
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                      style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowLanguageInfo(!showLanguageInfo); }}
+                    >
+                      i
+                    </span>
+                    {showLanguageInfo && (
+                      <div
+                        className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs p-3"
+                        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
+                        <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
+                          This is the default language applied to all samples in the dataset. You can override the language for individual samples in the audio files section below.
+                        </p>
+                      </div>
+                    )}
+                  </span>
+                </label>
+                <select
+                  value={datasetLanguageId}
+                  onChange={e => {
+                    const newId = Number(e.target.value);
+                    setDatasetLanguageId(newId);
+                    // Update all existing audio files to the new dataset language
+                    setAudioFiles(prev => prev.map(f => ({ ...f, languageId: newId })));
+                  }}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                  }}
+                >
+                  {languages.map(lang => (
+                    <option key={lang.id} value={lang.id}>{lang.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -1157,26 +1287,48 @@ function DatasetsTab({
                             onPlayToggle={() => setPlayingFileId(playingFileId === audioFile.id ? null : audioFile.id)}
                           />
 
-                          <div className="mt-3">
-                            <label className="block text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
-                              Ground Truth (optional)
-                            </label>
-                            <textarea
-                              value={audioFile.groundTruth}
-                              onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
-                              placeholder={audioFile.fileId ? "Enter the expected transcription (optional)..." : "Wait for upload to complete..."}
-                              rows={2}
-                              disabled={!audioFile.fileId}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              style={{
-                                backgroundColor: audioFile.fileId ? colors.bg.primary : colors.bg.secondary,
-                                borderColor: colors.border,
-                                color: audioFile.fileId ? colors.text.primary : colors.text.secondary,
-                                resize: 'vertical',
-                                cursor: audioFile.fileId ? 'text' : 'not-allowed',
-                                opacity: audioFile.fileId ? 1 : 0.6,
-                              }}
-                            />
+                          <div className="mt-3 flex items-end gap-3">
+                            <div className="flex-shrink-0" style={{ width: '200px' }}>
+                              <label className="block text-[10px] font-semibold mb-1.5 uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                                Select Language
+                              </label>
+                              <select
+                                value={audioFile.languageId}
+                                onChange={e => updateFileLanguage(audioFile.id, Number(e.target.value))}
+                                className="w-full px-3 py-2 border rounded-md text-sm"
+                                style={{
+                                  backgroundColor: colors.bg.primary,
+                                  borderColor: colors.border,
+                                  color: colors.text.primary,
+                                  height: '38px',
+                                }}
+                              >
+                                {languages.map(lang => (
+                                  <option key={lang.id} value={lang.id}>{lang.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex-1">
+                              <label className="block text-[10px] font-semibold mb-1.5 uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                                Ground Truth (optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={audioFile.groundTruth}
+                                onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
+                                placeholder={audioFile.fileId ? "Enter the expected transcription (optional)..." : "Wait for upload to complete..."}
+                                disabled={!audioFile.fileId}
+                                className="w-full px-3 py-2 border rounded-md text-sm"
+                                style={{
+                                  backgroundColor: audioFile.fileId ? colors.bg.primary : colors.bg.secondary,
+                                  borderColor: colors.border,
+                                  color: audioFile.fileId ? colors.text.primary : colors.text.secondary,
+                                  height: '38px',
+                                  cursor: audioFile.fileId ? 'text' : 'not-allowed',
+                                  opacity: audioFile.fileId ? 1 : 0.6,
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1202,7 +1354,7 @@ function DatasetsTab({
           onClick={() => {
             setDatasetName('');
             setDatasetDescription('');
-            setDatasetLanguage('en');
+            setDatasetLanguageId(1);
             setAudioFiles([]);
             setPlayingFileId(null);
           }}
@@ -1303,7 +1455,15 @@ function EvaluationsTab({
   setActiveTab,
 }: EvaluationsTabProps) {
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
+  const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!openScoreInfo) return;
+    const handleClick = () => setOpenScoreInfo(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openScoreInfo]);
 
   const toggleTranscription = (resultId: number) => {
     setExpandedTranscriptions(prev => {
@@ -1317,11 +1477,11 @@ function EvaluationsTab({
     });
   };
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean, comment?: string) => {
+  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string) => {
     if (apiKeys.length === 0) return;
 
     try {
-      const payload: { is_correct?: boolean; comment?: string } = {};
+      const payload: { is_correct?: boolean | null; comment?: string } = {};
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
 
@@ -1338,10 +1498,10 @@ function EvaluationsTab({
 
       // Update local state
       setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, ...(isCorrect !== undefined && { is_correct: isCorrect }), ...(comment !== undefined && { comment }) } : r
+        r.id === resultId ? { ...r, ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}), ...(comment !== undefined && { comment }) } : r
       ));
 
-   //   toast.success('Feedback updated successfully');
+      //   toast.success('Feedback updated successfully');
     } catch (error) {
       console.error('Failed to update feedback:', error);
       toast.error('Failed to update feedback');
@@ -1360,66 +1520,34 @@ function EvaluationsTab({
             borderColor: colors.border,
           }}
         >
-        <div className="flex-1 overflow-auto p-4 space-y-4">
-          {/* Evaluation Name */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-              Evaluation Name *
-            </label>
-            <input
-              type="text"
-              value={evaluationName}
-              onChange={e => setEvaluationName(e.target.value)}
-              placeholder="e.g., English Podcast Evaluation v1"
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
-                color: colors.text.primary,
-              }}
-            />
-          </div>
+          <div className="flex-1 overflow-auto p-4 space-y-4">
+            {/* Evaluation Name */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                Evaluation Name *
+              </label>
+              <input
+                type="text"
+                value={evaluationName}
+                onChange={e => setEvaluationName(e.target.value)}
+                placeholder="e.g., English Podcast Evaluation v1"
+                className="w-full px-3 py-2 border rounded-md text-sm"
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  borderColor: colors.border,
+                  color: colors.text.primary,
+                }}
+              />
+            </div>
 
-          {/* Model Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-              Model *
-            </label>
-            <select
-              value={selectedModel}
-              onChange={e => setSelectedModel(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
-                color: colors.text.primary,
-              }}
-            >
-              <option value="gemini-2.0-flash-exp">gemini-2.5-pro</option>
-            </select>
-          </div>
-
-          {/* Dataset Selection */}
-          <div className="pt-2">
-            <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-              Select Dataset *
-            </label>
-            {isLoadingDatasets ? (
-              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
-              </div>
-            ) : datasets.length === 0 ? (
-              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
-                <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                  Create a dataset first in the Datasets tab
-                </p>
-              </div>
-            ) : (
+            {/* Model Selection */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                Model *
+              </label>
               <select
-                value={selectedDatasetId || ''}
-                onChange={e => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
+                value={selectedModel}
+                onChange={e => setSelectedModel(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 style={{
                   backgroundColor: colors.bg.primary,
@@ -1427,81 +1555,113 @@ function EvaluationsTab({
                   color: colors.text.primary,
                 }}
               >
-                <option value="">-- Select a dataset --</option>
-                {datasets.map(dataset => (
-                  <option key={dataset.id} value={dataset.id}>
-                    {dataset.name} ({dataset.dataset_metadata?.sample_count || 0} samples)
-                  </option>
-                ))}
+                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
               </select>
-            )}
-          </div>
+            </div>
 
-          {/* Selected Dataset Info */}
-          {selectedDataset && (
-            <div
-              className="border rounded-lg p-3"
-              style={{
-                borderColor: colors.status.success,
-                backgroundColor: 'rgba(22, 163, 74, 0.02)',
-              }}
-            >
-              <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="flex-1">
-                  <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                    {selectedDataset.name}
-                  </div>
-                  <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
-                    <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
-                    {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+            {/* Dataset Selection */}
+            <div className="pt-2">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                Select Dataset *
+              </label>
+              {isLoadingDatasets ? (
+                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
+                </div>
+              ) : datasets.length === 0 ? (
+                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                  <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
+                  <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                    Create a dataset first in the Datasets tab
+                  </p>
+                </div>
+              ) : (
+                <select
+                  value={selectedDatasetId || ''}
+                  onChange={e => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                  }}
+                >
+                  <option value="">-- Select a dataset --</option>
+                  {datasets.map(dataset => (
+                    <option key={dataset.id} value={dataset.id}>
+                      {dataset.name} ({dataset.dataset_metadata?.sample_count || 0} samples)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Selected Dataset Info */}
+            {selectedDataset && (
+              <div
+                className="border rounded-lg p-3"
+                style={{
+                  borderColor: colors.status.success,
+                  backgroundColor: 'rgba(22, 163, 74, 0.02)',
+                }}
+              >
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                      {selectedDataset.name}
+                    </div>
+                    <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
+                      <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
+                      {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-
-
-
-        {/* Run Evaluation Button */}
-        <div
-          className="flex-shrink-0 border-t px-4 py-3"
-          style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
-        >
-          <button
-            onClick={handleRunEvaluation}
-            disabled={isRunning || !evaluationName.trim() || !selectedDatasetId}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
-            style={{
-              backgroundColor: isRunning || !evaluationName.trim() || !selectedDatasetId
-                ? colors.bg.secondary
-                : colors.accent.primary,
-              color: isRunning || !evaluationName.trim() || !selectedDatasetId
-                ? colors.text.secondary
-                : '#fff',
-              cursor: isRunning || !evaluationName.trim() || !selectedDatasetId
-                ? 'not-allowed'
-                : 'pointer',
-            }}
-          >
-            {isRunning ? (
-              <>
-                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                Starting Evaluation...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Run Evaluation
-              </>
             )}
-          </button>
-        </div>
+          </div>
+
+
+
+          {/* Run Evaluation Button */}
+          <div
+            className="flex-shrink-0 border-t px-4 py-3"
+            style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+          >
+            <button
+              onClick={handleRunEvaluation}
+              disabled={isRunning || !evaluationName.trim() || !selectedDatasetId}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
+              style={{
+                backgroundColor: isRunning || !evaluationName.trim() || !selectedDatasetId
+                  ? colors.bg.secondary
+                  : colors.accent.primary,
+                color: isRunning || !evaluationName.trim() || !selectedDatasetId
+                  ? colors.text.secondary
+                  : '#fff',
+                cursor: isRunning || !evaluationName.trim() || !selectedDatasetId
+                  ? 'not-allowed'
+                  : 'pointer',
+              }}
+            >
+              {isRunning ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  Starting Evaluation...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Run Evaluation
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1546,7 +1706,7 @@ function EvaluationsTab({
             )}
           </div>
 
-          <div className="rounded-lg border overflow-hidden" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <div className={`rounded-lg border ${openScoreInfo ? '' : 'overflow-hidden'}`} style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
@@ -1563,11 +1723,91 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '20%' }}>Ground Truth</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Transcription</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '10%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '20%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '40%' }}>
+                        <div>
+                          <div>Ground Truth vs Transcription</div>
+                          <div className="flex items-center gap-2 font-normal mt-1">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#fee2e2' }} />
+                              <span style={{ color: colors.text.secondary }}>Deletion</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#dcfce7' }} />
+                              <span style={{ color: colors.text.secondary }}>Insertion</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#fef3c7' }} />
+                              <span style={{ color: colors.text.secondary }}>Substitution</span>
+                            </span>
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                        <span className="inline-flex items-center gap-1 relative">
+                          Score
+                          <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            onClick={(e) => { e.stopPropagation(); setOpenScoreInfo(openScoreInfo ? null : 'accuracy'); }}
+                          >
+                            i
+                          </span>
+                          {openScoreInfo && (() => {
+                            const metrics = [
+                              { key: 'accuracy', title: 'Accuracy (Word Information Preserved)', desc: 'Measures how much of the original information was correctly captured.', formula: 'WIP = (C / N) × (C / H)', formulaDesc: 'C = correct words\nN = total words in reference\nH = total words in hypothesis', example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat" (H=5)\nC = 3 (cat, on, mat)\n\nWIP = (3/6) × (3/5)\n    = 0.5 × 0.6 = 0.30 = 30%`, direction: 'Higher is better.', directionColor: colors.status.success },
+                              { key: 'wer', title: 'WER (Word Error Rate)', desc: 'The most widely used metric in STT evaluation.', formula: 'WER = (S + D + I) / N', formulaDesc: 'S = substitutions, D = deletions\nI = insertions, N = total words in reference', example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat"\n\nthe → a    (Substitution)\ncat → cat  (Correct)\nsat → sit  (Substitution)\non  → on   (Correct)\nthe → ∅    (Deletion)\nmat → mat  (Correct)\n\nS=2, D=1, I=0\nWER = (2+1+0) / 6 = 0.50 = 50%`, direction: 'Lower is better.', directionColor: colors.status.error },
+                              { key: 'cer', title: 'CER (Character Error Rate)', desc: 'Same concept as WER but at the character level — more granular, catches partial word errors.', formula: 'CER = (S + D + I) / N', formulaDesc: 'S, D, I = character-level errors\nN = total characters in reference', example: `Reference:  "the cat sat" (N=11 chars)\nHypothesis: "the bat set"\n\nt → t  (Correct)\nh → h  (Correct)\ne → e  (Correct)\n· → ·  (Correct)\nc → b  (Substitution)\na → a  (Correct)\nt → t  (Correct)\n· → ·  (Correct)\ns → s  (Correct)\na → e  (Substitution)\nt → t  (Correct)\n\nS=2, D=0, I=0\nCER = 2/11 = 0.18 = 18%`, direction: 'Lower is better.', directionColor: colors.status.error },
+                              { key: 'lenient_wer', title: 'Lenient WER', desc: 'Same as WER but ignores differences in casing and punctuation — useful when exact formatting doesn\'t matter.', formula: 'Same as WER after normalizing text', formulaDesc: 'Normalization: lowercase + remove punctuation', example: `Reference:  "Hello, World!"\nHypothesis: "hello world"\n\nAfter normalization:\n"hello world" vs "hello world"\n→ exact match\n\nLenient WER = 0%\n(strict WER would be higher)`, direction: 'Lower is better.', directionColor: colors.status.error },
+                            ];
+                            const currentIdx = metrics.findIndex(m => m.key === openScoreInfo);
+                            const current = metrics[currentIdx >= 0 ? currentIdx : 0];
+                            return (
+                              <div
+                                className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs"
+                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px' }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {/* Tab navigation */}
+                                <div className="flex border-b" style={{ borderColor: colors.border }}>
+                                  {metrics.map((m, idx) => (
+                                    <button
+                                      key={m.key}
+                                      className="flex-1 px-2 py-2 text-xs font-medium"
+                                      style={{
+                                        color: openScoreInfo === m.key ? colors.accent.primary : colors.text.secondary,
+                                        borderBottom: openScoreInfo === m.key ? `2px solid ${colors.accent.primary}` : '2px solid transparent',
+                                        backgroundColor: 'transparent',
+                                        cursor: 'pointer',
+                                      }}
+                                      onClick={() => setOpenScoreInfo(m.key)}
+                                    >
+                                      {m.key === 'accuracy' ? 'Accuracy' : m.key === 'wer' ? 'WER' : m.key === 'cer' ? 'CER' : 'Lenient WER'}
+                                    </button>
+                                  ))}
+                                </div>
+                                {/* Content */}
+                                <div className="p-3" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
+                                  <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>{current.title}</div>
+                                  <p className="mb-2" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>{current.desc}</p>
+                                  <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Formula</div>
+                                  <div className="mb-2 p-2 rounded whitespace-pre-wrap" style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary }}>
+                                    {current.formula}{'\n'}
+                                    <span style={{ color: colors.text.secondary }}>{current.formulaDesc}</span>
+                                  </div>
+                                  <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Example</div>
+                                  <div className="p-2 rounded whitespace-pre-wrap" style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary, lineHeight: '1.6' }}>
+                                    {current.example}
+                                  </div>
+                                  <div className="mt-2 font-semibold" style={{ color: current.directionColor }}>{current.direction}</div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </span>
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1587,49 +1827,176 @@ function EvaluationsTab({
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
-                          <div
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                            title={result.groundTruth || 'No ground truth provided'}
-                          >
-                            {result.groundTruth || '-'}
-                          </div>
+                        <td className="px-4 py-3 text-sm align-top">
+                          {(() => {
+                            const hasBoth = result.groundTruth && result.transcription;
+                            const segments = hasBoth ? computeWordDiff(result.groundTruth, result.transcription) : [];
+                            const isExpanded = expandedTranscriptions.has(result.id);
+                            return (
+                              <div>
+                                <div
+                                  className="grid grid-cols-2 rounded-md overflow-hidden border"
+                                  style={{ borderColor: colors.border, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '12px' }}
+                                >
+                                  {/* Left Panel - Ground Truth */}
+                                  <div>
+                                    <div
+                                      className="px-2 py-1.5 text-xs font-semibold border-b"
+                                      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border, color: colors.text.secondary }}
+                                    >
+                                      Ground Truth
+                                    </div>
+                                    <div
+                                      className="px-3 py-2 leading-relaxed"
+                                      style={{
+                                        backgroundColor: colors.bg.primary,
+                                        ...(!isExpanded ? {
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 3,
+                                          WebkitBoxOrient: 'vertical' as const,
+                                          overflow: 'hidden',
+                                        } : {}),
+                                      }}
+                                    >
+                                      {hasBoth ? segments.map((seg, idx) => {
+                                        if (seg.type === 'insertion') return null;
+                                        const word = seg.reference || '';
+                                        return (
+                                          <span key={idx}>
+                                            <span
+                                              className="px-0.5 rounded"
+                                              style={{
+                                                backgroundColor:
+                                                  seg.type === 'substitution' ? '#fef3c7' :
+                                                    seg.type === 'deletion' ? '#fee2e2' :
+                                                      'transparent',
+                                                textDecoration: seg.type === 'deletion' ? 'line-through' : 'none',
+                                                color: seg.type === 'deletion' ? '#dc2626' : colors.text.primary,
+                                              }}
+                                              title={seg.type === 'substitution' ? `→ "${seg.hypothesis}"` : undefined}
+                                            >
+                                              {seg.type === 'deletion' && '- '}{word}
+                                            </span>
+                                            {' '}
+                                          </span>
+                                        );
+                                      }) : (
+                                        <span style={{ color: colors.text.secondary }}>{result.groundTruth || '-'}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {/* Right Panel - Transcription */}
+                                  <div className="border-l" style={{ borderColor: colors.border }}>
+                                    <div
+                                      className="px-2 py-1.5 text-xs font-semibold border-b"
+                                      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border, color: colors.text.secondary }}
+                                    >
+                                      Transcription
+                                    </div>
+                                    <div
+                                      className="px-3 py-2 leading-relaxed"
+                                      style={{
+                                        backgroundColor: colors.bg.primary,
+                                        ...(!isExpanded ? {
+                                          display: '-webkit-box',
+                                          WebkitLineClamp: 3,
+                                          WebkitBoxOrient: 'vertical' as const,
+                                          overflow: 'hidden',
+                                        } : {}),
+                                      }}
+                                    >
+                                      {hasBoth ? segments.map((seg, idx) => {
+                                        if (seg.type === 'deletion') {
+                                          return (
+                                            <span key={idx}>
+                                              <span
+                                                className="px-0.5 rounded"
+                                                style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                                title={`Missing: "${seg.reference}"`}
+                                              >
+                                                ___
+                                              </span>
+                                              {' '}
+                                            </span>
+                                          );
+                                        }
+                                        const word = seg.hypothesis || seg.reference || '';
+                                        return (
+                                          <span key={idx}>
+                                            <span
+                                              className="px-0.5 rounded"
+                                              style={{
+                                                backgroundColor:
+                                                  seg.type === 'substitution' ? '#fef3c7' :
+                                                    seg.type === 'insertion' ? '#dcfce7' :
+                                                      'transparent',
+                                                color:
+                                                  seg.type === 'insertion' ? '#16a34a' :
+                                                    colors.text.primary,
+                                                fontWeight: seg.type === 'insertion' ? 500 : 'normal',
+                                              }}
+                                              title={
+                                                seg.type === 'substitution' ? `Was: "${seg.reference}"` :
+                                                  seg.type === 'insertion' ? 'Inserted' : undefined
+                                              }
+                                            >
+                                              {seg.type === 'insertion' && '+ '}{word}
+                                            </span>
+                                            {' '}
+                                          </span>
+                                        );
+                                      }) : (
+                                        <span style={{ color: colors.text.secondary }}>{result.transcription || '-'}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                {hasBoth && (result.groundTruth!.length > 100 || result.transcription!.length > 100) && (
+                                  <button
+                                    onClick={() => toggleTranscription(result.id)}
+                                    className="text-xs mt-1.5"
+                                    style={{ color: colors.accent.primary, cursor: 'pointer' }}
+                                  >
+                                    {isExpanded ? 'Show less' : 'Expand'}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
-                        <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
-                          <div>
-                            <div
-                              style={{
-                                display: expandedTranscriptions.has(result.id) ? 'block' : '-webkit-box',
-                                WebkitLineClamp: expandedTranscriptions.has(result.id) ? 'unset' : 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              {result.transcription || '-'}
+                        <td className="px-4 py-3 text-xs align-top">
+                          {result.score ? (
+                            <div className="space-y-2">
+                              <div className="flex justify-between gap-2">
+                                <span style={{ color: colors.text.secondary }}>Accuracy</span>
+                                <span className="font-mono font-medium" style={{ color: result.score.wip >= 0.9 ? colors.status.success : result.score.wip >= 0.7 ? '#ca8a04' : colors.status.error }}>{(result.score.wip * 100).toFixed(1)}%</span>
+                              </div>
+                              <div>
+                                <div className="mb-1" style={{ color: colors.text.secondary, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Errors</div>
+                                <div className="space-y-1 pl-1" style={{ borderLeft: `2px solid ${colors.border}` }}>
+                                  {[
+                                    { label: 'WER', value: result.score.wer },
+                                    { label: 'CER', value: result.score.cer },
+                                    { label: 'Lenient WER', value: result.score.lenient_wer },
+                                  ].map(({ label, value }) => (
+                                    <div key={label} className="flex justify-between gap-2 pl-1.5">
+                                      <span style={{ color: colors.text.secondary }}>{label}</span>
+                                      <span className="font-mono font-medium" style={{ color: value >= 0.8 ? colors.status.error : value >= 0.4 ? '#ca8a04' : colors.status.success }}>{(value * 100).toFixed(1)}%</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
-                            {result.transcription && result.transcription.length > 80 && (
-                              <button
-                                onClick={() => toggleTranscription(result.id)}
-                                className="text-xs mt-1"
-                                style={{ color: colors.accent.primary, cursor: 'pointer' }}
-                              >
-                                {expandedTranscriptions.has(result.id) ? 'Show less' : 'Read more'}
-                              </button>
-                            )}
-                          </div>
+                          ) : (
+                            <span style={{ color: colors.text.secondary }}>-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">
                           <select
                             value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
                             onChange={(e) => {
                               const value = e.target.value;
-                              if (value === '') return;
-                              updateFeedback(result.id, value === 'true');
+                              updateFeedback(result.id, value === '' ? null : value === 'true');
                             }}
                             className="px-3 py-1.5 border rounded text-xs font-medium"
                             style={{

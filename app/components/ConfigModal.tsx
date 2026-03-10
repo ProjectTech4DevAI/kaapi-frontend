@@ -23,6 +23,7 @@ interface ConfigVersionInfo {
   tools?: any[];
   provider?: string;
   type?: 'text' | 'stt' | 'tts';
+  knowledge_base_ids?: string[];
 }
 
 export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: ConfigModalProps) {
@@ -83,6 +84,25 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
           const blob = versionData.data.config_blob;
           const params = blob?.completion?.params || {};
 
+          // Extract knowledge base IDs from multiple sources
+          const knowledgeBaseIds: string[] = [];
+
+          // 1. Check direct params.knowledge_base_ids
+          if (Array.isArray(params.knowledge_base_ids)) {
+            knowledgeBaseIds.push(...params.knowledge_base_ids);
+          }
+
+          // 2. Check tools array for knowledge_base_ids
+          if (params.tools) {
+            const toolKbIds = params.tools
+              .filter((tool: any) => Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0)
+              .flatMap((tool: any) => tool.knowledge_base_ids);
+            knowledgeBaseIds.push(...toolKbIds);
+          }
+
+          // Remove duplicates
+          const uniqueKbIds = [...new Set(knowledgeBaseIds)];
+
           setConfigVersionInfo({
             name: configName || 'Unknown Config',
             version: job.config_version!,
@@ -92,6 +112,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
             tools: params.tools,
             provider: blob?.completion?.provider,
             type: blob?.completion?.type || 'text',
+            knowledge_base_ids: uniqueKbIds.length > 0 ? uniqueKbIds : undefined,
           });
         }
       } catch (error) {
@@ -124,13 +145,16 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
       >
         {/* Header */}
         <div className="px-6 py-4 border-b" style={{ borderColor: '#e5e5e5' }}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#737373' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <h3 className="text-lg font-semibold" style={{ color: '#171717' }}>Detailed Configuration</h3>
+              <h3 className="text-lg font-semibold" style={{ color: '#171717' }}>
+                {configVersionInfo?.name || 'Detailed Configuration'}
+                {configVersionInfo?.version && <span className="text-sm font-normal" style={{ color: '#737373' }}> v{configVersionInfo.version}</span>}
+              </h3>
             </div>
             <button
               onClick={onClose}
@@ -154,47 +178,6 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
               </svg>
             </button>
           </div>
-
-          {/* Config Name and Version */}
-          {job.config_id && job.config_version && (
-            <div className="mt-2 px-4 py-3 rounded-lg" style={{ backgroundColor: '#f0f9ff', borderWidth: '1px', borderColor: '#bae6fd' }}>
-              {isLoadingConfig ? (
-                <div className="text-sm" style={{ color: '#0369a1' }}>Loading config info...</div>
-              ) : configVersionInfo ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#0369a1' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    <span className="text-sm font-semibold" style={{ color: '#0369a1' }}>
-                      {configVersionInfo.name} <span className="font-normal">v{configVersionInfo.version}</span>
-                    </span>
-                  </div>
-                  <div className="text-xs ml-6 space-y-1" style={{ color: '#0369a1' }}>
-                    {configVersionInfo.provider && configVersionInfo.model && (
-                      <div>
-                        <span className="font-medium">Model:</span> {configVersionInfo.provider}/{configVersionInfo.model}
-                      </div>
-                    )}
-                    {configVersionInfo.type && (
-                      <div>
-                        <span className="font-medium">Type:</span> {configVersionInfo.type.toUpperCase()}
-                      </div>
-                    )}
-                    {configVersionInfo.temperature !== undefined && (
-                      <div>
-                        <span className="font-medium">Temperature:</span> {configVersionInfo.temperature}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm" style={{ color: '#0369a1' }}>
-                  Config ID: {job.config_id} (v{job.config_version})
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Content */}
@@ -219,6 +202,19 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
               {configVersionInfo?.model || assistantConfig?.model || job.config?.model || 'N/A'}
             </div>
           </div>
+
+          {configVersionInfo?.knowledge_base_ids && configVersionInfo.knowledge_base_ids.length > 0 && (
+            <div>
+              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Knowledge Base IDs</div>
+              <div className="text-sm font-mono p-3 rounded-md border mb-4" style={{
+                backgroundColor: '#fafafa',
+                borderColor: '#e5e5e5',
+                color: '#171717'
+              }}>
+                {configVersionInfo.knowledge_base_ids.join(', ')}
+              </div>
+            </div>
+          )}
 
           {(configVersionInfo?.temperature !== undefined || assistantConfig?.temperature !== undefined || job.config?.temperature !== undefined) && (
             <div>
@@ -258,7 +254,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                       backgroundColor: '#fafafa',
                       borderWidth: '1px',
                       borderColor: '#e5e5e5',
-                      color: '#171717'
+                      color: '#000000'
                     }}
                   >
                     {tool.type}
@@ -266,20 +262,36 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                 ))}
               </div>
               {configVersionInfo.tools.map((tool, idx) => (
-                Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
-                  <div key={`vs-${idx}`} className="mb-4">
-                    <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>
-                      Vector Store IDs ({tool.type})
+                <div key={`tool-details-${idx}`}>
+                  {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
+                        Knowledge Base IDs ({tool.type})
+                      </div>
+                      <div className="text-sm font-mono p-3 rounded-md border" style={{
+                        backgroundColor: '#fafafa',
+                        borderColor: '#e5e5e5',
+                        color: '#171717'
+                      }}>
+                        {tool.knowledge_base_ids.join(', ')}
+                      </div>
                     </div>
-                    <div className="text-sm font-mono p-3 rounded-md border" style={{
-                      backgroundColor: '#fafafa',
-                      borderColor: '#e5e5e5',
-                      color: '#171717'
-                    }}>
-                      {tool.knowledge_base_ids.join(', ')}
+                  )}
+                  {tool.max_num_results !== undefined && (
+                    <div className="mb-4">
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
+                        Max Results ({tool.type})
+                      </div>
+                      <div className="text-sm font-mono p-3 rounded-md border" style={{
+                        backgroundColor: '#fafafa',
+                        borderColor: '#e5e5e5',
+                        color: '#171717'
+                      }}>
+                        {tool.max_num_results}
+                      </div>
                     </div>
-                  </div>
-                )
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -296,7 +308,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                       backgroundColor: '#fafafa',
                       borderWidth: '1px',
                       borderColor: '#e5e5e5',
-                      color: '#171717'
+                      color: '#000000'
                     }}
                   >
                     {tool.type}
@@ -304,27 +316,43 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                 ))}
               </div>
               {job.config.tools.map((tool, idx) => (
-                Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
-                  <div key={`vs-${idx}`} className="mb-4">
-                    <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>
-                      Vector Store IDs ({tool.type})
+                <div key={`tool-details-${idx}`}>
+                  {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
+                        Knowledge Base IDs ({tool.type})
+                      </div>
+                      <div className="text-sm font-mono p-3 rounded-md border" style={{
+                        backgroundColor: '#fafafa',
+                        borderColor: '#e5e5e5',
+                        color: '#171717'
+                      }}>
+                        {tool.knowledge_base_ids.join(', ')}
+                      </div>
                     </div>
-                    <div className="text-sm font-mono p-3 rounded-md border" style={{
-                      backgroundColor: '#fafafa',
-                      borderColor: '#e5e5e5',
-                      color: '#171717'
-                    }}>
-                      {tool.knowledge_base_ids.join(', ')}
+                  )}
+                  {tool.max_num_results !== undefined && (
+                    <div className="mb-4">
+                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
+                        Max Results ({tool.type})
+                      </div>
+                      <div className="text-sm font-mono p-3 rounded-md border" style={{
+                        backgroundColor: '#fafafa',
+                        borderColor: '#e5e5e5',
+                        color: '#171717'
+                      }}>
+                        {tool.max_num_results}
+                      </div>
                     </div>
-                  </div>
-                )
+                  )}
+                </div>
               ))}
             </div>
           )}
 
           {Array.isArray(assistantConfig?.knowledge_base_ids) && assistantConfig.knowledge_base_ids.length > 0 && (
             <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Vector Store IDs</div>
+              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>Knowledge Base IDs</div>
               <div className="text-sm font-mono p-3 rounded-md border" style={{
                 backgroundColor: '#fafafa',
                 borderColor: '#e5e5e5',

@@ -66,6 +66,7 @@ export default function ConfigEditorPane({
   onToggle,
 }: ConfigEditorPaneProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState<number | null>(null);
 
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
@@ -587,7 +588,7 @@ export default function ConfigEditorPane({
                 }}
               >
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold">File Search</span>
+                  <span className="text-xs font-semibold" style={{ color: colors.text.primary }}>File Search</span>
                   <button
                     onClick={() => handleRemoveTool(index)}
                     className="text-xs"
@@ -604,9 +605,9 @@ export default function ConfigEditorPane({
                 <div className="mb-2">
                   <label
                     className="block text-xs mb-1"
-                    style={{ color: colors.text.secondary }}
+                    style={{ color: colors.text.primary }}
                   >
-                    Vector Store ID
+                    Knowledge Base ID
                   </label>
                   <input
                     type="text"
@@ -619,16 +620,69 @@ export default function ConfigEditorPane({
                     style={{
                       border: `1px solid ${colors.border}`,
                       backgroundColor: colors.bg.primary,
+                      color: colors.text.primary,
                     }}
                   />
                 </div>
                 <div>
-                  <label
-                    className="block text-xs mb-1"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    Max Results
-                  </label>
+                  <div className="flex items-center gap-1 mb-1">
+                    <label
+                      className="text-xs"
+                      style={{ color: colors.text.primary }}
+                    >
+                      Max Results
+                    </label>
+                    <div
+                      className="relative inline-flex items-center justify-center cursor-help"
+                      style={{ width: '14px', height: '14px' }}
+                      onMouseEnter={() => setShowTooltip(index)}
+                      onMouseLeave={() => setShowTooltip(null)}
+                    >
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {showTooltip === index && (
+                        <div
+                          className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50"
+                          style={{
+                            backgroundColor: '#1f2937',
+                            color: '#ffffff',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                            whiteSpace: 'nowrap',
+                            lineHeight: '1.4',
+                          }}
+                        >
+                          Controls how many matching results are returned<br />from the search
+                          <div
+                            style={{
+                              position: 'absolute',
+                              right: '100%',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 0,
+                              height: 0,
+                              borderTop: '4px solid transparent',
+                              borderBottom: '4px solid transparent',
+                              borderRight: '4px solid #1f2937',
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <input
                     type="number"
                     value={tool.max_num_results}
@@ -643,6 +697,7 @@ export default function ConfigEditorPane({
                     style={{
                       border: `1px solid ${colors.border}`,
                       backgroundColor: colors.bg.primary,
+                      color: colors.text.primary,
                     }}
                   />
                 </div>

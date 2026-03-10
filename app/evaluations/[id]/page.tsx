@@ -43,6 +43,7 @@ export default function EvaluationReport() {
   const [configVersionInfo, setConfigVersionInfo] = useState<ConfigVersionInfo | null>(null);
   const [exportFormat, setExportFormat] = useState<'row' | 'grouped'>('row');
   const [isResyncing, setIsResyncing] = useState(false);
+  const [showNoTracesModal, setShowNoTracesModal] = useState(false);
 
   // Load API keys from localStorage
   useEffect(() => {
@@ -253,7 +254,7 @@ export default function EvaluationReport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.info(`Grouped CSV exported with ${traces.length} questions`);
+      toast.success(`Grouped CSV exported with ${traces.length} questions`);
     } catch (error) {
       console.error('Error exporting grouped CSV:', error);
       toast.error('Failed to export grouped CSV');
@@ -319,7 +320,7 @@ export default function EvaluationReport() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.info(`CSV exported successfully with ${rowCount} rows`);
+      toast.success(`CSV exported successfully with ${rowCount} rows`);
     } catch (error) {
       console.error('Error exporting row CSV:', error);
       toast.error('Failed to export CSV');
@@ -386,6 +387,16 @@ export default function EvaluationReport() {
 
       if (!foundJob) {
         throw new Error('Evaluation job not found');
+      }
+
+      // Check if the new data has traces
+      const newScoreObject = getScoreObject(foundJob);
+      const hasTraces = newScoreObject && isNewScoreObjectV2(newScoreObject);
+
+      // If no traces in new data, show modal and don't update
+      if (!hasTraces) {
+        setShowNoTracesModal(true);
+        return;
       }
 
       setJob(foundJob);
@@ -816,6 +827,46 @@ export default function EvaluationReport() {
         job={job}
         assistantConfig={assistantConfig}
       />
+
+      {/* No Traces Modal */}
+      {showNoTracesModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setShowNoTracesModal(false)}
+        >
+          <div
+            className="rounded-lg shadow-lg p-6 max-w-md mx-4"
+            style={{ backgroundColor: colors.bg.primary }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold mb-2" style={{ color: colors.text.primary }}>
+                No Langfuse Traces Available
+              </h3>
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                This evaluation does not have Langfuse traces.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowNoTracesModal(false)}
+                className="px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: colors.accent.primary,
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.accent.hover}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.accent.primary}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -588,7 +588,7 @@ export default function ConfigEditorPane({
                 }}
               >
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold" style={{ color: '#000000' }}>File Search</span>
+                  <span className="text-xs font-semibold" style={{ color: colors.text.primary }}>File Search</span>
                   <button
                     onClick={() => handleRemoveTool(index)}
                     className="text-xs"
@@ -605,7 +605,7 @@ export default function ConfigEditorPane({
                 <div className="mb-2">
                   <label
                     className="block text-xs mb-1"
-                    style={{ color: '#000000' }}
+                    style={{ color: colors.text.primary }}
                   >
                     Knowledge Base ID
                   </label>
@@ -628,7 +628,7 @@ export default function ConfigEditorPane({
                   <div className="flex items-center gap-1 mb-1">
                     <label
                       className="text-xs"
-                      style={{ color: '#000000' }}
+                      style={{ color: colors.text.primary }}
                     >
                       Max Results
                     </label>

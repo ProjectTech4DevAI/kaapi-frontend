@@ -20,6 +20,7 @@ export interface Collection {
   id: string;
   name?: string;
   description?: string;
+  knowledge_base_id?:string,
   inserted_at: string;
   updated_at: string;
   status?: string;
@@ -428,6 +429,7 @@ export default function KnowledgeBasePage() {
           const jobData = result.data || result;
           const status = jobData.status || null;
           const realCollectionId = jobData.collection?.id || jobData.collection_id || null;
+          const knowledgeBaseId = jobData.collection?.knowledge_base_id || null;
 
           if (status) {
             // Always update status in UI (including in_progress/pending states)
@@ -435,14 +437,14 @@ export default function KnowledgeBasePage() {
               prev.map((c) => {
                 // Update by collectionId OR by job_id (handles optimistic->real transition)
                 if (c.id === collectionId || c.job_id === jobId) {
-                  return { ...c, status };
+                  return { ...c, status, knowledge_base_id: knowledgeBaseId || c.knowledge_base_id };
                 }
                 return c;
               })
             );
             setSelectedCollection((prev) => {
               if (prev?.id === collectionId || prev?.job_id === jobId) {
-                return { ...prev, status };
+                return { ...prev, status, knowledge_base_id: knowledgeBaseId || prev?.knowledge_base_id };
               }
               return prev;
             });
@@ -1136,6 +1138,14 @@ export default function KnowledgeBasePage() {
                   </div>
                   <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                     {(selectedCollection.status || 'N/A').replace(/_/g, ' ').toUpperCase()}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-xs uppercase font-semibold" style={{ color: colors.text.secondary }}>
+                    Knowledge Base ID:
+                  </div>
+                  <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                    {selectedCollection.knowledge_base_id || 'N/A'}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

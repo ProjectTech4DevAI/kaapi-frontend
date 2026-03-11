@@ -8,6 +8,13 @@ export async function GET(
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
+  if (!apiKey) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized: Missing API key', data: null },
+      { status: 401 }
+    );
+  }
+
   try {
     // Get query parameters from the request
     const { searchParams } = new URL(request.url);
@@ -25,7 +32,7 @@ export async function GET(
 
     const response = await fetch(backendUrlWithParams, {
       headers: {
-        'X-API-KEY': apiKey || '',
+        'X-API-KEY': apiKey,
       },
     });
 

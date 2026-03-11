@@ -8,10 +8,17 @@ export async function GET(
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
+  if (!apiKey) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized: Missing API key', data: null },
+      { status: 401 }
+    );
+  }
+
   try {
     const response = await fetch(`${backendUrl}/api/v1/evaluations/tts/datasets/${dataset_id}`, {
       headers: {
-        'X-API-KEY': apiKey || '',
+        'X-API-KEY': apiKey,
       },
     });
 

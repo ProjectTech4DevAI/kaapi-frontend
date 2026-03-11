@@ -9,6 +9,7 @@
 "use client"
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import {format, toZonedTime} from "date-fns-tz"
+import { colors } from '@/app/lib/colors';
 import { useRouter, useSearchParams } from 'next/navigation'
 import { APIKey } from '../keystore/page';
 import { STORAGE_KEY } from '../keystore/page';
@@ -280,7 +281,7 @@ function SimplifiedEvalContent() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: '#fafafa' }}>
+    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Full Height */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
@@ -288,52 +289,20 @@ function SimplifiedEvalContent() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Title Section with Collapse Button */}
-          <div className="border-b px-6 py-4" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>
+          <div className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded flex-shrink-0"
-                style={{
-                  borderWidth: '1px',
-                  borderColor: '#e5e5e5',
-                  backgroundColor: '#ffffff',
-                  color: '#737373',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fafafa';
-                  e.currentTarget.style.color = '#171717';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.color = '#737373';
-                }}
+                className="p-1.5 rounded-md"
+                style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  {sidebarCollapsed ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
-                  )}
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-semibold" style={{ color: '#171717', letterSpacing: '-0.01em' }}>Evaluations</h1>
+                <h1 className="text-base font-semibold" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>Text Evaluation</h1>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>Compare model response quality on your datasets across different configs</p>
               </div>
             </div>
           </div>
@@ -349,8 +318,8 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: '#fafafa' }}>
-            <div className="max-w-7xl mx-auto space-y-6 page-transition">
+          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: colors.bg.secondary }}>
+            <div className="max-w-7xl mx-auto space-y-4 page-transition">
               {activeTab === 'datasets' ? (
                 <DatasetsTab
                   isEvaluating={isEvaluating}
@@ -443,14 +412,14 @@ function DatasetsTab({
   const [showCsvFormatTooltip, setShowCsvFormatTooltip] = useState(false);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* API Key Selection Card */}
-      <div className="border rounded-lg p-6" style={{
-        backgroundColor: '#ffffff',
-        borderColor: '#e5e5e5'
+      <div className="border rounded-lg p-4" style={{
+        backgroundColor: colors.bg.primary,
+        borderColor: colors.border
       }}>
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: '#171717' }}>Select API Key</h2>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Select API Key</h2>
           <div className="relative">
             <button
               onMouseEnter={() => setShowHowItWorksTooltip(true)}
@@ -571,12 +540,12 @@ function DatasetsTab({
       </div>
 
       {/* Dataset Selection Card */}
-      <div className="border rounded-lg p-8" style={{
-        backgroundColor: '#ffffff',
-        borderColor: '#e5e5e5'
+      <div className="border rounded-lg p-4" style={{
+        backgroundColor: colors.bg.primary,
+        borderColor: colors.border
       }}>
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-semibold" style={{ color: '#171717' }}>Select QnA Dataset</h2>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Select QnA Dataset</h2>
           <div className="relative">
             <button
               onMouseEnter={() => setShowCsvFormatTooltip(true)}
@@ -717,17 +686,17 @@ function DatasetsTab({
           />
 
           {/* Experiment Name & Run Button */}
-          <div className="border rounded-lg p-6" style={{
-            backgroundColor: '#ffffff',
-            borderColor: '#e5e5e5'
+          <div className="border rounded-lg p-4" style={{
+            backgroundColor: colors.bg.primary,
+            borderColor: colors.border
           }}>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: '#171717' }}>
+            <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
               Run Evaluation
             </h2>
 
             {/* Experiment Name */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
                 Experiment Name <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
@@ -958,46 +927,37 @@ function EvaluationsTab({ apiKeys, selectedKeyId }: EvaluationsTabProps) {
   }, [evalJobs, fetchEvaluations]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold" style={{ color: '#171717' }}>
-          Evaluation Jobs
+        <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+          Evaluation Runs
         </h2>
         <button
           onClick={fetchEvaluations}
           disabled={isLoading}
-          className="px-4 py-2 rounded-md text-sm font-medium"
-          style={{
-            background: isLoading ? '#fafafa' : '#171717',
-            color: isLoading ? '#737373' : '#ffffff',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s ease',
-            border: 'none'
-          }}
-          onMouseEnter={(e) => {
-            if (!isLoading) {
-              e.currentTarget.style.background = '#404040';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isLoading) {
-              e.currentTarget.style.background = '#171717';
-            }
-          }}
+          className="p-1.5 rounded"
+          style={{ color: colors.text.secondary }}
         >
-          {isLoading ? 'Refreshing...' : '🔄 Refresh'}
+          <svg
+            className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
         </button>
       </div>
 
       {/* Loading State */}
       {isLoading && evalJobs.length === 0 && (
-        <LoaderBox message="Loading evaluation jobs..." size="md" />
+        <LoaderBox message="Loading evaluation runs..." size="md" />
       )}
 
       {/* Error State */}
       {error && (
-        <div className="border rounded-lg p-6" style={{
+        <div className="border rounded-lg p-4" style={{
           backgroundColor: 'hsl(0, 84%, 96%)',
           borderColor: 'hsl(0, 84%, 80%)'
         }}>
@@ -1007,18 +967,17 @@ function EvaluationsTab({ apiKeys, selectedKeyId }: EvaluationsTabProps) {
         </div>
       )}
 
-      {/* No Jobs Yet */}
+      {/* No Runs Yet */}
       {!isLoading && evalJobs.length === 0 && !error && (
         <div className="border rounded-lg p-8 text-center" style={{
-          backgroundColor: '#ffffff',
-          borderColor: '#e5e5e5',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
+          backgroundColor: colors.bg.primary,
+          borderColor: colors.border,
         }}>
-          <p style={{ color: '#737373' }}>No evaluation jobs found. Create one from the Datasets tab!</p>
+          <p style={{ color: colors.text.secondary }}>No evaluation runs found. Create one from the Datasets tab!</p>
         </div>
       )}
 
-      {/* Evaluation Job Cards */}
+      {/* Evaluation Run Cards */}
       {evalJobs.length > 0 && (
         <div className="space-y-4">
           {evalJobs.map((job) => (

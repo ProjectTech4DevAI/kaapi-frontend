@@ -133,7 +133,8 @@ function AudioPlayerFromUrl({
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
-    return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
@@ -189,7 +190,9 @@ function AudioPlayerFromUrl({
         <div className="flex items-center gap-3 mt-1.5">
           {durationSeconds != null && (
             <span className="text-xs tabular-nums" style={{ color: colors.text.secondary }}>
-              {durationSeconds.toFixed(1)}s
+              {durationSeconds >= 60
+                ? `${Math.floor(durationSeconds / 60)}m ${Math.round(durationSeconds % 60)}s`
+                : `${Math.round(durationSeconds)}s`}
             </span>
           )}
           {sizeBytes != null && (

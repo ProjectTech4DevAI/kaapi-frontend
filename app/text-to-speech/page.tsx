@@ -572,7 +572,7 @@ export default function TextToSpeechPage() {
                   Text-to-Speech Evaluation
                 </h1>
                 <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  Evaluate TTS model output quality
+                  Compare synthesized audio quality across TTS models
                 </p>
               </div>
             </div>

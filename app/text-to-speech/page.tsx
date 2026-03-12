@@ -240,7 +240,7 @@ export default function TextToSpeechPage() {
 
   // UI State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [leftPanelWidth] = useState(450);
+  const leftPanelWidth = 450;
 
   // API Keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);

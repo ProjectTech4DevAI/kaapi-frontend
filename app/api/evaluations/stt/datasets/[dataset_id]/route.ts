@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET(
   request: Request,
@@ -26,9 +26,8 @@ export async function GET(
     if (includeSamples) backendParams.append('include_samples', includeSamples);
     if (includeAudio) backendParams.append('include_audio', includeAudio);
 
-    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${
-      backendParams.toString() ? `?${backendParams.toString()}` : ''
-    }`;
+    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${backendParams.toString() ? `?${backendParams.toString()}` : ''
+      }`;
 
     const response = await fetch(backendUrlWithParams, {
       headers: {

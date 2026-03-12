@@ -1304,13 +1304,11 @@ function EvaluationsTab({
                         <tr key={result.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
                           <td className="px-4 py-3 text-sm align-top" style={{ color: colors.text.primary }}>
                             <div
+                              className="overflow-y-auto"
                               style={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
+                                maxHeight: '80px',
+                                lineHeight: '1.5',
                               }}
-                              title={result.sample_text}
                             >
                               {result.sample_text || '-'}
                             </div>

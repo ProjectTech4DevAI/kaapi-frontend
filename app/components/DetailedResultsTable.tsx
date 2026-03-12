@@ -118,10 +118,10 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                 Question
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
-                Answer
+                Ground Truth
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
-                Ground Truth
+                Answer
               </th>
               {scoreNames.map((scoreName) => (
                 <th key={scoreName} className="px-4 py-3 text-center text-xs font-semibold uppercase" style={{ color: '#171717', width: `${20 / scoreNames.length}%` }}>
@@ -153,12 +153,12 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                   }}
                 >
                   {/* Row Number */}
-                  <td className="px-4 py-3 text-sm font-medium" style={{ color: '#737373' }}>
+                  <td className="px-4 py-3 text-sm font-medium align-top" style={{ color: '#737373' }}>
                     {index + 1}
                   </td>
 
                   {/* Question */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top" style={{ backgroundColor: '#fafafa' }}>
                     <div
                       className="text-sm overflow-auto"
                       style={{
@@ -171,22 +171,8 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                     </div>
                   </td>
 
-                  {/* Answer */}
-                  <td className="px-4 py-3">
-                    <div
-                      className="text-sm overflow-auto"
-                      style={{
-                        color: '#171717',
-                        lineHeight: '1.5',
-                        maxHeight: '150px'
-                      }}
-                    >
-                      {answer}
-                    </div>
-                  </td>
-
                   {/* Ground Truth */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top" style={{ backgroundColor: '#fafafa' }}>
                     <div
                       className="text-sm overflow-auto"
                       style={{
@@ -199,13 +185,27 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                     </div>
                   </td>
 
+                  {/* Answer */}
+                  <td className="px-4 py-3 align-top">
+                    <div
+                      className="text-sm overflow-auto"
+                      style={{
+                        color: '#171717',
+                        lineHeight: '1.5',
+                        maxHeight: '150px'
+                      }}
+                    >
+                      {answer}
+                    </div>
+                  </td>
+
                   {/* Score Columns */}
                   {scoreNames.map((scoreName) => {
                     const score = getScoreByName(item.trace_scores, scoreName);
                     const { value, color, bg } = formatScoreValue(score);
 
                     return (
-                      <td key={scoreName} className="px-4 py-3 text-center">
+                      <td key={scoreName} className="px-4 py-3 text-center align-top">
                         <div className="flex items-center justify-center gap-2">
                           <div
                             className="inline-block px-2 py-1 rounded text-xs font-medium"
@@ -404,12 +404,12 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                 }}
               >
                 {/* Question ID - matching row format # column */}
-                <td className="px-4 py-3 text-sm font-medium" style={{ color: '#737373' }}>
+                <td className="px-4 py-3 text-sm font-medium align-top" style={{ color: '#737373' }}>
                   {group.question_id}
                 </td>
 
                 {/* Question - matching row format text cell */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 align-top" style={{ backgroundColor: '#fafafa' }}>
                   <div
                     className="text-sm overflow-auto"
                     style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
@@ -419,7 +419,7 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                 </td>
 
                 {/* Ground Truth - matching row format text cell */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 align-top" style={{ backgroundColor: '#fafafa' }}>
                   <div
                     className="text-sm overflow-auto"
                     style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
@@ -434,7 +434,7 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                   const answerScores: TraceScore[] = group.scores?.[answerIndex] || [];
 
                   return (
-                    <td key={answerIndex} className="px-4 py-3">
+                    <td key={answerIndex} className="px-4 py-3 align-top">
                       {answer ? (
                         <div>
                           <div

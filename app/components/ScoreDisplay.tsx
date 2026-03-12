@@ -79,30 +79,25 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
       );
     }
 
-    // Display each numeric score in its own box
+    // Display each numeric score in its own subtle chip
     return (
-      <div className="inline-flex items-center gap-3">
+      <div className="flex items-center gap-2 flex-wrap">
         {numericScores.map((summary, idx) => {
           const value = summary.avg !== undefined ? summary.avg.toFixed(2) : 'N/A';
           const std = summary.std !== undefined ? summary.std.toFixed(2) : null;
 
           return (
-            <div
+            <span
               key={idx}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm"
-              style={{
-                backgroundColor: '#ffffff',
-                borderWidth: '1px',
-                borderColor: '#e5e5e5',
-                color: '#737373'
-              }}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs"
+              style={{ backgroundColor: '#f5f5f5', color: '#737373' }}
             >
               <span>{summary.name}:</span>
-              <span className="font-bold" style={{ color: '#171717' }}>{value}</span>
+              <span className="font-semibold" style={{ color: '#171717' }}>{value}</span>
               {std !== null && (
                 <span>±{std}</span>
               )}
-            </div>
+            </span>
           );
         })}
       </div>

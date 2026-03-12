@@ -898,41 +898,37 @@ function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
         borderLeft: `3px solid ${statusColor.border}`,
       }}
     >
-      <div className="p-5">
-        {/* Row 1: Run Name + Status rectangle */}
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <div className="text-base font-medium" style={{ color: colors.text.primary }}>
+      <div className="px-5 py-4">
+        {/* Row 1: Run Name (left) | Status (right) */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
             {job.run_name}
           </div>
           <span
             className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
-            style={{
-              backgroundColor: statusColor.bg,
-              color: statusColor.text,
-            }}
+            style={{ backgroundColor: statusColor.bg, color: statusColor.text }}
           >
             {job.status}
           </span>
         </div>
 
-        {/* Row 2: Scores (if available) */}
+        {/* Row 2: Scores */}
         {scoreObj && (
-          <div className="mb-3">
+          <div className="mt-3">
             <ScoreDisplay score={scoreObj} errorMessage={job.error_message} />
           </div>
         )}
 
         {/* Error message (if failed) */}
         {job.error_message && (
-          <div className="rounded-lg p-3 mb-3" style={{ backgroundColor: 'hsl(8, 86%, 95%)' }}>
-            <div className="text-xs font-semibold mb-1" style={{ color: 'hsl(8, 86%, 40%)' }}>Error</div>
-            <div className="text-sm" style={{ color: 'hsl(8, 86%, 40%)' }}>{job.error_message}</div>
+          <div className="mt-3 text-xs" style={{ color: 'hsl(8, 86%, 40%)' }}>
+            {job.error_message}
           </div>
         )}
 
-        {/* Row 3: Metadata (left) | Actions (right) */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-sm" style={{ color: colors.text.secondary }}>
+        {/* Row 3: Dataset + Config (left) | Actions (right) */}
+        <div className="flex items-center justify-between gap-4 mt-3">
+          <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
             {job.dataset_name && (
               <span className="flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -942,15 +938,15 @@ function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
               </span>
             )}
             {job.assistant_id && assistantConfig?.name && (
-              <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: colors.bg.secondary }}>
+              <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
                 {assistantConfig.name}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button
               onClick={() => setIsConfigModalOpen(true)}
-              className="px-4 py-1.5 rounded-lg text-sm font-medium border"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border"
               style={{
                 backgroundColor: 'transparent',
                 borderColor: colors.border,
@@ -962,10 +958,10 @@ function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
             <button
               onClick={() => router.push(`/evaluations/${job.id}`)}
               disabled={!isCompleted}
-              className="px-4 py-1.5 rounded-lg text-sm font-medium border"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border"
               style={{
                 backgroundColor: 'transparent',
-                borderColor: isCompleted ? colors.border : colors.border,
+                borderColor: colors.border,
                 color: isCompleted ? colors.text.primary : colors.text.secondary,
                 cursor: isCompleted ? 'pointer' : 'not-allowed',
                 opacity: isCompleted ? 1 : 0.5,

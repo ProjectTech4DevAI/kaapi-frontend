@@ -128,7 +128,6 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
           <thead>
             <tr style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '5%' }}>
-                #
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
                 Question
@@ -168,7 +167,6 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                     row.style.backgroundColor = '#ffffff';
                   }}
                 >
-                  {/* Row Number */}
                   <td className="px-4 py-3 text-sm font-medium align-top" style={{ color: '#737373' }}>
                     {index + 1}
                   </td>

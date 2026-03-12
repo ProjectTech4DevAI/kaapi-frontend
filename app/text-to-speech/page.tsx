@@ -12,6 +12,7 @@ import Sidebar from '@/app/components/Sidebar';
 import TabNavigation from '@/app/components/TabNavigation';
 import StatusBadge from '@/app/components/StatusBadge';
 import Loader, { LoaderBox } from '@/app/components/Loader';
+import { getStatusColor } from '@/app/components/utils';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import ErrorModal from '@/app/components/ErrorModal';
@@ -1599,47 +1600,54 @@ function EvaluationsTab({
                 <div className="p-4 space-y-3">
                   {runs.map((run) => {
                     const isCompleted = run.status.toLowerCase() === 'completed';
+                    const statusColor = getStatusColor(run.status);
                     return (
                       <div
                         key={run.id}
-                        className="rounded-lg p-5"
+                        className="rounded-lg overflow-hidden"
                         style={{
                           backgroundColor: colors.bg.primary,
                           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                          borderLeft: `3px solid ${statusColor.border}`,
                         }}
                       >
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex-1">
-                            <div className="text-base font-medium" style={{ color: colors.text.primary }}>
+                        <div className="px-5 py-4">
+                          {/* Row 1: Run Name + Status */}
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                               {run.run_name}
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-4 text-sm" style={{ color: colors.text.secondary }}>
-                            <span className="flex items-center gap-1.5">
-                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
-                              </svg>
-                              {run.dataset_name}
+                            <span
+                              className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
+                              style={{ backgroundColor: statusColor.bg, color: statusColor.text }}
+                            >
+                              {run.status}
                             </span>
-                            {run.models && run.models.length > 0 && (
-                              <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: colors.bg.secondary }}>
-                                {run.models.join(', ')}
-                              </span>
-                            )}
                           </div>
-                          <div className="flex items-center gap-3">
-                            <StatusBadge status={run.status} size="sm" />
+
+                          {/* Row 2: Dataset + Models (left) | Actions (right) */}
+                          <div className="flex items-center justify-between gap-4 mt-3">
+                            <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
+                              <span className="flex items-center gap-1.5">
+                                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                                </svg>
+                                {run.dataset_name}
+                              </span>
+                              {run.models && run.models.length > 0 && (
+                                <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  {run.models.join(', ')}
+                                </span>
+                              )}
+                            </div>
                             <button
                               onClick={isCompleted ? () => loadResults(run.id) : undefined}
                               disabled={!isCompleted}
-                              className="px-4 py-1.5 rounded-lg text-sm font-medium border"
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium border flex-shrink-0"
                               style={{
                                 backgroundColor: 'transparent',
-                                borderColor: isCompleted ? colors.accent.primary : colors.border,
-                                color: isCompleted ? colors.accent.primary : colors.text.secondary,
+                                borderColor: colors.border,
+                                color: isCompleted ? colors.text.primary : colors.text.secondary,
                                 cursor: isCompleted ? 'pointer' : 'not-allowed',
                                 opacity: isCompleted ? 1 : 0.5,
                               }}

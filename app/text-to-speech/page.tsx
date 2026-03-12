@@ -1049,14 +1049,24 @@ function EvaluationsTab({
   setActiveTab,
 }: EvaluationsTabProps) {
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
+  const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string) => {
+  // Close score info tooltip on outside click
+  useEffect(() => {
+    if (!openScoreInfo) return;
+    const handleClick = () => setOpenScoreInfo(null);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [openScoreInfo]);
+
+  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string, score?: { [key: string]: any }) => {
     if (apiKeys.length === 0) return;
 
     try {
-      const payload: { is_correct?: boolean | null; comment?: string } = {};
+      const payload: { is_correct?: boolean | null; comment?: string; score?: { [key: string]: any } } = {};
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
+      if (score !== undefined) payload.score = score;
 
       const response = await fetch(`/api/evaluations/tts/results/${resultId}`, {
         method: 'PATCH',
@@ -1070,7 +1080,12 @@ function EvaluationsTab({
       if (!response.ok) throw new Error('Failed to update feedback');
 
       setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}), ...(comment !== undefined && { comment }) } : r
+        r.id === resultId ? {
+          ...r,
+          ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}),
+          ...(comment !== undefined && { comment }),
+          ...(score !== undefined && { score: { ...(r.score || {}), ...score } }),
+        } : r
       ));
     } catch (error) {
       console.error('Failed to update feedback:', error);
@@ -1275,7 +1290,7 @@ function EvaluationsTab({
             )}
           </div>
 
-          <div className="rounded-lg border overflow-hidden" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <div className="rounded-lg border overflow-x-auto" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
@@ -1289,13 +1304,101 @@ function EvaluationsTab({
                   <p className="text-xs" style={{ color: colors.text.secondary }}>This evaluation has no results yet</p>
                 </div>
               ) : (
-                <table className="w-full">
+                <table className="w-full" style={{ minWidth: '900px' }}>
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '35%' }}>Text</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Audio</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '15%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '24%' }}>Text</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '18%' }}>Audio</th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '12%' }}>
+                        <div className="relative">
+                          <div>Speech</div>
+                          <div>Naturalness{' '}
+                          <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer align-middle"
+                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            onClick={(e) => { e.stopPropagation(); setOpenScoreInfo(openScoreInfo === 'speech_naturalness' ? null : 'speech_naturalness'); }}
+                          >
+                            i
+                          </span>
+                          {openScoreInfo === 'speech_naturalness' && (
+                            <div
+                              className="absolute left-0 top-full mt-1 z-50 rounded-lg shadow-lg border text-xs"
+                              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '340px' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="p-3">
+                                <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>Speech Naturalness</div>
+                                <p className="mb-3" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>
+                                  Assesses how human-like the generated speech sounds.
+                                </p>
+                                <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Scoring</div>
+                                <div className="space-y-2 p-2 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.success, width: '62px' }}>High:</span>
+                                    <span style={{ color: colors.text.primary }}>Very human-like, natural flow with appropriate pauses and inflections.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: '#ca8a04', width: '62px' }}>Medium:</span>
+                                    <span style={{ color: colors.text.primary }}>Some human qualities but with occasional robotic or awkward elements.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.error, width: '62px' }}>Low:</span>
+                                    <span style={{ color: colors.text.primary }}>Clearly robotic or artificial, with choppy or monotone speech.</span>
+                                  </div>
+                                </div>
+                                <div className="mt-2 font-semibold" style={{ color: colors.status.success }}>Higher is better.</div>
+                              </div>
+                            </div>
+                          )}
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '12%' }}>
+                        <div className="relative">
+                          <div>Pronunciation</div>
+                          <div>Accuracy{' '}
+                          <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer align-middle"
+                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            onClick={(e) => { e.stopPropagation(); setOpenScoreInfo(openScoreInfo === 'pronunciation_accuracy' ? null : 'pronunciation_accuracy'); }}
+                          >
+                            i
+                          </span>
+                          {openScoreInfo === 'pronunciation_accuracy' && (
+                            <div
+                              className="absolute left-0 top-full mt-1 z-50 rounded-lg shadow-lg border text-xs"
+                              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '340px' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="p-3">
+                                <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>Pronunciation Accuracy</div>
+                                <p className="mb-3" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>
+                                  Evaluates how clearly and correctly words are pronounced in the TTS output.
+                                </p>
+                                <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Scoring</div>
+                                <div className="space-y-2 p-2 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.success, width: '62px' }}>High:</span>
+                                    <span style={{ color: colors.text.primary }}>All words are pronounced clearly and correctly.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: '#ca8a04', width: '62px' }}>Medium:</span>
+                                    <span style={{ color: colors.text.primary }}>1-2 words are mispronounced or unclear.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.error, width: '62px' }}>Low:</span>
+                                    <span style={{ color: colors.text.primary }}>3 or more words are mispronounced or difficult to understand.</span>
+                                  </div>
+                                </div>
+                                <div className="mt-2 font-semibold" style={{ color: colors.status.success }}>Higher is better.</div>
+                              </div>
+                            </div>
+                          )}
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-left px-3 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '12%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '18%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1329,7 +1432,97 @@ function EvaluationsTab({
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm align-top">
+                          <td className="px-3 py-3 text-sm align-top">
+                            <select
+                              value={result.score?.speech_naturalness || ''}
+                              onChange={(e) => {
+                                const value = e.target.value || null;
+                                const newScore = { ...(result.score || {}), speech_naturalness: value };
+                                setResults(prev => prev.map(r =>
+                                  r.id === result.id ? { ...r, score: newScore } : r
+                                ));
+                                updateFeedback(result.id, result.is_correct, undefined, { speech_naturalness: value });
+                              }}
+                              disabled={result.status !== 'SUCCESS'}
+                              className="w-full px-2 py-1.5 border rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: !result.score?.speech_naturalness
+                                  ? colors.bg.primary
+                                  : result.score.speech_naturalness === 'High'
+                                    ? 'rgba(22, 163, 74, 0.1)'
+                                    : result.score.speech_naturalness === 'Medium'
+                                      ? 'rgba(234, 179, 8, 0.1)'
+                                      : 'rgba(239, 68, 68, 0.1)',
+                                borderColor: !result.score?.speech_naturalness
+                                  ? colors.border
+                                  : result.score.speech_naturalness === 'High'
+                                    ? colors.status.success
+                                    : result.score.speech_naturalness === 'Medium'
+                                      ? '#eab308'
+                                      : colors.status.error,
+                                color: !result.score?.speech_naturalness
+                                  ? colors.text.primary
+                                  : result.score.speech_naturalness === 'High'
+                                    ? colors.status.success
+                                    : result.score.speech_naturalness === 'Medium'
+                                      ? '#ca8a04'
+                                      : colors.status.error,
+                                cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
+                                opacity: result.status === 'SUCCESS' ? 1 : 0.5,
+                              }}
+                            >
+                              <option value="">-</option>
+                              <option value="High">High</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Low">Low</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-3 text-sm align-top">
+                            <select
+                              value={result.score?.pronunciation_accuracy || ''}
+                              onChange={(e) => {
+                                const value = e.target.value || null;
+                                const newScore = { ...(result.score || {}), pronunciation_accuracy: value };
+                                setResults(prev => prev.map(r =>
+                                  r.id === result.id ? { ...r, score: newScore } : r
+                                ));
+                                updateFeedback(result.id, result.is_correct, undefined, { pronunciation_accuracy: value });
+                              }}
+                              disabled={result.status !== 'SUCCESS'}
+                              className="w-full px-2 py-1.5 border rounded text-xs font-medium"
+                              style={{
+                                backgroundColor: !result.score?.pronunciation_accuracy
+                                  ? colors.bg.primary
+                                  : result.score.pronunciation_accuracy === 'High'
+                                    ? 'rgba(22, 163, 74, 0.1)'
+                                    : result.score.pronunciation_accuracy === 'Medium'
+                                      ? 'rgba(234, 179, 8, 0.1)'
+                                      : 'rgba(239, 68, 68, 0.1)',
+                                borderColor: !result.score?.pronunciation_accuracy
+                                  ? colors.border
+                                  : result.score.pronunciation_accuracy === 'High'
+                                    ? colors.status.success
+                                    : result.score.pronunciation_accuracy === 'Medium'
+                                      ? '#eab308'
+                                      : colors.status.error,
+                                color: !result.score?.pronunciation_accuracy
+                                  ? colors.text.primary
+                                  : result.score.pronunciation_accuracy === 'High'
+                                    ? colors.status.success
+                                    : result.score.pronunciation_accuracy === 'Medium'
+                                      ? '#ca8a04'
+                                      : colors.status.error,
+                                cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
+                                opacity: result.status === 'SUCCESS' ? 1 : 0.5,
+                              }}
+                            >
+                              <option value="">-</option>
+                              <option value="High">High</option>
+                              <option value="Medium">Medium</option>
+                              <option value="Low">Low</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-3 text-sm align-top">
                             <select
                               value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
                               onChange={(e) => {
@@ -1337,7 +1530,7 @@ function EvaluationsTab({
                                 updateFeedback(result.id, value === '' ? null : value === 'true');
                               }}
                               disabled={result.status !== 'SUCCESS'}
-                              className="px-3 py-1.5 border rounded text-xs font-medium"
+                              className="w-full px-2 py-1.5 border rounded text-xs font-medium"
                               style={{
                                 backgroundColor: result.is_correct === null
                                   ? colors.bg.primary

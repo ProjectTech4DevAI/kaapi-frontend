@@ -9,6 +9,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import Sidebar from '@/app/components/Sidebar';
+import TabNavigation from '@/app/components/TabNavigation';
+import StatusBadge from '@/app/components/StatusBadge';
+import Loader, { LoaderBox } from '@/app/components/Loader';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
@@ -318,20 +321,6 @@ const getLanguageId = (languageCode: string, languages: Language[] = DEFAULT_LAN
   return lang ? lang.id : 1;
 };
 
-// Helper function to format status
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'completed':
-      return { bg: colors.bg.primary, border: colors.status.success, text: colors.status.success };
-    case 'failed':
-      return { bg: colors.bg.primary, border: colors.status.error, text: colors.status.error };
-    case 'running':
-    case 'processing':
-      return { bg: colors.bg.primary, border: colors.accent.primary, text: colors.accent.primary };
-    default:
-      return { bg: colors.bg.primary, border: colors.border, text: colors.text.secondary };
-  }
-};
 
 export default function SpeechToTextPage() {
   const toast = useToast();
@@ -874,31 +863,14 @@ export default function SpeechToTextPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div
-            className="border-b flex gap-1 px-4"
-            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
-          >
-            <button
-              onClick={() => setActiveTab('datasets')}
-              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
-              style={{
-                borderColor: activeTab === 'datasets' ? colors.accent.primary : 'transparent',
-                color: activeTab === 'datasets' ? colors.accent.primary : colors.text.secondary,
-              }}
-            >
-              Datasets
-            </button>
-            <button
-              onClick={() => setActiveTab('evaluations')}
-              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
-              style={{
-                borderColor: activeTab === 'evaluations' ? colors.accent.primary : 'transparent',
-                color: activeTab === 'evaluations' ? colors.accent.primary : colors.text.secondary,
-              }}
-            >
-              Evaluations
-            </button>
-          </div>
+          <TabNavigation
+            tabs={[
+              { id: 'datasets', label: 'Datasets' },
+              { id: 'evaluations', label: 'Evaluations' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as Tab)}
+          />
 
           {/* Tab Content */}
           {activeTab === 'datasets' ? (
@@ -1025,33 +997,46 @@ function DatasetsTab({
   languages,
 }: DatasetsTabProps) {
   const [showLanguageInfo, setShowLanguageInfo] = useState(false);
+  const [languageInfoPos, setLanguageInfoPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     if (!showLanguageInfo) return;
     const handleClick = () => setShowLanguageInfo(false);
+    const handleScroll = () => setShowLanguageInfo(false);
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [showLanguageInfo]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-7xl mx-auto space-y-4">
-          {/* Dataset Information Card - Compact */}
+          {/* Title */}
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Create New Dataset
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              Add audio samples that will be transcribed during evaluation
+            </p>
+          </div>
+
+          {/* Dataset Fields */}
           <div
-            className="border rounded-lg p-4"
+            className="rounded-lg p-5"
             style={{
               backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
             }}
           >
-            <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
-              Dataset Information
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Dataset Name *
+                <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+                  Name *
                 </label>
                 <input
                   type="text"
@@ -1068,7 +1053,7 @@ function DatasetsTab({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                   Description
                 </label>
                 <input
@@ -1086,20 +1071,26 @@ function DatasetsTab({
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  <span className="inline-flex items-center gap-1 relative">
+                <label className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+                  <span className="inline-flex items-center gap-1">
                     Language *
                     <span
-                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
                       style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowLanguageInfo(!showLanguageInfo); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setLanguageInfoPos({ top: rect.bottom + 4, left: rect.left });
+                        setShowLanguageInfo(!showLanguageInfo);
+                      }}
                     >
                       i
                     </span>
                     {showLanguageInfo && (
                       <div
-                        className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs p-3"
-                        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px' }}
+                        className="fixed z-50 rounded-lg shadow-lg border text-xs p-3"
+                        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px', top: languageInfoPos.top, left: languageInfoPos.left }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
@@ -1135,15 +1126,15 @@ function DatasetsTab({
 
           {/* Audio Files Section Card - Expanded with Split Layout */}
           <div
-            className="border rounded-lg flex flex-col overflow-hidden"
+            className="rounded-lg flex flex-col overflow-hidden"
             style={{
               backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
               ...(audioFiles.length > 0 && { flex: 1, minHeight: '500px' }),
             }}
           >
             <div className="p-4 border-b" style={{ borderColor: colors.border }}>
-              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
+              <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: colors.text.secondary }}>
                 Audio Files *
               </h2>
             </div>
@@ -1456,13 +1447,19 @@ function EvaluationsTab({
 }: EvaluationsTabProps) {
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
   const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
+  const [scoreInfoPos, setScoreInfoPos] = useState({ top: 0, left: 0 });
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!openScoreInfo) return;
     const handleClick = () => setOpenScoreInfo(null);
+    const handleScroll = () => setOpenScoreInfo(null);
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [openScoreInfo]);
 
   const toggleTranscription = (resultId: number) => {
@@ -1523,8 +1520,8 @@ function EvaluationsTab({
           <div className="flex-1 overflow-auto p-4 space-y-4">
             {/* Evaluation Name */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                Evaluation Name *
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+                Name *
               </label>
               <input
                 type="text"
@@ -1542,7 +1539,7 @@ function EvaluationsTab({
 
             {/* Model Selection */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                 Model *
               </label>
               <select
@@ -1561,14 +1558,11 @@ function EvaluationsTab({
 
             {/* Dataset Selection */}
             <div className="pt-2">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                 Select Dataset *
               </label>
               {isLoadingDatasets ? (
-                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
-                </div>
+                <LoaderBox message="Loading datasets..." size="sm" />
               ) : datasets.length === 0 ? (
                 <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
                   <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
@@ -1615,8 +1609,8 @@ function EvaluationsTab({
                       {selectedDataset.name}
                     </div>
                     <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
-                      <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
-                      {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+                      <div>{selectedDataset.dataset_metadata?.sample_count || 0} samples</div>
+                      {selectedDataset.description && <div>{selectedDataset.description}</div>}
                     </div>
                   </div>
                 </div>
@@ -1670,22 +1664,26 @@ function EvaluationsTab({
         <div className="flex-1 overflow-auto p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {selectedRunId !== null && (
-                <button
-                  onClick={() => setSelectedRunId(null)}
-                  className="p-1.5 rounded hover:bg-opacity-10"
-                  style={{ color: colors.text.secondary }}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+              {selectedRunId !== null ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedRunId(null)}
+                    className="p-1 rounded"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                    {runs.find(r => r.id === selectedRunId)?.run_name}
+                  </h2>
+                </div>
+              ) : (
+                <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                  Evaluation Runs
+                </h2>
               )}
-              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
-                {selectedRunId !== null
-                  ? `Results - ${runs.find(r => r.id === selectedRunId)?.run_name}`
-                  : 'Evaluation Runs'}
-              </h2>
             </div>
             {selectedRunId === null && (
               <button
@@ -1706,13 +1704,12 @@ function EvaluationsTab({
             )}
           </div>
 
-          <div className={`rounded-lg border ${openScoreInfo ? '' : 'overflow-hidden'}`} style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <div className="rounded-lg overflow-visible" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
-                <div className="p-16 text-center">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading results...</p>
+                <div className="p-16">
+                  <Loader size="md" message="Loading results..." />
                 </div>
               ) : results.length === 0 ? (
                 <div className="p-16 text-center">
@@ -1723,8 +1720,8 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '40%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '40%' }}>
                         <div>
                           <div>Ground Truth vs Transcription</div>
                           <div className="flex items-center gap-2 font-normal mt-1">
@@ -1743,13 +1740,18 @@ function EvaluationsTab({
                           </div>
                         </div>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '15%' }}>
-                        <span className="inline-flex items-center gap-1 relative">
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                        <span className="inline-flex items-center gap-1">
                           Score
                           <span
-                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
                             style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
-                            onClick={(e) => { e.stopPropagation(); setOpenScoreInfo(openScoreInfo ? null : 'accuracy'); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setScoreInfoPos({ top: rect.bottom + 4, left: rect.left });
+                              setOpenScoreInfo(openScoreInfo ? null : 'accuracy');
+                            }}
                           >
                             i
                           </span>
@@ -1764,8 +1766,8 @@ function EvaluationsTab({
                             const current = metrics[currentIdx >= 0 ? currentIdx : 0];
                             return (
                               <div
-                                className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs"
-                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px' }}
+                                className="fixed z-50 rounded-lg shadow-lg border text-xs"
+                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px', top: scoreInfoPos.top, left: scoreInfoPos.left }}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {/* Tab navigation */}
@@ -1806,8 +1808,8 @@ function EvaluationsTab({
                           })()}
                         </span>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2055,9 +2057,8 @@ function EvaluationsTab({
             ) : (
               // Runs List View
               isLoadingRuns ? (
-                <div className="p-16 text-center">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading evaluation runs...</p>
+                <div className="p-16">
+                  <Loader size="md" message="Loading evaluation runs..." />
                 </div>
               ) : runs.length === 0 ? (
                 <div className="p-16 text-center">
@@ -2068,17 +2069,16 @@ function EvaluationsTab({
                   <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
                 </div>
               ) : (
-                <div className="p-3 space-y-3">
+                <div className="p-4 space-y-3">
                   {runs.map((run) => {
-                    const statusColors = getStatusColor(run.status);
                     const isCompleted = run.status.toLowerCase() === 'completed';
                     return (
                       <div
                         key={run.id}
-                        className="border rounded-lg p-5"
+                        className="rounded-lg p-5"
                         style={{
-                          borderColor: colors.border,
-                          backgroundColor: colors.bg.secondary,
+                          backgroundColor: colors.bg.primary,
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
                         }}
                       >
                         <div className="flex items-start justify-between gap-4 mb-3">
@@ -2090,33 +2090,31 @@ function EvaluationsTab({
                         </div>
 
                         <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-6 text-sm" style={{ color: colors.text.secondary }}>
-                            <div>
-                              <span className="font-medium">Dataset:</span> {run.dataset_name}
-                            </div>
+                          <div className="flex items-center gap-4 text-sm" style={{ color: colors.text.secondary }}>
+                            <span className="flex items-center gap-1.5">
+                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                              </svg>
+                              {run.dataset_name}
+                            </span>
+                            {run.models && run.models.length > 0 && (
+                              <span className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: colors.bg.secondary }}>
+                                {run.models.join(', ')}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span
-                              className="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: statusColors.bg,
-                                borderWidth: '1px',
-                                borderColor: statusColors.border,
-                                color: statusColors.text,
-                              }}
-                            >
-                              {run.status.toUpperCase()}
-                            </span>
+                            <StatusBadge status={run.status} size="sm" />
                             <button
                               onClick={isCompleted ? () => loadResults(run.id) : undefined}
                               disabled={!isCompleted}
-                              className="px-4 py-2 rounded-lg text-sm font-medium border"
+                              className="px-4 py-1.5 rounded-lg text-sm font-medium border"
                               style={{
-                                backgroundColor: isCompleted ? colors.bg.primary : colors.bg.secondary,
-                                borderColor: colors.border,
-                                color: isCompleted ? colors.text.primary : colors.text.secondary,
+                                backgroundColor: 'transparent',
+                                borderColor: isCompleted ? colors.accent.primary : colors.border,
+                                color: isCompleted ? colors.accent.primary : colors.text.secondary,
                                 cursor: isCompleted ? 'pointer' : 'not-allowed',
-                                opacity: isCompleted ? 1 : 0.6,
+                                opacity: isCompleted ? 1 : 0.5,
                               }}
                             >
                               View Results

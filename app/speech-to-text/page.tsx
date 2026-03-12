@@ -873,7 +873,20 @@ export default function SpeechToTextPage() {
           />
 
           {/* Tab Content */}
-          {activeTab === 'datasets' ? (
+          {apiKeys.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>API key required</p>
+                <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>Add an API key in the Keystore to start creating datasets and running evaluations</p>
+                <a href="/keystore" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}>
+                  Go to Keystore
+                </a>
+              </div>
+            </div>
+          ) : activeTab === 'datasets' ? (
             <DatasetsTab
               leftPanelWidth={leftPanelWidth}
               datasetName={datasetName}

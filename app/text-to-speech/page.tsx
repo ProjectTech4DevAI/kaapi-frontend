@@ -21,6 +21,17 @@ interface TextSample {
   text: string;
 }
 
+interface Language {
+  id: number;
+  code: string;
+  name: string;
+}
+
+const DEFAULT_LANGUAGES: Language[] = [
+  { id: 1, code: 'en', name: 'English' },
+  { id: 2, code: 'hi', name: 'Hindi' },
+];
+
 interface TTSDataset {
   id: number;
   name: string;
@@ -234,9 +245,13 @@ export default function TextToSpeechPage() {
   // API Keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
 
+  // Languages
+  const [languages, setLanguages] = useState<Language[]>([]);
+
   // Dataset form (Tab 1)
   const [datasetName, setDatasetName] = useState('');
   const [datasetDescription, setDatasetDescription] = useState('');
+  const [datasetLanguageId, setDatasetLanguageId] = useState<number>(1);
   const [textSamples, setTextSamples] = useState<TextSample[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -274,6 +289,52 @@ export default function TextToSpeechPage() {
       }
     }
   }, []);
+
+  // Load languages
+  const loadLanguages = async () => {
+    if (apiKeys.length === 0) return;
+
+    try {
+      const response = await fetch('/api/languages', {
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
+
+      if (!response.ok) throw new Error('Failed to load languages');
+
+      const data = await response.json();
+
+      let rawList: any[] = [];
+      if (Array.isArray(data)) {
+        rawList = data;
+      } else if (data.data?.data && Array.isArray(data.data.data)) {
+        rawList = data.data.data;
+      } else if (data.data && Array.isArray(data.data)) {
+        rawList = data.data;
+      } else if (data.languages && Array.isArray(data.languages)) {
+        rawList = data.languages;
+      }
+
+      const languagesList: Language[] = rawList
+        .filter((l: any) => l.is_active !== false)
+        .map((l: any) => ({
+          id: l.id,
+          code: l.locale || l.code || '',
+          name: l.label || l.name || '',
+        }));
+
+      if (languagesList.length > 0) {
+        setLanguages(languagesList);
+        if (languagesList[0]?.id) {
+          setDatasetLanguageId(languagesList[0].id);
+        }
+      } else {
+        setLanguages(DEFAULT_LANGUAGES);
+      }
+    } catch (error) {
+      console.error('Failed to load languages:', error);
+      setLanguages(DEFAULT_LANGUAGES);
+    }
+  };
 
   // Load datasets
   const loadDatasets = async () => {
@@ -342,6 +403,7 @@ export default function TextToSpeechPage() {
   };
 
   useEffect(() => {
+    loadLanguages();
     loadDatasets();
     if (activeTab === 'evaluations') {
       loadRuns();
@@ -418,6 +480,7 @@ export default function TextToSpeechPage() {
         body: JSON.stringify({
           name: datasetName.trim(),
           description: datasetDescription.trim() || undefined,
+          language_id: datasetLanguageId,
           samples,
         }),
       });
@@ -615,6 +678,9 @@ export default function TextToSpeechPage() {
               setDatasetName={setDatasetName}
               datasetDescription={datasetDescription}
               setDatasetDescription={setDatasetDescription}
+              datasetLanguageId={datasetLanguageId}
+              setDatasetLanguageId={setDatasetLanguageId}
+              languages={languages}
               textSamples={textSamples}
               addTextSample={addTextSample}
               removeTextSample={removeTextSample}
@@ -676,6 +742,9 @@ interface DatasetsTabProps {
   setDatasetName: (name: string) => void;
   datasetDescription: string;
   setDatasetDescription: (desc: string) => void;
+  datasetLanguageId: number;
+  setDatasetLanguageId: (id: number) => void;
+  languages: Language[];
   textSamples: TextSample[];
   addTextSample: () => void;
   removeTextSample: (id: string) => void;
@@ -691,6 +760,9 @@ function DatasetsTab({
   setDatasetName,
   datasetDescription,
   setDatasetDescription,
+  datasetLanguageId,
+  setDatasetLanguageId,
+  languages,
   textSamples,
   addTextSample,
   removeTextSample,
@@ -715,7 +787,7 @@ function DatasetsTab({
             <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
               Dataset Information
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
                   Dataset Name *
@@ -750,6 +822,26 @@ function DatasetsTab({
                     color: colors.text.primary,
                   }}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+                  Language *
+                </label>
+                <select
+                  value={datasetLanguageId}
+                  onChange={e => setDatasetLanguageId(Number(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-md text-sm"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                  }}
+                >
+                  {languages.map(lang => (
+                    <option key={lang.id} value={lang.id}>{lang.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

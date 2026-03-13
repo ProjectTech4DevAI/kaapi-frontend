@@ -659,6 +659,7 @@ export default function TextToSpeechPage() {
             </div>
           ) : activeTab === 'datasets' ? (
             <DatasetsTab
+              leftPanelWidth={leftPanelWidth}
               datasetName={datasetName}
               setDatasetName={setDatasetName}
               datasetDescription={datasetDescription}
@@ -678,6 +679,9 @@ export default function TextToSpeechPage() {
                 setTextSamples([]);
               }}
               apiKeys={apiKeys}
+              datasets={datasets}
+              loadDatasets={loadDatasets}
+              toast={toast}
             />
           ) : (
             <EvaluationsTab
@@ -723,6 +727,7 @@ export default function TextToSpeechPage() {
 
 // ============ DATASETS TAB COMPONENT ============
 interface DatasetsTabProps {
+  leftPanelWidth: number;
   datasetName: string;
   setDatasetName: (name: string) => void;
   datasetDescription: string;
@@ -738,9 +743,13 @@ interface DatasetsTabProps {
   handleCreateDataset: () => void;
   resetForm: () => void;
   apiKeys: APIKey[];
+  datasets: TTSDataset[];
+  loadDatasets: () => void;
+  toast: ReturnType<typeof useToast>;
 }
 
 function DatasetsTab({
+  leftPanelWidth,
   datasetName,
   setDatasetName,
   datasetDescription,
@@ -756,110 +765,141 @@ function DatasetsTab({
   handleCreateDataset,
   resetForm,
   apiKeys,
+  datasets,
+  loadDatasets,
+  toast,
 }: DatasetsTabProps) {
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewModalData, setViewModalData] = useState<{ name: string; samples: { id: number; text: string }[] } | null>(null);
+
+  const handleViewDataset = async (datasetId: number, datasetName: string) => {
+    if (apiKeys.length === 0) return;
+    setViewingId(datasetId);
+    try {
+      const response = await fetch(`/api/evaluations/tts/datasets/${datasetId}?include_samples=true`, {
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch dataset');
+      }
+      const data = await response.json();
+      const samples = data?.data?.samples || data?.samples || [];
+      if (samples.length === 0) {
+        toast.error('No samples found in this dataset');
+        return;
+      }
+      setViewModalData({ name: datasetName, samples });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to view dataset');
+    } finally {
+      setViewingId(null);
+    }
+  };
+
+  const handleDeleteDataset = async (datasetId: number) => {
+    if (apiKeys.length === 0) return;
+    setDeletingId(datasetId);
+    try {
+      const response = await fetch(`/api/evaluations/tts/datasets/${datasetId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete dataset');
+      }
+      toast.success('Dataset deleted');
+      loadDatasets();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete dataset');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto space-y-4">
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Create Dataset Form */}
+      <div
+        className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+      >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
           {/* Page Title */}
           <div>
             <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
               Create New Dataset
             </h2>
             <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-              Add text samples that will be synthesized into speech during evaluation
+              Add text samples for speech synthesis evaluation
             </p>
           </div>
 
-          {/* Dataset Fields */}
-          <div
-            className="rounded-lg p-5"
-            style={{
-              backgroundColor: colors.bg.primary,
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-            }}
-          >
-            <div className="grid grid-cols-3 gap-5">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={datasetName}
-                  onChange={e => setDatasetName(e.target.value)}
-                  placeholder="e.g., Hindi News Dataset"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={datasetDescription}
-                  onChange={e => setDatasetDescription(e.target.value)}
-                  placeholder="Optional description"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
-                  Language *
-                </label>
-                <select
-                  value={datasetLanguageId}
-                  onChange={e => setDatasetLanguageId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                >
-                  {languages.map(lang => (
-                    <option key={lang.id} value={lang.id}>{lang.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Name *
+            </label>
+            <input
+              type="text"
+              value={datasetName}
+              onChange={e => setDatasetName(e.target.value)}
+              placeholder="e.g., Hindi News Dataset"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
           </div>
 
-          {/* Text Samples Section */}
-          <div
-            className="rounded-lg flex flex-col overflow-hidden"
-            style={{
-              backgroundColor: colors.bg.primary,
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-              ...(textSamples.length > 0 && { flex: 1, minHeight: '400px' }),
-            }}
-          >
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: colors.border }}>
-              <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: colors.text.secondary }}>
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Description
+            </label>
+            <input
+              type="text"
+              value={datasetDescription}
+              onChange={e => setDatasetDescription(e.target.value)}
+              placeholder="Optional description"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
+          </div>
+
+          {/* Language */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Language *
+            </label>
+            <select
+              value={datasetLanguageId}
+              onChange={e => setDatasetLanguageId(Number(e.target.value))}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            >
+              {languages.map(lang => (
+                <option key={lang.id} value={lang.id}>{lang.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Text Samples */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium" style={{ color: colors.text.secondary }}>
                 Text Samples *
-              </h2>
+              </label>
               <button
                 onClick={apiKeys.length > 0 ? addTextSample : undefined}
-                className="flex items-center gap-1.5 text-sm font-medium"
+                className="flex items-center gap-1 text-xs font-medium"
                 style={{
                   color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
                   cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
                 }}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Add Sample
@@ -867,120 +907,257 @@ function DatasetsTab({
             </div>
 
             {textSamples.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-sm" style={{ color: colors.text.secondary }}>
-                  {apiKeys.length > 0 ? 'No samples added yet. Use the "Add Sample" button above.' : 'Add an API key in Keystore first.'}
+              <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: colors.border }}>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  No samples added yet
                 </p>
               </div>
             ) : (
-              <div className="flex-1 overflow-auto p-4">
-                <div className="space-y-3">
-                  {textSamples.map((sample, idx) => (
-                    <div
-                      key={sample.id}
-                      className="border rounded-lg overflow-hidden"
-                      style={{
-                        borderColor: sample.text.trim() ? colors.status.success : colors.border,
-                        backgroundColor: sample.text.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.secondary,
-                      }}
+              <div className="space-y-2" style={{ maxHeight: '300px', overflow: 'auto' }}>
+                {textSamples.map((sample, idx) => (
+                  <div key={sample.id} className="flex gap-2">
+                    <textarea
+                      value={sample.text}
+                      onChange={e => updateSampleText(sample.id, e.target.value)}
+                      placeholder={`Sample ${idx + 1}...`}
+                      rows={2}
+                      className="flex-1 px-3 py-2 border rounded-md text-sm"
+                      style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary, resize: 'vertical' }}
+                    />
+                    <button
+                      onClick={() => removeTextSample(sample.id)}
+                      className="p-1 rounded flex-shrink-0 self-start mt-1.5"
+                      style={{ color: colors.text.secondary }}
                     >
-                      <div className="p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span
-                              className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-medium"
-                              style={{ backgroundColor: colors.bg.primary, color: colors.text.secondary }}
-                            >
-                              {idx + 1}
-                            </span>
-                            <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                              Sample {idx + 1}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => removeTextSample(sample.id)}
-                            className="p-1 rounded flex-shrink-0"
-                            style={{ color: colors.text.secondary }}
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        <textarea
-                          value={sample.text}
-                          onChange={e => updateSampleText(sample.id, e.target.value)}
-                          placeholder="Enter text to be synthesized into speech..."
-                          rows={3}
-                          className="w-full px-3 py-2 border rounded text-sm"
-                          style={{
-                            backgroundColor: colors.bg.primary,
-                            borderColor: colors.border,
-                            color: colors.text.primary,
-                            resize: 'vertical',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
+        </div>
 
+        {/* Bottom Action Bar */}
+        <div className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <button
+            onClick={resetForm}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ color: colors.text.secondary }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateDataset}
+            disabled={isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0 ? colors.bg.secondary : colors.accent.primary,
+              color: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0 ? colors.text.secondary : '#fff',
+              cursor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isCreating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Creating...
+              </>
+            ) : (
+              'Create Dataset'
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Fixed Action Buttons at Bottom */}
-      <div
-        className="flex-shrink-0 border-t px-6 py-4 flex gap-3"
-        style={{
-          borderColor: colors.border,
-          backgroundColor: colors.bg.primary,
-          boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)'
-        }}
-      >
-        <button
-          onClick={resetForm}
-          disabled={isCreating}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border"
-          style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border,
-            color: colors.text.primary,
-            cursor: isCreating ? 'not-allowed' : 'pointer',
-            opacity: isCreating ? 0.5 : 1,
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateDataset}
-          disabled={isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
-          style={{
-            backgroundColor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0
-              ? colors.bg.secondary
-              : colors.accent.primary,
-            color: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0
-              ? colors.text.secondary
-              : '#fff',
-            cursor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0
-              ? 'not-allowed'
-              : 'pointer',
-          }}
-        >
-          {isCreating ? (
-            <>
-              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-              Creating Dataset...
-            </>
+      {/* Right Panel - Dataset List */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>Datasets</h3>
+          </div>
+
+          {datasets.length === 0 ? (
+            <div className="p-16 text-center">
+              <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+              </svg>
+              <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No datasets yet</p>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset using the form on the left</p>
+            </div>
           ) : (
-            'Create Dataset'
+            <div className="space-y-3">
+              {datasets.map((dataset) => (
+                <div
+                  key={dataset.id}
+                  className="rounded-lg overflow-hidden"
+                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+                >
+                  <div className="px-5 py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                        {dataset.name}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewDataset(dataset.id, dataset.name)}
+                          disabled={viewingId === dataset.id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{
+                            backgroundColor: 'transparent',
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: viewingId === dataset.id ? 0.5 : 1,
+                          }}
+                        >
+                          {viewingId === dataset.id ? 'Loading...' : 'View'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(dataset.id)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{ backgroundColor: 'transparent', borderColor: colors.border, color: 'hsl(8, 86%, 40%)' }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                      {dataset.dataset_metadata?.sample_count !== undefined && (
+                        <span>{dataset.dataset_metadata.sample_count} samples</span>
+                      )}
+                      {dataset.description && (
+                        <>
+                          <span style={{ color: colors.border }}>·</span>
+                          <span>{dataset.description}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
       </div>
+
+      {/* View Dataset Modal */}
+      {viewModalData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setViewModalData(null)}
+        >
+          <div
+            className="rounded-lg shadow-xl flex flex-col"
+            style={{ backgroundColor: colors.bg.primary, width: '600px', maxHeight: '80vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  {viewModalData.name}
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                  {viewModalData.samples.length} text samples
+                </p>
+              </div>
+              <button
+                onClick={() => setViewModalData(null)}
+                className="p-1.5 rounded"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body - Samples Table */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '50px' }}>
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                      Text
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewModalData.samples.map((sample, idx) => (
+                    <tr key={sample.id || idx} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                      <td className="px-4 py-2.5 text-xs" style={{ color: colors.text.secondary }}>
+                        {idx + 1}
+                      </td>
+                      <td className="px-4 py-2.5" style={{ color: colors.text.primary }}>
+                        <div className="text-sm" style={{ lineHeight: '1.5' }}>
+                          {sample.text || <span style={{ color: colors.text.secondary }}>—</span>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId !== null && (() => {
+        const dataset = datasets.find(d => d.id === confirmDeleteId);
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={() => setConfirmDeleteId(null)}
+          >
+            <div
+              className="rounded-lg shadow-xl w-full max-w-md"
+              style={{ backgroundColor: colors.bg.primary }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 py-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)' }}>
+                    <svg className="w-5 h-5" style={{ color: 'hsl(8, 86%, 40%)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                      Delete dataset
+                    </h3>
+                    <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                      Are you sure you want to delete <strong style={{ color: colors.text.primary }}>{dataset?.name}</strong>? This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: colors.border }}>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium border"
+                  style={{ backgroundColor: 'transparent', borderColor: colors.border, color: colors.text.primary }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { handleDeleteDataset(confirmDeleteId); setConfirmDeleteId(null); }}
+                  disabled={deletingId === confirmDeleteId}
+                  className="px-4 py-2 rounded-lg text-sm font-medium"
+                  style={{ backgroundColor: 'hsl(8, 86%, 40%)', color: '#ffffff', opacity: deletingId === confirmDeleteId ? 0.5 : 1 }}
+                >
+                  {deletingId === confirmDeleteId ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1637,6 +1814,13 @@ function EvaluationsTab({
                               {run.status}
                             </span>
                           </div>
+
+                          {/* Error message */}
+                          {run.error_message && (
+                            <div className="mt-3 text-xs" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                              {run.error_message}
+                            </div>
+                          )}
 
                           {/* Row 2: Dataset + Models (left) | Actions (right) */}
                           <div className="flex items-center justify-between gap-4 mt-3">

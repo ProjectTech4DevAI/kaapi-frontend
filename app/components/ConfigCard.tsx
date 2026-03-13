@@ -24,7 +24,7 @@ export default function ConfigCard({
   const router = useRouter();
   const { latestVersion, totalVersions } = configGroup;
   const [showTools, setShowTools] = useState(false);
-  const [showVectorStores, setShowVectorStores] = useState(false);
+  const [showKnowledgeBases, setShowKnowledgeBases] = useState(false);
 
   const handleEdit = () => {
     router.push(`/configurations/prompt-editor?config=${latestVersion.config_id}&version=${latestVersion.version}`);
@@ -164,7 +164,7 @@ export default function ConfigCard({
                   </div>
                 ))}
 
-                {/* Vector Stores Section inside Tools */}
+                {/* Knowledge Bases Section inside Tools */}
                 {(() => {
                   // Collect all knowledge_base_ids from all tools
                   const allVectorStoreIds = latestVersion.tools
@@ -174,7 +174,7 @@ export default function ConfigCard({
                   return allVectorStoreIds.length > 0 && (
                     <div className="mt-3 pt-2" style={{ borderTop: `1px solid ${colors.border}` }}>
                       <button
-                        onClick={() => setShowVectorStores(!showVectorStores)}
+                        onClick={() => setShowKnowledgeBases(!showKnowledgeBases)}
                         className="w-full flex items-center justify-between px-2 py-1 rounded-md transition-colors"
                         style={{
                           backgroundColor: colors.bg.primary,
@@ -184,7 +184,7 @@ export default function ConfigCard({
                           Knowledge Base IDs ({allVectorStoreIds.length})
                         </span>
                         <svg
-                          className={`w-3 h-3 transition-transform ${showVectorStores ? 'rotate-180' : ''}`}
+                          className={`w-3 h-3 transition-transform ${showKnowledgeBases ? 'rotate-180' : ''}`}
                           style={{ color: colors.text.secondary }}
                           fill="none"
                           viewBox="0 0 24 24"
@@ -193,7 +193,7 @@ export default function ConfigCard({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                      {showVectorStores && (
+                      {showKnowledgeBases && (
                         <div
                           className="mt-1 p-2 rounded-md space-y-1"
                           style={{

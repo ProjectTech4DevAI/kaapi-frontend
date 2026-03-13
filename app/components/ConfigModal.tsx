@@ -1,6 +1,6 @@
 /**
  * ConfigModal - Displays detailed configuration for an evaluation job
- * Shows assistant config, model, temperature, instructions, tools, and vector stores
+ * Shows assistant config, model, temperature, instructions, tools, and knowledge bases
  */
 
 "use client"

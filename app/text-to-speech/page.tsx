@@ -773,6 +773,17 @@ function DatasetsTab({
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [viewModalData, setViewModalData] = useState<{ name: string; headers: string[]; rows: string[][] } | null>(null);
+  const samplesContainerRef = useRef<HTMLDivElement>(null);
+  const prevSamplesCount = useRef(textSamples.length);
+
+  useEffect(() => {
+    if (textSamples.length > prevSamplesCount.current) {
+      setTimeout(() => {
+        samplesContainerRef.current?.scrollTo({ top: samplesContainerRef.current.scrollHeight, behavior: 'smooth' });
+      }, 50);
+    }
+    prevSamplesCount.current = textSamples.length;
+  }, [textSamples.length]);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
     if (apiKeys.length === 0) return;
@@ -929,24 +940,9 @@ function DatasetsTab({
 
           {/* Text Samples */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium" style={{ color: colors.text.secondary }}>
-                Text Samples *
-              </label>
-              <button
-                onClick={apiKeys.length > 0 ? addTextSample : undefined}
-                className="flex items-center gap-1 text-xs font-medium"
-                style={{
-                  color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
-                  cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
-                }}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Sample
-              </button>
-            </div>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: colors.text.secondary }}>
+              Text Samples *
+            </label>
 
             {textSamples.length === 0 ? (
               <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: colors.border }}>
@@ -955,7 +951,7 @@ function DatasetsTab({
                 </p>
               </div>
             ) : (
-              <div className="space-y-2" style={{ maxHeight: '300px', overflow: 'auto' }}>
+              <div ref={samplesContainerRef} className="space-y-2" style={{ maxHeight: '300px', overflow: 'auto' }}>
                 {textSamples.map((sample, idx) => (
                   <div key={sample.id} className="flex gap-2">
                     <textarea
@@ -979,6 +975,20 @@ function DatasetsTab({
                 ))}
               </div>
             )}
+
+            <button
+              onClick={apiKeys.length > 0 ? addTextSample : undefined}
+              className="flex items-center gap-1 text-xs font-medium mt-2"
+              style={{
+                color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
+                cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+              }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Sample
+            </button>
           </div>
         </div>
 

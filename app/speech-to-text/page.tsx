@@ -1016,6 +1016,45 @@ function DatasetsTab({
   const [languageInfoPos, setLanguageInfoPos] = useState({ top: 0, left: 0 });
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewModalData, setViewModalData] = useState<{
+    name: string;
+    samples: {
+      id: number;
+      text: string;
+      ground_truth: string;
+      language_id: number;
+      signed_url?: string;
+      sample_metadata?: { original_filename?: string; [key: string]: any };
+    }[];
+  } | null>(null);
+  const [viewPlayingId, setViewPlayingId] = useState<number | null>(null);
+
+  const handleViewDataset = async (datasetId: number, datasetName: string) => {
+    if (apiKeys.length === 0) return;
+    setViewingId(datasetId);
+    try {
+      const response = await fetch(
+        `/api/evaluations/stt/datasets/${datasetId}?include_samples=true&include_signed_url=true&sample_limit=100&sample_offset=0`,
+        { headers: { 'X-API-KEY': apiKeys[0].key } }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch dataset');
+      }
+      const data = await response.json();
+      const samples = data?.data?.samples || data?.samples || [];
+      if (samples.length === 0) {
+        toast.error('No samples found in this dataset');
+        return;
+      }
+      setViewModalData({ name: datasetName, samples });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to view dataset');
+    } finally {
+      setViewingId(null);
+    }
+  };
 
   const handleDeleteDataset = async (datasetId: number) => {
     if (apiKeys.length === 0) return;
@@ -1372,6 +1411,19 @@ function DatasetsTab({
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
+                          onClick={() => handleViewDataset(dataset.id, dataset.name)}
+                          disabled={viewingId === dataset.id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{
+                            backgroundColor: 'transparent',
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: viewingId === dataset.id ? 0.5 : 1,
+                          }}
+                        >
+                          {viewingId === dataset.id ? 'Loading...' : 'View'}
+                        </button>
+                        <button
                           onClick={() => setConfirmDeleteId(dataset.id)}
                           className="px-3 py-1.5 rounded-lg text-xs font-medium border"
                           style={{ backgroundColor: 'transparent', borderColor: colors.border, color: 'hsl(8, 86%, 40%)' }}
@@ -1398,6 +1450,100 @@ function DatasetsTab({
           )}
         </div>
       </div>
+
+      {/* View Dataset Modal */}
+      {viewModalData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => { setViewModalData(null); setViewPlayingId(null); }}
+        >
+          <div
+            className="rounded-lg shadow-xl flex flex-col"
+            style={{ backgroundColor: colors.bg.primary, width: '90vw', maxWidth: '900px', maxHeight: '85vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  {viewModalData.name}
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                  {viewModalData.samples.length} audio samples
+                </p>
+              </div>
+              <button
+                onClick={() => { setViewModalData(null); setViewPlayingId(null); }}
+                className="p-1.5 rounded"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body - Samples */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '40px' }}>
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                      Sample
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '120px' }}>
+                      Language
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                      Ground Truth
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewModalData.samples.map((sample, idx) => (
+                    <tr key={sample.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                      <td className="px-4 py-3 text-xs align-top" style={{ color: colors.text.secondary }}>
+                        {idx + 1}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="space-y-1.5">
+                          {sample.sample_metadata?.original_filename && (
+                            <div className="text-xs font-medium truncate" style={{ color: colors.text.primary, maxWidth: '280px' }}>
+                              {sample.sample_metadata.original_filename}
+                            </div>
+                          )}
+                          {sample.signed_url ? (
+                            <AudioPlayerFromUrl
+                              signedUrl={sample.signed_url}
+                              isPlaying={viewPlayingId === sample.id}
+                              onPlayToggle={() => setViewPlayingId(viewPlayingId === sample.id ? null : sample.id)}
+                            />
+                          ) : (
+                            <span className="text-xs" style={{ color: colors.text.secondary }}>No audio</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span className="text-xs" style={{ color: colors.text.primary }}>
+                          {getLanguageName(sample.language_id, languages)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span className="text-sm" style={{ color: sample.ground_truth ? colors.text.primary : colors.text.secondary, lineHeight: '1.5' }}>
+                          {sample.ground_truth || '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {confirmDeleteId !== null && (() => {

@@ -16,18 +16,15 @@ export async function GET(
   }
 
   try {
-    // Get query parameters from the request
+    // Forward all query parameters to the backend
     const { searchParams } = new URL(request.url);
-    const includeSamples = searchParams.get('include_samples');
-    const includeAudio = searchParams.get('include_audio');
-
-    // Build backend URL with query parameters
     const backendParams = new URLSearchParams();
-    if (includeSamples) backendParams.append('include_samples', includeSamples);
-    if (includeAudio) backendParams.append('include_audio', includeAudio);
+    for (const [key, value] of searchParams.entries()) {
+      backendParams.append(key, value);
+    }
+    const queryString = backendParams.toString() ? `?${backendParams.toString()}` : '';
 
-    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${backendParams.toString() ? `?${backendParams.toString()}` : ''
-      }`;
+    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${queryString}`;
 
     const response = await fetch(backendUrlWithParams, {
       headers: {

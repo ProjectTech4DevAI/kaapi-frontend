@@ -31,6 +31,25 @@ export async function GET(
     });
 
     const data = await response.json();
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
+    // If fetch_content=true, download the CSV from the signed URL and return it
+    const fetchContent = new URL(request.url).searchParams.get('fetch_content');
+    if (fetchContent === 'true') {
+      const signedUrl = data?.data?.signed_url || data?.signed_url;
+      if (!signedUrl) {
+        return NextResponse.json({ error: 'No signed URL available' }, { status: 404 });
+      }
+      const csvResponse = await fetch(signedUrl);
+      if (!csvResponse.ok) {
+        return NextResponse.json({ error: 'Failed to fetch CSV file' }, { status: 502 });
+      }
+      const csvText = await csvResponse.text();
+      return NextResponse.json({ ...data, csv_content: csvText }, { status: 200 });
+    }
+
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(

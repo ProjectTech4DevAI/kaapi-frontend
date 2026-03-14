@@ -678,6 +678,7 @@ function DatasetsTab({
                   style={{
                     backgroundColor: colors.bg.primary,
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                    borderLeft: '3px solid #DCCFC3',
                   }}
                 >
                   <div className="px-5 py-4">

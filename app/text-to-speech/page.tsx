@@ -772,13 +772,13 @@ function DatasetsTab({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
-  const [viewModalData, setViewModalData] = useState<{ name: string; samples: { id: number; text: string }[] } | null>(null);
+  const [viewModalData, setViewModalData] = useState<{ name: string; headers: string[]; rows: string[][] } | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
     if (apiKeys.length === 0) return;
     setViewingId(datasetId);
     try {
-      const response = await fetch(`/api/evaluations/tts/datasets/${datasetId}?include_samples=true`, {
+      const response = await fetch(`/api/evaluations/tts/datasets/${datasetId}?include_signed_url=true&fetch_content=true`, {
         headers: { 'X-API-KEY': apiKeys[0].key },
       });
       if (!response.ok) {
@@ -786,17 +786,59 @@ function DatasetsTab({
         throw new Error(errorData.error || 'Failed to fetch dataset');
       }
       const data = await response.json();
-      const samples = data?.data?.samples || data?.samples || [];
-      if (samples.length === 0) {
-        toast.error('No samples found in this dataset');
+      const csvText = data?.csv_content;
+      if (!csvText) {
+        toast.error('No data available for this dataset');
         return;
       }
-      setViewModalData({ name: datasetName, samples });
+
+      // Parse CSV
+      const lines = csvText.split('\n').filter((l: string) => l.trim());
+      const parseRow = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] === '"') {
+            if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+          } else if (line[i] === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += line[i];
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = lines.length > 0 ? parseRow(lines[0]) : [];
+      const rows = lines.slice(1).map(parseRow);
+
+      setViewModalData({ name: datasetName, headers, rows });
     } catch (err: any) {
       toast.error(err.message || 'Failed to view dataset');
     } finally {
       setViewingId(null);
     }
+  };
+
+  const handleDownloadFromModal = () => {
+    if (!viewModalData) return;
+    const csvLines = [viewModalData.headers.join(',')];
+    viewModalData.rows.forEach(row => {
+      csvLines.push(row.map(cell => cell.includes(',') || cell.includes('"') || cell.includes('\n') ? `"${cell.replace(/"/g, '""')}"` : cell).join(','));
+    });
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${viewModalData.name}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleDeleteDataset = async (datasetId: number) => {
@@ -992,7 +1034,7 @@ function DatasetsTab({
                 <div
                   key={dataset.id}
                   className="rounded-lg overflow-hidden"
-                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)', borderLeft: '3px solid #DCCFC3' }}
                 >
                   <div className="px-5 py-4">
                     <div className="flex items-center justify-between gap-4">
@@ -1050,7 +1092,7 @@ function DatasetsTab({
         >
           <div
             className="rounded-lg shadow-xl flex flex-col"
-            style={{ backgroundColor: colors.bg.primary, width: '600px', maxHeight: '80vh' }}
+            style={{ backgroundColor: colors.bg.primary, width: '80vw', maxWidth: '1000px', maxHeight: '80vh' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -1060,43 +1102,56 @@ function DatasetsTab({
                   {viewModalData.name}
                 </h3>
                 <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-                  {viewModalData.samples.length} text samples
+                  {viewModalData.rows.length} rows · {viewModalData.headers.length} columns
                 </p>
               </div>
-              <button
-                onClick={() => setViewModalData(null)}
-                className="p-1.5 rounded"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadFromModal}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium"
+                  style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
+                >
+                  Download CSV
+                </button>
+                <button
+                  onClick={() => setViewModalData(null)}
+                  className="p-1.5 rounded"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            {/* Modal Body - Samples Table */}
+            {/* Modal Body - Table */}
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '50px' }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '40px' }}>
                     </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
-                      Text
-                    </th>
+                    {viewModalData.headers.map((header, i) => (
+                      <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                        {header}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {viewModalData.samples.map((sample, idx) => (
-                    <tr key={sample.id || idx} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                  {viewModalData.rows.map((row, rowIdx) => (
+                    <tr key={rowIdx} style={{ borderBottom: `1px solid ${colors.border}` }}>
                       <td className="px-4 py-2.5 text-xs" style={{ color: colors.text.secondary }}>
-                        {idx + 1}
+                        {rowIdx + 1}
                       </td>
-                      <td className="px-4 py-2.5" style={{ color: colors.text.primary }}>
-                        <div className="text-sm" style={{ lineHeight: '1.5' }}>
-                          {sample.text || <span style={{ color: colors.text.secondary }}>—</span>}
-                        </div>
-                      </td>
+                      {row.map((cell, cellIdx) => (
+                        <td key={cellIdx} className="px-4 py-2.5" style={{ color: colors.text.primary }}>
+                          <div className="text-sm" style={{ maxHeight: '120px', overflow: 'auto', lineHeight: '1.5' }}>
+                            {cell || <span style={{ color: colors.text.secondary }}>—</span>}
+                          </div>
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>

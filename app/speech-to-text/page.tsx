@@ -1019,6 +1019,7 @@ function DatasetsTab({
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [viewModalData, setViewModalData] = useState<{
     name: string;
+    datasetId: number;
     samples: {
       id: number;
       text: string;
@@ -1029,6 +1030,7 @@ function DatasetsTab({
     }[];
   } | null>(null);
   const [viewPlayingId, setViewPlayingId] = useState<number | null>(null);
+  const [savingSampleId, setSavingSampleId] = useState<number | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
     if (apiKeys.length === 0) return;
@@ -1048,11 +1050,40 @@ function DatasetsTab({
         toast.error('No samples found in this dataset');
         return;
       }
-      setViewModalData({ name: datasetName, samples });
+      setViewModalData({ name: datasetName, datasetId, samples });
     } catch (err: any) {
       toast.error(err.message || 'Failed to view dataset');
     } finally {
       setViewingId(null);
+    }
+  };
+
+  const handleUpdateSample = async (sampleId: number, field: 'ground_truth' | 'language_id', value: string | number) => {
+    if (!viewModalData || apiKeys.length === 0) return;
+    setSavingSampleId(sampleId);
+    try {
+      const response = await fetch(
+        `/api/evaluations/stt/samples/${sampleId}`,
+        {
+          method: 'PATCH',
+          headers: { 'X-API-KEY': apiKeys[0].key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value }),
+        }
+      );
+      const responseData = await response.json().catch(() => ({}));
+      console.log('Update sample response:', response.status, responseData);
+      if (!response.ok) {
+        const msg = responseData?.detail || responseData?.error || responseData?.message || `Failed to update sample (${response.status})`;
+        throw new Error(msg);
+      }
+      setViewModalData(prev => prev ? {
+        ...prev,
+        samples: prev.samples.map(s => s.id === sampleId ? { ...s, [field]: value } : s),
+      } : null);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update sample');
+    } finally {
+      setSavingSampleId(null);
     }
   };
 
@@ -1402,7 +1433,7 @@ function DatasetsTab({
                 <div
                   key={dataset.id}
                   className="rounded-lg overflow-hidden"
-                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)', borderLeft: '3px solid #DCCFC3' }}
                 >
                   <div className="px-5 py-4">
                     <div className="flex items-center justify-between gap-4">
@@ -1527,14 +1558,46 @@ function DatasetsTab({
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <span className="text-xs" style={{ color: colors.text.primary }}>
-                          {getLanguageName(sample.language_id, languages)}
-                        </span>
+                        <select
+                          value={sample.language_id}
+                          onChange={e => handleUpdateSample(sample.id, 'language_id', Number(e.target.value))}
+                          disabled={savingSampleId === sample.id}
+                          className="w-full px-2 py-1.5 border rounded-md text-xs"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: savingSampleId === sample.id ? 0.5 : 1,
+                          }}
+                        >
+                          {languages.map(lang => (
+                            <option key={lang.id} value={lang.id}>{lang.name}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <span className="text-sm" style={{ color: sample.ground_truth ? colors.text.primary : colors.text.secondary, lineHeight: '1.5' }}>
-                          {sample.ground_truth || '—'}
-                        </span>
+                        <textarea
+                          value={sample.ground_truth || ''}
+                          onChange={e => {
+                            const newVal = e.target.value;
+                            setViewModalData(prev => prev ? {
+                              ...prev,
+                              samples: prev.samples.map(s => s.id === sample.id ? { ...s, ground_truth: newVal } : s),
+                            } : null);
+                          }}
+                          onBlur={e => handleUpdateSample(sample.id, 'ground_truth', e.target.value)}
+                          placeholder="Enter ground truth..."
+                          disabled={savingSampleId === sample.id}
+                          rows={3}
+                          className="w-full px-2 py-1.5 border rounded-md text-xs"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: savingSampleId === sample.id ? 0.5 : 1,
+                            resize: 'vertical',
+                          }}
+                        />
                       </td>
                     </tr>
                   ))}

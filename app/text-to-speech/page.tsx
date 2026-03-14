@@ -1670,96 +1670,108 @@ function EvaluationsTab({
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-3 text-sm align-top">
-                            <select
-                              value={result.score?.speech_naturalness || ''}
-                              onChange={(e) => {
-                                const value = e.target.value || null;
-                                const newScore = { ...(result.score || {}), speech_naturalness: value };
-                                setResults(prev => prev.map(r =>
-                                  r.id === result.id ? { ...r, score: newScore } : r
-                                ));
-                                updateFeedback(result.id, result.is_correct, undefined, { speech_naturalness: value });
-                              }}
-                              disabled={result.status !== 'SUCCESS'}
-                              className="w-full px-2 py-1.5 border rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: !result.score?.speech_naturalness
-                                  ? colors.bg.primary
-                                  : result.score.speech_naturalness === 'High'
-                                    ? 'rgba(22, 163, 74, 0.1)'
-                                    : result.score.speech_naturalness === 'Medium'
-                                      ? 'rgba(234, 179, 8, 0.1)'
-                                      : 'rgba(239, 68, 68, 0.1)',
-                                borderColor: !result.score?.speech_naturalness
-                                  ? colors.border
-                                  : result.score.speech_naturalness === 'High'
-                                    ? colors.status.success
-                                    : result.score.speech_naturalness === 'Medium'
-                                      ? '#eab308'
-                                      : colors.status.error,
-                                color: !result.score?.speech_naturalness
-                                  ? colors.text.primary
-                                  : result.score.speech_naturalness === 'High'
-                                    ? colors.status.success
-                                    : result.score.speech_naturalness === 'Medium'
-                                      ? '#ca8a04'
-                                      : colors.status.error,
-                                cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
-                                opacity: result.status === 'SUCCESS' ? 1 : 0.5,
-                              }}
-                            >
-                              <option value="">-</option>
-                              <option value="High">High</option>
-                              <option value="Medium">Medium</option>
-                              <option value="Low">Low</option>
-                            </select>
-                          </td>
-                          <td className="px-3 py-3 text-sm align-top">
-                            <select
-                              value={result.score?.pronunciation_accuracy || ''}
-                              onChange={(e) => {
-                                const value = e.target.value || null;
-                                const newScore = { ...(result.score || {}), pronunciation_accuracy: value };
-                                setResults(prev => prev.map(r =>
-                                  r.id === result.id ? { ...r, score: newScore } : r
-                                ));
-                                updateFeedback(result.id, result.is_correct, undefined, { pronunciation_accuracy: value });
-                              }}
-                              disabled={result.status !== 'SUCCESS'}
-                              className="w-full px-2 py-1.5 border rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: !result.score?.pronunciation_accuracy
-                                  ? colors.bg.primary
-                                  : result.score.pronunciation_accuracy === 'High'
-                                    ? 'rgba(22, 163, 74, 0.1)'
-                                    : result.score.pronunciation_accuracy === 'Medium'
-                                      ? 'rgba(234, 179, 8, 0.1)'
-                                      : 'rgba(239, 68, 68, 0.1)',
-                                borderColor: !result.score?.pronunciation_accuracy
-                                  ? colors.border
-                                  : result.score.pronunciation_accuracy === 'High'
-                                    ? colors.status.success
-                                    : result.score.pronunciation_accuracy === 'Medium'
-                                      ? '#eab308'
-                                      : colors.status.error,
-                                color: !result.score?.pronunciation_accuracy
-                                  ? colors.text.primary
-                                  : result.score.pronunciation_accuracy === 'High'
-                                    ? colors.status.success
-                                    : result.score.pronunciation_accuracy === 'Medium'
-                                      ? '#ca8a04'
-                                      : colors.status.error,
-                                cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
-                                opacity: result.status === 'SUCCESS' ? 1 : 0.5,
-                              }}
-                            >
-                              <option value="">-</option>
-                              <option value="High">High</option>
-                              <option value="Medium">Medium</option>
-                              <option value="Low">Low</option>
-                            </select>
-                          </td>
+                          {(() => {
+                            const snVal = result.score?.['Speech Naturalness'] || result.score?.speech_naturalness || '';
+                            const normalizedSn = snVal ? snVal.charAt(0).toUpperCase() + snVal.slice(1).toLowerCase() : '';
+                            return (
+                              <td className="px-3 py-3 text-sm align-top">
+                                <select
+                                  value={normalizedSn}
+                                  onChange={(e) => {
+                                    const value = e.target.value || null;
+                                    const newScore = { ...(result.score || {}), 'Speech Naturalness': value };
+                                    setResults(prev => prev.map(r =>
+                                      r.id === result.id ? { ...r, score: newScore } : r
+                                    ));
+                                    updateFeedback(result.id, result.is_correct, undefined, { 'Speech Naturalness': value });
+                                  }}
+                                  disabled={result.status !== 'SUCCESS'}
+                                  className="w-full px-2 py-1.5 border rounded text-xs font-medium"
+                                  style={{
+                                    backgroundColor: !normalizedSn
+                                      ? colors.bg.primary
+                                      : normalizedSn === 'High'
+                                        ? 'rgba(22, 163, 74, 0.1)'
+                                        : normalizedSn === 'Medium'
+                                          ? 'rgba(234, 179, 8, 0.1)'
+                                          : 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: !normalizedSn
+                                      ? colors.border
+                                      : normalizedSn === 'High'
+                                        ? colors.status.success
+                                        : normalizedSn === 'Medium'
+                                          ? '#eab308'
+                                          : colors.status.error,
+                                    color: !normalizedSn
+                                      ? colors.text.primary
+                                      : normalizedSn === 'High'
+                                        ? colors.status.success
+                                        : normalizedSn === 'Medium'
+                                          ? '#ca8a04'
+                                          : colors.status.error,
+                                    cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
+                                    opacity: result.status === 'SUCCESS' ? 1 : 0.5,
+                                  }}
+                                >
+                                  <option value="">-</option>
+                                  <option value="High">High</option>
+                                  <option value="Medium">Medium</option>
+                                  <option value="Low">Low</option>
+                                </select>
+                              </td>
+                            );
+                          })()}
+                          {(() => {
+                            const paVal = result.score?.['Pronunciation Accuracy'] || result.score?.pronunciation_accuracy || '';
+                            const normalizedPa = paVal ? paVal.charAt(0).toUpperCase() + paVal.slice(1).toLowerCase() : '';
+                            return (
+                              <td className="px-3 py-3 text-sm align-top">
+                                <select
+                                  value={normalizedPa}
+                                  onChange={(e) => {
+                                    const value = e.target.value || null;
+                                    const newScore = { ...(result.score || {}), 'Pronunciation Accuracy': value };
+                                    setResults(prev => prev.map(r =>
+                                      r.id === result.id ? { ...r, score: newScore } : r
+                                    ));
+                                    updateFeedback(result.id, result.is_correct, undefined, { 'Pronunciation Accuracy': value });
+                                  }}
+                                  disabled={result.status !== 'SUCCESS'}
+                                  className="w-full px-2 py-1.5 border rounded text-xs font-medium"
+                                  style={{
+                                    backgroundColor: !normalizedPa
+                                      ? colors.bg.primary
+                                      : normalizedPa === 'High'
+                                        ? 'rgba(22, 163, 74, 0.1)'
+                                        : normalizedPa === 'Medium'
+                                          ? 'rgba(234, 179, 8, 0.1)'
+                                          : 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: !normalizedPa
+                                      ? colors.border
+                                      : normalizedPa === 'High'
+                                        ? colors.status.success
+                                        : normalizedPa === 'Medium'
+                                          ? '#eab308'
+                                          : colors.status.error,
+                                    color: !normalizedPa
+                                      ? colors.text.primary
+                                      : normalizedPa === 'High'
+                                        ? colors.status.success
+                                        : normalizedPa === 'Medium'
+                                          ? '#ca8a04'
+                                          : colors.status.error,
+                                    cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
+                                    opacity: result.status === 'SUCCESS' ? 1 : 0.5,
+                                  }}
+                                >
+                                  <option value="">-</option>
+                                  <option value="High">High</option>
+                                  <option value="Medium">Medium</option>
+                                  <option value="Low">Low</option>
+                                </select>
+                              </td>
+                            );
+                          })()}
                           <td className="px-3 py-3 text-sm align-top">
                             <select
                               value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}

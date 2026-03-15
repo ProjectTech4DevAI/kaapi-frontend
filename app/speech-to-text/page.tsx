@@ -1132,7 +1132,7 @@ function DatasetsTab({
         className="flex-shrink-0 border-r flex flex-col overflow-hidden"
         style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
       >
-        <div className="flex-1 overflow-auto p-5 space-y-5">
+        <div className="flex-1 overflow-auto p-4 space-y-4">
           {/* Page Title */}
           <div>
             <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
@@ -1425,7 +1425,7 @@ function DatasetsTab({
       <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex-1 overflow-auto p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: colors.text.secondary }}>Datasets</h3>
+            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>Datasets</h3>
           </div>
 
           {datasets.length === 0 ? (
@@ -1739,7 +1739,7 @@ function EvaluationsTab({
             borderColor: colors.border,
           }}
         >
-          <div className="flex-1 overflow-auto p-5 space-y-5">
+          <div className="flex-1 overflow-auto p-4 space-y-4">
             {/* Evaluation Name */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
@@ -1901,7 +1901,7 @@ function EvaluationsTab({
                   </h2>
                 </div>
               ) : (
-                <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: colors.text.secondary }}>
+                <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
                   Evaluation Runs
                 </h2>
               )}

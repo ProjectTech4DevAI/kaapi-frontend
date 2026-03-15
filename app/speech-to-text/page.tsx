@@ -1740,6 +1740,16 @@ function EvaluationsTab({
           }}
         >
           <div className="flex-1 overflow-auto p-4 space-y-4">
+            {/* Page Title */}
+            <div>
+              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                Run New Evaluation
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                Compare transcription quality across STT models
+              </p>
+            </div>
+
             {/* Evaluation Name */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>

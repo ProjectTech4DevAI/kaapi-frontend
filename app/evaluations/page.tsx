@@ -110,10 +110,43 @@ function SimplifiedEvalContent() {
       event.target.value = '';
       return;
     }
-    setUploadedFile(file);
-    if (!datasetName) {
-      setDatasetName(file.name.replace(/\.csv$/i, ''));
-    }
+
+    // Validate CSV has exactly "question" and "answer" columns
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) {
+        toast.error('Failed to read CSV file');
+        event.target.value = '';
+        return;
+      }
+      const firstLine = text.split('\n')[0]?.trim();
+      if (!firstLine) {
+        toast.error('CSV file is empty');
+        event.target.value = '';
+        return;
+      }
+      const headers = firstLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+      const required = ['question', 'answer'];
+      const hasRequired = required.every(col => headers.includes(col));
+      const hasExtra = headers.some(col => !required.includes(col));
+
+      if (!hasRequired || hasExtra) {
+        toast.error('CSV must have exactly two columns: "question" and "answer"');
+        event.target.value = '';
+        return;
+      }
+
+      setUploadedFile(file);
+      if (!datasetName) {
+        setDatasetName(file.name.replace(/\.csv$/i, ''));
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read CSV file');
+      event.target.value = '';
+    };
+    reader.readAsText(file);
   };
 
   // Create dataset

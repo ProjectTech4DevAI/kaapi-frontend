@@ -16,7 +16,7 @@ import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
 import { computeWordDiff, DiffSegment } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
-import { formatDate, getStatusColor } from '@/app/components/utils';
+import { formatDate } from '@/app/components/utils';
 import ErrorModal from '@/app/components/ErrorModal';
 
 type Tab = 'datasets' | 'evaluations';
@@ -187,8 +187,8 @@ function AudioPlayer({
 
       {/* Progress bar */}
       <div
-        className="h-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: colors.bg.secondary }}
+        className="h-0.5 rounded-full overflow-hidden mt-1"
+        style={{ backgroundColor: colors.border }}
       >
         <div
           className="h-full rounded-full"
@@ -282,8 +282,8 @@ function AudioPlayerFromUrl({
 
       {/* Progress bar */}
       <div
-        className="h-1 rounded-full overflow-hidden mt-2"
-        style={{ backgroundColor: colors.bg.secondary }}
+        className="h-0.5 rounded-full overflow-hidden mt-1.5"
+        style={{ backgroundColor: colors.border }}
       >
         <div
           className="h-full rounded-full"
@@ -1127,7 +1127,7 @@ function DatasetsTab({
         className="flex-shrink-0 border-r flex flex-col overflow-hidden"
         style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
       >
-        <div className="flex-1 overflow-auto p-4 space-y-4">
+        <div className="flex-1 overflow-auto p-5 space-y-5">
           {/* Page Title */}
           <div>
             <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
@@ -1257,58 +1257,40 @@ function DatasetsTab({
                 </p>
               </div>
             ) : (
-              <div className="space-y-2" style={{ maxHeight: '400px', overflow: 'auto' }}>
-                {/* Upload more button */}
-                <div
-                  onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
-                  className="border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer"
-                  style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.bg.primary)}
-                >
-                  <p className="text-xs font-medium" style={{ color: colors.accent.primary }}>
-                    + Add more audio samples ({audioFiles.length} added, {audioFiles.filter(f => f.fileId).length} uploaded)
-                  </p>
-                </div>
+              <div>
+                <div className="space-y-3" style={{ maxHeight: '400px', overflow: 'auto' }}>
 
                 {audioFiles.map((audioFile, idx) => (
                   <div
                     key={audioFile.id}
-                    className="border rounded-lg overflow-hidden"
+                    className="rounded-lg overflow-hidden"
                     style={{
-                      borderColor: audioFile.groundTruth.trim() ? colors.status.success : colors.border,
-                      backgroundColor: audioFile.groundTruth.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.secondary,
+                      backgroundColor: colors.bg.primary,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                     }}
                   >
-                    <div className="p-3">
-                      <div className="flex items-center justify-between mb-2">
+                    <div className="p-4">
+                      {/* Header: number, filename, status, remove */}
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-medium"
-                            style={{ backgroundColor: colors.bg.primary, color: colors.text.secondary }}
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-medium"
+                            style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
                           >
                             {idx + 1}
                           </span>
-                          <span className="text-xs font-medium truncate" style={{ color: colors.text.primary }}>
+                          <span className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
                             {audioFile.name}
                           </span>
-                          {audioFile.fileId && (
-                            <span
-                              className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: 'rgba(22, 163, 74, 0.1)', color: colors.status.success }}
-                            >
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </span>
-                          )}
-                          {!audioFile.fileId && (
-                            <span
-                              className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: colors.accent.primary }}
-                            >
-                              <div className="w-2 h-2 border border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.accent.primary, borderTopColor: 'transparent' }} />
-                            </span>
+                          <span className="text-xs flex-shrink-0" style={{ color: colors.text.secondary }}>
+                            {formatFileSize(audioFile.size)}
+                          </span>
+                          {audioFile.fileId ? (
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.status.success }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0" style={{ borderColor: colors.accent.primary, borderTopColor: 'transparent' }} />
                           )}
                         </div>
                         <button
@@ -1322,6 +1304,7 @@ function DatasetsTab({
                         </button>
                       </div>
 
+                      {/* Audio Player */}
                       <AudioPlayer
                         audioBase64={audioFile.base64}
                         mediaType={audioFile.mediaType}
@@ -1329,9 +1312,10 @@ function DatasetsTab({
                         onPlayToggle={() => setPlayingFileId(playingFileId === audioFile.id ? null : audioFile.id)}
                       />
 
-                      <div className="mt-2 flex items-end gap-2">
-                        <div className="flex-shrink-0" style={{ width: '140px' }}>
-                          <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wider" style={{ color: colors.text.secondary }}>
+                      {/* Language + Ground Truth */}
+                      <div className="mt-3 flex items-start gap-3">
+                        <div className="flex-shrink-0" style={{ width: '120px' }}>
+                          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide" style={{ color: colors.text.secondary }}>
                             Language
                           </label>
                           <select
@@ -1346,15 +1330,15 @@ function DatasetsTab({
                           </select>
                         </div>
                         <div className="flex-1">
-                          <label className="block text-[10px] font-semibold mb-1 uppercase tracking-wider" style={{ color: colors.text.secondary }}>
-                            Ground Truth (optional)
+                          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide" style={{ color: colors.text.secondary }}>
+                            Ground Truth
                           </label>
-                          <input
-                            type="text"
+                          <textarea
                             value={audioFile.groundTruth}
                             onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
-                            placeholder={audioFile.fileId ? "Expected transcription..." : "Wait for upload..."}
+                            placeholder={audioFile.fileId ? "Expected transcription..." : "Uploading..."}
                             disabled={!audioFile.fileId}
+                            rows={2}
                             className="w-full px-2 py-1.5 border rounded-md text-xs"
                             style={{
                               backgroundColor: audioFile.fileId ? colors.bg.primary : colors.bg.secondary,
@@ -1362,6 +1346,7 @@ function DatasetsTab({
                               color: audioFile.fileId ? colors.text.primary : colors.text.secondary,
                               cursor: audioFile.fileId ? 'text' : 'not-allowed',
                               opacity: audioFile.fileId ? 1 : 0.6,
+                              resize: 'vertical',
                             }}
                           />
                         </div>
@@ -1369,6 +1354,25 @@ function DatasetsTab({
                     </div>
                   </div>
                 ))}
+                </div>
+
+                {/* Upload more - below scrollable area */}
+                <button
+                  onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                  className="flex items-center gap-1 text-xs font-medium mt-2"
+                  style={{
+                    color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
+                    cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add more samples
+                  <span style={{ color: colors.text.secondary }}>
+                    ({audioFiles.filter(f => f.fileId).length}/{audioFiles.length} uploaded)
+                  </span>
+                </button>
               </div>
             )}
           </div>
@@ -1416,7 +1420,7 @@ function DatasetsTab({
       <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex-1 overflow-auto p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>Datasets</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: colors.text.secondary }}>Datasets</h3>
           </div>
 
           {datasets.length === 0 ? (
@@ -1790,7 +1794,7 @@ function EvaluationsTab({
             borderColor: colors.border,
           }}
         >
-          <div className="flex-1 overflow-auto p-4 space-y-4">
+          <div className="flex-1 overflow-auto p-5 space-y-5">
             {/* Evaluation Name */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
@@ -1953,7 +1957,7 @@ function EvaluationsTab({
                   </h2>
                 </div>
               ) : (
-                <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: colors.text.secondary }}>
                   Evaluation Runs
                 </h2>
               )}
@@ -1993,8 +1997,8 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '40%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '40%' }}>
                         <div>
                           <div>Ground Truth vs Transcription</div>
                           <div className="flex items-center gap-2 font-normal mt-1">
@@ -2013,7 +2017,7 @@ function EvaluationsTab({
                           </div>
                         </div>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '15%' }}>
                         <span className="inline-flex items-center gap-1">
                           Score
                           <span
@@ -2081,8 +2085,8 @@ function EvaluationsTab({
                           })()}
                         </span>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '8%' }}>Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2345,15 +2349,14 @@ function EvaluationsTab({
                 <div className="p-4 space-y-3">
                   {runs.map((run) => {
                     const isCompleted = run.status.toLowerCase() === 'completed';
-                    const statusColor = getStatusColor(run.status);
                     return (
                       <div
                         key={run.id}
                         className="rounded-lg overflow-hidden"
                         style={{
                           backgroundColor: colors.bg.primary,
-                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-                          borderLeft: `3px solid ${statusColor.border}`,
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)',
+                          borderLeft: '3px solid #DCCFC3',
                         }}
                       >
                         <div className="px-5 py-4">
@@ -2362,12 +2365,7 @@ function EvaluationsTab({
                             <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
                               {run.run_name}
                             </div>
-                            <span
-                              className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
-                              style={{ backgroundColor: statusColor.bg, color: statusColor.text }}
-                            >
-                              {run.status}
-                            </span>
+                            <StatusBadge status={run.status} size="sm" />
                           </div>
 
                           {/* Error message */}

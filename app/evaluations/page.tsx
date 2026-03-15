@@ -378,6 +378,20 @@ function DatasetsTab({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [showDuplicationInfo, setShowDuplicationInfo] = useState(false);
+  const [duplicationInfoPos, setDuplicationInfoPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (!showDuplicationInfo) return;
+    const handleClick = () => setShowDuplicationInfo(false);
+    const handleScroll = () => setShowDuplicationInfo(false);
+    document.addEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [showDuplicationInfo]);
 
   const handleDeleteDataset = async (datasetId: number) => {
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
@@ -542,18 +556,46 @@ function DatasetsTab({
 
           {/* Duplication Factor */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
-              Duplication Factor
+            <label className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              <span className="inline-flex items-center gap-1">
+                Duplication Factor
+                <span
+                  className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
+                  style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setDuplicationInfoPos({ top: rect.bottom + 4, left: rect.left });
+                    setShowDuplicationInfo(!showDuplicationInfo);
+                  }}
+                >
+                  i
+                </span>
+                {showDuplicationInfo && (
+                  <div
+                    className="fixed z-50 rounded-lg shadow-lg border text-xs p-3"
+                    style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px', top: duplicationInfoPos.top, left: duplicationInfoPos.left }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Duplication Factor</div>
+                    <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
+                      Controls how many times each question is sent to the AI to generate an answer. For example, setting this to 3 means the AI answers each question 3 separate times — helpful for checking if the AI gives consistent and reliable responses each time.
+                    </p>
+                  </div>
+                )}
+              </span>
             </label>
-            <input
-              type="number"
-              min="1"
-              max="5"
+            <select
               value={duplicationFactor}
               onChange={e => setDuplicationFactor(e.target.value)}
               className="w-full px-3 py-2 border rounded-md text-sm"
               style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
-            />
+            >
+              {[1, 2, 3, 4, 5].map(n => (
+                <option key={n} value={String(n)}>{n}</option>
+              ))}
+            </select>
           </div>
 
           {/* CSV Upload */}
@@ -571,11 +613,11 @@ function DatasetsTab({
             />
 
             {uploadedFile ? (
-              <div className="border rounded-lg p-3" style={{ borderColor: colors.status.success, backgroundColor: 'rgba(22, 163, 74, 0.02)' }}>
+              <div className="rounded-lg p-3" style={{ backgroundColor: colors.bg.secondary }}>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <div className="flex items-center gap-2.5">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <div>
                       <p className="text-sm font-medium" style={{ color: colors.text.primary }}>{uploadedFile.name}</p>

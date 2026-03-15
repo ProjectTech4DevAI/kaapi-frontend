@@ -15,6 +15,7 @@ import { useToast } from '../components/Toast';
 export interface Dataset {
   dataset_id: number;
   dataset_name: string;
+  description?: string;
   total_items: number;
   original_items: number;
   duplication_factor: number;

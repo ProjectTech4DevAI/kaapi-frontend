@@ -136,6 +136,9 @@ function SimplifiedEvalContent() {
       const formData = new FormData();
       formData.append('file', uploadedFile);
       formData.append('dataset_name', datasetName.trim());
+      if (datasetDescription.trim()) {
+        formData.append('description', datasetDescription.trim());
+      }
       if (duplicationFactor && parseInt(duplicationFactor) > 1) {
         formData.append('duplication_factor', duplicationFactor);
       }
@@ -329,6 +332,33 @@ function SimplifiedEvalContent() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============ DATASET DESCRIPTION COMPONENT ============
+const EVAL_DESCRIPTION_CHAR_LIMIT = 100;
+
+function EvalDatasetDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = description.length > EVAL_DESCRIPTION_CHAR_LIMIT;
+
+  return (
+    <div className="mt-2 text-xs leading-relaxed break-words overflow-hidden" style={{ color: colors.text.secondary }}>
+      <span>
+        {isLong && !expanded
+          ? description.slice(0, EVAL_DESCRIPTION_CHAR_LIMIT).trimEnd() + '...'
+          : description}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="mt-1 block text-xs font-medium"
+          style={{ color: colors.text.primary }}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
     </div>
   );
 }
@@ -724,9 +754,29 @@ function DatasetsTab({
                   }}
                 >
                   <div className="px-5 py-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                        {dataset.dataset_name}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                          {dataset.dataset_name}
+                        </div>
+                        {dataset.description && (
+                          <EvalDatasetDescription description={dataset.description} />
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                          <span>{dataset.total_items} items</span>
+                          {dataset.duplication_factor > 1 && (
+                            <>
+                              <span style={{ color: colors.border }}>·</span>
+                              <span>x{dataset.duplication_factor} duplication</span>
+                            </>
+                          )}
+                          {dataset.original_items > 0 && dataset.original_items !== dataset.total_items && (
+                            <>
+                              <span style={{ color: colors.border }}>·</span>
+                              <span>{dataset.original_items} original</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
@@ -750,21 +800,6 @@ function DatasetsTab({
                           Delete
                         </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
-                      <span>{dataset.total_items} items</span>
-                      {dataset.duplication_factor > 1 && (
-                        <>
-                          <span style={{ color: colors.border }}>·</span>
-                          <span>x{dataset.duplication_factor} duplication</span>
-                        </>
-                      )}
-                      {dataset.original_items > 0 && dataset.original_items !== dataset.total_items && (
-                        <>
-                          <span style={{ color: colors.border }}>·</span>
-                          <span>{dataset.original_items} original</span>
-                        </>
-                      )}
                     </div>
                   </div>
                 </div>

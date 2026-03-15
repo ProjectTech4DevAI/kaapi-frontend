@@ -725,6 +725,33 @@ export default function TextToSpeechPage() {
   );
 }
 
+// ============ DATASET DESCRIPTION COMPONENT ============
+const TTS_DESCRIPTION_CHAR_LIMIT = 100;
+
+function TTSDatasetDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = description.length > TTS_DESCRIPTION_CHAR_LIMIT;
+
+  return (
+    <div className="mt-2 text-xs leading-relaxed break-words overflow-hidden" style={{ color: colors.text.secondary }}>
+      <span>
+        {isLong && !expanded
+          ? description.slice(0, TTS_DESCRIPTION_CHAR_LIMIT).trimEnd() + '...'
+          : description}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="mt-1 block text-xs font-medium"
+          style={{ color: colors.text.primary }}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ============ DATASETS TAB COMPONENT ============
 interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -769,8 +796,6 @@ function DatasetsTab({
   loadDatasets,
   toast,
 }: DatasetsTabProps) {
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [viewModalData, setViewModalData] = useState<{ name: string; headers: string[]; rows: string[][] } | null>(null);
   const samplesContainerRef = useRef<HTMLDivElement>(null);
@@ -852,26 +877,6 @@ function DatasetsTab({
     URL.revokeObjectURL(url);
   };
 
-  const handleDeleteDataset = async (datasetId: number) => {
-    if (apiKeys.length === 0) return;
-    setDeletingId(datasetId);
-    try {
-      const response = await fetch(`/api/evaluations/tts/datasets/${datasetId}`, {
-        method: 'DELETE',
-        headers: { 'X-API-KEY': apiKeys[0].key },
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to delete dataset');
-      }
-      toast.success('Dataset deleted');
-      loadDatasets();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to delete dataset');
-    } finally {
-      setDeletingId(null);
-    }
-  };
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -1047,9 +1052,19 @@ function DatasetsTab({
                   style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)', borderLeft: '3px solid #DCCFC3' }}
                 >
                   <div className="px-5 py-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                        {dataset.name}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                          {dataset.name}
+                        </div>
+                        {dataset.description && (
+                          <TTSDatasetDescription description={dataset.description} />
+                        )}
+                        {dataset.dataset_metadata?.sample_count !== undefined && (
+                          <div className="mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                            {dataset.dataset_metadata.sample_count} samples
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
@@ -1065,25 +1080,7 @@ function DatasetsTab({
                         >
                           {viewingId === dataset.id ? 'Loading...' : 'View'}
                         </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(dataset.id)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
-                          style={{ backgroundColor: 'transparent', borderColor: colors.border, color: 'hsl(8, 86%, 40%)' }}
-                        >
-                          Delete
-                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
-                      {dataset.dataset_metadata?.sample_count !== undefined && (
-                        <span>{dataset.dataset_metadata.sample_count} samples</span>
-                      )}
-                      {dataset.description && (
-                        <>
-                          <span style={{ color: colors.border }}>·</span>
-                          <span>{dataset.description}</span>
-                        </>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1171,58 +1168,6 @@ function DatasetsTab({
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {confirmDeleteId !== null && (() => {
-        const dataset = datasets.find(d => d.id === confirmDeleteId);
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-            onClick={() => setConfirmDeleteId(null)}
-          >
-            <div
-              className="rounded-lg shadow-xl w-full max-w-md"
-              style={{ backgroundColor: colors.bg.primary }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-6 py-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)' }}>
-                    <svg className="w-5 h-5" style={{ color: 'hsl(8, 86%, 40%)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                      Delete dataset
-                    </h3>
-                    <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                      Are you sure you want to delete <strong style={{ color: colors.text.primary }}>{dataset?.name}</strong>? This action cannot be undone.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: colors.border }}>
-                <button
-                  onClick={() => setConfirmDeleteId(null)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium border"
-                  style={{ backgroundColor: 'transparent', borderColor: colors.border, color: colors.text.primary }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => { handleDeleteDataset(confirmDeleteId); setConfirmDeleteId(null); }}
-                  disabled={deletingId === confirmDeleteId}
-                  className="px-4 py-2 rounded-lg text-sm font-medium"
-                  style={{ backgroundColor: 'hsl(8, 86%, 40%)', color: '#ffffff', opacity: deletingId === confirmDeleteId ? 0.5 : 1 }}
-                >
-                  {deletingId === confirmDeleteId ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }

@@ -485,61 +485,63 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                             if (!score) return null;
                             const { value, color, bg } = formatScoreValue(score);
                             return (
-                              <div key={score.name || scoreIdx} className="flex items-center gap-1">
-                                <span className="text-xs" style={{ color: '#737373' }}>{score.name}:</span>
-                                <div
-                                  className="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                                  style={{
-                                    color,
-                                    backgroundColor: bg,
-                                    borderWidth: bg === 'transparent' ? '1px' : '0',
-                                    borderColor: '#e5e5e5'
-                                  }}
-                                >
-                                  {value}
-                                </div>
-                                {score?.comment && (() => {
-                                  const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
-                                  return (
-                                    <>
-                                      <div
-                                        className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-xs font-normal"
-                                        style={{
-                                          backgroundColor: openCommentId === commentId ? '#171717' : '#fafafa',
-                                          color: openCommentId === commentId ? '#ffffff' : '#737373',
-                                        }}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const rect = e.currentTarget.getBoundingClientRect();
-                                          const tooltipWidth = 300;
-                                          const centerX = rect.left + rect.width / 2;
-                                          const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
-                                          setCommentPos({ top: rect.top - 8, left: clampedLeft });
-                                          setOpenCommentId(openCommentId === commentId ? null : commentId);
-                                        }}
-                                      >
-                                        i
-                                      </div>
-                                      {openCommentId === commentId && (
+                              <div key={score.name || scoreIdx} className="flex items-center justify-between gap-1">
+                                <span className="text-xs truncate min-w-0" style={{ color: '#737373' }}>{score.name}:</span>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <div
+                                    className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                                    style={{
+                                      color,
+                                      backgroundColor: bg,
+                                      borderWidth: bg === 'transparent' ? '1px' : '0',
+                                      borderColor: '#e5e5e5'
+                                    }}
+                                  >
+                                    {value}
+                                  </div>
+                                  {score?.comment && (() => {
+                                    const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
+                                    return (
+                                      <>
                                         <div
-                                          className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal"
+                                          className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-xs font-normal"
                                           style={{
-                                            backgroundColor: '#171717',
-                                            color: '#ffffff',
-                                            width: '300px',
-                                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                            top: commentPos.top,
-                                            left: commentPos.left,
-                                            transform: 'translateY(-100%)',
+                                            backgroundColor: openCommentId === commentId ? '#171717' : '#fafafa',
+                                            color: openCommentId === commentId ? '#ffffff' : '#737373',
                                           }}
-                                          onClick={(e) => e.stopPropagation()}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            const tooltipWidth = 300;
+                                            const centerX = rect.left + rect.width / 2;
+                                            const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
+                                            setCommentPos({ top: rect.top - 8, left: clampedLeft });
+                                            setOpenCommentId(openCommentId === commentId ? null : commentId);
+                                          }}
                                         >
-                                          {score.comment}
+                                          i
                                         </div>
-                                      )}
-                                    </>
-                                  );
-                                })()}
+                                        {openCommentId === commentId && (
+                                          <div
+                                            className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal"
+                                            style={{
+                                              backgroundColor: '#171717',
+                                              color: '#ffffff',
+                                              width: '300px',
+                                              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                              top: commentPos.top,
+                                              left: commentPos.left,
+                                              transform: 'translateY(-100%)',
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            {score.comment}
+                                          </div>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               </div>
                             );
                           })}

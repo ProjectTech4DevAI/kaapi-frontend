@@ -1301,9 +1301,17 @@ function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
     >
       <div className="px-5 py-4">
         {/* Row 1: Run Name (left) | Status (right) */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-            {job.run_name}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+              {job.run_name}
+            </div>
+            {/* Error message (if failed) */}
+            {job.error_message && (
+              <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                {job.error_message}
+              </div>
+            )}
           </div>
           <span
             className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
@@ -1317,13 +1325,6 @@ function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
         {scoreObj && (
           <div className="mt-3">
             <ScoreDisplay score={scoreObj} errorMessage={job.error_message} />
-          </div>
-        )}
-
-        {/* Error message (if failed) */}
-        {job.error_message && (
-          <div className="mt-3 text-xs" style={{ color: 'hsl(8, 86%, 40%)' }}>
-            {job.error_message}
           </div>
         )}
 

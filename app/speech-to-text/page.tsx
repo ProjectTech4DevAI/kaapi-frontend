@@ -1832,7 +1832,6 @@ function EvaluationsTab({
                     </div>
                     <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
                       <div>{selectedDataset.dataset_metadata?.sample_count || 0} samples</div>
-                      {selectedDataset.description && <div>{selectedDataset.description}</div>}
                     </div>
                   </div>
                 </div>
@@ -2306,19 +2305,20 @@ function EvaluationsTab({
                       >
                         <div className="px-5 py-4">
                           {/* Row 1: Run Name + Status */}
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                              {run.run_name}
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                                {run.run_name}
+                              </div>
+                              {/* Error message */}
+                              {run.error_message && (
+                                <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                                  {run.error_message}
+                                </div>
+                              )}
                             </div>
                             <StatusBadge status={run.status} size="sm" />
                           </div>
-
-                          {/* Error message */}
-                          {run.error_message && (
-                            <div className="mt-3 text-xs" style={{ color: 'hsl(8, 86%, 40%)' }}>
-                              {run.error_message}
-                            </div>
-                          )}
 
                           {/* Row 2: Dataset + Models (left) | Actions (right) */}
                           <div className="flex items-center justify-between gap-4 mt-3">

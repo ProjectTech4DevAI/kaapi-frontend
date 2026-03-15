@@ -1941,8 +1941,8 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '40%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '40%' }}>
                         <div>
                           <div>Ground Truth vs Transcription</div>
                           <div className="flex items-center gap-2 font-normal mt-1">
@@ -1961,7 +1961,7 @@ function EvaluationsTab({
                           </div>
                         </div>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '15%' }}>
                         <span className="inline-flex items-center gap-1">
                           Score
                           <span
@@ -2029,8 +2029,8 @@ function EvaluationsTab({
                           })()}
                         </span>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '8%' }}>Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>

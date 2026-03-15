@@ -23,7 +23,7 @@ import HistorySidebar from '@/app/components/prompt-editor/HistorySidebar';
 import PromptEditorPane from '@/app/components/prompt-editor/PromptEditorPane';
 import ConfigEditorPane from '@/app/components/prompt-editor/ConfigEditorPane';
 import DiffView from '@/app/components/prompt-editor/DiffView';
-import ValidatorListPane, { Validator } from '@/app/components/prompt-editor/ValidatorListPane';
+import ValidatorListPane, { Validator, AVAILABLE_VALIDATORS } from '@/app/components/prompt-editor/ValidatorListPane';
 import { useToast } from '@/app/components/Toast';
 import Loader from '@/app/components/Loader';
 import { useConfigs, invalidateConfigCache, SavedConfig } from '@/app/lib/useConfigs';
@@ -88,6 +88,15 @@ function PromptEditorContent() {
   const [isGuardrailsMode, setIsGuardrailsMode] = useState<boolean>(false);
   const [selectedValidator, setSelectedValidator] = useState<string | null>(null);
   const [savedValidators, setSavedValidators] = useState<Validator[]>([]);
+
+  // Mapping from backend validator type to frontend validator id
+  const VALIDATOR_TYPE_TO_ID: Record<string, string> = {
+    'pii_remover': 'detect-pii',
+    'uli_slur_match': 'lexical-slur-match',
+    'gender_assumption_bias': 'gender-assumption-bias',
+    'ban_list': 'ban-list',
+    'topic_relevance': 'topic-relevance',
+  };
 
   // Get API key from localStorage
   const getApiKey = (): string | null => {
@@ -163,6 +172,25 @@ function PromptEditorContent() {
         setCurrentConfigVersion(targetConfig.version);
         setTools(targetConfig.tools || []);
 
+        // Load guardrails if this config has them
+        if (targetConfig.hasGuardrails) {
+          const apiKey = getApiKey();
+          if (apiKey) {
+            fetch(`/api/configs/${targetConfig.config_id}/versions/${targetConfig.version}`, {
+              headers: { 'X-API-KEY': apiKey },
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success && data.data && data.data.config_blob) {
+                  loadGuardrailsFromConfig(data.data.config_blob);
+                }
+              })
+              .catch(error => console.error('Failed to load guardrails:', error));
+          }
+        } else {
+          setSavedValidators([]);
+        }
+
         // If history is requested, show the history sidebar with this version selected
         if (showHistory) {
           setSelectedVersion(targetConfig);
@@ -235,7 +263,21 @@ function PromptEditorContent() {
         }
       });
 
-      const configBlob: ConfigBlob = {
+      // Build guardrails arrays from saved validators
+      console.log('[DEBUG] Saved validators:', savedValidators);
+
+      const inputGuardrails = savedValidators
+        .filter(v => (v.config?.stage || 'input') === 'input' && v.validator_config_id)
+        .map(v => ({ validator_config_id: v.validator_config_id! }));
+
+      const outputGuardrails = savedValidators
+        .filter(v => v.config?.stage === 'output' && v.validator_config_id)
+        .map(v => ({ validator_config_id: v.validator_config_id! }));
+
+      console.log('[DEBUG] Input guardrails:', inputGuardrails);
+      console.log('[DEBUG] Output guardrails:', outputGuardrails);
+
+      const configBlob: any = {
         completion: {
           provider: currentConfigBlob.completion.provider,
           type: currentConfigBlob.completion.type || 'text', // Default to 'text'
@@ -250,6 +292,9 @@ function PromptEditorContent() {
             }),
           },
         },
+        // Include guardrails if any validators are configured
+        ...(inputGuardrails.length > 0 && { input_guardrails: inputGuardrails }),
+        ...(outputGuardrails.length > 0 && { output_guardrails: outputGuardrails }),
       };
 
       console.log('[DEBUG] Config blob being sent:', JSON.stringify(configBlob, null, 2));
@@ -325,7 +370,7 @@ function PromptEditorContent() {
   };
 
   // Load a saved configuration by ID
-  const handleLoadConfigById = (configId: string) => {
+  const handleLoadConfigById = async (configId: string) => {
     if (!configId) {
       // Reset to new config
       setCurrentContent('');
@@ -337,6 +382,7 @@ function PromptEditorContent() {
       setCurrentConfigParentId('');
       setCurrentConfigVersion(0);
       setTools([]);
+      setSavedValidators([]);
       return;
     }
 
@@ -363,6 +409,31 @@ function PromptEditorContent() {
     setCurrentConfigParentId(config.config_id);
     setCurrentConfigVersion(config.version);
     setTools(config.tools || []);
+
+    // Always fetch config blob to check for guardrails
+    const apiKey = getApiKey();
+    if (apiKey) {
+      try {
+        // Fetch full config version to get config_blob
+        const response = await fetch(
+          `/api/configs/${config.config_id}/versions/${config.version}`,
+          {
+            headers: { 'X-API-KEY': apiKey },
+          }
+        );
+        const data = await response.json();
+        if (data.success && data.data && data.data.config_blob) {
+          await loadGuardrailsFromConfig(data.data.config_blob);
+        } else {
+          setSavedValidators([]);
+        }
+      } catch (error) {
+        console.error('Failed to load guardrails:', error);
+        setSavedValidators([]);
+      }
+    } else {
+      setSavedValidators([]);
+    }
   };
 
   // Guardrails handlers
@@ -380,13 +451,337 @@ function PromptEditorContent() {
     setSelectedValidator(validatorId);
   };
 
-  const handleSaveValidator = (validator: Validator) => {
-    setSavedValidators([...savedValidators, validator]);
-    setSelectedValidator(null);
+  const handleSaveValidator = async (validator: Validator) => {
+    // Get API key from localStorage
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      toast.error('No API key found. Please add an API key in the Keystore.');
+      return;
+    }
+
+    // Get guardrails token from localStorage
+    const getGuardrailsToken = (): string | null => {
+      try {
+        const stored = localStorage.getItem('kaapi_api_keys');
+        if (stored) {
+          const keys = JSON.parse(stored);
+          if (keys.length > 0 && keys[0].guardrails_token) {
+            return keys[0].guardrails_token;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to get guardrails token:', e);
+      }
+      return null;
+    };
+
+    const guardrailsToken = getGuardrailsToken();
+    if (!guardrailsToken) {
+      toast.error('No guardrails token found. Please add a guardrails token in the Keystore.');
+      return;
+    }
+
+    try {
+      // Get actual organization_id and project_id from API key verification
+      const verifyResponse = await fetch('/api/apikeys/verify', {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': apiKey,
+        },
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok || !verifyData.success) {
+        toast.error('Failed to verify API key. Please check your credentials.');
+        return;
+      }
+
+      const { organization_id, project_id } = verifyData.data;
+
+      // Make API call to save validator configuration
+      console.log('[DEBUG] Saving validator config:', JSON.stringify(validator.config, null, 2));
+      console.log('[DEBUG] Request URL:', `/api/guardrails/validators/configs?organization_id=${organization_id}&project_id=${project_id}`);
+
+      const response = await fetch(
+        `/api/guardrails/validators/configs?organization_id=${organization_id}&project_id=${project_id}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${guardrailsToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(validator.config),
+        }
+      );
+
+      console.log('[DEBUG] Response status:', response.status, response.statusText);
+
+      // Try to parse response as JSON, fallback to text if it fails
+      let data: any = {};
+      const contentType = response.headers.get('content-type');
+      try {
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          console.log('[DEBUG] Response text (non-JSON):', text);
+          data = { error: text || 'Empty response' };
+        }
+      } catch (parseError) {
+        console.error('[DEBUG] Failed to parse response:', parseError);
+        const text = await response.text();
+        console.log('[DEBUG] Raw response text:', text);
+        data = { error: 'Failed to parse response' };
+      }
+
+      console.log('[DEBUG] Validator save response:', JSON.stringify(data, null, 2));
+
+      if (!response.ok) {
+        console.error('[DEBUG] Validator save failed with status:', response.status);
+        console.error('[DEBUG] Response data:', data);
+        toast.error(`Failed to save validator (${response.status}): ${data.error || data.detail || 'Unknown error'}`);
+        return;
+      }
+
+      // Extract validator_config_id from response
+      // Try multiple possible response structures
+      const configId = data.id || data.validator_config_id || data.config_id || data.data?.id || data.data?.validator_config_id;
+
+      console.log('[DEBUG] Extracted config ID:', configId);
+
+      if (!configId) {
+        console.error('[DEBUG] No config ID found in response. Full response:', data);
+        toast.error('Validator saved but no ID returned from backend');
+        return;
+      }
+
+      // Extract validator_config_id from response and add to validator
+      const validatorWithId: Validator = {
+        ...validator,
+        validator_config_id: configId
+      };
+
+      console.log('[DEBUG] Validator with ID:', validatorWithId);
+
+      // Add to local state on success
+      setSavedValidators([...savedValidators, validatorWithId]);
+      setSelectedValidator(null);
+      toast.success(`Validator "${validator.name}" configured successfully!`);
+    } catch (error) {
+      console.error('Error saving validator:', error);
+      toast.error('Failed to save validator configuration. Please try again.');
+    }
   };
 
-  const handleRemoveValidator = (index: number) => {
-    setSavedValidators(savedValidators.filter((_, i) => i !== index));
+  const handleRemoveValidator = async (index: number) => {
+    const validator = savedValidators[index];
+    if (!validator || !validator.validator_config_id) {
+      // No config ID, just remove from local state
+      setSavedValidators(savedValidators.filter((_, i) => i !== index));
+      return;
+    }
+
+    // Get API key and guardrails token
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      toast.error('No API key found. Please add an API key in the Keystore.');
+      return;
+    }
+
+    const getGuardrailsToken = (): string | null => {
+      try {
+        const stored = localStorage.getItem('kaapi_api_keys');
+        if (stored) {
+          const keys = JSON.parse(stored);
+          if (keys.length > 0 && keys[0].guardrails_token) {
+            return keys[0].guardrails_token;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to get guardrails token:', e);
+      }
+      return null;
+    };
+
+    const guardrailsToken = getGuardrailsToken();
+    if (!guardrailsToken) {
+      toast.error('No guardrails token found. Please add a guardrails token in the Keystore.');
+      return;
+    }
+
+    try {
+      // Get organization and project IDs
+      const verifyResponse = await fetch('/api/apikeys/verify', {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': apiKey,
+        },
+      });
+
+      const verifyData = await verifyResponse.json();
+      if (!verifyResponse.ok || !verifyData.success) {
+        toast.error('Failed to verify API key.');
+        return;
+      }
+
+      const { organization_id, project_id } = verifyData.data;
+
+      // Call DELETE API
+      const response = await fetch(
+        `/api/guardrails/validators/configs/${validator.validator_config_id}?organization_id=${organization_id}&project_id=${project_id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${guardrailsToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        toast.error(`Failed to delete validator: ${data.error || 'Unknown error'}`);
+        return;
+      }
+
+      // Remove from local state on success
+      setSavedValidators(savedValidators.filter((_, i) => i !== index));
+      toast.success(`Validator "${validator.name}" deleted successfully!`);
+    } catch (error) {
+      console.error('Error deleting validator:', error);
+      toast.error('Failed to delete validator. Please try again.');
+    }
+  };
+
+  // Load guardrails from config blob
+  const loadGuardrailsFromConfig = async (configBlob: any) => {
+    console.log('[DEBUG loadGuardrailsFromConfig] Config blob:', configBlob);
+    const inputGuardrails = configBlob.input_guardrails || [];
+    const outputGuardrails = configBlob.output_guardrails || [];
+
+    console.log('[DEBUG loadGuardrailsFromConfig] Input guardrails:', inputGuardrails);
+    console.log('[DEBUG loadGuardrailsFromConfig] Output guardrails:', outputGuardrails);
+
+    const allGuardrailIds = [
+      ...inputGuardrails.map((g: any) => ({ id: g.validator_config_id, stage: 'input' })),
+      ...outputGuardrails.map((g: any) => ({ id: g.validator_config_id, stage: 'output' }))
+    ];
+
+    console.log('[DEBUG loadGuardrailsFromConfig] All guardrail IDs:', allGuardrailIds);
+
+    if (allGuardrailIds.length === 0) {
+      console.log('[DEBUG loadGuardrailsFromConfig] No guardrails found, clearing validators');
+      setSavedValidators([]);
+      return;
+    }
+
+    // Get API key and guardrails token
+    const apiKey = getApiKey();
+    if (!apiKey) return;
+
+    const getGuardrailsToken = (): string | null => {
+      try {
+        const stored = localStorage.getItem('kaapi_api_keys');
+        if (stored) {
+          const keys = JSON.parse(stored);
+          if (keys.length > 0 && keys[0].guardrails_token) {
+            return keys[0].guardrails_token;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to get guardrails token:', e);
+      }
+      return null;
+    };
+
+    const guardrailsToken = getGuardrailsToken();
+    if (!guardrailsToken) {
+      console.warn('No guardrails token found, cannot load validator details');
+      return;
+    }
+
+    // Get organization and project IDs
+    try {
+      const verifyResponse = await fetch('/api/apikeys/verify', {
+        method: 'GET',
+        headers: {
+          'X-API-KEY': apiKey,
+        },
+      });
+
+      const verifyData = await verifyResponse.json();
+      if (!verifyResponse.ok || !verifyData.success) {
+        console.error('Failed to verify API key');
+        return;
+      }
+
+      const { organization_id, project_id } = verifyData.data;
+
+      // Fetch all validator configs
+      const validators: Validator[] = [];
+
+      for (const { id: configId, stage } of allGuardrailIds) {
+        try {
+          console.log(`[DEBUG loadGuardrailsFromConfig] Fetching validator config ${configId} for stage ${stage}`);
+          const response = await fetch(
+            `/api/guardrails/validators/configs/${configId}?organization_id=${organization_id}&project_id=${project_id}`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${guardrailsToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          const data = await response.json();
+          console.log(`[DEBUG loadGuardrailsFromConfig] Response for ${configId}:`, response.ok, data);
+
+          if (response.ok && data && data.data) {
+            const validatorData = data.data;
+
+            // Map backend type to frontend validator id
+            const backendType = validatorData.type || '';
+            const validatorId = VALIDATOR_TYPE_TO_ID[backendType] || backendType;
+
+            console.log(`[DEBUG loadGuardrailsFromConfig] Backend type: ${backendType}, Frontend ID: ${validatorId}`);
+
+            // Find validator metadata from AVAILABLE_VALIDATORS
+            const validatorMeta = AVAILABLE_VALIDATORS.find(v => v.id === validatorId);
+
+            console.log(`[DEBUG loadGuardrailsFromConfig] Validator meta:`, validatorMeta);
+
+            if (validatorMeta) {
+              validators.push({
+                id: validatorId,
+                name: validatorMeta.name,
+                description: validatorMeta.description,
+                tags: validatorMeta.tags,
+                validator_config_id: configId,
+                config: {
+                  ...validatorData,
+                  stage: stage, // Ensure stage is set correctly
+                }
+              });
+              console.log(`[DEBUG loadGuardrailsFromConfig] Added validator:`, validatorMeta.name);
+            } else {
+              console.warn(`[DEBUG loadGuardrailsFromConfig] No metadata found for validator ID: ${validatorId}`);
+            }
+          } else {
+            // Validator config not found (likely deleted) - skip silently
+            console.log(`[DEBUG loadGuardrailsFromConfig] Validator config ${configId} not found (may have been deleted), skipping`);
+          }
+        } catch (error) {
+          console.error(`Failed to load validator config ${configId}:`, error);
+        }
+      }
+
+      console.log('[DEBUG loadGuardrailsFromConfig] Loaded validators:', validators);
+      setSavedValidators(validators);
+    } catch (error) {
+      console.error('Error loading guardrails:', error);
+    }
   };
 
 
@@ -421,6 +816,9 @@ function PromptEditorContent() {
               }}
               onLoadVersion={(version) => {
                 handleLoadConfigById(version.id);
+                // Exit guardrails mode when loading a version
+                setIsGuardrailsMode(false);
+                setSelectedValidator(null);
               }}
               onBackToEditor={() => {
                 setSelectedVersion(null);
@@ -440,6 +838,9 @@ function PromptEditorContent() {
                   handleLoadConfigById(versionId);
                   setSelectedVersion(null);
                   setCompareWith(null);
+                  // Exit guardrails mode when loading a version
+                  setIsGuardrailsMode(false);
+                  setSelectedValidator(null);
                 }}
               />
             ) : (

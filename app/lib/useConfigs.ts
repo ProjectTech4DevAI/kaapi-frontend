@@ -37,6 +37,8 @@ export interface SavedConfig {
   vectorStoreIds: string;
   tools?: Tool[];
   commit_message?: string | null;
+  hasGuardrails?: boolean; // Whether this config has input or output guardrails configured
+  guardrailsCount?: number; // Total count of guardrails (input + output)
 }
 
 // Config grouped by name with all its versions
@@ -110,6 +112,13 @@ const flattenConfigVersion = (
     });
   }
 
+  // Check for guardrails
+  const inputGuardrails = (blob as any).input_guardrails || [];
+  const outputGuardrails = (blob as any).output_guardrails || [];
+  const guardrailsCount = inputGuardrails.length + outputGuardrails.length;
+
+  console.log('[DEBUG flattenConfigVersion] Config:', config.name, 'Input guardrails:', inputGuardrails.length, 'Output guardrails:', outputGuardrails.length, 'Total:', guardrailsCount);
+
   return {
     id: version.id,
     config_id: config.id,
@@ -126,6 +135,8 @@ const flattenConfigVersion = (
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
     tools: tools,
     commit_message: version.commit_message,
+    hasGuardrails: guardrailsCount > 0,
+    guardrailsCount: guardrailsCount,
   };
 };
 

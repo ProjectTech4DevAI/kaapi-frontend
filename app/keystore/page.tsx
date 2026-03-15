@@ -14,6 +14,7 @@ export interface APIKey {
   label: string;
   key: string;
   provider: string;
+  guardrails_token?: string;
   createdAt?: string;
 }
 
@@ -27,6 +28,7 @@ export default function KaapiKeystore() {
   const [newKeyLabel, setNewKeyLabel] = useState('');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [newKeyProvider, setNewKeyProvider] = useState('Kaapi');
+  const [newGuardrailsToken, setNewGuardrailsToken] = useState('');
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
 
   // Load API keys from localStorage on mount
@@ -63,6 +65,7 @@ export default function KaapiKeystore() {
       label: newKeyLabel,
       key: newKeyValue,
       provider: newKeyProvider,
+      guardrails_token: newGuardrailsToken.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
 
@@ -70,6 +73,7 @@ export default function KaapiKeystore() {
     setNewKeyLabel('');
     setNewKeyValue('');
     setNewKeyProvider('Kaapi');
+    setNewGuardrailsToken('');
 
     // Close modal after adding
     setIsModalOpen(false);
@@ -176,10 +180,12 @@ export default function KaapiKeystore() {
           newKeyLabel={newKeyLabel}
           newKeyValue={newKeyValue}
           newKeyProvider={newKeyProvider}
+          newGuardrailsToken={newGuardrailsToken}
           providers={providers}
           onLabelChange={setNewKeyLabel}
           onValueChange={setNewKeyValue}
           onProviderChange={setNewKeyProvider}
+          onGuardrailsTokenChange={setNewGuardrailsToken}
           onAddKey={handleAddKey}
           onClose={() => setIsModalOpen(false)}
         />
@@ -299,18 +305,41 @@ function StoredKeysTab({
                         {apiKey.label}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <code
-                        className="text-sm px-3 py-1 rounded font-mono"
-                        style={{
-                          backgroundColor: 'hsl(0, 0%, 100%)',
-                          color: 'hsl(330, 3%, 19%)'
-                        }}
-                      >
-                        {visibleKeys.has(apiKey.id)
-                          ? apiKey.key
-                          : '•'.repeat(32)}
-                      </code>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs font-medium mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                          Kaapi API Key
+                        </p>
+                        <code
+                          className="text-sm px-3 py-1 rounded font-mono inline-block"
+                          style={{
+                            backgroundColor: 'hsl(0, 0%, 100%)',
+                            color: 'hsl(330, 3%, 19%)'
+                          }}
+                        >
+                          {visibleKeys.has(apiKey.id)
+                            ? apiKey.key
+                            : '•'.repeat(32)}
+                        </code>
+                      </div>
+                      {apiKey.guardrails_token && (
+                        <div>
+                          <p className="text-xs font-medium mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                            Guardrails Token
+                          </p>
+                          <code
+                            className="text-sm px-3 py-1 rounded font-mono inline-block"
+                            style={{
+                              backgroundColor: 'hsl(0, 0%, 100%)',
+                              color: 'hsl(330, 3%, 19%)'
+                            }}
+                          >
+                            {visibleKeys.has(apiKey.id)
+                              ? apiKey.guardrails_token
+                              : '•'.repeat(32)}
+                          </code>
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs mt-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
                       Added {new Date(apiKey.createdAt).toLocaleDateString()}
@@ -409,10 +438,12 @@ interface AddKeyModalProps {
   newKeyLabel: string;
   newKeyValue: string;
   newKeyProvider: string;
+  newGuardrailsToken: string;
   providers: string[];
   onLabelChange: (value: string) => void;
   onValueChange: (value: string) => void;
   onProviderChange: (value: string) => void;
+  onGuardrailsTokenChange: (value: string) => void;
   onAddKey: () => void;
   onClose: () => void;
 }
@@ -421,10 +452,12 @@ function AddKeyModal({
   newKeyLabel,
   newKeyValue,
   newKeyProvider,
+  newGuardrailsToken,
   providers,
   onLabelChange,
   onValueChange,
   onProviderChange,
+  onGuardrailsTokenChange,
   onAddKey,
   onClose,
 }: AddKeyModalProps) {
@@ -534,6 +567,27 @@ function AddKeyModal({
                   color: 'hsl(330, 3%, 19%)'
                 }}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'hsl(330, 3%, 19%)' }}>
+                Guardrails Token (Optional)
+              </label>
+              <input
+                type="password"
+                value={newGuardrailsToken}
+                onChange={(e) => onGuardrailsTokenChange(e.target.value)}
+                placeholder="Paste your guardrails token here"
+                className="w-full px-4 py-2 rounded-md border focus:outline-none focus:ring-2 font-mono text-sm"
+                style={{
+                  borderColor: 'hsl(0, 0%, 85%)',
+                  backgroundColor: 'hsl(0, 0%, 100%)',
+                  color: 'hsl(330, 3%, 19%)'
+                }}
+              />
+              <p className="text-xs mt-1.5" style={{ color: 'hsl(330, 3%, 49%)' }}>
+                Used for guardrails validator configuration
+              </p>
             </div>
           </div>
 

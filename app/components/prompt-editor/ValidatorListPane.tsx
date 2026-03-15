@@ -6,9 +6,11 @@ export interface Validator {
   name: string;
   description: string;
   tags: string[];
+  validator_config_id?: string; // ID returned from backend after saving
   config?: {
     threshold?: number;
     enabled?: boolean;
+    stage?: string;
     [key: string]: any;
   };
 }
@@ -21,22 +23,22 @@ export const AVAILABLE_VALIDATORS: Validator[] = [
     tags: ['STRING', 'BRAND RISK'],
   },
   {
-    id: 'bias-check',
-    name: 'Bias Check',
-    description: 'Validates that the text is free from biases related to age, gender, sex, ethnicity,...',
-    tags: ['STRING', 'BRAND RISK'],
-  },
-  {
     id: 'detect-pii',
     name: 'Detect PII',
     description: 'Detects personally identifiable information (PII) in text, using Microsoft Presidio.',
     tags: ['STRING', 'DATA LEAKAGE'],
   },
   {
-    id: 'extractive-summary',
-    name: 'Extractive Summary',
-    description: 'Uses fuzzy matching to detect if some text is a summary of a document.',
-    tags: ['STRING', 'FACTUALITY'],
+    id: 'lexical-slur-match',
+    name: 'Lexical Slur Match',
+    description: 'Detects and filters offensive slurs in multiple languages using lexical matching.',
+    tags: ['STRING', 'BRAND RISK'],
+  },
+  {
+    id: 'gender-assumption-bias',
+    name: 'Gender Assumption Bias',
+    description: 'Detects gender assumption biases across different domains like healthcare and education.',
+    tags: ['STRING', 'BRAND RISK'],
   },
 ];
 

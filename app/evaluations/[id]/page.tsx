@@ -212,7 +212,9 @@ export default function EvaluationReport() {
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
         scoreNames.forEach(name => {
-          csvContent += `,${name} (${i}),${name} (${i}) - comment`;
+          // Escape score name for CSV headers
+          const escapedName = name.replace(/"/g, '""').replace(/\n/g, ' ');
+          csvContent += `,"${escapedName} (${i})","${escapedName} (${i}) - comment"`;
         });
       }
       csvContent += '\n';
@@ -237,7 +239,15 @@ export default function EvaluationReport() {
           scoreNames.forEach(name => {
             const score = group.scores[i]?.find(s => s.name === name);
             row.push(score ? String(score.value) : '');
-            row.push(score?.comment ? `"${score.comment.replace(/"/g, '""').replace(/\n/g, ' ')}"` : '');
+            if (score?.comment) {
+              let sanitized = score.comment.replace(/"/g, '""').replace(/\n/g, ' ');
+              if (/^[=+\-@]/.test(sanitized)) {
+                sanitized = ' ' + sanitized;
+              }
+              row.push(`"${sanitized}"`);
+            } else {
+              row.push('');
+            }
           });
         }
 

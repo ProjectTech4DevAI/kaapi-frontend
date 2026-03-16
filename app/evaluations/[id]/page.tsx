@@ -212,7 +212,7 @@ export default function EvaluationReport() {
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
         scoreNames.forEach(name => {
-          csvContent += `,${name} (${i})`;
+          csvContent += `,${name} (${i}),${name} (${i}) - comment`;
         });
       }
       csvContent += '\n';
@@ -233,10 +233,11 @@ export default function EvaluationReport() {
           // Trace ID
           row.push(group.trace_ids[i] || '');
 
-          // Scores
+          // Scores with comments
           scoreNames.forEach(name => {
             const score = group.scores[i]?.find(s => s.name === name);
             row.push(score ? String(score.value) : '');
+            row.push(score?.comment ? `"${score.comment.replace(/"/g, '""').replace(/\n/g, ' ')}"` : '');
           });
         }
 

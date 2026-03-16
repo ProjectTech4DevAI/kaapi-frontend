@@ -87,7 +87,6 @@ export default function ConfigEditorPane({
   const [validatorConfig, setValidatorConfig] = useState<any>({});
   const [showExitModal, setShowExitModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [showVersionWarningModal, setShowVersionWarningModal] = useState(false);
   const [editingValidatorIndex, setEditingValidatorIndex] = useState<number | null>(null);
   const [editingValidatorId, setEditingValidatorId] = useState<string | null>(null);
   const [initialValidators, setInitialValidators] = useState<Validator[]>([]);
@@ -167,6 +166,7 @@ export default function ConfigEditorPane({
       // Create ban list payload
       const payload = {
         name: newBanList.name,
+        description: newBanList.description,
         banned_words: bannedWordsArray,
         domain: newBanList.domain,
         is_public: newBanList.is_public,
@@ -967,22 +967,6 @@ export default function ConfigEditorPane({
                     <>
                       <div>
                         <label className="block text-xs font-semibold mb-2" style={{ color: colors.text.primary }}>
-                          Type
-                        </label>
-                        <input
-                          type="text"
-                          value={validatorConfig.type || 'pii_remover'}
-                          onChange={(e) => setValidatorConfig({ ...validatorConfig, type: e.target.value })}
-                          className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                          style={{
-                            border: `1px solid ${colors.border}`,
-                            backgroundColor: colors.bg.primary,
-                            color: colors.text.primary,
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold mb-2" style={{ color: colors.text.primary }}>
                           Stage
                         </label>
                         <select
@@ -1098,7 +1082,7 @@ export default function ConfigEditorPane({
                         </label>
                         <input
                           type="text"
-                          value={validatorConfig.on_fail || 'fix'}
+                          value={validatorConfig.on_fail || 'Fix'}
                           onChange={(e) => setValidatorConfig({ ...validatorConfig, on_fail: e.target.value })}
                           className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
                           style={{
@@ -1358,45 +1342,45 @@ export default function ConfigEditorPane({
                       if (validator && onSaveValidator) {
                         // Merge default values with user-provided values
                         let finalConfig = { ...validatorConfig };
+                        let enabled = true;
 
                         if (currentValidatorId === 'detect-pii') {
+                          enabled = validatorConfig.is_enabled !== undefined ? validatorConfig.is_enabled : true;
                           finalConfig = {
                             type: validatorConfig.type || 'pii_remover',
                             stage: validatorConfig.stage || 'input',
                             on_fail_action: validatorConfig.on_fail_action || 'fix',
-                            is_enabled: validatorConfig.is_enabled !== undefined ? validatorConfig.is_enabled : true,
                             entity_types: validatorConfig.entity_types || ['PERSON', 'PHONE_NUMBER', 'IN_AADHAAR'],
                             threshold: validatorConfig.threshold !== undefined ? validatorConfig.threshold : 0.6,
                           };
                         } else if (currentValidatorId === 'lexical-slur-match') {
+                          enabled = validatorConfig.enabled !== undefined ? validatorConfig.enabled : true;
                           finalConfig = {
                             type: validatorConfig.type || 'uli_slur_match',
                             stage: validatorConfig.stage || 'input',
-                            on_fail: validatorConfig.on_fail || 'fix',
-                            enabled: validatorConfig.enabled !== undefined ? validatorConfig.enabled : true,
                             languages: validatorConfig.languages || ['en', 'hi'],
                             severity: validatorConfig.severity || 'all',
                           };
                         } else if (currentValidatorId === 'gender-assumption-bias') {
+                          enabled = validatorConfig.enabled !== undefined ? validatorConfig.enabled : true;
                           finalConfig = {
                             type: validatorConfig.type || 'gender_assumption_bias',
                             stage: validatorConfig.stage || 'input',
                             on_fail_action: validatorConfig.on_fail_action || 'fix',
-                            enabled: validatorConfig.enabled !== undefined ? validatorConfig.enabled : true,
-                            bias_category: validatorConfig.bias_category || 'all',
+                            categories: validatorConfig.bias_category || 'all',
                           };
                         } else if (currentValidatorId === 'ban-list') {
+                          enabled = validatorConfig.enabled !== undefined ? validatorConfig.enabled : true;
                           finalConfig = {
                             type: validatorConfig.type || 'ban_list',
                             stage: validatorConfig.stage || 'input',
-                            enabled: validatorConfig.enabled !== undefined ? validatorConfig.enabled : true,
                             on_fail_action: validatorConfig.on_fail_action || 'exception',
                             ban_list_id: validatorConfig.ban_list_id || '',
                           };
                         } else {
+                          enabled = validatorConfig.enabled || false;
                           finalConfig = {
                             type: validatorConfig.type || 'topic_relevance',
-                            enabled: validatorConfig.enabled || false,
                             threshold: validatorConfig.threshold || 0.8,
                           };
                         }
@@ -1412,6 +1396,7 @@ export default function ConfigEditorPane({
                           name: validator.name,
                           description: validator.description,
                           tags: validator.tags,
+                          enabled: enabled,
                           config: finalConfig
                         });
 
@@ -1476,7 +1461,7 @@ export default function ConfigEditorPane({
                   </h3>
                   {!isEditMode && (
                     <button
-                      onClick={() => setShowVersionWarningModal(true)}
+                      onClick={() => setIsEditMode(true)}
                       className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5"
                       style={{
                         backgroundColor: colors.bg.primary,
@@ -1525,10 +1510,7 @@ export default function ConfigEditorPane({
                                       {validator.name}
                                     </div>
                                     <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                                      {(() => {
-                                        const isEnabled = validator.config?.is_enabled ?? validator.config?.enabled ?? true;
-                                        return isEnabled ? 'Enabled' : 'Disabled';
-                                      })()}
+                                      {validator.enabled !== undefined ? (validator.enabled ? 'Enabled' : 'Disabled') : 'Enabled'}
                                     </div>
                                   </div>
                                 </div>
@@ -1591,10 +1573,7 @@ export default function ConfigEditorPane({
                                       {validator.name}
                                     </div>
                                     <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                                      {(() => {
-                                        const isEnabled = validator.config?.is_enabled ?? validator.config?.enabled ?? true;
-                                        return isEnabled ? 'Enabled' : 'Disabled';
-                                      })()}
+                                      {validator.enabled !== undefined ? (validator.enabled ? 'Enabled' : 'Disabled') : 'Enabled'}
                                     </div>
                                   </div>
                                 </div>
@@ -1752,73 +1731,6 @@ export default function ConfigEditorPane({
         </>
       )}
 
-      {/* Version Warning Modal */}
-      {showVersionWarningModal && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-50"
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }}
-            onClick={() => setShowVersionWarningModal(false)}
-          />
-
-          {/* Modal */}
-          <div
-            className="fixed top-1/2 left-1/2 z-50 w-full max-w-md rounded-lg shadow-lg p-6"
-            style={{
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: colors.bg.primary,
-              border: `1px solid ${colors.border}`,
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex-1">
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: colors.text.primary }}
-                >
-                  Edit Guardrails Configuration
-                </h3>
-                <p className="text-sm mb-6" style={{ color: colors.text.secondary }}>
-                  If you edit these validators, a whole new version of the configuration will be created when you save. Do you want to continue?
-                </p>
-                <div className="flex gap-3 justify-end">
-                  <button
-                    onClick={() => setShowVersionWarningModal(false)}
-                    className="px-4 py-2 rounded-md text-sm font-medium"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.primary,
-                      border: `1px solid ${colors.border}`,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowVersionWarningModal(false);
-                      setIsEditMode(true);
-                    }}
-                    className="px-4 py-2 rounded-md text-sm font-semibold"
-                    style={{
-                      backgroundColor: colors.accent.primary,
-                      color: '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Okay, Continue
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Create Ban List Modal */}
       {showCreateBanListModal && (
         <>
@@ -1878,7 +1790,7 @@ export default function ConfigEditorPane({
                   type="text"
                   value={newBanList.description}
                   onChange={(e) => setNewBanList({ ...newBanList, description: e.target.value })}
-                  placeholder="e.g., profanity-filter"
+                  placeholder="e.g., Filter for offensive and inappropriate language"
                   className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
                   style={{
                     border: `1px solid ${colors.border}`,
@@ -1948,7 +1860,7 @@ export default function ConfigEditorPane({
               <button
                 onClick={() => {
                   setShowCreateBanListModal(false);
-                  setNewBanList({ name: '', banned_words: '', domain: '', is_public: false });
+                  setNewBanList({ name: '',description:'', banned_words: '', domain: '', is_public: false });
                 }}
                 className="px-4 py-2 rounded-md text-sm font-medium"
                 style={{
@@ -1962,17 +1874,17 @@ export default function ConfigEditorPane({
               </button>
               <button
                 onClick={handleCreateBanList}
-                disabled={!newBanList.name.trim() || !newBanList.banned_words.trim()}
+                disabled={!newBanList.name.trim() || !newBanList.description.trim() || !newBanList.banned_words.trim()}
                 className="px-4 py-2 rounded-md text-sm font-semibold"
                 style={{
-                  backgroundColor: !newBanList.name.trim() || !newBanList.banned_words.trim()
+                  backgroundColor: !newBanList.name.trim() || !newBanList.description.trim() || !newBanList.banned_words.trim()
                     ? colors.bg.secondary
                     : colors.status.success,
-                  color: !newBanList.name.trim() || !newBanList.banned_words.trim()
+                  color: !newBanList.name.trim() || !newBanList.description.trim() || !newBanList.banned_words.trim()
                     ? colors.text.secondary
                     : '#ffffff',
                   border: 'none',
-                  cursor: !newBanList.name.trim() || !newBanList.banned_words.trim()
+                  cursor: !newBanList.name.trim() || !newBanList.description.trim() || !newBanList.banned_words.trim()
                     ? 'not-allowed'
                     : 'pointer',
                 }}

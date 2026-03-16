@@ -6,10 +6,10 @@ export interface Validator {
   name: string;
   description: string;
   tags: string[];
+  enabled?: boolean;
   validator_config_id?: string; // ID returned from backend after saving
   config?: {
     threshold?: number;
-    enabled?: boolean;
     stage?: string;
     [key: string]: any;
   };

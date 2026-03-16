@@ -45,6 +45,20 @@ export default function EvaluationReport() {
   const [isResyncing, setIsResyncing] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
 
+  // CSV helper functions
+  const escapeCSVValue = (value: string): string => {
+    return value.replace(/"/g, '""').replace(/\n/g, ' ');
+  };
+
+  const sanitizeCSVCell = (value: string, preventFormulaInjection = false): string => {
+    let sanitized = escapeCSVValue(value);
+    // Prevent CSV formula injection by prepending space to values starting with =, +, -, @
+    if (preventFormulaInjection && /^[=+\-@]/.test(sanitized)) {
+      sanitized = ' ' + sanitized;
+    }
+    return `"${sanitized}"`;
+  };
+
   // Load API keys from localStorage
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -212,7 +226,8 @@ export default function EvaluationReport() {
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
         scoreNames.forEach(name => {
-          csvContent += `,${name} (${i})`;
+          const escapedName = escapeCSVValue(name);
+          csvContent += `,"${escapedName} (${i})","${escapedName} (${i}) - comment"`;
         });
       }
       csvContent += '\n';
@@ -221,22 +236,23 @@ export default function EvaluationReport() {
       traces.forEach(group => {
         const row: string[] = [
           String(group.question_id),
-          `"${(group.question || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-          `"${(group.ground_truth_answer || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+          sanitizeCSVCell(group.question || ''),
+          sanitizeCSVCell(group.ground_truth_answer || '')
         ];
 
         for (let i = 0; i < maxAnswers; i++) {
           // LLM Answer
           const answer = group.llm_answers[i] || '';
-          row.push(`"${answer.replace(/"/g, '""').replace(/\n/g, ' ')}"`);
+          row.push(sanitizeCSVCell(answer));
 
           // Trace ID
           row.push(group.trace_ids[i] || '');
 
-          // Scores
+          // Scores with comments
           scoreNames.forEach(name => {
             const score = group.scores[i]?.find(s => s.name === name);
             row.push(score ? String(score.value) : '');
+            row.push(score?.comment ? sanitizeCSVCell(score.comment, true) : '');
           });
         }
 
@@ -280,7 +296,10 @@ export default function EvaluationReport() {
       // Header row
       csvContent += 'Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,';
       csvContent += 'Question,Answer,Ground Truth,';
-      csvContent += scoreNames.map(name => `${name},${name} (comment)`).join(',') + '\n';
+      csvContent += scoreNames.map(name => {
+        const escapedName = escapeCSVValue(name);
+        return `"${escapedName}","${escapedName} (comment)"`;
+      }).join(',') + '\n';
 
       // Data rows
       let rowCount = 0;
@@ -289,19 +308,19 @@ export default function EvaluationReport() {
           index + 1,
           item.trace_id || 'N/A',
           job.id,
-          `"${job.run_name.replace(/"/g, '""')}"`,
-          `"${job.dataset_name.replace(/"/g, '""')}"`,
+          sanitizeCSVCell(job.run_name),
+          sanitizeCSVCell(job.dataset_name),
           assistantConfig?.model || job.config?.model || 'N/A',
           job.status,
           job.total_items,
-          `"${(item.input?.question || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-          `"${(item.output?.answer || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-          `"${(item.metadata?.ground_truth || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+          sanitizeCSVCell(item.input?.question || ''),
+          sanitizeCSVCell(item.output?.answer || ''),
+          sanitizeCSVCell(item.metadata?.ground_truth || ''),
           ...scoreNames.flatMap(name => {
             const score = item.trace_scores?.find(s => s.name === name);
             return [
               score ? score.value : 'N/A',
-              score?.comment ? `"${score.comment.replace(/"/g, '""').replace(/\n/g, ' ')}"` : ''
+              score?.comment ? sanitizeCSVCell(score.comment, true) : ''
             ];
           })
         ].join(',');

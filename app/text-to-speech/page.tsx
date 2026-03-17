@@ -475,9 +475,7 @@ export default function TextToSpeechPage() {
       await loadDatasets();
     } catch (error) {
       console.error('Failed to create dataset:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while creating the dataset';
-      setErrorModalMessage(errorMessage);
-      setErrorModalOpen(true);
+      toast.error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreating(false);
     }

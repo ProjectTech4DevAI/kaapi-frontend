@@ -266,9 +266,11 @@ function SimplifiedEvalContent() {
 
       setIsEvaluating(false);
       toast.success(`Evaluation created! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
+      return true;
     } catch (error: any) {
       toast.error(`Failed to run evaluation: ${error.message || 'Unknown error'}`);
       setIsEvaluating(false);
+      return false;
     }
   };
 
@@ -997,7 +999,7 @@ interface EvaluationsTabProps {
   experimentName: string;
   setExperimentName: (name: string) => void;
   isEvaluating: boolean;
-  handleRunEvaluation: () => void;
+  handleRunEvaluation: () => Promise<boolean>;
   setActiveTab: (tab: Tab) => void;
 }
 
@@ -1212,7 +1214,10 @@ function EvaluationsTab({
         {/* Run Evaluation Button */}
         <div className="flex-shrink-0 border-t px-4 py-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
           <button
-            onClick={handleRunEvaluation}
+            onClick={async () => {
+              const success = await handleRunEvaluation();
+              if (success) fetchEvaluations();
+            }}
             disabled={!canRun}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
             style={{

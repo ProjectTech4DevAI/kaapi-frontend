@@ -6,7 +6,7 @@
 
 "use client"
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'
+
 import { APIKey, STORAGE_KEY } from '../keystore/page';
 import Sidebar from '../components/Sidebar';
 import { useToast } from '../components/Toast';
@@ -27,7 +27,6 @@ export interface Dataset {
 export const DATASETS_STORAGE_KEY = 'kaapi_datasets';
 
 export default function Datasets() {
-  const router = useRouter();
   const toast = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,7 +41,7 @@ export default function Datasets() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const itemsPerPage = 10;
 
   // Load API key from localStorage
   useEffect(() => {
@@ -139,10 +138,6 @@ export default function Datasets() {
       formData.append('file', selectedFile);
       formData.append('dataset_name', datasetName.trim());
 
-      if (duplicationFactor===""){
-        formData.append('duplication_factor', '1')
-      }
-          
       formData.append('duplication_factor', duplicationFactor || '1');
 
       // Upload to backend
@@ -160,8 +155,6 @@ export default function Datasets() {
       }
 
       const data = await response.json();
-      console.log('Dataset uploaded successfully:', data);
-
       // Refresh datasets list
       await fetchDatasets();
 

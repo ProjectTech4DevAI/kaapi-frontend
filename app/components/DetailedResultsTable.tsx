@@ -9,6 +9,50 @@ import React, { useState, useEffect } from 'react';
 import { IndividualScore, TraceScore, getScoreObject, normalizeToIndividualScores, hasSummaryScores, isNewScoreObjectV2, isGroupedFormat, GroupedTraceItem } from './types';
 import { EvalJob } from './types';
 
+// Helper function to format score value with color
+const formatScoreValue = (score: TraceScore | undefined) => {
+  if (!score) return { value: 'N/A', color: '#737373', bg: 'transparent' };
+
+  if (score.data_type === 'CATEGORICAL') {
+    const catValue = String(score.value);
+    let color = '#171717';
+    let bg = '#fafafa';
+
+    if (catValue === 'CORRECT') {
+      color = '#15803d';
+      bg = '#dcfce7';
+    } else if (catValue === 'PARTIAL') {
+      color = '#92400e';
+      bg = '#fef3c7';
+    } else if (catValue === 'INCORRECT') {
+      color = '#dc2626';
+      bg = '#fee2e2';
+    }
+
+    return { value: catValue, color, bg };
+  }
+
+  // NUMERIC
+  const numValue = Number(score.value);
+  const formattedValue = numValue.toFixed(2);
+  let color = '#171717';
+  let bg = 'transparent';
+
+  // Color based on value
+  if (numValue >= 0.7) {
+    color = '#15803d';
+    bg = '#dcfce7';
+  } else if (numValue >= 0.5) {
+    color = '#92400e';
+    bg = '#fef3c7';
+  } else {
+    color = '#dc2626';
+    bg = '#fee2e2';
+  }
+
+  return { value: formattedValue, color, bg };
+};
+
 interface DetailedResultsTableProps {
   job: EvalJob;
 }
@@ -73,50 +117,6 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
   const getScoreByName = (scores: TraceScore[], name: string): TraceScore | undefined => {
     if (!scores || !Array.isArray(scores)) return undefined;
     return scores.find(s => s?.name === name);
-  };
-
-  // Helper function to format score value with color
-  const formatScoreValue = (score: TraceScore | undefined) => {
-    if (!score) return { value: 'N/A', color: '#737373', bg: 'transparent' };
-
-    if (score.data_type === 'CATEGORICAL') {
-      const catValue = String(score.value);
-      let color = '#171717';
-      let bg = '#fafafa';
-
-      if (catValue === 'CORRECT') {
-        color = '#15803d';
-        bg = '#dcfce7';
-      } else if (catValue === 'PARTIAL') {
-        color = '#92400e';
-        bg = '#fef3c7';
-      } else if (catValue === 'INCORRECT') {
-        color = '#dc2626';
-        bg = '#fee2e2';
-      }
-
-      return { value: catValue, color, bg };
-    }
-
-    // NUMERIC
-    const numValue = Number(score.value);
-    const formattedValue = numValue.toFixed(2);
-    let color = '#171717';
-    let bg = 'transparent';
-
-    // Color based on value
-    if (numValue >= 0.7) {
-      color = '#15803d';
-      bg = '#dcfce7';
-    } else if (numValue >= 0.5) {
-      color = '#92400e';
-      bg = '#fef3c7';
-    } else {
-      color = '#dc2626';
-      bg = '#fee2e2';
-    }
-
-    return { value: formattedValue, color, bg };
   };
 
   return (
@@ -326,49 +326,6 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
   // This ensures horizontal scroll activates at the right point
   const fixedColumnsWidth = COLUMN_WIDTHS.qId + COLUMN_WIDTHS.question + COLUMN_WIDTHS.groundTruth;
   const tableMinWidth = fixedColumnsWidth + (maxAnswers * COLUMN_WIDTHS.answer);
-
-  // Helper function to format score value with color (matching row format)
-  const formatScoreValue = (score: TraceScore | undefined) => {
-    if (!score) return { value: 'N/A', color: '#737373', bg: 'transparent' };
-
-    if (score.data_type === 'CATEGORICAL') {
-      const catValue = String(score.value);
-      let color = '#171717';
-      let bg = '#fafafa';
-
-      if (catValue === 'CORRECT') {
-        color = '#15803d';
-        bg = '#dcfce7';
-      } else if (catValue === 'PARTIAL') {
-        color = '#92400e';
-        bg = '#fef3c7';
-      } else if (catValue === 'INCORRECT') {
-        color = '#dc2626';
-        bg = '#fee2e2';
-      }
-
-      return { value: catValue, color, bg };
-    }
-
-    // NUMERIC
-    const numValue = Number(score.value);
-    const formattedValue = numValue.toFixed(2);
-    let color = '#171717';
-    let bg = 'transparent';
-
-    if (numValue >= 0.7) {
-      color = '#15803d';
-      bg = '#dcfce7';
-    } else if (numValue >= 0.5) {
-      color = '#92400e';
-      bg = '#fef3c7';
-    } else {
-      color = '#dc2626';
-      bg = '#fee2e2';
-    }
-
-    return { value: formattedValue, color, bg };
-  };
 
   return (
     <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>

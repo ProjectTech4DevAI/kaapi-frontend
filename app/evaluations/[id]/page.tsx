@@ -23,7 +23,7 @@ interface ConfigVersionInfo {
   model?: string;
   instructions?: string;
   temperature?: number;
-  tools?: any[];
+  tools?: { type: string; [key: string]: unknown }[];
   provider?: string;
 }
 

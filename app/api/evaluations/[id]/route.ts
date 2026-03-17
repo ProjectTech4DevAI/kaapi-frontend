@@ -37,7 +37,6 @@ export async function GET(
         const fileContent = fs.readFileSync(filePath, 'utf-8');
         const mockData = JSON.parse(fileContent);
 
-        console.log(`[MOCK MODE] Returning mock data for ID ${id} from ${mockFileName}`);
         return NextResponse.json(mockData, { status: 200 });
       } catch (err) {
         console.error('Error reading mock data:', err);
@@ -60,8 +59,6 @@ export async function GET(
     url.searchParams.set('get_trace_info', 'true');
     url.searchParams.set('resync_score', resyncScore);
     url.searchParams.set('export_format', exportFormat);
-
-    console.log(`[REAL BACKEND] Fetching evaluation ${id} from ${url.toString()}`);
 
     const response = await fetch(url.toString(), {
       method: 'GET',
@@ -90,7 +87,6 @@ export async function GET(
       );
     }
 
-    console.log(`[REAL BACKEND] Successfully fetched evaluation ${id}`);
     return NextResponse.json(data, { status: 200 });
   } catch (error: any) {
     console.error('Proxy error:', error);

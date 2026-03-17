@@ -646,8 +646,6 @@ export default function SpeechToTextPage() {
         language_id: datasetLanguageId,
         samples: samples,
       };
-      console.log('Create dataset payload:', JSON.stringify(payload, null, 2));
-
       const createDatasetResponse = await fetch('/api/evaluations/stt/datasets', {
         method: 'POST',
         headers: {
@@ -1080,7 +1078,6 @@ function DatasetsTab({
         }
       );
       const responseData = await response.json().catch(() => ({}));
-      console.log('Update sample response:', response.status, responseData);
       if (!response.ok) {
         const msg = responseData?.detail || responseData?.error || responseData?.message || `Failed to update sample (${response.status})`;
         throw new Error(msg);

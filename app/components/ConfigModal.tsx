@@ -21,7 +21,7 @@ interface ConfigVersionInfo {
   model?: string;
   instructions?: string;
   temperature?: number;
-  tools?: any[];
+  tools?: { type: string; [key: string]: unknown }[];
   provider?: string;
   type?: 'text' | 'stt' | 'tts';
   knowledge_base_ids?: string[];
@@ -266,7 +266,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                             <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
                               Max Results ({tool.type})
                             </div>
-                            <div className="text-sm" style={{ color: colors.text.primary }}>{tool.max_num_results}</div>
+                            <div className="text-sm" style={{ color: colors.text.primary }}>{String(tool.max_num_results)}</div>
                           </div>
                         )}
                       </React.Fragment>
@@ -298,7 +298,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                             <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
                               Max Results ({tool.type})
                             </div>
-                            <div className="text-sm" style={{ color: colors.text.primary }}>{tool.max_num_results}</div>
+                            <div className="text-sm" style={{ color: colors.text.primary }}>{String(tool.max_num_results)}</div>
                           </div>
                         )}
                       </React.Fragment>

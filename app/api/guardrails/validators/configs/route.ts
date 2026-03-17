@@ -6,15 +6,16 @@ const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001
 
 export async function POST(request: NextRequest) {
   try {
-    // Get the API key from request headers
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-    return NextResponse.json(
-      { error: 'Missing Authorization header' },
-      { status: 401 }
-    );
-  }
+    // Get the guardrails token from environment variable
+    const guardrailsToken = process.env.GUARDRAILS_TOKEN;
+    if (!guardrailsToken) {
+      return NextResponse.json(
+        { error: 'Missing GUARDRAILS_TOKEN environment variable' },
+        { status: 500 }
+      );
+    }
 
+    const authHeader = `Bearer ${guardrailsToken}`;
 
     // Get the JSON body from the request
     const body = await request.json();

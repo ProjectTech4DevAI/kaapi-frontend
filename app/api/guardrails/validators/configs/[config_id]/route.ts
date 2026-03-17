@@ -7,14 +7,17 @@ export async function GET(
   { params }: { params: Promise<{ config_id: string }> }
 ) {
   const { config_id } = await params;
-  const authHeader = request.headers.get('Authorization');
 
-  if (!authHeader) {
+  // Get the guardrails token from environment variable
+  const guardrailsToken = process.env.GUARDRAILS_TOKEN;
+  if (!guardrailsToken) {
     return NextResponse.json(
-      { error: 'Missing Authorization header' },
-      { status: 401 }
+      { error: 'Missing GUARDRAILS_TOKEN environment variable' },
+      { status: 500 }
     );
   }
+
+  const authHeader = `Bearer ${guardrailsToken}`;
 
   try {
     // Get query parameters
@@ -62,14 +65,17 @@ export async function DELETE(
 ) {
   const { config_id } = await params;
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
-  const authHeader = request.headers.get('Authorization');
 
-  if (!authHeader) {
+  // Get the guardrails token from environment variable
+  const guardrailsToken = process.env.GUARDRAILS_TOKEN;
+  if (!guardrailsToken) {
     return NextResponse.json(
-      { error: 'Missing Authorization header' },
-      { status: 401 }
+      { error: 'Missing GUARDRAILS_TOKEN environment variable' },
+      { status: 500 }
     );
   }
+
+  const authHeader = `Bearer ${guardrailsToken}`;
 
   try {
       // Get query parameters

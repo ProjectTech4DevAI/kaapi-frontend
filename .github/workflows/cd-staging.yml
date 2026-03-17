@@ -18,7 +18,8 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
-          SCRIPT_NAME: ${{ secrets.PM2_APP_NAME }}
+          PM2_APP_NAME: ${{ secrets.PM2_APP_NAME }}
+          BUILD_DIRECTORY: ${{ secrets.BUILD_DIRECTORY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
@@ -28,13 +29,13 @@ jobs:
             set -e
 
             echo "=== Navigating to Project Directory ==="
-            cd ${{ secrets.PROJECT_PATH }}
+            cd $BUILD_DIRECTORY
 
             echo "=== Fetch Latest Code ==="
             git pull origin main
 
             echo "=== Stop Running Application ==="
-            pm2 stop "$SCRIPT_NAME" || true
+            pm2 stop "$PM2_APP_NAME" || true
 
             echo "=== Install Dependencies ==="
             npm ci
@@ -43,4 +44,4 @@ jobs:
             npm run build
 
             echo "=== Start Application ==="
-            pm2 start "$SCRIPT_NAME"
+            pm2 start "$PM2_APP_NAME"

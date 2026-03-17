@@ -123,8 +123,7 @@ export default function ConfigSelector({
           </h2>
         </div>
         <div
-          className="rounded-lg p-4 text-sm"
-          style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}
+          className="rounded-lg p-4 text-sm bg-[#fef2f2] border border-[#fecaca] text-[#dc2626]"
         >
           {error}
         </div>

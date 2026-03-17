@@ -369,145 +369,141 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
           <tbody>
             {traces.map((group, index) => (
               <React.Fragment key={group.question_id || index}>
-              {/* Text row */}
-              <tr
-                key={`${group.question_id || index}-text`}
-                style={{ backgroundColor: '#ffffff' }}
-              >
-                {/* Question ID */}
-                <td className="px-4 pt-3 pb-1 text-sm font-medium align-top" style={{ color: '#737373' }}>
-                  {group.question_id}
-                </td>
+                {/* Text row */}
+                <tr
+                  key={`${group.question_id || index}-text`}
+                  style={{ backgroundColor: '#ffffff' }}
+                >
+                  {/* Question ID */}
+                  <td className="px-4 pt-3 pb-1 text-sm font-medium align-top" style={{ color: '#737373' }}>
+                    {group.question_id}
+                  </td>
 
-                {/* Question */}
-                <td className="px-4 pt-3 pb-1 align-top" style={{ backgroundColor: '#fafafa' }}>
-                  <div
-                    className="text-sm overflow-auto"
-                    style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
-                  >
-                    {group.question}
-                  </div>
-                </td>
+                  {/* Question */}
+                  <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
+                    <div
+                      className="text-sm overflow-auto"
+                      style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
+                    >
+                      {group.question}
+                    </div>
+                  </td>
 
-                {/* Ground Truth */}
-                <td className="px-4 pt-3 pb-1 align-top" style={{ backgroundColor: '#fafafa' }}>
-                  <div
-                    className="text-sm overflow-auto"
-                    style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
-                  >
-                    {group.ground_truth_answer}
-                  </div>
-                </td>
+                  {/* Ground Truth */}
+                  <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
+                    <div
+                      className="text-sm overflow-auto"
+                      style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
+                    >
+                      {group.ground_truth_answer}
+                    </div>
+                  </td>
 
-                {/* Answer text only */}
-                {Array.from({ length: maxAnswers }, (_, answerIndex) => {
-                  const answer = group.llm_answers[answerIndex];
-                  return (
-                    <td key={answerIndex} className="px-4 pt-3 pb-1 align-top">
-                      {answer ? (
-                        <div
-                          className="text-sm overflow-auto"
-                          style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
-                        >
-                          {answer}
-                        </div>
-                      ) : (
-                        <span className="text-sm" style={{ color: '#737373' }}>-</span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-              {/* Scores row */}
-              <tr
-                key={`${group.question_id || index}-scores`}
-                className="border-b"
-                style={{ borderColor: '#e5e5e5' }}
-              >
-                {/* Empty cells for Q.ID, Question, Ground Truth */}
-                <td className="px-4 pt-1 pb-3" />
-                <td className="px-4 pt-1 pb-3" style={{ backgroundColor: '#fafafa' }} />
-                <td className="px-4 pt-1 pb-3" style={{ backgroundColor: '#fafafa' }} />
+                  {/* Answer text only */}
+                  {Array.from({ length: maxAnswers }, (_, answerIndex) => {
+                    const answer = group.llm_answers[answerIndex];
+                    return (
+                      <td key={answerIndex} className="px-4 pt-3 pb-1 align-top">
+                        {answer ? (
+                          <div className="text-sm overflow-auto text-[#171717] leading-6 max-h-[150px]">
+                            {answer}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-[#171717]">-</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+                {/* Scores row */}
+                <tr
+                  key={`${group.question_id || index}-scores`}
+                  className="border-b border-[#e5e5e5]"
+                >
+                  {/* Empty cells for Q.ID, Question, Ground Truth */}
+                  <td className="px-4 pt-1 pb-3" />
+                  <td className="px-4 pt-1 pb-3" style={{ backgroundColor: '#fafafa' }} />
+                  <td className="px-4 pt-1 pb-3" style={{ backgroundColor: '#fafafa' }} />
 
-                {/* Score cells */}
-                {Array.from({ length: maxAnswers }, (_, answerIndex) => {
-                  const answerScores: TraceScore[] = group.scores?.[answerIndex] || [];
-                  const answer = group.llm_answers[answerIndex];
+                  {/* Score cells */}
+                  {Array.from({ length: maxAnswers }, (_, answerIndex) => {
+                    const answerScores: TraceScore[] = group.scores?.[answerIndex] || [];
+                    const answer = group.llm_answers[answerIndex];
 
-                  return (
-                    <td key={answerIndex} className="px-4 pt-1 pb-3 align-bottom">
-                      {answer && answerScores.length > 0 ? (
-                        <div className="space-y-1">
-                          {answerScores.map((score: TraceScore, scoreIdx: number) => {
-                            if (!score) return null;
-                            const { value, color, bg } = formatScoreValue(score);
-                            return (
-                              <div key={score.name || scoreIdx} className="flex items-center justify-between gap-1">
-                                <span className="text-xs truncate min-w-0" style={{ color: '#737373' }}>{score.name}:</span>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                  <div
-                                    className="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                                    style={{
-                                      color,
-                                      backgroundColor: bg,
-                                      borderWidth: bg === 'transparent' ? '1px' : '0',
-                                      borderColor: '#e5e5e5'
-                                    }}
-                                  >
-                                    {value}
-                                  </div>
-                                  {score?.comment && (() => {
-                                    const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
-                                    return (
-                                      <>
-                                        <div
-                                          className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-xs font-normal"
-                                          style={{
-                                            backgroundColor: openCommentId === commentId ? '#171717' : '#fafafa',
-                                            color: openCommentId === commentId ? '#ffffff' : '#737373',
-                                          }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            const tooltipWidth = 300;
-                                            const centerX = rect.left + rect.width / 2;
-                                            const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
-                                            setCommentPos({ top: rect.top - 8, left: clampedLeft });
-                                            setOpenCommentId(openCommentId === commentId ? null : commentId);
-                                          }}
-                                        >
-                                          i
-                                        </div>
-                                        {openCommentId === commentId && (
+                    return (
+                      <td key={answerIndex} className="px-4 pt-1 pb-3 align-bottom">
+                        {answer && answerScores.length > 0 ? (
+                          <div className="space-y-1">
+                            {answerScores.map((score: TraceScore, scoreIdx: number) => {
+                              if (!score) return null;
+                              const { value, color, bg } = formatScoreValue(score);
+                              return (
+                                <div key={score.name || scoreIdx} className="flex items-center justify-between gap-1">
+                                  <span className="text-xs truncate min-w-0" style={{ color: '#737373' }}>{score.name}:</span>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <div
+                                      className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                                      style={{
+                                        color,
+                                        backgroundColor: bg,
+                                        borderWidth: bg === 'transparent' ? '1px' : '0',
+                                        borderColor: '#e5e5e5'
+                                      }}
+                                    >
+                                      {value}
+                                    </div>
+                                    {score?.comment && (() => {
+                                      const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
+                                      return (
+                                        <>
                                           <div
-                                            className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal"
+                                            className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-xs font-normal"
                                             style={{
-                                              backgroundColor: '#171717',
-                                              color: '#ffffff',
-                                              width: '300px',
-                                              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                              top: commentPos.top,
-                                              left: commentPos.left,
-                                              transform: 'translateY(-100%)',
+                                              backgroundColor: openCommentId === commentId ? '#171717' : '#fafafa',
+                                              color: openCommentId === commentId ? '#ffffff' : '#737373',
                                             }}
-                                            onClick={(e) => e.stopPropagation()}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const rect = e.currentTarget.getBoundingClientRect();
+                                              const tooltipWidth = 300;
+                                              const centerX = rect.left + rect.width / 2;
+                                              const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
+                                              setCommentPos({ top: rect.top - 8, left: clampedLeft });
+                                              setOpenCommentId(openCommentId === commentId ? null : commentId);
+                                            }}
                                           >
-                                            {score.comment}
+                                            i
                                           </div>
-                                        )}
-                                      </>
-                                    );
-                                  })()}
+                                          {openCommentId === commentId && (
+                                            <div
+                                              className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal"
+                                              style={{
+                                                backgroundColor: '#171717',
+                                                color: '#ffffff',
+                                                width: '300px',
+                                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                                top: commentPos.top,
+                                                left: commentPos.left,
+                                                transform: 'translateY(-100%)',
+                                              }}
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              {score.comment}
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                    </td>
-                  );
-                })}
-              </tr>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </td>
+                    );
+                  })}
+                </tr>
               </React.Fragment>
             ))}
           </tbody>

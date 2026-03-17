@@ -17,18 +17,12 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
   if (!score) {
     return (
       <div
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
-        style={{
-          backgroundColor: 'hsl(0, 0%, 95%)',
-          borderWidth: '1px',
-          borderColor: 'hsl(0, 0%, 85%)',
-          color: 'hsl(330, 3%, 49%)'
-        }}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
       >
         <span className="font-medium">Score:</span>
         <span>N/A</span>
         {errorMessage && (
-          <span className="text-xs" style={{ color: 'hsl(8, 86%, 40%)' }}>
+          <span className="text-xs text-[hsl(8,86%,40%)]">
             (Error)
           </span>
         )}
@@ -43,13 +37,7 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
     if (summaryScores.length === 0) {
       return (
         <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
-          style={{
-            backgroundColor: 'hsl(0, 0%, 95%)',
-            borderWidth: '1px',
-            borderColor: 'hsl(0, 0%, 85%)',
-            color: 'hsl(330, 3%, 49%)'
-          }}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
         >
           <span className="font-medium">Score:</span>
           <span>No scores available</span>
@@ -65,13 +53,7 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
     if (numericScores.length === 0 && categoricalScores.length === 0) {
       return (
         <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
-          style={{
-            backgroundColor: 'hsl(0, 0%, 95%)',
-            borderWidth: '1px',
-            borderColor: 'hsl(0, 0%, 85%)',
-            color: 'hsl(330, 3%, 49%)'
-          }}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
         >
           <span className="font-medium">Score:</span>
           <span>No numeric scores available</span>
@@ -89,11 +71,10 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
           return (
             <span
               key={idx}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs"
-              style={{ backgroundColor: '#f5f5f5', color: '#737373' }}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs bg-[#f5f5f5] text-[#737373]"
             >
               <span>{summary.name}:</span>
-              <span className="font-semibold" style={{ color: '#171717' }}>{value}</span>
+              <span className="font-semibold text-[#171717]">{value}</span>
               {std !== null && (
                 <span>±{std}</span>
               )}
@@ -107,13 +88,7 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
   // Fallback for unsupported format
   return (
     <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm"
-      style={{
-        backgroundColor: 'hsl(0, 0%, 95%)',
-        borderWidth: '1px',
-        borderColor: 'hsl(0, 0%, 85%)',
-        color: 'hsl(330, 3%, 49%)'
-      }}
+      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
     >
       <span className="font-medium">Score:</span>
       <span>Unsupported format</span>

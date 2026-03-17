@@ -11,9 +11,9 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="w-full h-screen flex items-center justify-center" style={{ backgroundColor: '#fafafa' }}>
+    <div className="w-full h-screen flex items-center justify-center bg-[#fafafa]">
       <div className="text-center">
-        <div className="animate-pulse" style={{ color: '#737373' }}>
+        <div className="animate-pulse text-[#737373]">
           <svg
             className="mx-auto h-12 w-12 mb-4"
             fill="none"
@@ -27,7 +27,7 @@ export default function Home() {
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-          <p className="text-sm" style={{ color: '#171717' }}>
+          <p className="text-sm text-[#171717]">
             Redirecting...
           </p>
         </div>

@@ -137,13 +137,10 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
 
   const CodeBlock = ({ children }: { children: React.ReactNode }) => (
     <div
-      className="text-sm font-mono px-3 py-2.5 rounded-md whitespace-pre-wrap"
+      className="text-sm font-mono px-3 py-2.5 rounded-md whitespace-pre-wrap max-h-[240px] overflow-y-auto leading-[1.6]"
       style={{
         backgroundColor: colors.bg.secondary,
         color: colors.text.primary,
-        maxHeight: '240px',
-        overflowY: 'auto',
-        lineHeight: '1.6',
       }}
     >
       {children}
@@ -161,8 +158,7 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       <div

@@ -9,6 +9,7 @@ jobs:
   deploy:
     name: Deploy Kaapi Frontend to EC2 Staging
     runs-on: ubuntu-latest
+    environment: AWS_STAGING_ENV
 
     steps:
       - name: Checkout Repository

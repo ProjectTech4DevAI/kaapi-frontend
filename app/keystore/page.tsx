@@ -4,7 +4,6 @@
  * Allows users to securely store and manage API keys for various LLM providers
  */
 
-
 "use client"
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'
@@ -300,23 +299,18 @@ function StoredKeysTab({
                         {apiKey.label}
                       </h3>
                     </div>
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-xs font-medium mb-1" style={{ color: 'hsl(330, 3%, 49%)' }}>
-                          Kaapi API Key
-                        </p>
-                        <code
-                          className="text-sm px-3 py-1 rounded font-mono inline-block"
-                          style={{
-                            backgroundColor: 'hsl(0, 0%, 100%)',
-                            color: 'hsl(330, 3%, 19%)'
-                          }}
-                        >
-                          {visibleKeys.has(apiKey.id)
-                            ? apiKey.key
-                            : '•'.repeat(32)}
-                        </code>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <code
+                        className="text-sm px-3 py-1 rounded font-mono"
+                        style={{
+                          backgroundColor: 'hsl(0, 0%, 100%)',
+                          color: 'hsl(330, 3%, 19%)'
+                        }}
+                      >
+                        {visibleKeys.has(apiKey.id)
+                          ? apiKey.key
+                          : '•'.repeat(32)}
+                      </code>
                     </div>
                     <p className="text-xs mt-2" style={{ color: 'hsl(330, 3%, 49%)' }}>
                       Added {new Date(apiKey.createdAt).toLocaleDateString()}
@@ -541,7 +535,6 @@ function AddKeyModal({
                 }}
               />
             </div>
-
           </div>
 
           {/* Info Card */}

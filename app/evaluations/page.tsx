@@ -83,11 +83,15 @@ function SimplifiedEvalContent() {
 
   // Fetch datasets from backend
   const loadStoredDatasets = useCallback(async () => {
-    if (!apiKeys.length) return;
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) {
+      console.error('No selected API key found for loading datasets');
+      return;
+    }
     try {
       const response = await fetch('/api/evaluations/datasets', {
         method: 'GET',
-        headers: { 'X-API-KEY': apiKeys[0].key },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
       if (!response.ok) return;
       const data = await response.json();
@@ -95,11 +99,11 @@ function SimplifiedEvalContent() {
     } catch (e) {
       console.error('Failed to load datasets:', e);
     }
-  }, [apiKeys]);
+  }, [apiKeys, selectedKeyId]);
 
   useEffect(() => {
-    if (apiKeys.length > 0) loadStoredDatasets();
-  }, [apiKeys, loadStoredDatasets]);
+    if (apiKeys.length > 0 && selectedKeyId) loadStoredDatasets();
+  }, [apiKeys, selectedKeyId, loadStoredDatasets]);
 
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,8 +163,9 @@ function SimplifiedEvalContent() {
       toast.error('Please enter a dataset name');
       return;
     }
-    if (apiKeys.length === 0) {
-      toast.error('No API key found. Add one in the Keystore.');
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) {
+      toast.error('No API key selected. Please select one in the Keystore.');
       return;
     }
 
@@ -179,7 +184,7 @@ function SimplifiedEvalContent() {
       const response = await fetch('/api/evaluations/datasets', {
         method: 'POST',
         body: formData,
-        headers: { 'X-API-KEY': apiKeys[0].key },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
 
       if (!response.ok) {
@@ -280,6 +285,7 @@ function SimplifiedEvalContent() {
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="p-1.5 rounded-md"
                 style={{ color: colors.text.secondary }}
+                aria-label="Toggle sidebar"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -696,6 +702,7 @@ function DatasetsTab({
                     }}
                     className="p-1 rounded"
                     style={{ color: colors.text.secondary }}
+                    aria-label="Remove file"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -876,6 +883,7 @@ function DatasetsTab({
                   onClick={() => setViewModalData(null)}
                   className="p-1.5 rounded"
                   style={{ color: colors.text.secondary }}
+                  aria-label="Close modal"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1263,6 +1271,7 @@ function EvaluationsTab({
                 disabled={isLoading}
                 className="p-1.5 rounded"
                 style={{ color: colors.text.secondary }}
+                aria-label="Refresh evaluations"
               >
                 <svg
                   className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}

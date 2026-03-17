@@ -812,8 +812,29 @@ function DatasetsTab({
         return;
       }
 
-      // Parse CSV
-      const lines = csvText.split('\n').filter((l: string) => l.trim());
+      // Split CSV into logical records (quote-aware)
+      const splitCSVRecords = (text: string): string[] => {
+        const records: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+            current += ch;
+          } else if ((ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) && !inQuotes) {
+            if (current.trim()) records.push(current);
+            current = '';
+            if (ch === '\r') i++; // skip \n in \r\n
+          } else {
+            current += ch;
+          }
+        }
+        if (current.trim()) records.push(current);
+        return records;
+      };
+
+      const lines = splitCSVRecords(csvText);
       const parseRow = (line: string): string[] => {
         const result: string[] = [];
         let current = '';

@@ -102,6 +102,7 @@ export default function EvaluationReport() {
       if (data.success === false && data.error) {
         toast.error(data.error);
         setExportFormat('row');
+        return;
       }
 
       const foundJob = data.data || data;
@@ -182,7 +183,7 @@ export default function EvaluationReport() {
       let csvContent = 'Question ID,Question,Ground Truth';
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
-        scoreNames.forEach(name => { csvContent += `,${name} (${i})`; });
+        scoreNames.forEach(name => { csvContent += `,${name} (${i}),${sanitizeCSVCell(`${name} (${i}) Comment`)}`; });
       }
       csvContent += '\n';
       traces.forEach(group => {
@@ -351,7 +352,7 @@ export default function EvaluationReport() {
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-sm mb-4" style={{ color: 'hsl(8, 86%, 40%)' }}>
+              <p className="text-sm mb-4" style={{ color: colors.status.error }}>
                 {error || 'Evaluation job not found'}
               </p>
               <button
@@ -422,12 +423,24 @@ export default function EvaluationReport() {
               >
                 <button
                   onClick={() => setExportFormat('row')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
                   style={{
                     backgroundColor: exportFormat === 'row' ? colors.bg.primary : 'transparent',
-                    color: exportFormat === 'row' ? colors.text.primary : colors.text.secondary,
+                    color: exportFormat === 'row' ? colors.text.primary : colors.text.primary,
                     boxShadow: exportFormat === 'row' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
                     border: exportFormat === 'row' ? `1px solid ${colors.border}` : '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (exportFormat !== 'row') {
+                      e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.06)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (exportFormat !== 'row') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
                   }}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -437,12 +450,24 @@ export default function EvaluationReport() {
                 </button>
                 <button
                   onClick={() => setExportFormat('grouped')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
                   style={{
                     backgroundColor: exportFormat === 'grouped' ? colors.bg.primary : 'transparent',
-                    color: exportFormat === 'grouped' ? colors.text.primary : colors.text.secondary,
+                    color: exportFormat === 'grouped' ? colors.text.primary : colors.text.primary,
                     boxShadow: exportFormat === 'grouped' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
                     border: exportFormat === 'grouped' ? `1px solid ${colors.border}` : '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (exportFormat !== 'grouped') {
+                      e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.06)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (exportFormat !== 'grouped') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
                   }}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

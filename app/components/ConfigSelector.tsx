@@ -217,7 +217,7 @@ export default function ConfigSelector({
       ) : (
         <>
           {/* Dropdown Selector */}
-          <div className="relative">
+          <div className={`relative ${isDropdownOpen ? 'z-50' : ''}`}>
             {isDropdownOpen ? (
               /* Search Input when dropdown is open */
               <input

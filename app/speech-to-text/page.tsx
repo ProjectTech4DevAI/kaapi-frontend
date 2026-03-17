@@ -1162,9 +1162,11 @@ function DatasetsTab({
             <label className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
               <span className="inline-flex items-center gap-1">
                 Language *
-                <span
+                <button
+                  type="button"
+                  aria-label="Show language information"
                   className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
-                  style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                  style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary, padding: 0, lineHeight: 1 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -1174,7 +1176,7 @@ function DatasetsTab({
                   }}
                 >
                   i
-                </span>
+                </button>
                 {showLanguageInfo && (
                   <div
                     className="fixed z-50 rounded-lg shadow-lg border text-xs p-3"

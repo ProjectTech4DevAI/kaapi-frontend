@@ -399,22 +399,6 @@ export default function TextToSpeechPage() {
     }
   }, [apiKeys, activeTab]);
 
-  // Auto-refresh runs every 10 seconds if there are running evaluations
-  useEffect(() => {
-    if (activeTab !== 'evaluations') return;
-
-    const hasRunningEvals = runs.some(run =>
-      run.status === 'running' || run.status === 'processing' || run.status === 'pending'
-    );
-
-    if (hasRunningEvals) {
-      const interval = setInterval(() => {
-        loadRuns();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [runs, activeTab]);
-
   // Add a new text sample
   const addTextSample = () => {
     setTextSamples(prev => [...prev, {

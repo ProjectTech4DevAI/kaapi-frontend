@@ -1084,17 +1084,6 @@ function EvaluationsTab({
     if (selectedKeyId) fetchEvaluations();
   }, [selectedKeyId, fetchEvaluations]);
 
-  // Auto-refresh for processing jobs
-  useEffect(() => {
-    const hasProcessing = evalJobs.some(job =>
-      ['processing', 'pending', 'queued', 'running'].includes(job.status?.toLowerCase())
-    );
-    if (hasProcessing) {
-      const interval = setInterval(fetchEvaluations, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [evalJobs, fetchEvaluations]);
-
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left Panel - Configuration */}
@@ -1199,6 +1188,9 @@ function EvaluationsTab({
                   <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
                     {selectedDataset.dataset_name}
                   </div>
+                  {selectedDataset.description && (
+                    <EvalDatasetDescription description={selectedDataset.description} />
+                  )}
                   <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
                     {selectedDataset.total_items} items · x{selectedDataset.duplication_factor} duplication
                   </div>

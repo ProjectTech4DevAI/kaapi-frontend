@@ -502,22 +502,6 @@ export default function SpeechToTextPage() {
     }
   }, [apiKeys, activeTab]);
 
-  // Auto-refresh runs every 10 seconds if there are running evaluations
-  useEffect(() => {
-    if (activeTab !== 'evaluations') return;
-
-    const hasRunningEvals = runs.some(run =>
-      run.status === 'running' || run.status === 'processing' || run.status === 'pending'
-    );
-
-    if (hasRunningEvals) {
-      const interval = setInterval(() => {
-        loadRuns();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [runs, activeTab]);
-
   // Handle audio file selection and upload
   const handleAudioFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

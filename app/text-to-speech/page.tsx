@@ -1210,6 +1210,7 @@ function EvaluationsTab({
   toast,
   setActiveTab,
 }: EvaluationsTabProps) {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
   const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
   const [scoreInfoPos, setScoreInfoPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -1449,21 +1450,42 @@ function EvaluationsTab({
               )}
             </div>
             {selectedRunId === null && (
-              <button
-                onClick={loadRuns}
-                disabled={isLoadingRuns}
-                className="p-1.5 rounded"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <div className="flex items-center gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-2.5 py-1 rounded-md text-xs font-medium border appearance-none cursor-pointer pr-7"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 6px center',
+                  }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
+                  <option value="all">All Status</option>
+                  <option value="completed">Completed</option>
+                  <option value="processing">Processing</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+                <button
+                  onClick={loadRuns}
+                  disabled={isLoadingRuns}
+                  className="p-1.5 rounded"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <svg
+                    className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
 
@@ -1801,9 +1823,13 @@ function EvaluationsTab({
                   <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
                   <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
                 </div>
-              ) : (
+              ) : (() => {
+                const filteredRuns = statusFilter === 'all'
+                  ? runs
+                  : runs.filter(r => r.status.toLowerCase() === statusFilter);
+                return filteredRuns.length > 0 ? (
                 <div className="p-4 space-y-3">
-                  {runs.map((run) => {
+                  {filteredRuns.map((run) => {
                     const isCompleted = run.status.toLowerCase() === 'completed';
                     const statusColor = getStatusColor(run.status);
                     return (
@@ -1873,7 +1899,13 @@ function EvaluationsTab({
                     );
                   })}
                 </div>
-              )
+                ) : (
+                  <div className="p-16 text-center">
+                    <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>

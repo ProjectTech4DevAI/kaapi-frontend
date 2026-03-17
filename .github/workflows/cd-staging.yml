@@ -26,20 +26,20 @@ jobs:
           script: |
             set -e
 
-            echo "===== Navigating to Project Directory ====="
+            echo "=== Navigating to Project Directory ==="
             cd ${{ secrets.PROJECT_PATH }}
 
-            echo "===== Fetch Latest Code ====="
+            echo "=== Fetch Latest Code ==="
             git pull origin main
 
-            echo "===== Stop Running Application ====="
+            echo "=== Stop Running Application ==="
             pm2 stop "$SCRIPT_NAME" || true
 
-            echo "===== Install Dependencies ====="
+            echo "=== Install Dependencies ==="
             npm ci
 
-            echo "===== Build Application ====="
+            echo "=== Build Application ==="
             npm run build
 
-            echo "===== Start Application ====="
+            echo "=== Start Application ==="
             pm2 start "$SCRIPT_NAME"

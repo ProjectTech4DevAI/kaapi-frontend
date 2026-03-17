@@ -512,17 +512,17 @@ export default function EvaluationReport() {
                     <button
                       onClick={handleResync}
                       disabled={isResyncing}
-                      className="p-1.5 rounded"
-                      style={{ color: colors.text.secondary }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#171717] text-white disabled:opacity-50"
                     >
                       <svg
-                        className={`w-4 h-4 ${isResyncing ? 'animate-spin' : ''}`}
+                        className={`w-3.5 h-3.5 ${isResyncing ? 'animate-spin' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
+                      {isResyncing ? 'Resyncing...' : 'Resync'}
                     </button>
                   </div>
                   {summaryScores.length > 0 ? (

@@ -63,12 +63,9 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
 
   useEffect(() => {
     if (!openCommentId) return;
-    const handleClick = () => setOpenCommentId(null);
     const handleScroll = () => setOpenCommentId(null);
-    document.addEventListener('click', handleClick);
     window.addEventListener('scroll', handleScroll, true);
     return () => {
-      document.removeEventListener('click', handleClick);
       window.removeEventListener('scroll', handleScroll, true);
     };
   }, [openCommentId]);
@@ -235,26 +232,26 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                           {score?.comment && (
                             <>
                               <div
-                                className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-xs font-normal"
+                                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
                                 style={{
                                   backgroundColor: openCommentId === `${index}-${scoreName}` ? '#171717' : '#fafafa',
                                   color: openCommentId === `${index}-${scoreName}` ? '#ffffff' : '#737373',
                                 }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                                onMouseEnter={(e) => {
                                   const rect = e.currentTarget.getBoundingClientRect();
                                   const tooltipWidth = 300;
                                   const centerX = rect.left + rect.width / 2;
                                   const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
                                   setCommentPos({ top: rect.top - 8, left: clampedLeft });
-                                  setOpenCommentId(openCommentId === `${index}-${scoreName}` ? null : `${index}-${scoreName}`);
+                                  setOpenCommentId(`${index}-${scoreName}`);
                                 }}
+                                onMouseLeave={() => setOpenCommentId(null)}
                               >
                                 i
                               </div>
                               {openCommentId === `${index}-${scoreName}` && (
                                 <div
-                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal"
+                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
                                   style={{
                                     backgroundColor: '#171717',
                                     color: '#ffffff',
@@ -264,7 +261,6 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                                     left: commentPos.left,
                                     transform: 'translateY(-100%)',
                                   }}
-                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   {score.comment}
                                 </div>
@@ -291,12 +287,9 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
 
   useEffect(() => {
     if (!openCommentId) return;
-    const handleClick = () => setOpenCommentId(null);
     const handleScroll = () => setOpenCommentId(null);
-    document.addEventListener('click', handleClick);
     window.addEventListener('scroll', handleScroll, true);
     return () => {
-      document.removeEventListener('click', handleClick);
       window.removeEventListener('scroll', handleScroll, true);
     };
   }, [openCommentId]);
@@ -457,26 +450,26 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                                       return (
                                         <>
                                           <div
-                                            className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-pointer text-xs font-normal"
+                                            className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
                                             style={{
                                               backgroundColor: openCommentId === commentId ? '#171717' : '#fafafa',
                                               color: openCommentId === commentId ? '#ffffff' : '#737373',
                                             }}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
+                                            onMouseEnter={(e) => {
                                               const rect = e.currentTarget.getBoundingClientRect();
                                               const tooltipWidth = 300;
                                               const centerX = rect.left + rect.width / 2;
                                               const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
                                               setCommentPos({ top: rect.top - 8, left: clampedLeft });
-                                              setOpenCommentId(openCommentId === commentId ? null : commentId);
+                                              setOpenCommentId(commentId);
                                             }}
+                                            onMouseLeave={() => setOpenCommentId(null)}
                                           >
                                             i
                                           </div>
                                           {openCommentId === commentId && (
                                             <div
-                                              className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal"
+                                              className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
                                               style={{
                                                 backgroundColor: '#171717',
                                                 color: '#ffffff',
@@ -486,7 +479,6 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                                                 left: commentPos.left,
                                                 transform: 'translateY(-100%)',
                                               }}
-                                              onClick={(e) => e.stopPropagation()}
                                             >
                                               {score.comment}
                                             </div>

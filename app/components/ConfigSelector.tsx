@@ -156,16 +156,10 @@ export default function ConfigSelector({
             style={{
               backgroundColor: colors.bg.primary,
               border: `1px solid ${colors.border}`,
-              color: colors.text.secondary,
+              color: colors.text.primary,
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.bg.secondary;
-              e.currentTarget.style.color = colors.text.primary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.bg.primary;
-              e.currentTarget.style.color = colors.text.secondary;
-            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
           >
             Browse Library
           </button>

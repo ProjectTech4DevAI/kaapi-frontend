@@ -30,9 +30,7 @@ interface SidebarProps {
 export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: SidebarProps) {
   const router = useRouter();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-    'Capabilities': true,
     'Evaluations': true,
-    'Documents': true,
     'Configurations': false,
   });
 
@@ -57,27 +55,35 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
 
   const navItems: MenuItem[] = [
     {
-      name: 'Capabilities',
+      name: 'Evaluations',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h6" />
         </svg>
       ),
       submenu: [
-        {
-          name: 'Evaluations',
-          submenu: [
-            { name: 'Text', route: '/evaluations' },
-            { name: 'Speech-to-Text', route: '/speech-to-text' },
-            { name: 'Text-to-Speech', route: '/text-to-speech' },
-          ]
-        },
-        { name: 'Documents', route: '/document' },
-        { name: 'Knowledge Base', route: '/knowledge-base' },
-        // { name: 'Model Testing', route: '/model-testing', comingSoon: true },
-        // { name: 'Guardrails', route: '/guardrails', comingSoon: true },
-        // { name: 'Redteaming', route: '/redteaming', comingSoon: true },
+        { name: 'Text', route: '/evaluations' },
+        { name: 'Speech-to-Text', route: '/speech-to-text' },
+        { name: 'Text-to-Speech', route: '/text-to-speech' },
       ]
+    },
+    {
+      name: 'Documents',
+      route: '/document',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
+      name: 'Knowledge Base',
+      route: '/knowledge-base',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      ),
     },
     {
       name: 'Configurations',
@@ -92,15 +98,6 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
         { name: 'Prompt Editor', route: '/configurations/prompt-editor' },
       ]
     }
-//    {
-//      name: 'Datasets',
-//      route: '/datasets',
-//      icon: (
-//        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-//          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-//        </svg>
-//      )
-//    }
   ];
 
   const bottomItem: MenuItem = {

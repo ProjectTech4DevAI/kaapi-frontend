@@ -1,0 +1,45 @@
+name: Deploy Kaapi to EC2 Production
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  deploy:
+    name: Deploy Kaapi Frontend to EC2 Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SCRIPT_NAME: ${{ secrets.PM2_APP_NAME }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "===== Navigating to Project Directory ====="
+            cd ${{ secrets.PROJECT_PATH }}
+
+            echo "===== Fetch Latest Code ====="
+            git pull origin release
+
+            echo "===== Stop Running Application ====="
+            pm2 stop "$SCRIPT_NAME" || true
+
+            echo "===== Install Dependencies ====="
+            npm ci
+
+            echo "===== Build Application ====="
+            npm run build
+
+            echo "===== Start Application ====="
+            pm2 start "$SCRIPT_NAME" || pm2 start npm --name "$SCRIPT_NAME" -- start

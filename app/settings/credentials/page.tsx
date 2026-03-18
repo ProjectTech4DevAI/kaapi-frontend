@@ -20,6 +20,7 @@ import {
 import { getExistingForProvider } from "@/app/lib/utils";
 import ProviderList from "@/app/components/settings/credentials/ProviderList";
 import CredentialForm from "@/app/components/settings/credentials/CredentialForm";
+import { apiFetch } from "@/app/lib/apiClient";
 import Link from "next/link";
 
 export default function CredentialsPage() {
@@ -82,14 +83,10 @@ export default function CredentialsPage() {
   const loadCredentials = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/credentials", {
-        headers: { "X-API-KEY": apiKeys[0].key },
-      });
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(
-          data.error || data.message || "Failed to fetch credentials",
-        );
+      const data = await apiFetch<{ data?: Credential[] } | Credential[]>(
+        "/api/credentials",
+        apiKeys[0].key,
+      );
       setCredentials(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       console.error("Failed to load credentials:", err);
@@ -125,34 +122,17 @@ export default function CredentialsPage() {
       };
 
       if (existingCredential) {
-        const res = await fetch(`/api/credentials/${existingCredential.id}`, {
-          method: "PATCH",
-          headers: {
-            "X-API-KEY": apiKeys[0].key,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
-        });
-        const resData = await res.json();
-        if (!res.ok)
-          throw new Error(
-            resData.error || resData.message || "Failed to update credential",
-          );
+        await apiFetch(
+          `/api/credentials/${existingCredential.id}`,
+          apiKeys[0].key,
+          { method: "PATCH", body: JSON.stringify(body) },
+        );
         toast.success(`${selectedProvider.name} credentials updated`);
       } else {
-        const res = await fetch("/api/credentials", {
+        await apiFetch("/api/credentials", apiKeys[0].key, {
           method: "POST",
-          headers: {
-            "X-API-KEY": apiKeys[0].key,
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify(body),
         });
-        const resData = await res.json();
-        if (!res.ok)
-          throw new Error(
-            resData.error || resData.message || "Failed to create credential",
-          );
         toast.success(`${selectedProvider.name} credentials saved`);
       }
       await loadCredentials();

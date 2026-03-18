@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
 /**
  * Passthrough proxy helper for Next.js route handlers.
@@ -27,4 +28,30 @@ export async function apiClient(
   const data = response.status === 204 ? null : await response.json();
 
   return { status: response.status, data };
+}
+
+/**
+ * Client-side fetch helper for Next.js route handlers (/api/*).
+ * Attaches the X-API-KEY header and throws on non-OK responses.
+ * Use this in "use client" pages instead of raw fetch calls.
+ */
+export async function apiFetch<T>(
+  url: string,
+  apiKey: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "X-API-KEY": apiKey,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(
+      data.error || data.message || `Request failed: ${res.status}`,
+    );
+  return data as T;
 }

@@ -5,6 +5,7 @@
 
 "use client"
 import React, { useState, useEffect } from 'react';
+import { colors } from '@/app/lib/colors';
 import { EvalJob, AssistantConfig } from './types';
 
 interface ConfigModalProps {
@@ -20,7 +21,7 @@ interface ConfigVersionInfo {
   model?: string;
   instructions?: string;
   temperature?: number;
-  tools?: any[];
+  tools?: { type: string; [key: string]: unknown }[];
   provider?: string;
   type?: 'text' | 'stt' | 'tts';
   knowledge_base_ids?: string[];
@@ -127,280 +128,198 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
 
   if (!isOpen) return null;
 
+  const ConfigField = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div>
+      <div className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>{label}</div>
+      {children}
+    </div>
+  );
+
+  const CodeBlock = ({ children }: { children: React.ReactNode }) => (
+    <div
+      className="text-sm font-mono px-3 py-2.5 rounded-md whitespace-pre-wrap max-h-[240px] overflow-y-auto leading-[1.6]"
+      style={{
+        backgroundColor: colors.bg.secondary,
+        color: colors.text.primary,
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  const Tag = ({ children }: { children: React.ReactNode }) => (
+    <span
+      className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium"
+      style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary }}
+    >
+      {children}
+    </span>
+  );
+
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', animation: 'fadeIn 0.2s ease' }}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl max-h-[80vh] overflow-hidden rounded-xl"
-        style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e5e5',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          animation: 'modalSlideUp 0.3s ease'
-        }}
+        className="w-full max-w-xl rounded-lg shadow-xl flex flex-col"
+        style={{ backgroundColor: colors.bg.primary, maxHeight: '80vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b" style={{ borderColor: '#e5e5e5' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#737373' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <h3 className="text-lg font-semibold" style={{ color: '#171717' }}>
-                {configVersionInfo?.name || 'Detailed Configuration'}
-                {configVersionInfo?.version && <span className="text-sm font-normal" style={{ color: '#737373' }}> v{configVersionInfo.version}</span>}
-              </h3>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-md"
-              style={{
-                color: '#737373',
-                backgroundColor: 'transparent',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fafafa';
-                e.currentTarget.style.color = '#171717';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = '#737373';
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+          <div>
+            <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+              {configVersionInfo?.name || 'Configuration'}
+              {configVersionInfo?.version && (
+                <span className="text-xs font-normal ml-1.5" style={{ color: colors.text.secondary }}>v{configVersionInfo.version}</span>
+              )}
+            </h3>
+            {configVersionInfo?.provider && (
+              <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>{configVersionInfo.provider}</p>
+            )}
           </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded"
+            style={{ color: colors.text.secondary }}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto p-6 space-y-4" style={{ maxHeight: 'calc(80vh - 140px)' }}>
-          {assistantConfig && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Assistant Name</div>
-              <div className="text-sm font-medium mb-4" style={{ color: '#171717' }}>{assistantConfig.name}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {isLoadingConfig ? (
+            <div className="py-8 text-center">
+              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+              <p className="text-xs" style={{ color: colors.text.secondary }}>Loading configuration...</p>
             </div>
-          )}
+          ) : (
+            <>
+              {assistantConfig?.name && (
+                <ConfigField label="Assistant">
+                  <div className="text-sm font-medium" style={{ color: colors.text.primary }}>{assistantConfig.name}</div>
+                </ConfigField>
+              )}
 
-          {job.assistant_id && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Assistant ID</div>
-              <div className="text-sm font-mono mb-4" style={{ color: '#171717' }}>{job.assistant_id}</div>
-            </div>
-          )}
+              {job.assistant_id && (
+                <ConfigField label="Assistant ID">
+                  <div className="text-xs font-mono" style={{ color: colors.text.primary }}>{job.assistant_id}</div>
+                </ConfigField>
+              )}
 
-          <div>
-            <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Model</div>
-            <div className="text-sm font-medium mb-4" style={{ color: '#171717' }}>
-              {configVersionInfo?.model || assistantConfig?.model || job.config?.model || 'N/A'}
-            </div>
-          </div>
+              <ConfigField label="Model">
+                <Tag>{configVersionInfo?.model || assistantConfig?.model || job.config?.model || 'N/A'}</Tag>
+              </ConfigField>
 
-          {configVersionInfo?.knowledge_base_ids && configVersionInfo.knowledge_base_ids.length > 0 && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Knowledge Base IDs</div>
-              <div className="text-sm font-mono p-3 rounded-md border mb-4" style={{
-                backgroundColor: '#fafafa',
-                borderColor: '#e5e5e5',
-                color: '#171717'
-              }}>
-                {configVersionInfo.knowledge_base_ids.join(', ')}
-              </div>
-            </div>
-          )}
+              {(configVersionInfo?.temperature !== undefined || assistantConfig?.temperature !== undefined || job.config?.temperature !== undefined) && (
+                <ConfigField label="Temperature">
+                  <Tag>
+                    {configVersionInfo?.temperature !== undefined
+                      ? configVersionInfo.temperature
+                      : (assistantConfig?.temperature !== undefined ? assistantConfig.temperature : job.config?.temperature)}
+                  </Tag>
+                </ConfigField>
+              )}
 
-          {(configVersionInfo?.temperature !== undefined || assistantConfig?.temperature !== undefined || job.config?.temperature !== undefined) && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Temperature</div>
-              <div className="text-sm font-medium mb-4" style={{ color: '#171717' }}>
-                {configVersionInfo?.temperature !== undefined
-                  ? configVersionInfo.temperature
-                  : (assistantConfig?.temperature !== undefined ? assistantConfig.temperature : job.config?.temperature)}
-              </div>
-            </div>
-          )}
+              {configVersionInfo?.knowledge_base_ids && configVersionInfo.knowledge_base_ids.length > 0 && (
+                <ConfigField label="Knowledge Base IDs">
+                  <CodeBlock>{configVersionInfo.knowledge_base_ids.join('\n')}</CodeBlock>
+                </ConfigField>
+              )}
 
-          {(configVersionInfo?.instructions || assistantConfig?.instructions || job.config?.instructions) && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Instructions</div>
-              <div className="text-sm p-3 rounded-md font-mono whitespace-pre-wrap border" style={{
-                backgroundColor: '#fafafa',
-                borderColor: '#e5e5e5',
-                color: '#171717',
-                maxHeight: '300px',
-                overflowY: 'auto'
-              }}>
-                {configVersionInfo?.instructions || assistantConfig?.instructions || job.config?.instructions}
-              </div>
-            </div>
-          )}
+              {(configVersionInfo?.instructions || assistantConfig?.instructions || job.config?.instructions) && (
+                <ConfigField label="Instructions">
+                  <CodeBlock>
+                    {configVersionInfo?.instructions || assistantConfig?.instructions || job.config?.instructions}
+                  </CodeBlock>
+                </ConfigField>
+              )}
 
-          {(Array.isArray(configVersionInfo?.tools) && configVersionInfo.tools.length > 0) && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Tools (from Config Version)</div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {configVersionInfo.tools.map((tool, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-1 rounded text-xs font-medium"
-                    style={{
-                      backgroundColor: '#fafafa',
-                      borderWidth: '1px',
-                      borderColor: '#e5e5e5',
-                      color: '#000000'
-                    }}
-                  >
-                    {tool.type}
-                  </span>
-                ))}
-              </div>
-              {configVersionInfo.tools.map((tool, idx) => (
-                <div key={`tool-details-${idx}`}>
-                  {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
-                        Knowledge Base IDs ({tool.type})
-                      </div>
-                      <div className="text-sm font-mono p-3 rounded-md border" style={{
-                        backgroundColor: '#fafafa',
-                        borderColor: '#e5e5e5',
-                        color: '#171717'
-                      }}>
-                        {tool.knowledge_base_ids.join(', ')}
-                      </div>
+              {(Array.isArray(configVersionInfo?.tools) && configVersionInfo.tools.length > 0) && (
+                <ConfigField label="Tools">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {configVersionInfo.tools.map((tool, idx) => (
+                        <Tag key={idx}>{tool.type}</Tag>
+                      ))}
                     </div>
-                  )}
-                  {tool.max_num_results !== undefined && (
-                    <div className="mb-4">
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
-                        Max Results ({tool.type})
-                      </div>
-                      <div className="text-sm font-mono p-3 rounded-md border" style={{
-                        backgroundColor: '#fafafa',
-                        borderColor: '#e5e5e5',
-                        color: '#171717'
-                      }}>
-                        {tool.max_num_results}
-                      </div>
+                    {configVersionInfo.tools.map((tool, idx) => (
+                      <React.Fragment key={`tool-details-${idx}`}>
+                        {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
+                          <div>
+                            <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                              Knowledge Base IDs ({tool.type})
+                            </div>
+                            <CodeBlock>{tool.knowledge_base_ids.join('\n')}</CodeBlock>
+                          </div>
+                        )}
+                        {tool.max_num_results !== undefined && (
+                          <div>
+                            <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                              Max Results ({tool.type})
+                            </div>
+                            <div className="text-sm" style={{ color: colors.text.primary }}>{String(tool.max_num_results)}</div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </ConfigField>
+              )}
+
+              {Array.isArray(job.config?.tools) && job.config.tools.length > 0 && !configVersionInfo?.tools?.length && (
+                <ConfigField label="Tools">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {job.config.tools.map((tool, idx) => (
+                        <Tag key={idx}>{tool.type}</Tag>
+                      ))}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                    {job.config.tools.map((tool, idx) => (
+                      <React.Fragment key={`tool-details-${idx}`}>
+                        {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
+                          <div>
+                            <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                              Knowledge Base IDs ({tool.type})
+                            </div>
+                            <CodeBlock>{tool.knowledge_base_ids.join('\n')}</CodeBlock>
+                          </div>
+                        )}
+                        {tool.max_num_results !== undefined && (
+                          <div>
+                            <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+                              Max Results ({tool.type})
+                            </div>
+                            <div className="text-sm" style={{ color: colors.text.primary }}>{String(tool.max_num_results)}</div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </ConfigField>
+              )}
 
-          {Array.isArray(job.config?.tools) && job.config.tools.length > 0 && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Tools</div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {job.config.tools.map((tool, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-1 rounded text-xs font-medium"
-                    style={{
-                      backgroundColor: '#fafafa',
-                      borderWidth: '1px',
-                      borderColor: '#e5e5e5',
-                      color: '#000000'
-                    }}
-                  >
-                    {tool.type}
-                  </span>
-                ))}
-              </div>
-              {job.config.tools.map((tool, idx) => (
-                <div key={`tool-details-${idx}`}>
-                  {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
-                        Knowledge Base IDs ({tool.type})
-                      </div>
-                      <div className="text-sm font-mono p-3 rounded-md border" style={{
-                        backgroundColor: '#fafafa',
-                        borderColor: '#e5e5e5',
-                        color: '#171717'
-                      }}>
-                        {tool.knowledge_base_ids.join(', ')}
-                      </div>
-                    </div>
-                  )}
-                  {tool.max_num_results !== undefined && (
-                    <div className="mb-4">
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>
-                        Max Results ({tool.type})
-                      </div>
-                      <div className="text-sm font-mono p-3 rounded-md border" style={{
-                        backgroundColor: '#fafafa',
-                        borderColor: '#e5e5e5',
-                        color: '#171717'
-                      }}>
-                        {tool.max_num_results}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+              {Array.isArray(assistantConfig?.knowledge_base_ids) && assistantConfig.knowledge_base_ids.length > 0 && (
+                <ConfigField label="Knowledge Base IDs">
+                  <CodeBlock>{assistantConfig.knowledge_base_ids.join('\n')}</CodeBlock>
+                </ConfigField>
+              )}
 
-          {Array.isArray(assistantConfig?.knowledge_base_ids) && assistantConfig.knowledge_base_ids.length > 0 && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#000000' }}>Knowledge Base IDs</div>
-              <div className="text-sm font-mono p-3 rounded-md border" style={{
-                backgroundColor: '#fafafa',
-                borderColor: '#e5e5e5',
-                color: '#171717'
-              }}>
-                {assistantConfig.knowledge_base_ids.join(', ')}
-              </div>
-            </div>
+              {Array.isArray(job.config?.include) && job.config.include.length > 0 && (
+                <ConfigField label="Include">
+                  <div className="flex flex-wrap gap-2">
+                    {job.config.include.map((item, idx) => (
+                      <Tag key={idx}>{item}</Tag>
+                    ))}
+                  </div>
+                </ConfigField>
+              )}
+            </>
           )}
-
-          {Array.isArray(job.config?.include) && job.config.include.length > 0 && (
-            <div>
-              <div className="text-xs uppercase font-semibold mb-2" style={{ color: '#737373' }}>Include</div>
-              <div className="flex flex-wrap gap-2">
-                {job.config.include.map((item, idx) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-1 rounded text-xs font-medium"
-                    style={{
-                      backgroundColor: '#fafafa',
-                      borderWidth: '1px',
-                      borderColor: '#e5e5e5',
-                      color: '#171717'
-                    }}
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t flex justify-end" style={{ borderColor: '#e5e5e5', backgroundColor: '#fafafa' }}>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-md text-sm font-medium"
-            style={{
-              backgroundColor: '#171717',
-              color: '#ffffff',
-              transition: 'background-color 0.15s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>

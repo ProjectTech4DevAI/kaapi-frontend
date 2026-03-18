@@ -78,8 +78,7 @@ export function useToast() {
 function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: string) => void }) {
   return (
     <div
-      className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
-      style={{ maxWidth: '420px' }}
+      className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none max-w-[420px]"
     >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
@@ -100,12 +99,10 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       }}
     >
       <div
-        className="rounded-lg border p-4 shadow-lg flex items-start gap-3"
+        className="rounded-lg border p-4 shadow-lg flex items-start gap-3 min-w-[300px] max-w-[420px]"
         style={{
           backgroundColor: styles.bg,
           borderColor: styles.border,
-          minWidth: '300px',
-          maxWidth: '420px',
         }}
       >
         {/* Icon */}

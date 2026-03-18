@@ -39,6 +39,7 @@ export const getStatusColor = (status: string): { bg: string; border: string; te
     case 'processing':
     case 'pending':
     case 'queued':
+    case 'running':
       return { bg: 'hsl(46, 100%, 95%)', border: 'hsl(46, 100%, 80%)', text: 'hsl(46, 100%, 25%)' };
     case 'failed':
     case 'error':

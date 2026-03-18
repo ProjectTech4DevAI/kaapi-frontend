@@ -9,6 +9,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import Sidebar from '@/app/components/Sidebar';
+import TabNavigation from '@/app/components/TabNavigation';
+import StatusBadge from '@/app/components/StatusBadge';
+import Loader, { LoaderBox } from '@/app/components/Loader';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
@@ -184,8 +187,8 @@ function AudioPlayer({
 
       {/* Progress bar */}
       <div
-        className="h-1 rounded-full overflow-hidden"
-        style={{ backgroundColor: colors.bg.secondary }}
+        className="h-0.5 rounded-full overflow-hidden mt-1"
+        style={{ backgroundColor: colors.border }}
       >
         <div
           className="h-full rounded-full"
@@ -279,8 +282,8 @@ function AudioPlayerFromUrl({
 
       {/* Progress bar */}
       <div
-        className="h-1 rounded-full overflow-hidden mt-2"
-        style={{ backgroundColor: colors.bg.secondary }}
+        className="h-0.5 rounded-full overflow-hidden mt-1.5"
+        style={{ backgroundColor: colors.border }}
       >
         <div
           className="h-full rounded-full"
@@ -318,20 +321,6 @@ const getLanguageId = (languageCode: string, languages: Language[] = DEFAULT_LAN
   return lang ? lang.id : 1;
 };
 
-// Helper function to format status
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'completed':
-      return { bg: colors.bg.primary, border: colors.status.success, text: colors.status.success };
-    case 'failed':
-      return { bg: colors.bg.primary, border: colors.status.error, text: colors.status.error };
-    case 'running':
-    case 'processing':
-      return { bg: colors.bg.primary, border: colors.accent.primary, text: colors.accent.primary };
-    default:
-      return { bg: colors.bg.primary, border: colors.border, text: colors.text.secondary };
-  }
-};
 
 export default function SpeechToTextPage() {
   const toast = useToast();
@@ -513,22 +502,6 @@ export default function SpeechToTextPage() {
     }
   }, [apiKeys, activeTab]);
 
-  // Auto-refresh runs every 10 seconds if there are running evaluations
-  useEffect(() => {
-    if (activeTab !== 'evaluations') return;
-
-    const hasRunningEvals = runs.some(run =>
-      run.status === 'running' || run.status === 'processing' || run.status === 'pending'
-    );
-
-    if (hasRunningEvals) {
-      const interval = setInterval(() => {
-        loadRuns();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [runs, activeTab]);
-
   // Handle audio file selection and upload
   const handleAudioFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -673,8 +646,6 @@ export default function SpeechToTextPage() {
         language_id: datasetLanguageId,
         samples: samples,
       };
-      console.log('Create dataset payload:', JSON.stringify(payload, null, 2));
-
       const createDatasetResponse = await fetch('/api/evaluations/stt/datasets', {
         method: 'POST',
         headers: {
@@ -702,9 +673,7 @@ export default function SpeechToTextPage() {
       await loadDatasets();
     } catch (error) {
       console.error('Failed to create dataset:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while creating the dataset';
-      setErrorModalMessage(errorMessage);
-      setErrorModalOpen(true);
+      toast.error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreating(false);
     }
@@ -874,34 +843,30 @@ export default function SpeechToTextPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div
-            className="border-b flex gap-1 px-4"
-            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
-          >
-            <button
-              onClick={() => setActiveTab('datasets')}
-              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
-              style={{
-                borderColor: activeTab === 'datasets' ? colors.accent.primary : 'transparent',
-                color: activeTab === 'datasets' ? colors.accent.primary : colors.text.secondary,
-              }}
-            >
-              Datasets
-            </button>
-            <button
-              onClick={() => setActiveTab('evaluations')}
-              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
-              style={{
-                borderColor: activeTab === 'evaluations' ? colors.accent.primary : 'transparent',
-                color: activeTab === 'evaluations' ? colors.accent.primary : colors.text.secondary,
-              }}
-            >
-              Evaluations
-            </button>
-          </div>
+          <TabNavigation
+            tabs={[
+              { id: 'datasets', label: 'Datasets' },
+              { id: 'evaluations', label: 'Evaluations' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as Tab)}
+          />
 
           {/* Tab Content */}
-          {activeTab === 'datasets' ? (
+          {apiKeys.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>API key required</p>
+                <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>Add an API key in the Keystore to start creating datasets and running evaluations</p>
+                <a href="/keystore" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}>
+                  Go to Keystore
+                </a>
+              </div>
+            </div>
+          ) : activeTab === 'datasets' ? (
             <DatasetsTab
               leftPanelWidth={leftPanelWidth}
               datasetName={datasetName}
@@ -927,6 +892,7 @@ export default function SpeechToTextPage() {
               loadDatasets={loadDatasets}
               apiKeys={apiKeys}
               languages={languages}
+              toast={toast}
             />
           ) : (
             <EvaluationsTab
@@ -970,6 +936,33 @@ export default function SpeechToTextPage() {
   );
 }
 
+// ============ DATASET DESCRIPTION COMPONENT ============
+const DESCRIPTION_CHAR_LIMIT = 100;
+
+function DatasetDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = description.length > DESCRIPTION_CHAR_LIMIT;
+
+  return (
+    <div className="mt-2 text-xs leading-relaxed break-words overflow-hidden" style={{ color: colors.text.secondary }}>
+      <span>
+        {isLong && !expanded
+          ? description.slice(0, DESCRIPTION_CHAR_LIMIT).trimEnd() + '...'
+          : description}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="mt-1 block text-xs font-medium"
+          style={{ color: colors.text.primary }}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ============ DATASETS TAB COMPONENT ============
 interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -996,6 +989,7 @@ interface DatasetsTabProps {
   loadDatasets: () => void;
   apiKeys: APIKey[];
   languages: Language[];
+  toast: ReturnType<typeof useToast>;
 }
 
 function DatasetsTab({
@@ -1023,129 +1017,197 @@ function DatasetsTab({
   loadDatasets,
   apiKeys,
   languages,
+  toast,
 }: DatasetsTabProps) {
   const [showLanguageInfo, setShowLanguageInfo] = useState(false);
+  const [languageInfoPos, setLanguageInfoPos] = useState({ top: 0, left: 0 });
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewModalData, setViewModalData] = useState<{
+    name: string;
+    datasetId: number;
+    samples: {
+      id: number;
+      text: string;
+      ground_truth: string;
+      language_id: number;
+      signed_url?: string;
+      sample_metadata?: { original_filename?: string; [key: string]: any };
+    }[];
+  } | null>(null);
+  const [viewPlayingId, setViewPlayingId] = useState<number | null>(null);
+  const [savingSampleId, setSavingSampleId] = useState<number | null>(null);
+
+  const handleViewDataset = async (datasetId: number, datasetName: string) => {
+    if (apiKeys.length === 0) return;
+    setViewingId(datasetId);
+    try {
+      const response = await fetch(
+        `/api/evaluations/stt/datasets/${datasetId}?include_samples=true&include_signed_url=true&sample_limit=100&sample_offset=0`,
+        { headers: { 'X-API-KEY': apiKeys[0].key } }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch dataset');
+      }
+      const data = await response.json();
+      const samples = data?.data?.samples || data?.samples || [];
+      if (samples.length === 0) {
+        toast.error('No samples found in this dataset');
+        return;
+      }
+      setViewModalData({ name: datasetName, datasetId, samples });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to view dataset');
+    } finally {
+      setViewingId(null);
+    }
+  };
+
+  const handleUpdateSample = async (sampleId: number, field: 'ground_truth' | 'language_id', value: string | number) => {
+    if (!viewModalData || apiKeys.length === 0) return;
+    setSavingSampleId(sampleId);
+    try {
+      const response = await fetch(
+        `/api/evaluations/stt/samples/${sampleId}`,
+        {
+          method: 'PATCH',
+          headers: { 'X-API-KEY': apiKeys[0].key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [field]: value }),
+        }
+      );
+      const responseData = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const msg = responseData?.detail || responseData?.error || responseData?.message || `Failed to update sample (${response.status})`;
+        throw new Error(msg);
+      }
+      setViewModalData(prev => prev ? {
+        ...prev,
+        samples: prev.samples.map(s => s.id === sampleId ? { ...s, [field]: value } : s),
+      } : null);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update sample');
+    } finally {
+      setSavingSampleId(null);
+    }
+  };
+
 
   useEffect(() => {
     if (!showLanguageInfo) return;
     const handleClick = () => setShowLanguageInfo(false);
+    const handleScroll = () => setShowLanguageInfo(false);
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [showLanguageInfo]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto space-y-4">
-          {/* Dataset Information Card - Compact */}
-          <div
-            className="border rounded-lg p-4"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
-              Dataset Information
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Create Dataset Form */}
+      <div
+        className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+      >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* Page Title */}
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Create New Dataset
             </h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Dataset Name *
-                </label>
-                <input
-                  type="text"
-                  value={datasetName}
-                  onChange={e => setDatasetName(e.target.value)}
-                  placeholder="e.g., English Podcast Dataset"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={datasetDescription}
-                  onChange={e => setDatasetDescription(e.target.value)}
-                  placeholder="Optional description"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  <span className="inline-flex items-center gap-1 relative">
-                    Language *
-                    <span
-                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
-                      style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
-                      onClick={(e) => { e.stopPropagation(); e.preventDefault(); setShowLanguageInfo(!showLanguageInfo); }}
-                    >
-                      i
-                    </span>
-                    {showLanguageInfo && (
-                      <div
-                        className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs p-3"
-                        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
-                        <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
-                          This is the default language applied to all samples in the dataset. You can override the language for individual samples in the audio files section below.
-                        </p>
-                      </div>
-                    )}
-                  </span>
-                </label>
-                <select
-                  value={datasetLanguageId}
-                  onChange={e => {
-                    const newId = Number(e.target.value);
-                    setDatasetLanguageId(newId);
-                    // Update all existing audio files to the new dataset language
-                    setAudioFiles(prev => prev.map(f => ({ ...f, languageId: newId })));
-                  }}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                >
-                  {languages.map(lang => (
-                    <option key={lang.id} value={lang.id}>{lang.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              Add audio samples that will be transcribed during evaluation
+            </p>
           </div>
 
-          {/* Audio Files Section Card - Expanded with Split Layout */}
-          <div
-            className="border rounded-lg flex flex-col overflow-hidden"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-              ...(audioFiles.length > 0 && { flex: 1, minHeight: '500px' }),
-            }}
-          >
-            <div className="p-4 border-b" style={{ borderColor: colors.border }}>
-              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-                Audio Files *
-              </h2>
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Name *
+            </label>
+            <input
+              type="text"
+              value={datasetName}
+              onChange={e => setDatasetName(e.target.value)}
+              placeholder="e.g., English Podcast Dataset"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Description
+            </label>
+            <input
+              type="text"
+              value={datasetDescription}
+              onChange={e => setDatasetDescription(e.target.value)}
+              placeholder="Optional description"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
+          </div>
+
+          {/* Language */}
+          <div>
+            <label className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              <span className="inline-flex items-center gap-1">
+                Language *
+                <button
+                  type="button"
+                  aria-label="Show language information"
+                  className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
+                  style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary, padding: 0, lineHeight: 1 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setLanguageInfoPos({ top: rect.bottom + 4, left: rect.left });
+                    setShowLanguageInfo(!showLanguageInfo);
+                  }}
+                >
+                  i
+                </button>
+                {showLanguageInfo && (
+                  <div
+                    className="fixed z-50 rounded-lg shadow-lg border text-xs p-3"
+                    style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px', top: languageInfoPos.top, left: languageInfoPos.left }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
+                    <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
+                      This is the default language applied to all samples in the dataset. You can override the language for individual samples in the audio files section below.
+                    </p>
+                  </div>
+                )}
+              </span>
+            </label>
+            <select
+              value={datasetLanguageId}
+              onChange={e => {
+                const newId = Number(e.target.value);
+                setDatasetLanguageId(newId);
+                setAudioFiles(prev => prev.map(f => ({ ...f, languageId: newId })));
+              }}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            >
+              {languages.map(lang => (
+                <option key={lang.id} value={lang.id}>{lang.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Audio Samples */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+                Audio Samples *
+              </label>
             </div>
 
             <input
@@ -1158,244 +1220,376 @@ function DatasetsTab({
             />
 
             {audioFiles.length === 0 ? (
-              <div className="p-6">
-                <div
-                  onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
-                  className="border-2 border-dashed rounded-lg p-6 text-center transition-colors"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: colors.bg.primary,
-                    cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
-                    opacity: apiKeys.length > 0 ? 1 : 0.5,
-                  }}
-                  onMouseEnter={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
-                  onMouseLeave={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.primary)}
-                >
-                  <svg className="w-10 h-10 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                  </svg>
-                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
-                    {apiKeys.length > 0 ? 'Click to upload audio files' : 'Add an API key to upload audio files'}
-                  </p>
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>
-                    {apiKeys.length > 0 ? 'Supports MP3, WAV, M4A, OGG, FLAC, WebM' : 'Go to Keystore to add an API key first'}
-                  </p>
-                </div>
+              <div
+                onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                className="border-2 border-dashed rounded-lg p-6 text-center transition-colors"
+                style={{
+                  borderColor: colors.border,
+                  backgroundColor: colors.bg.primary,
+                  cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                  opacity: apiKeys.length > 0 ? 1 : 0.5,
+                }}
+                onMouseEnter={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
+                onMouseLeave={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.primary)}
+              >
+                <svg className="w-8 h-8 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                <p className="text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
+                  {apiKeys.length > 0 ? 'Click to upload audio samples' : 'Add an API key to upload'}
+                </p>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  MP3, WAV, M4A, OGG, FLAC, WebM
+                </p>
               </div>
             ) : (
-              <div className="flex-1 flex overflow-hidden" style={{ minHeight: '500px' }}>
-                {/* Left: Upload More Files */}
-                <div className="w-96 border-r p-4 flex flex-col" style={{ borderColor: colors.border }}>
-                  <h3 className="text-sm font-semibold mb-3" style={{ color: colors.text.primary }}>
-                    Upload More Files
-                  </h3>
+              <div>
+                <div className="space-y-3" style={{ maxHeight: '400px', overflow: 'auto' }}>
+
+                {audioFiles.map((audioFile, idx) => (
                   <div
-                    onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
-                    className="border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer"
+                    key={audioFile.id}
+                    className="rounded-lg overflow-hidden"
                     style={{
-                      borderColor: colors.border,
                       backgroundColor: colors.bg.primary,
-                      cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
-                      opacity: apiKeys.length > 0 ? 1 : 0.5,
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                     }}
-                    onMouseEnter={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
-                    onMouseLeave={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.primary)}
                   >
-                    <svg className="w-8 h-8 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                      Add Audio Files
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                      MP3, WAV, M4A, OGG, FLAC, WebM
-                    </p>
-                  </div>
-                  <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: colors.bg.secondary }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
-                      Total Files: {audioFiles.length}
-                    </p>
-                    <p className="text-xs" style={{ color: colors.text.secondary }}>
-                      {audioFiles.filter(f => f.fileId).length} uploaded, {audioFiles.filter(f => !f.fileId).length} uploading
-                    </p>
-                  </div>
-                </div>
+                    <div className="p-4">
+                      {/* Header: number, filename, status, remove */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-medium"
+                            style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
+                            {audioFile.name}
+                          </span>
+                          <span className="text-xs flex-shrink-0" style={{ color: colors.text.secondary }}>
+                            {formatFileSize(audioFile.size)}
+                          </span>
+                          {audioFile.fileId ? (
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.status.success }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0" style={{ borderColor: colors.accent.primary, borderTopColor: 'transparent' }} />
+                          )}
+                        </div>
+                        <button
+                          onClick={() => removeAudioFile(audioFile.id)}
+                          className="p-1 rounded flex-shrink-0"
+                          style={{ color: colors.text.secondary }}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
 
-                {/* Right: Uploaded Files List (Scrollable) */}
-                <div className="flex-1 overflow-auto p-4">
-                  <h3 className="text-sm font-semibold mb-3" style={{ color: colors.text.primary }}>
-                    Uploaded Files ({audioFiles.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {audioFiles.map((audioFile, idx) => (
-                      <div
-                        key={audioFile.id}
-                        className="border rounded-lg overflow-hidden"
-                        style={{
-                          borderColor: audioFile.groundTruth.trim() ? colors.status.success : colors.border,
-                          backgroundColor: audioFile.groundTruth.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.secondary,
-                        }}
-                      >
-                        <div className="p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <span
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-medium"
-                                style={{ backgroundColor: colors.bg.primary, color: colors.text.secondary }}
-                              >
-                                {idx + 1}
-                              </span>
-                              <span className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
-                                {audioFile.name}
-                              </span>
-                              {audioFile.fileId && (
-                                <span
-                                  className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: 'rgba(22, 163, 74, 0.1)', color: colors.status.success }}
-                                >
-                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                  Uploaded
-                                </span>
-                              )}
-                              {!audioFile.fileId && (
-                                <span
-                                  className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', color: colors.accent.primary }}
-                                >
-                                  <div className="w-2 h-2 border border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.accent.primary, borderTopColor: 'transparent' }} />
-                                  Uploading...
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => removeAudioFile(audioFile.id)}
-                              className="p-1 rounded flex-shrink-0"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
+                      {/* Audio Player */}
+                      <AudioPlayer
+                        audioBase64={audioFile.base64}
+                        mediaType={audioFile.mediaType}
+                        isPlaying={playingFileId === audioFile.id}
+                        onPlayToggle={() => setPlayingFileId(playingFileId === audioFile.id ? null : audioFile.id)}
+                      />
 
-                          <AudioPlayer
-                            audioBase64={audioFile.base64}
-                            mediaType={audioFile.mediaType}
-                            isPlaying={playingFileId === audioFile.id}
-                            onPlayToggle={() => setPlayingFileId(playingFileId === audioFile.id ? null : audioFile.id)}
+                      {/* Language + Ground Truth */}
+                      <div className="mt-3 flex items-start gap-3">
+                        <div className="flex-shrink-0" style={{ width: '120px' }}>
+                          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide" style={{ color: colors.text.secondary }}>
+                            Language
+                          </label>
+                          <select
+                            value={audioFile.languageId}
+                            onChange={e => updateFileLanguage(audioFile.id, Number(e.target.value))}
+                            className="w-full px-2 py-1.5 border rounded-md text-xs"
+                            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+                          >
+                            {languages.map(lang => (
+                              <option key={lang.id} value={lang.id}>{lang.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide" style={{ color: colors.text.secondary }}>
+                            Ground Truth
+                          </label>
+                          <textarea
+                            value={audioFile.groundTruth}
+                            onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
+                            placeholder={audioFile.fileId ? "Expected transcription..." : "Uploading..."}
+                            disabled={!audioFile.fileId}
+                            rows={2}
+                            className="w-full px-2 py-1.5 border rounded-md text-xs"
+                            style={{
+                              backgroundColor: audioFile.fileId ? colors.bg.primary : colors.bg.secondary,
+                              borderColor: colors.border,
+                              color: audioFile.fileId ? colors.text.primary : colors.text.secondary,
+                              cursor: audioFile.fileId ? 'text' : 'not-allowed',
+                              opacity: audioFile.fileId ? 1 : 0.6,
+                              resize: 'vertical',
+                            }}
                           />
-
-                          <div className="mt-3 flex items-end gap-3">
-                            <div className="flex-shrink-0" style={{ width: '200px' }}>
-                              <label className="block text-[10px] font-semibold mb-1.5 uppercase tracking-wider" style={{ color: colors.text.secondary }}>
-                                Select Language
-                              </label>
-                              <select
-                                value={audioFile.languageId}
-                                onChange={e => updateFileLanguage(audioFile.id, Number(e.target.value))}
-                                className="w-full px-3 py-2 border rounded-md text-sm"
-                                style={{
-                                  backgroundColor: colors.bg.primary,
-                                  borderColor: colors.border,
-                                  color: colors.text.primary,
-                                  height: '38px',
-                                }}
-                              >
-                                {languages.map(lang => (
-                                  <option key={lang.id} value={lang.id}>{lang.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="flex-1">
-                              <label className="block text-[10px] font-semibold mb-1.5 uppercase tracking-wider" style={{ color: colors.text.secondary }}>
-                                Ground Truth (optional)
-                              </label>
-                              <input
-                                type="text"
-                                value={audioFile.groundTruth}
-                                onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
-                                placeholder={audioFile.fileId ? "Enter the expected transcription (optional)..." : "Wait for upload to complete..."}
-                                disabled={!audioFile.fileId}
-                                className="w-full px-3 py-2 border rounded-md text-sm"
-                                style={{
-                                  backgroundColor: audioFile.fileId ? colors.bg.primary : colors.bg.secondary,
-                                  borderColor: colors.border,
-                                  color: audioFile.fileId ? colors.text.primary : colors.text.secondary,
-                                  height: '38px',
-                                  cursor: audioFile.fileId ? 'text' : 'not-allowed',
-                                  opacity: audioFile.fileId ? 1 : 0.6,
-                                }}
-                              />
-                            </div>
-                          </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
+                ))}
                 </div>
+
+                {/* Upload more - below scrollable area */}
+                <button
+                  onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                  className="flex items-center gap-1 text-xs font-medium mt-2"
+                  style={{
+                    color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
+                    cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add more samples
+                  <span style={{ color: colors.text.secondary }}>
+                    ({audioFiles.filter(f => f.fileId).length}/{audioFiles.length} uploaded)
+                  </span>
+                </button>
               </div>
             )}
           </div>
         </div>
+
+        {/* Bottom Action Bar */}
+        <div className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <button
+            onClick={() => {
+              setDatasetName('');
+              setDatasetDescription('');
+              setDatasetLanguageId(1);
+              setAudioFiles([]);
+              setPlayingFileId(null);
+            }}
+            disabled={isCreating}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ color: colors.text.secondary }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateDataset}
+            disabled={isCreating || !datasetName.trim() || audioFiles.length === 0}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: isCreating || !datasetName.trim() || audioFiles.length === 0 ? colors.bg.secondary : colors.accent.primary,
+              color: isCreating || !datasetName.trim() || audioFiles.length === 0 ? colors.text.secondary : '#fff',
+              cursor: isCreating || !datasetName.trim() || audioFiles.length === 0 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isCreating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Creating...
+              </>
+            ) : (
+              'Create Dataset'
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Fixed Action Buttons at Bottom */}
-      <div
-        className="flex-shrink-0 border-t px-6 py-4 flex gap-3"
-        style={{
-          borderColor: colors.border,
-          backgroundColor: colors.bg.primary,
-          boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)'
-        }}
-      >
-        <button
-          onClick={() => {
-            setDatasetName('');
-            setDatasetDescription('');
-            setDatasetLanguageId(1);
-            setAudioFiles([]);
-            setPlayingFileId(null);
-          }}
-          disabled={isCreating}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border"
-          style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border,
-            color: colors.text.primary,
-            cursor: isCreating ? 'not-allowed' : 'pointer',
-            opacity: isCreating ? 0.5 : 1,
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateDataset}
-          disabled={isCreating || !datasetName.trim() || audioFiles.length === 0}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
-          style={{
-            backgroundColor: isCreating || !datasetName.trim() || audioFiles.length === 0
-              ? colors.bg.secondary
-              : colors.accent.primary,
-            color: isCreating || !datasetName.trim() || audioFiles.length === 0
-              ? colors.text.secondary
-              : '#fff',
-            cursor: isCreating || !datasetName.trim() || audioFiles.length === 0
-              ? 'not-allowed'
-              : 'pointer',
-          }}
-        >
-          {isCreating ? (
-            <>
-              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-              Creating Dataset...
-            </>
+      {/* Right Panel - Dataset List */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>Datasets</h3>
+          </div>
+
+          {datasets.length === 0 ? (
+            <div className="p-16 text-center">
+              <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+              </svg>
+              <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No datasets yet</p>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset using the form on the left</p>
+            </div>
           ) : (
-            'Create Dataset'
+            <div className="space-y-3">
+              {datasets.map((dataset) => (
+                <div
+                  key={dataset.id}
+                  className="rounded-lg overflow-hidden"
+                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)', borderLeft: '3px solid #DCCFC3' }}
+                >
+                  <div className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                          {dataset.name}
+                        </div>
+                        {dataset.description && (
+                          <DatasetDescription description={dataset.description} />
+                        )}
+                        {dataset.dataset_metadata?.sample_count !== undefined && (
+                          <div className="mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                            {dataset.dataset_metadata.sample_count} samples
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewDataset(dataset.id, dataset.name)}
+                          disabled={viewingId === dataset.id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{
+                            backgroundColor: 'transparent',
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: viewingId === dataset.id ? 0.5 : 1,
+                          }}
+                        >
+                          {viewingId === dataset.id ? 'Loading...' : 'View'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
       </div>
+
+      {/* View Dataset Modal */}
+      {viewModalData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => { setViewModalData(null); setViewPlayingId(null); }}
+        >
+          <div
+            className="rounded-lg shadow-xl flex flex-col"
+            style={{ backgroundColor: colors.bg.primary, width: '90vw', maxWidth: '900px', maxHeight: '85vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  {viewModalData.name}
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                  {viewModalData.samples.length} audio samples
+                </p>
+              </div>
+              <button
+                onClick={() => { setViewModalData(null); setViewPlayingId(null); }}
+                className="p-1.5 rounded"
+                style={{ color: colors.text.secondary }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body - Samples */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '40px' }}>
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                      Sample
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '120px' }}>
+                      Language
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                      Ground Truth
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewModalData.samples.map((sample, idx) => (
+                    <tr key={sample.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                      <td className="px-4 py-3 text-xs align-top" style={{ color: colors.text.secondary }}>
+                        {idx + 1}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="space-y-1.5">
+                          {sample.sample_metadata?.original_filename && (
+                            <div className="text-xs font-medium truncate" style={{ color: colors.text.primary, maxWidth: '280px' }}>
+                              {sample.sample_metadata.original_filename}
+                            </div>
+                          )}
+                          {sample.signed_url ? (
+                            <AudioPlayerFromUrl
+                              signedUrl={sample.signed_url}
+                              isPlaying={viewPlayingId === sample.id}
+                              onPlayToggle={() => setViewPlayingId(viewPlayingId === sample.id ? null : sample.id)}
+                            />
+                          ) : (
+                            <span className="text-xs" style={{ color: colors.text.secondary }}>No audio</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <select
+                          value={sample.language_id}
+                          onChange={e => handleUpdateSample(sample.id, 'language_id', Number(e.target.value))}
+                          disabled={savingSampleId === sample.id}
+                          className="w-full px-2 py-1.5 border rounded-md text-xs"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: savingSampleId === sample.id ? 0.5 : 1,
+                          }}
+                        >
+                          {languages.map(lang => (
+                            <option key={lang.id} value={lang.id}>{lang.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <textarea
+                          value={sample.ground_truth || ''}
+                          onChange={e => {
+                            const newVal = e.target.value;
+                            setViewModalData(prev => prev ? {
+                              ...prev,
+                              samples: prev.samples.map(s => s.id === sample.id ? { ...s, ground_truth: newVal } : s),
+                            } : null);
+                          }}
+                          onBlur={e => handleUpdateSample(sample.id, 'ground_truth', e.target.value)}
+                          placeholder="Enter ground truth..."
+                          disabled={savingSampleId === sample.id}
+                          rows={3}
+                          className="w-full px-2 py-1.5 border rounded-md text-xs"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: savingSampleId === sample.id ? 0.5 : 1,
+                            resize: 'vertical',
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1454,15 +1648,22 @@ function EvaluationsTab({
   toast,
   setActiveTab,
 }: EvaluationsTabProps) {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
   const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
+  const [scoreInfoPos, setScoreInfoPos] = useState({ top: 0, left: 0 });
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!openScoreInfo) return;
     const handleClick = () => setOpenScoreInfo(null);
+    const handleScroll = () => setOpenScoreInfo(null);
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [openScoreInfo]);
 
   const toggleTranscription = (resultId: number) => {
@@ -1521,10 +1722,20 @@ function EvaluationsTab({
           }}
         >
           <div className="flex-1 overflow-auto p-4 space-y-4">
+            {/* Page Title */}
+            <div>
+              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                Run New Evaluation
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                Compare transcription quality across STT models
+              </p>
+            </div>
+
             {/* Evaluation Name */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                Evaluation Name *
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+                Name *
               </label>
               <input
                 type="text"
@@ -1542,7 +1753,7 @@ function EvaluationsTab({
 
             {/* Model Selection */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                 Model *
               </label>
               <select
@@ -1561,14 +1772,11 @@ function EvaluationsTab({
 
             {/* Dataset Selection */}
             <div className="pt-2">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                 Select Dataset *
               </label>
               {isLoadingDatasets ? (
-                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
-                </div>
+                <LoaderBox message="Loading datasets..." size="sm" />
               ) : datasets.length === 0 ? (
                 <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
                   <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
@@ -1615,8 +1823,7 @@ function EvaluationsTab({
                       {selectedDataset.name}
                     </div>
                     <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
-                      <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
-                      {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+                      <div>{selectedDataset.dataset_metadata?.sample_count || 0} samples</div>
                     </div>
                   </div>
                 </div>
@@ -1670,49 +1877,73 @@ function EvaluationsTab({
         <div className="flex-1 overflow-auto p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {selectedRunId !== null && (
-                <button
-                  onClick={() => setSelectedRunId(null)}
-                  className="p-1.5 rounded hover:bg-opacity-10"
-                  style={{ color: colors.text.secondary }}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+              {selectedRunId !== null ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedRunId(null)}
+                    className="p-1 rounded"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                    {runs.find(r => r.id === selectedRunId)?.run_name}
+                  </h2>
+                </div>
+              ) : (
+                <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                  Evaluation Runs
+                </h2>
               )}
-              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
-                {selectedRunId !== null
-                  ? `Results - ${runs.find(r => r.id === selectedRunId)?.run_name}`
-                  : 'Evaluation Runs'}
-              </h2>
             </div>
             {selectedRunId === null && (
-              <button
-                onClick={loadRuns}
-                disabled={isLoadingRuns}
-                className="p-1.5 rounded"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <div className="flex items-center gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-2.5 py-1 rounded-md text-xs font-medium border appearance-none cursor-pointer pr-7"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 6px center',
+                  }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
+                  <option value="all">All Status</option>
+                  <option value="completed">Completed</option>
+                  <option value="processing">Processing</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+                <button
+                  onClick={loadRuns}
+                  disabled={isLoadingRuns}
+                  className="p-1.5 rounded"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <svg
+                    className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
 
-          <div className={`rounded-lg border ${openScoreInfo ? '' : 'overflow-hidden'}`} style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <div className="rounded-lg overflow-visible" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
-                <div className="p-16 text-center">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading results...</p>
+                <div className="p-16">
+                  <Loader size="md" message="Loading results..." />
                 </div>
               ) : results.length === 0 ? (
                 <div className="p-16 text-center">
@@ -1723,8 +1954,8 @@ function EvaluationsTab({
                 <table className="w-full">
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '40%' }}>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '40%' }}>
                         <div>
                           <div>Ground Truth vs Transcription</div>
                           <div className="flex items-center gap-2 font-normal mt-1">
@@ -1743,13 +1974,18 @@ function EvaluationsTab({
                           </div>
                         </div>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '15%' }}>
-                        <span className="inline-flex items-center gap-1 relative">
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                        <span className="inline-flex items-center gap-1">
                           Score
                           <span
-                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-bold cursor-pointer shrink-0"
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
                             style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
-                            onClick={(e) => { e.stopPropagation(); setOpenScoreInfo(openScoreInfo ? null : 'accuracy'); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setScoreInfoPos({ top: rect.bottom + 4, left: rect.left });
+                              setOpenScoreInfo(openScoreInfo ? null : 'accuracy');
+                            }}
                           >
                             i
                           </span>
@@ -1764,8 +2000,8 @@ function EvaluationsTab({
                             const current = metrics[currentIdx >= 0 ? currentIdx : 0];
                             return (
                               <div
-                                className="absolute left-0 top-6 z-50 rounded-lg shadow-lg border text-xs"
-                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px' }}
+                                className="fixed z-50 rounded-lg shadow-lg border text-xs"
+                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px', top: scoreInfoPos.top, left: scoreInfoPos.left }}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {/* Tab navigation */}
@@ -1806,8 +2042,8 @@ function EvaluationsTab({
                           })()}
                         </span>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2055,9 +2291,8 @@ function EvaluationsTab({
             ) : (
               // Runs List View
               isLoadingRuns ? (
-                <div className="p-16 text-center">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading evaluation runs...</p>
+                <div className="p-16">
+                  <Loader size="md" message="Loading evaluation runs..." />
                 </div>
               ) : runs.length === 0 ? (
                 <div className="p-16 text-center">
@@ -2067,56 +2302,66 @@ function EvaluationsTab({
                   <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
                   <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
                 </div>
-              ) : (
-                <div className="p-3 space-y-3">
-                  {runs.map((run) => {
-                    const statusColors = getStatusColor(run.status);
+              ) : (() => {
+                const filteredRuns = statusFilter === 'all'
+                  ? runs
+                  : runs.filter(r => r.status.toLowerCase() === statusFilter);
+                return filteredRuns.length > 0 ? (
+                <div className="p-4 space-y-3">
+                  {filteredRuns.map((run) => {
                     const isCompleted = run.status.toLowerCase() === 'completed';
                     return (
                       <div
                         key={run.id}
-                        className="border rounded-lg p-5"
+                        className="rounded-lg overflow-hidden"
                         style={{
-                          borderColor: colors.border,
-                          backgroundColor: colors.bg.secondary,
+                          backgroundColor: colors.bg.primary,
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)',
+                          borderLeft: '3px solid #DCCFC3',
                         }}
                       >
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex-1">
-                            <div className="text-base font-medium" style={{ color: colors.text.primary }}>
-                              {run.run_name}
+                        <div className="px-5 py-4">
+                          {/* Row 1: Run Name + Status */}
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                                {run.run_name}
+                              </div>
+                              {/* Error message */}
+                              {run.error_message && (
+                                <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                                  {run.error_message}
+                                </div>
+                              )}
                             </div>
+                            <StatusBadge status={run.status} size="sm" />
                           </div>
-                        </div>
 
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-6 text-sm" style={{ color: colors.text.secondary }}>
-                            <div>
-                              <span className="font-medium">Dataset:</span> {run.dataset_name}
+                          {/* Row 2: Dataset + Models (left) | Actions (right) */}
+                          <div className="flex items-center justify-between gap-4 mt-3">
+                            <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
+                              <span className="flex items-center gap-1.5">
+                                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                                </svg>
+                                {run.dataset_name}
+                              </span>
+                              {run.models && run.models.length > 0 && (
+                                <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  {run.models.join(', ')}
+                                </span>
+                              )}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: statusColors.bg,
-                                borderWidth: '1px',
-                                borderColor: statusColors.border,
-                                color: statusColors.text,
-                              }}
-                            >
-                              {run.status.toUpperCase()}
-                            </span>
                             <button
                               onClick={isCompleted ? () => loadResults(run.id) : undefined}
                               disabled={!isCompleted}
-                              className="px-4 py-2 rounded-lg text-sm font-medium border"
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium border flex-shrink-0"
                               style={{
-                                backgroundColor: isCompleted ? colors.bg.primary : colors.bg.secondary,
+                                backgroundColor: 'transparent',
                                 borderColor: colors.border,
                                 color: isCompleted ? colors.text.primary : colors.text.secondary,
                                 cursor: isCompleted ? 'pointer' : 'not-allowed',
-                                opacity: isCompleted ? 1 : 0.6,
+                                opacity: isCompleted ? 1 : 0.5,
                               }}
                             >
                               View Results
@@ -2127,7 +2372,13 @@ function EvaluationsTab({
                     );
                   })}
                 </div>
-              )
+                ) : (
+                  <div className="p-16 text-center">
+                    <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>

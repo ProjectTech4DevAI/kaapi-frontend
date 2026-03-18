@@ -27,8 +27,7 @@ jobs:
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
               },
               body: JSON.stringify({
-                model: 'gpt-5-nano',
-                max_output_tokens: 1024,
+                model: 'gpt-4o-mini',
                 input: `Rewrite this GitHub issue body using the exact format below. Keep it short, crisp and easy to understand. Do NOT add any information that wasn't in the original. Output ONLY the formatted markdown, nothing else.
 
             Format:
@@ -56,12 +55,17 @@ jobs:
 
             const data = await response.json();
 
-            if (!data.output_text) {
+            const text = data.output
+              ?.find(o => o.type === 'message')
+              ?.content?.find(c => c.type === 'output_text')
+              ?.text;
+
+            if (!text) {
               core.setFailed(`OpenAI API error: ${JSON.stringify(data)}`);
               return;
             }
 
-            return data.output_text;
+            return text;
 
       - name: Rewrite issue title
         id: title
@@ -79,8 +83,7 @@ jobs:
                 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
               },
               body: JSON.stringify({
-                model: 'gpt-5-nano',
-                max_output_tokens: 100,
+                model: 'gpt-4o-mini',
                 input: `Based on the issue body below, generate a short title in this exact format:
             "Module Name: 4-5 word summary"
 
@@ -98,12 +101,17 @@ jobs:
 
             const data = await response.json();
 
-            if (!data.output_text) {
+            const text = data.output
+              ?.find(o => o.type === 'message')
+              ?.content?.find(c => c.type === 'output_text')
+              ?.text;
+
+            if (!text) {
               core.setFailed(`OpenAI API error: ${JSON.stringify(data)}`);
               return;
             }
 
-            return data.output_text.replace(/^["']|["']$/g, '');
+            return text.replace(/^["']|["']$/g, '');
 
       - name: Update issue
         uses: actions/github-script@v8

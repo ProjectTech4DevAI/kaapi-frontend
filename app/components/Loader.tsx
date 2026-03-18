@@ -36,10 +36,7 @@ export default function Loader({ size = 'md', message, fullScreen = false }: Loa
       {/* Message */}
       {message && (
         <p
-          className="text-sm font-medium"
-          style={{
-            color: '#737373',
-          }}
+          className="text-sm font-medium text-[#737373]"
         >
           {message}
         </p>
@@ -58,8 +55,7 @@ export default function Loader({ size = 'md', message, fullScreen = false }: Loa
   if (fullScreen) {
     return (
       <div
-        className="w-full h-screen flex items-center justify-center"
-        style={{ backgroundColor: '#fafafa' }}
+        className="w-full h-screen flex items-center justify-center bg-[#fafafa]"
       >
         {loaderContent}
       </div>
@@ -75,11 +71,7 @@ export default function Loader({ size = 'md', message, fullScreen = false }: Loa
 export function LoaderBox({ message, size = 'md' }: { message?: string; size?: 'sm' | 'md' | 'lg' }) {
   return (
     <div
-      className="border rounded-lg p-8 text-center"
-      style={{
-        backgroundColor: '#ffffff',
-        borderColor: '#e5e5e5',
-      }}
+      className="border rounded-lg p-8 text-center bg-[#ffffff] border-[#e5e5e5]"
     >
       <Loader size={size} message={message} />
     </div>

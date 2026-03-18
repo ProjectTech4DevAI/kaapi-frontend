@@ -1,67 +1,61 @@
 /**
- * SimplifiedEval.tsx - Simplified One-Click Evaluation Flow
+ * Text Evaluation Page
  *
- * Two-tab structure:
- * 1. Datasets Tab: Upload QnA dataset → Run evaluation
- * 2. Evaluations Tab: View evaluation results with metrics and detailed logs
+ * Tab 1 - Datasets: Create QnA datasets with CSV upload
+ * Tab 2 - Evaluations: Configure and run evaluations, view results
  */
 
 "use client"
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import {format, toZonedTime} from "date-fns-tz"
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { colors } from '@/app/lib/colors';
 import { useRouter, useSearchParams } from 'next/navigation'
-import { APIKey } from '../keystore/page';
-import { STORAGE_KEY } from '../keystore/page';
-import { Dataset, DATASETS_STORAGE_KEY, UploadDatasetModal } from '../datasets/page';
-import { EvalJob, AssistantConfig, ScoreObject, getScoreObject } from '../components/types';
-import { formatDate, getStatusColor } from '../components/utils';
+import { APIKey, STORAGE_KEY } from '../keystore/page';
+import { Dataset } from '../datasets/page';
+import { EvalJob, AssistantConfig, getScoreObject } from '../components/types';
+import { getStatusColor } from '../components/utils';
 import ConfigModal from '../components/ConfigModal';
-import StatusBadge from '../components/StatusBadge';
 import ScoreDisplay from '../components/ScoreDisplay';
 import Sidebar from '../components/Sidebar';
 import TabNavigation from '../components/TabNavigation';
 import ConfigSelector from '../components/ConfigSelector';
 import { useToast } from '../components/Toast';
-import Loader, { LoaderBox } from '../components/Loader';
+import Loader from '../components/Loader';
 
 type Tab = 'datasets' | 'evaluations';
+
+const leftPanelWidth = 450;
 
 function SimplifiedEvalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
 
-  // Initialize activeTab from URL query parameter, default to 'datasets'
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = searchParams.get('tab');
     return (tabParam === 'evaluations' || tabParam === 'datasets') ? tabParam as Tab : 'datasets';
   });
 
-  const [isEvaluating, setIsEvaluating] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
-  // Dataset selection (can be pre-populated from URL params)
+  // Dataset creation state
+  const [datasetName, setDatasetName] = useState('');
+  const [datasetDescription, setDatasetDescription] = useState('');
+  const [duplicationFactor, setDuplicationFactor] = useState('1');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Stored datasets
   const [storedDatasets, setStoredDatasets] = useState<Dataset[]>([]);
+
+  // Evaluation config state
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
     return searchParams.get('dataset') || '';
   });
-
-  // Upload modal state
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [datasetName, setDatasetName] = useState<string>('');
-  const [duplicationFactor, setDuplicationFactor] = useState<string>('1');
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Evaluation fields (can be pre-populated from URL params)
   const [experimentName, setExperimentName] = useState<string>(() => {
     return searchParams.get('experiment') || '';
   });
-
-  // Config reference fields (can be pre-populated from URL params)
   const [selectedConfigId, setSelectedConfigId] = useState<string>(() => {
     return searchParams.get('config') || '';
   });
@@ -69,15 +63,15 @@ function SimplifiedEvalContent() {
     const version = searchParams.get('version');
     return version ? parseInt(version) : 0;
   });
+  const [isEvaluating, setIsEvaluating] = useState(false);
 
-  // Load API keys from localStorage and auto-select if only one exists
+  // Load API keys
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
         const keys = JSON.parse(stored);
         setApiKeys(keys);
-        // Auto-select the first (and only) API key
         if (keys.length > 0) {
           setSelectedKeyId(keys[0].id);
         }
@@ -88,91 +82,109 @@ function SimplifiedEvalContent() {
   }, []);
 
   // Fetch datasets from backend
-  const loadStoredDatasets = async () => {
-    if (!apiKeys.length) return;
-
+  const loadStoredDatasets = useCallback(async () => {
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) {
+      console.error('No selected API key found for loading datasets');
+      return;
+    }
     try {
       const response = await fetch('/api/evaluations/datasets', {
         method: 'GET',
-        headers: {
-          'X-API-KEY': apiKeys[0].key,
-        },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
-
-      if (!response.ok) {
-        console.error('Failed to fetch datasets:', response.status);
-        return;
-      }
-
+      if (!response.ok) return;
       const data = await response.json();
-      const datasetList = Array.isArray(data) ? data : (data.data || []);
-      setStoredDatasets(datasetList);
+      setStoredDatasets(Array.isArray(data) ? data : (data.data || []));
     } catch (e) {
       console.error('Failed to load datasets:', e);
     }
-  };
+  }, [apiKeys, selectedKeyId]);
 
   useEffect(() => {
-    if (apiKeys.length > 0) {
-      loadStoredDatasets();
-    }
-  }, [apiKeys]);
+    if (apiKeys.length > 0 && selectedKeyId) loadStoredDatasets();
+  }, [apiKeys, selectedKeyId, loadStoredDatasets]);
 
-  const handleStoredDatasetSelect = (datasetId: string) => {
-    setSelectedDatasetId(datasetId);
-  };
-
-  // Upload modal handlers
+  // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     if (!file.name.endsWith('.csv')) {
       toast.error('Please select a CSV file');
       event.target.value = '';
       return;
     }
 
-    setUploadedFile(file);
-    const nameFromFile = file.name.replace(/\.csv$/i, '');
-    setDatasetName(nameFromFile);
+    // Validate CSV has exactly "question" and "answer" columns
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (!text) {
+        toast.error('Failed to read CSV file');
+        event.target.value = '';
+        return;
+      }
+      const firstLine = text.split('\n')[0]?.trim();
+      if (!firstLine) {
+        toast.error('CSV file is empty');
+        event.target.value = '';
+        return;
+      }
+      const headers = firstLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+      const required = ['question', 'answer'];
+      const hasRequired = required.every(col => headers.includes(col));
+      const hasExtra = headers.some(col => !required.includes(col));
+
+      if (!hasRequired || hasExtra) {
+        toast.error('CSV must have exactly two columns: "question" and "answer"');
+        event.target.value = '';
+        return;
+      }
+
+      setUploadedFile(file);
+      if (!datasetName) {
+        setDatasetName(file.name.replace(/\.csv$/i, ''));
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read CSV file');
+      event.target.value = '';
+    };
+    reader.readAsText(file);
   };
 
-  const handleUploadFromModal = async () => {
+  // Create dataset
+  const handleCreateDataset = async () => {
     if (!uploadedFile) {
-      toast.error('Please select a file first');
+      toast.error('Please select a CSV file');
       return;
     }
-
     if (!datasetName.trim()) {
       toast.error('Please enter a dataset name');
       return;
     }
-
-    if (apiKeys.length === 0) {
-      toast.error('No API key found');
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) {
+      toast.error('No API key selected. Please select one in the Keystore.');
       return;
     }
 
     setIsUploading(true);
-
     try {
-      // Prepare FormData for upload
       const formData = new FormData();
       formData.append('file', uploadedFile);
       formData.append('dataset_name', datasetName.trim());
-
+      if (datasetDescription.trim()) {
+        formData.append('description', datasetDescription.trim());
+      }
       if (duplicationFactor && parseInt(duplicationFactor) > 1) {
         formData.append('duplication_factor', duplicationFactor);
       }
 
-      // Upload to backend
       const response = await fetch('/api/evaluations/datasets', {
         method: 'POST',
         body: formData,
-        headers: {
-          'X-API-KEY': apiKeys[0].key,
-        }
+        headers: { 'X-API-KEY': selectedKey.key },
       });
 
       if (!response.ok) {
@@ -181,53 +193,45 @@ function SimplifiedEvalContent() {
       }
 
       const data = await response.json();
-      console.log('Dataset uploaded successfully:', data);
-
-      // Refresh the datasets list
       await loadStoredDatasets();
 
-      // Auto-select the newly uploaded dataset
       if (data.dataset_id) {
         setSelectedDatasetId(data.dataset_id.toString());
       }
 
-      // Reset form and close modal
+      // Reset form
       setUploadedFile(null);
       setDatasetName('');
+      setDatasetDescription('');
       setDuplicationFactor('1');
-      setIsUploadModalOpen(false);
 
-      toast.success('Dataset uploaded successfully!');
+      toast.success('Dataset created successfully!');
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(`Failed to upload dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRunEvaluation = async() => {
+  // Run evaluation
+  const handleRunEvaluation = async () => {
     if (!selectedKeyId) {
       toast.error('Please select an API key first');
       return;
     }
-
     if (!selectedDatasetId) {
       toast.error('Please select a dataset first');
       return;
     }
-
     if (!experimentName.trim()) {
-      toast.error('Please enter an experiment name');
+      toast.error('Please enter an evaluation name');
       return;
     }
-
     if (!selectedConfigId || !selectedConfigVersion) {
-      toast.error('Please select and save a configuration before running evaluation');
+      toast.error('Please select a configuration before running evaluation');
       return;
     }
 
-    // Get the selected API key
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) {
       toast.error('Selected API key not found');
@@ -235,18 +239,14 @@ function SimplifiedEvalContent() {
     }
 
     setIsEvaluating(true);
-
-    // Create the evaluation job using the selected dataset_id
     try {
-      // Build the request payload with config reference
-      const payload: any = {
+      const payload = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
         config_id: selectedConfigId,
         config_version: selectedConfigVersion,
       };
 
-      // Call evaluation endpoint via proxy
       const response = await fetch('/api/evaluations', {
         method: 'POST',
         headers: {
@@ -262,39 +262,32 @@ function SimplifiedEvalContent() {
       }
 
       const data = await response.json();
-      console.log('Evaluation job created:', data);
-
-      // Extract the evaluation ID from response (could be data.id or data.data.id or data.eval_id)
       const evalId = data.id || data.data?.id || data.eval_id || 'unknown';
 
-      // Redirect to evaluations tab to view evaluation status
       setIsEvaluating(false);
-      setActiveTab('evaluations');
-
-      // Show success message
-      toast.success(`Evaluation job created successfully! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
-    } catch(error: any) {
-      console.error('Error:', error);
+      toast.success(`Evaluation created! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
+      return true;
+    } catch (error: any) {
       toast.error(`Failed to run evaluation: ${error.message || 'Unknown error'}`);
       setIsEvaluating(false);
+      return false;
     }
   };
 
   return (
     <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - Full Height */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Title Section with Collapse Button */}
+          {/* Title Section */}
           <div className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="p-1.5 rounded-md"
                 style={{ color: colors.text.secondary }}
+                aria-label="Toggle sidebar"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -318,54 +311,94 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: colors.bg.secondary }}>
-            <div className="max-w-7xl mx-auto space-y-4 page-transition">
-              {activeTab === 'datasets' ? (
-                <DatasetsTab
-                  isEvaluating={isEvaluating}
-                  apiKeys={apiKeys}
-                  selectedKeyId={selectedKeyId}
-                  storedDatasets={storedDatasets}
-                  selectedDatasetId={selectedDatasetId}
-                  experimentName={experimentName}
-                  selectedConfigId={selectedConfigId}
-                  selectedConfigVersion={selectedConfigVersion}
-                  onKeySelect={setSelectedKeyId}
-                  onStoredDatasetSelect={handleStoredDatasetSelect}
-                  onOpenUploadModal={() => setIsUploadModalOpen(true)}
-                  onExperimentNameChange={setExperimentName}
-                  onRunEvaluation={handleRunEvaluation}
-                  onConfigSelect={(configId, configVersion) => {
-                    setSelectedConfigId(configId);
-                    setSelectedConfigVersion(configVersion);
-                  }}
-                />
-              ) : (
-                <EvaluationsTab apiKeys={apiKeys} selectedKeyId={selectedKeyId} />
-              )}
+          {apiKeys.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>API key required</p>
+                <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>Add an API key in the Keystore to start creating datasets and running evaluations</p>
+                <a href="/keystore" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}>
+                  Go to Keystore
+                </a>
+              </div>
             </div>
-          </div>
+          ) : activeTab === 'datasets' ? (
+            <DatasetsTab
+              leftPanelWidth={leftPanelWidth}
+              datasetName={datasetName}
+              setDatasetName={setDatasetName}
+              datasetDescription={datasetDescription}
+              setDatasetDescription={setDatasetDescription}
+              duplicationFactor={duplicationFactor}
+              setDuplicationFactor={setDuplicationFactor}
+              uploadedFile={uploadedFile}
+              onFileSelect={handleFileSelect}
+              onRemoveFile={() => setUploadedFile(null)}
+              isUploading={isUploading}
+              handleCreateDataset={handleCreateDataset}
+              resetForm={() => {
+                setDatasetName('');
+                setDatasetDescription('');
+                setDuplicationFactor('1');
+                setUploadedFile(null);
+              }}
+              storedDatasets={storedDatasets}
+              apiKeys={apiKeys}
+              selectedKeyId={selectedKeyId}
+              loadStoredDatasets={loadStoredDatasets}
+              toast={toast}
+            />
+          ) : (
+            <EvaluationsTab
+              leftPanelWidth={leftPanelWidth}
+              apiKeys={apiKeys}
+              selectedKeyId={selectedKeyId}
+              storedDatasets={storedDatasets}
+              selectedDatasetId={selectedDatasetId}
+              setSelectedDatasetId={setSelectedDatasetId}
+              selectedConfigId={selectedConfigId}
+              selectedConfigVersion={selectedConfigVersion}
+              onConfigSelect={(configId, configVersion) => {
+                setSelectedConfigId(configId);
+                setSelectedConfigVersion(configVersion);
+              }}
+              experimentName={experimentName}
+              setExperimentName={setExperimentName}
+              isEvaluating={isEvaluating}
+              handleRunEvaluation={handleRunEvaluation}
+              setActiveTab={setActiveTab}
+            />
+          )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Upload Dataset Modal */}
-      {isUploadModalOpen && (
-        <UploadDatasetModal
-          selectedFile={uploadedFile}
-          datasetName={datasetName}
-          duplicationFactor={duplicationFactor}
-          isUploading={isUploading}
-          onFileSelect={handleFileSelect}
-          onDatasetNameChange={setDatasetName}
-          onDuplicationFactorChange={setDuplicationFactor}
-          onUpload={handleUploadFromModal}
-          onClose={() => {
-            setIsUploadModalOpen(false);
-            setUploadedFile(null);
-            setDatasetName('');
-            setDuplicationFactor('1');
-          }}
-        />
+// ============ DATASET DESCRIPTION COMPONENT ============
+const EVAL_DESCRIPTION_CHAR_LIMIT = 100;
+
+function EvalDatasetDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = description.length > EVAL_DESCRIPTION_CHAR_LIMIT;
+
+  return (
+    <div className="mt-2 text-xs leading-relaxed break-words overflow-hidden" style={{ color: colors.text.secondary }}>
+      <span>
+        {isLong && !expanded
+          ? description.slice(0, EVAL_DESCRIPTION_CHAR_LIMIT).trimEnd() + '...'
+          : description}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="mt-1 block text-xs font-medium"
+          style={{ color: colors.text.primary }}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
       )}
     </div>
   );
@@ -373,440 +406,628 @@ function SimplifiedEvalContent() {
 
 // ============ DATASETS TAB COMPONENT ============
 interface DatasetsTabProps {
-  isEvaluating: boolean;
+  leftPanelWidth: number;
+  datasetName: string;
+  setDatasetName: (name: string) => void;
+  datasetDescription: string;
+  setDatasetDescription: (desc: string) => void;
+  duplicationFactor: string;
+  setDuplicationFactor: (factor: string) => void;
+  uploadedFile: File | null;
+  onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemoveFile: () => void;
+  isUploading: boolean;
+  handleCreateDataset: () => void;
+  resetForm: () => void;
+  storedDatasets: Dataset[];
   apiKeys: APIKey[];
   selectedKeyId: string;
-  storedDatasets: Dataset[];
-  selectedDatasetId: string;
-  experimentName: string;
-  selectedConfigId: string;
-  selectedConfigVersion: number;
-  onKeySelect: (keyId: string) => void;
-  onStoredDatasetSelect: (datasetId: string) => void;
-  onOpenUploadModal: () => void;
-  onExperimentNameChange: (value: string) => void;
-  onRunEvaluation: () => void;
-  onConfigSelect: (configId: string, configVersion: number) => void;
+  loadStoredDatasets: () => void;
+  toast: ReturnType<typeof useToast>;
 }
 
 function DatasetsTab({
-  isEvaluating,
+  leftPanelWidth,
+  datasetName,
+  setDatasetName,
+  datasetDescription,
+  setDatasetDescription,
+  duplicationFactor,
+  setDuplicationFactor,
+  uploadedFile,
+  onFileSelect,
+  onRemoveFile,
+  isUploading,
+  handleCreateDataset,
+  resetForm,
+  storedDatasets,
   apiKeys,
   selectedKeyId,
-  storedDatasets,
-  selectedDatasetId,
-  experimentName,
-  selectedConfigId,
-  selectedConfigVersion,
-  onKeySelect,
-  onStoredDatasetSelect,
-  onOpenUploadModal,
-  onExperimentNameChange,
-  onRunEvaluation,
-  onConfigSelect,
+  loadStoredDatasets,
+  toast,
 }: DatasetsTabProps) {
-  const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
-  const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [showDuplicationInfo, setShowDuplicationInfo] = useState(false);
+  const [duplicationInfoPos, setDuplicationInfoPos] = useState({ top: 0, left: 0 });
 
-  const [showHowItWorksTooltip, setShowHowItWorksTooltip] = useState(false);
-  const [showCsvFormatTooltip, setShowCsvFormatTooltip] = useState(false);
+  useEffect(() => {
+    if (!showDuplicationInfo) return;
+    const handleClick = () => setShowDuplicationInfo(false);
+    const handleScroll = () => setShowDuplicationInfo(false);
+    document.addEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [showDuplicationInfo]);
+
+  const handleDeleteDataset = async (datasetId: number) => {
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) return;
+
+    setDeletingId(datasetId);
+    try {
+      const response = await fetch(`/api/evaluations/datasets/${datasetId}`, {
+        method: 'DELETE',
+        headers: { 'X-API-KEY': selectedKey.key },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete dataset');
+      }
+      toast.success('Dataset deleted');
+      loadStoredDatasets();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete dataset');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewModalData, setViewModalData] = useState<{ name: string; headers: string[]; rows: string[][]; signedUrl: string } | null>(null);
+
+  const handleViewDataset = async (datasetId: number, datasetName: string) => {
+    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    if (!selectedKey) return;
+
+    setViewingId(datasetId);
+    try {
+      const response = await fetch(`/api/evaluations/datasets/${datasetId}?include_signed_url=true&fetch_content=true`, {
+        method: 'GET',
+        headers: { 'X-API-KEY': selectedKey.key },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get dataset');
+      }
+      const data = await response.json();
+      const signedUrl = data?.data?.signed_url || data?.signed_url;
+      const csvText = data?.csv_content;
+      if (!csvText) {
+        toast.error('No data available for this dataset');
+        return;
+      }
+
+      // Parse CSV
+      const lines = csvText.split('\n').filter(l => l.trim());
+      const parseRow = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] === '"') {
+            if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+          } else if (line[i] === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += line[i];
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = lines.length > 0 ? parseRow(lines[0]) : [];
+      const rows = lines.slice(1).map(parseRow);
+
+      setViewModalData({ name: datasetName, headers, rows, signedUrl: signedUrl || '' });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to view dataset');
+    } finally {
+      setViewingId(null);
+    }
+  };
+
+  const handleDownloadFromModal = () => {
+    if (!viewModalData) return;
+    // Reconstruct CSV from parsed data
+    const csvLines = [viewModalData.headers.join(',')];
+    viewModalData.rows.forEach(row => {
+      csvLines.push(row.map(cell => cell.includes(',') || cell.includes('"') || cell.includes('\n') ? `"${cell.replace(/"/g, '""')}"` : cell).join(','));
+    });
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${viewModalData.name}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.name.endsWith('.csv')) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      if (fileInputRef.current) {
+        fileInputRef.current.files = dt.files;
+        fileInputRef.current.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      {/* API Key Selection Card */}
-      <div className="border rounded-lg p-4" style={{
-        backgroundColor: colors.bg.primary,
-        borderColor: colors.border
-      }}>
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Select API Key</h2>
-          <div className="relative">
-            <button
-              onMouseEnter={() => setShowHowItWorksTooltip(true)}
-              onMouseLeave={() => setShowHowItWorksTooltip(false)}
-              className="p-1 rounded-full"
-              style={{
-                color: '#737373',
-                backgroundColor: showHowItWorksTooltip ? '#fafafa' : 'transparent',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-            {showHowItWorksTooltip && (
-              <div
-                className="absolute left-0 top-full mt-2 w-96 border rounded-lg p-4 z-50 animate-fadeIn"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderColor: '#e5e5e5'
-                }}
-              >
-                <h3 className="text-sm font-semibold mb-2" style={{ color: '#171717' }}>How it works</h3>
-                <ol className="list-decimal list-inside space-y-1.5 text-xs" style={{ color: '#737373' }}>
-                  <li>Select an API key from your keystore</li>
-                  <li>Select a stored dataset or upload a new CSV file (format: question,answer columns)</li>
-                  <li>Configure evaluation settings (experiment name required, other fields optional)</li>
-                  <li>Click <blockquote>Run Evaluation </blockquote> to start the evaluation process</li>
-                  <li>Wait for processing to complete (automatic redirect to evaluations tab)</li>
-                  <li>View detailed results and metrics in the Evaluations tab</li>
-                </ol>
-              </div>
-            )}
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Create Dataset Form */}
+      <div
+        className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+      >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* Page Title */}
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Create New Dataset
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              Upload a CSV with golden question-answer pairs
+            </p>
           </div>
-        </div>
 
-        {apiKeys.length === 0 ? (
-          <div className="border-2 border-dashed rounded-lg p-8 text-center" style={{ borderColor: '#e5e5e5' }}>
-            <div style={{ color: '#737373' }}>
-              <svg
-                className="mx-auto h-12 w-12 mb-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                />
-              </svg>
-              <p className="font-medium mb-2" style={{ color: '#171717' }}>No API key found</p>
-              <p className="text-sm mb-4">You need to add an API key before running evaluations</p>
-              <a
-                href="/keystore"
-                className="inline-block px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: '#171717',
-                  color: '#ffffff',
-                  transition: 'all 0.15s ease',
-                  border: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#404040';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#171717';
-                }}
-              >
-                Go to Keystore
-              </a>
-            </div>
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Name *
+            </label>
+            <input
+              type="text"
+              value={datasetName}
+              onChange={e => setDatasetName(e.target.value)}
+              placeholder="e.g., QnA Dataset v1"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
           </div>
-        ) : selectedKey ? (
-          <div className="border rounded-lg p-6" style={{
-            backgroundColor: '#f0fdf4',
-            borderColor: '#86efac',
-            transition: 'all 0.15s ease'
-          }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#16a34a' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#16a34a' }}>
-                    <span className="font-semibold">{selectedKey.provider} - {selectedKey.label}</span>
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: '#16a34a' }}>
-                    Key: {selectedKey.key.substring(0, 8)}...{selectedKey.key.substring(selectedKey.key.length - 4)}
-                  </p>
-                </div>
-              </div>
-              <a
-                href="/keystore"
-                className="px-3 py-2 rounded-md text-xs font-medium"
-                style={{
-                  borderWidth: '1px',
-                  borderColor: '#86efac',
-                  backgroundColor: 'transparent',
-                  color: '#16a34a',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#dcfce7';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                Manage
-              </a>
-            </div>
-          </div>
-        ) : null}
-      </div>
 
-      {/* Dataset Selection Card */}
-      <div className="border rounded-lg p-4" style={{
-        backgroundColor: colors.bg.primary,
-        borderColor: colors.border
-      }}>
-        <div className="flex items-center gap-2 mb-3">
-          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Select QnA Dataset</h2>
-          <div className="relative">
-            <button
-              onMouseEnter={() => setShowCsvFormatTooltip(true)}
-              onMouseLeave={() => setShowCsvFormatTooltip(false)}
-              className="p-1 rounded-full"
-              style={{
-                color: '#737373',
-                backgroundColor: showCsvFormatTooltip ? '#fafafa' : 'transparent',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
-            {showCsvFormatTooltip && (
-              <div
-                className="absolute left-0 top-full mt-2 w-80 border rounded-lg p-4 z-50 animate-fadeIn"
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderColor: '#e5e5e5'
-                }}
-              >
-                <h3 className="text-sm font-semibold mb-2" style={{ color: '#171717' }}>Expected CSV Format</h3>
-                <pre className="text-xs p-3 rounded-md border overflow-x-auto font-mono" style={{
-                  backgroundColor: '#fafafa',
-                  borderColor: '#e5e5e5',
-                  color: '#171717'
-                }}>
-{`question,answer
-"What is X?","Answer Y"
-"Explain Z","Description of Z"`}
-                </pre>
-              </div>
-            )}
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Description
+            </label>
+            <input
+              type="text"
+              value={datasetDescription}
+              onChange={e => setDatasetDescription(e.target.value)}
+              placeholder="Optional description"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
           </div>
-        </div>
 
-        <div className="space-y-3">
-          <div className="flex gap-2">
+          {/* Duplication Factor */}
+          <div>
+            <label className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              <span className="inline-flex items-center gap-1">
+                Duplication Factor
+                <span
+                  className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
+                  style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setDuplicationInfoPos({ top: rect.bottom + 4, left: rect.left });
+                    setShowDuplicationInfo(!showDuplicationInfo);
+                  }}
+                >
+                  i
+                </span>
+                {showDuplicationInfo && (
+                  <div
+                    className="fixed z-50 rounded-lg shadow-lg border text-xs p-3"
+                    style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px', top: duplicationInfoPos.top, left: duplicationInfoPos.left }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Duplication Factor</div>
+                    <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
+                      Controls how many times each question is sent to the AI to generate an answer. For example, setting this to 3 means the AI answers each question 3 separate times — helpful for checking if the AI gives consistent and reliable responses each time.
+                    </p>
+                  </div>
+                )}
+              </span>
+            </label>
             <select
-              value={selectedDatasetId}
-              onChange={(e) => onStoredDatasetSelect(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-md border focus:outline-none text-sm"
-              style={{
-                borderColor: selectedDatasetId ? '#171717' : '#e5e5e5',
-                backgroundColor: '#ffffff',
-                color: '#171717',
-                transition: 'all 0.15s ease'
-              }}
+              value={duplicationFactor}
+              onChange={e => setDuplicationFactor(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
             >
-              <option value="">-- Select a Dataset --</option>
-              {storedDatasets.map((dataset) => (
-                <option key={dataset.dataset_id} value={dataset.dataset_id}>
-                  {dataset.dataset_name} ({dataset.total_items} items)
-                </option>
+              {[1, 2, 3, 4, 5].map(n => (
+                <option key={n} value={String(n)}>{n}</option>
               ))}
             </select>
-            <button
-              onClick={onOpenUploadModal}
-              className="px-4 py-3 rounded-md text-sm font-medium flex items-center gap-2"
-              style={{
-                backgroundColor: '#171717',
-                color: '#ffffff',
-                border: 'none',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#404040';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#171717';
-              }}
-              title="Upload New Dataset"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
           </div>
 
-          {storedDatasets.length === 0 && (
-            <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: '#e5e5e5' }}>
-              <div style={{ color: '#737373' }}>
-                <svg
-                  className="mx-auto h-8 w-8 mb-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-                  />
-                </svg>
-                <p className="text-sm font-medium" style={{ color: '#171717' }}>No datasets found</p>
-                <p className="text-xs mt-1">Click the + button above to upload your first dataset</p>
-              </div>
-            </div>
-          )}
+          {/* CSV Upload */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Upload CSV *
+            </label>
 
-          {selectedDataset && (
-            <div className="border rounded-lg p-6" style={{
-              backgroundColor: 'hsl(142, 76%, 96%)',
-              borderColor: 'hsl(142, 76%, 75%)',
-              transition: 'all 0.15s ease'
-            }}>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#16a34a' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: '#16a34a' }}>
-                    Selected: <span className="font-semibold">{selectedDataset.dataset_name}</span>
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: '#16a34a' }}>
-                    Dataset ID: {selectedDataset.dataset_id} | Total Items: {selectedDataset.total_items} | Duplication: ×{selectedDataset.duplication_factor}
-                  </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={onFileSelect}
+              className="hidden"
+            />
+
+            {uploadedFile ? (
+              <div className="rounded-lg p-3" style={{ backgroundColor: colors.bg.secondary }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: colors.text.primary }}>{uploadedFile.name}</p>
+                      <p className="text-xs" style={{ color: colors.text.secondary }}>
+                        {(uploadedFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      onRemoveFile();
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="p-1 rounded"
+                    style={{ color: colors.text.secondary }}
+                    aria-label="Remove file"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
               </div>
+            ) : (
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragging ? 'border-blue-400 bg-blue-50/30' : ''}`}
+                style={{ borderColor: isDragging ? colors.accent.primary : colors.border }}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+              >
+                <svg className="mx-auto h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+                  Drop CSV here, or click to browse
+                </p>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  Format: <span className="font-mono" style={{ color: colors.text.primary }}>question,answer</span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <button
+            onClick={resetForm}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ color: colors.text.secondary }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateDataset}
+            disabled={!uploadedFile || !datasetName.trim() || isUploading}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: (!uploadedFile || !datasetName.trim() || isUploading) ? colors.bg.secondary : colors.accent.primary,
+              color: (!uploadedFile || !datasetName.trim() || isUploading) ? colors.text.secondary : '#fff',
+              cursor: (!uploadedFile || !datasetName.trim() || isUploading) ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isUploading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Creating...
+              </>
+            ) : (
+              'Create Dataset'
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Right Panel - Dataset List */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Datasets
+            </h3>
+          </div>
+
+          {storedDatasets.length === 0 ? (
+            <div className="p-16 text-center">
+              <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+              </svg>
+              <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No datasets yet</p>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset using the form on the left</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {storedDatasets.map((dataset) => (
+                <div
+                  key={dataset.dataset_id}
+                  className="rounded-lg overflow-hidden"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                    borderLeft: '3px solid #DCCFC3',
+                  }}
+                >
+                  <div className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                          {dataset.dataset_name}
+                        </div>
+                        {dataset.description && (
+                          <EvalDatasetDescription description={dataset.description} />
+                        )}
+                        <div className="flex items-center gap-3 mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                          <span>{dataset.total_items} items</span>
+                          {dataset.duplication_factor > 1 && (
+                            <>
+                              <span style={{ color: colors.border }}>·</span>
+                              <span>x{dataset.duplication_factor} duplication</span>
+                            </>
+                          )}
+                          {dataset.original_items > 0 && dataset.original_items !== dataset.total_items && (
+                            <>
+                              <span style={{ color: colors.border }}>·</span>
+                              <span>{dataset.original_items} original</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewDataset(dataset.dataset_id, dataset.dataset_name)}
+                          disabled={viewingId === dataset.dataset_id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{
+                            backgroundColor: 'transparent',
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: viewingId === dataset.dataset_id ? 0.5 : 1,
+                          }}
+                        >
+                          {viewingId === dataset.dataset_id ? 'Loading...' : 'View'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(dataset.dataset_id)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{ backgroundColor: 'transparent', borderColor: colors.border, color: 'hsl(8, 86%, 40%)' }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Config Selector */}
-      {selectedDatasetId && (
-        <>
-          <ConfigSelector
-            selectedConfigId={selectedConfigId}
-            selectedVersion={selectedConfigVersion}
-            onConfigSelect={onConfigSelect}
-            disabled={isEvaluating}
-            datasetId={selectedDatasetId}
-            experimentName={experimentName}
-          />
-
-          {/* Experiment Name & Run Button */}
-          <div className="border rounded-lg p-4" style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border
-          }}>
-            <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
-              Run Evaluation
-            </h2>
-
-            {/* Experiment Name */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                Experiment Name <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={experimentName}
-                onChange={(e) => onExperimentNameChange(e.target.value)}
-                placeholder="e.g., test_run_1"
-                disabled={isEvaluating}
-                className="w-full px-4 py-2 rounded-md border text-sm focus:outline-none"
-                style={{
-                  borderColor: experimentName ? '#171717' : '#e5e5e5',
-                  backgroundColor: isEvaluating ? '#fafafa' : '#ffffff',
-                  color: '#171717',
-                  transition: 'all 0.15s ease'
-                }}
-              />
-              <p className="text-xs mt-1" style={{ color: '#737373' }}>
-                Give your evaluation run a descriptive name
-              </p>
+      {/* View Dataset Modal */}
+      {viewModalData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setViewModalData(null)}
+        >
+          <div
+            className="rounded-lg shadow-xl flex flex-col"
+            style={{ backgroundColor: colors.bg.primary, width: '80vw', maxWidth: '1000px', maxHeight: '80vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  {viewModalData.name}
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                  {viewModalData.rows.length} rows · {viewModalData.headers.length} columns
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadFromModal}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium"
+                  style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
+                >
+                  Download CSV
+                </button>
+                <button
+                  onClick={() => setViewModalData(null)}
+                  className="p-1.5 rounded"
+                  style={{ color: colors.text.secondary }}
+                  aria-label="Close modal"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            {/* Validation Messages */}
-            {(!selectedConfigId || !selectedConfigVersion) && (
-              <div className="mb-4 border rounded-lg p-4" style={{
-                backgroundColor: '#fffbeb',
-                borderColor: '#fcd34d',
-              }}>
+            {/* Modal Body - Table */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '40px' }}>
+                    </th>
+                    {viewModalData.headers.map((header, i) => (
+                      <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewModalData.rows.map((row, rowIdx) => (
+                    <tr key={rowIdx} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                      <td className="px-4 py-2.5 text-xs" style={{ color: colors.text.secondary }}>
+                        {rowIdx + 1}
+                      </td>
+                      {row.map((cell, cellIdx) => (
+                        <td key={cellIdx} className="px-4 py-2.5" style={{ color: colors.text.primary }}>
+                          <div className="text-sm" style={{ maxHeight: '120px', overflow: 'auto', lineHeight: '1.5' }}>
+                            {cell || <span style={{ color: colors.text.secondary }}>—</span>}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteId !== null && (() => {
+        const dataset = storedDatasets.find(d => d.dataset_id === confirmDeleteId);
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={() => setConfirmDeleteId(null)}
+          >
+            <div
+              className="rounded-lg shadow-xl w-full max-w-md"
+              style={{ backgroundColor: colors.bg.primary }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-6 py-5">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#f59e0b' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium" style={{ color: '#b45309' }}>
-                      Configuration required
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: '#b45309' }}>
-                      Please select a configuration above before running an evaluation.
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(220, 38, 38, 0.1)' }}>
+                    <svg className="w-5 h-5" style={{ color: 'hsl(8, 86%, 40%)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                      Delete dataset
+                    </h3>
+                    <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+                      Are you sure you want to delete <strong style={{ color: colors.text.primary }}>{dataset?.dataset_name}</strong>? This action cannot be undone.
                     </p>
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Run Button */}
-            <button
-              onClick={onRunEvaluation}
-              disabled={!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating}
-              className="w-full py-3 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-              style={{
-                backgroundColor: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
-                  ? '#fafafa'
-                  : '#171717',
-                color: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
-                  ? '#737373'
-                  : '#ffffff',
-                cursor: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
-                  ? 'not-allowed'
-                  : 'pointer',
-                border: (!experimentName.trim() || !selectedConfigId || !selectedConfigVersion || isEvaluating)
-                  ? '1px solid #e5e5e5'
-                  : 'none',
-              }}
-              onMouseEnter={(e) => {
-                if (experimentName.trim() && selectedConfigId && selectedConfigVersion && !isEvaluating) {
-                  e.currentTarget.style.backgroundColor = '#404040';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (experimentName.trim() && selectedConfigId && selectedConfigVersion && !isEvaluating) {
-                  e.currentTarget.style.backgroundColor = '#171717';
-                }
-              }}
-            >
-              {isEvaluating ? (
-                <>
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Running Evaluation...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                  Run Evaluation
-                </>
-              )}
-            </button>
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t" style={{ borderColor: colors.border }}>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium border"
+                  style={{ backgroundColor: 'transparent', borderColor: colors.border, color: colors.text.primary }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { handleDeleteDataset(confirmDeleteId); setConfirmDeleteId(null); }}
+                  disabled={deletingId === confirmDeleteId}
+                  className="px-4 py-2 rounded-lg text-sm font-medium"
+                  style={{ backgroundColor: 'hsl(8, 86%, 40%)', color: '#ffffff', opacity: deletingId === confirmDeleteId ? 0.5 : 1 }}
+                >
+                  {deletingId === confirmDeleteId ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
           </div>
-        </>
-      )}
+        );
+      })()}
     </div>
   );
 }
 
-// ============ TYPES ============
-// Types are now imported from '../components/types'
-
 // ============ EVALUATIONS TAB COMPONENT ============
 interface EvaluationsTabProps {
+  leftPanelWidth: number;
   apiKeys: APIKey[];
   selectedKeyId: string;
+  storedDatasets: Dataset[];
+  selectedDatasetId: string;
+  setSelectedDatasetId: (id: string) => void;
+  selectedConfigId: string;
+  selectedConfigVersion: number;
+  onConfigSelect: (configId: string, configVersion: number) => void;
+  experimentName: string;
+  setExperimentName: (name: string) => void;
+  isEvaluating: boolean;
+  handleRunEvaluation: () => Promise<boolean>;
+  setActiveTab: (tab: Tab) => void;
 }
 
-function EvaluationsTab({ apiKeys, selectedKeyId }: EvaluationsTabProps) {
+function EvaluationsTab({
+  leftPanelWidth,
+  apiKeys,
+  selectedKeyId,
+  storedDatasets,
+  selectedDatasetId,
+  setSelectedDatasetId,
+  selectedConfigId,
+  selectedConfigVersion,
+  onConfigSelect,
+  experimentName,
+  setExperimentName,
+  isEvaluating,
+  handleRunEvaluation,
+  setActiveTab,
+}: EvaluationsTabProps) {
+  const router = useRouter();
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assistantConfigs, setAssistantConfigs] = useState<Map<string, AssistantConfig>>(new Map());
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
+  const canRun = experimentName.trim() && selectedDatasetId && selectedConfigId && selectedConfigVersion && !isEvaluating;
 
   // Fetch evaluation jobs
   const fetchEvaluations = useCallback(async () => {
@@ -814,7 +1035,6 @@ function EvaluationsTab({ apiKeys, selectedKeyId }: EvaluationsTabProps) {
       setError('Please select an API key first');
       return;
     }
-
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) {
       setError('Selected API key not found');
@@ -827,337 +1047,405 @@ function EvaluationsTab({ apiKeys, selectedKeyId }: EvaluationsTabProps) {
     try {
       const response = await fetch('/api/evaluations', {
         method: 'GET',
-        headers: {
-          'X-API-KEY': selectedKey.key,
-        },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || errorData.message || `Failed to fetch evaluations: ${response.status}`);
       }
-
       const data = await response.json();
-
-      // API may return an array or an object with data property
-      const jobs = Array.isArray(data) ? data : (data.data || []);
-
-      // Debug logging for score visibility
-      if (jobs.length > 0) {
-        console.log('[EvaluationsTab] Sample job data:', {
-          id: jobs[0].id,
-          run_name: jobs[0].run_name,
-          hasScore: !!jobs[0].score,
-          hasScores: !!jobs[0].scores,
-          scoreFromHelper: !!getScoreObject(jobs[0]),
-          scoreKeys: jobs[0].score ? Object.keys(jobs[0].score) : [],
-          scoresKeys: jobs[0].scores ? Object.keys(jobs[0].scores) : [],
-          summaryScoresLength: jobs[0].score?.summary_scores?.length || jobs[0].scores?.summary_scores?.length || 0
-        });
-      }
-
-      setEvalJobs(jobs);
+      setEvalJobs(Array.isArray(data) ? data : (data.data || []));
     } catch (err: any) {
-      console.error('Failed to fetch evaluations:', err);
       setError(err.message || 'Failed to fetch evaluation jobs');
     } finally {
       setIsLoading(false);
     }
   }, [apiKeys, selectedKeyId]);
 
-  // Fetch assistant config for a given assistant_id
+  // Fetch assistant config
   const fetchAssistantConfig = useCallback(async (assistantId: string) => {
     if (!selectedKeyId) return;
-
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) return;
 
     try {
       const response = await fetch(`/api/assistant/${assistantId}`, {
         method: 'GET',
-        headers: {
-          'X-API-KEY': selectedKey.key,
-        },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
-
-      if (!response.ok) {
-        console.error(`Failed to fetch assistant config for ${assistantId}:`, response.status);
-        return;
-      }
-
+      if (!response.ok) return;
       const result = await response.json();
       if (result.success && result.data) {
         setAssistantConfigs(prev => new Map(prev).set(assistantId, result.data));
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(`Failed to fetch assistant config for ${assistantId}:`, err);
     }
   }, [apiKeys, selectedKeyId]);
 
-  // Fetch assistant configs for jobs with assistant_id
   useEffect(() => {
-    const jobsWithAssistantId = evalJobs.filter(job => job.assistant_id);
-
-    jobsWithAssistantId.forEach(job => {
+    evalJobs.forEach(job => {
       if (job.assistant_id && !assistantConfigs.has(job.assistant_id)) {
         fetchAssistantConfig(job.assistant_id);
       }
     });
   }, [evalJobs, assistantConfigs, fetchAssistantConfig]);
 
-  // Fetch on mount and when API key changes
   useEffect(() => {
-    if (selectedKeyId) {
-      fetchEvaluations();
-    }
+    if (selectedKeyId) fetchEvaluations();
   }, [selectedKeyId, fetchEvaluations]);
 
-  // Auto-refresh every 10 seconds if there are processing jobs
-  useEffect(() => {
-    const hasProcessingJobs = evalJobs.some(job =>
-      job.status === 'processing' || job.status === 'pending' || job.status === 'queued'
-    );
-
-    if (hasProcessingJobs) {
-      const interval = setInterval(() => {
-        fetchEvaluations();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [evalJobs, fetchEvaluations]);
-
   return (
-    <div className="space-y-4">
-      {/* Header with refresh button */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
-          Evaluation Runs
-        </h2>
-        <button
-          onClick={fetchEvaluations}
-          disabled={isLoading}
-          className="p-1.5 rounded"
-          style={{ color: colors.text.secondary }}
-        >
-          <svg
-            className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Configuration */}
+      <div
+        className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+      >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* Page Title */}
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Run New Evaluation
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              Test model responses against your golden datasets
+            </p>
+          </div>
+
+          {/* Evaluation Name */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Name *
+            </label>
+            <input
+              type="text"
+              value={experimentName}
+              onChange={e => setExperimentName(e.target.value)}
+              placeholder="e.g., test_run_1"
+              disabled={isEvaluating}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{
+                backgroundColor: isEvaluating ? colors.bg.secondary : colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
+            />
+          </div>
+
+          {/* Config Selector */}
+          <ConfigSelector
+            selectedConfigId={selectedConfigId}
+            selectedVersion={selectedConfigVersion}
+            onConfigSelect={onConfigSelect}
+            disabled={isEvaluating}
+            compact
+            datasetId={selectedDatasetId}
+            experimentName={experimentName}
+          />
+
+          {/* Dataset Selection */}
+          <div className="pt-2">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Select Dataset *
+            </label>
+            {storedDatasets.length === 0 ? (
+              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
+                <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
+                <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                  Create a dataset first in the Datasets tab
+                </p>
+              </div>
+            ) : (
+              <div className="relative">
+                <select
+                  value={selectedDatasetId}
+                  onChange={e => setSelectedDatasetId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md text-sm appearance-none pr-8"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: selectedDatasetId ? colors.text.primary : colors.text.secondary,
+                  }}
+                >
+                  <option value="">-- Select a dataset --</option>
+                  {storedDatasets.map(dataset => (
+                    <option key={dataset.dataset_id} value={dataset.dataset_id}>
+                      {dataset.dataset_name} ({dataset.total_items} items)
+                    </option>
+                  ))}
+                </select>
+                <svg
+                  className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: colors.text.secondary }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Selected Dataset Info */}
+          {selectedDataset && (
+            <div className="border rounded-lg p-3" style={{ borderColor: colors.status.success, backgroundColor: 'rgba(22, 163, 74, 0.02)' }}>
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                    {selectedDataset.dataset_name}
+                  </div>
+                  {selectedDataset.description && (
+                    <EvalDatasetDescription description={selectedDataset.description} />
+                  )}
+                  <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                    {selectedDataset.total_items} items · x{selectedDataset.duplication_factor} duplication
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Run Evaluation Button */}
+        <div className="flex-shrink-0 border-t px-4 py-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <button
+            onClick={async () => {
+              const success = await handleRunEvaluation();
+              if (success) fetchEvaluations();
+            }}
+            disabled={!canRun}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: canRun ? colors.accent.primary : colors.bg.secondary,
+              color: canRun ? '#fff' : colors.text.secondary,
+              cursor: canRun ? 'pointer' : 'not-allowed',
+            }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
+            {isEvaluating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Running Evaluation...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Run Evaluation
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading && evalJobs.length === 0 && (
-        <LoaderBox message="Loading evaluation runs..." size="md" />
-      )}
+      {/* Right Panel - Evaluation Runs */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-4">
+          {/* Header */}
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Evaluation Runs
+            </h2>
+            <div className="flex items-center gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-2.5 py-1 rounded-md text-xs font-medium border appearance-none cursor-pointer pr-7"
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  borderColor: colors.border,
+                  color: colors.text.primary,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 6px center',
+                }}
+              >
+                <option value="all">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="processing">Processing</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
+              <button
+                onClick={fetchEvaluations}
+                disabled={isLoading}
+                className="p-1.5 rounded"
+                style={{ color: colors.text.secondary }}
+                aria-label="Refresh evaluations"
+              >
+                <svg
+                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="border rounded-lg p-4" style={{
-          backgroundColor: 'hsl(0, 84%, 96%)',
-          borderColor: 'hsl(0, 84%, 80%)'
-        }}>
-          <p className="text-sm font-medium" style={{ color: 'hsl(0, 84%, 50%)' }}>
-            Error: {error}
-          </p>
-        </div>
-      )}
+          <div className="rounded-lg overflow-visible" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
+            {/* Loading */}
+            {isLoading && evalJobs.length === 0 && (
+              <div className="p-16">
+                <Loader size="md" message="Loading evaluation runs..." />
+              </div>
+            )}
 
-      {/* No Runs Yet */}
-      {!isLoading && evalJobs.length === 0 && !error && (
-        <div className="border rounded-lg p-8 text-center" style={{
-          backgroundColor: colors.bg.primary,
-          borderColor: colors.border,
-        }}>
-          <p style={{ color: colors.text.secondary }}>No evaluation runs found. Create one from the Datasets tab!</p>
-        </div>
-      )}
+            {/* Error */}
+            {error && (
+              <div className="p-4">
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'hsl(8, 86%, 95%)' }}>
+                  <p className="text-sm" style={{ color: 'hsl(8, 86%, 40%)' }}>Error: {error}</p>
+                </div>
+              </div>
+            )}
 
-      {/* Evaluation Run Cards */}
-      {evalJobs.length > 0 && (
-        <div className="space-y-4">
-          {evalJobs.map((job) => (
-            <EvalJobCard
-              key={job.id}
-              job={job}
-              assistantConfig={job.assistant_id ? assistantConfigs.get(job.assistant_id) : undefined}
-            />
-          ))}
+            {/* Empty State */}
+            {!isLoading && evalJobs.length === 0 && !error && (
+              <div className="p-16 text-center">
+                <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>Select a dataset and configuration, then run your first evaluation</p>
+              </div>
+            )}
+
+            {/* Runs List */}
+            {evalJobs.length > 0 && (() => {
+              const filteredJobs = statusFilter === 'all'
+                ? evalJobs
+                : evalJobs.filter(job => job.status.toLowerCase() === statusFilter);
+              return filteredJobs.length > 0 ? (
+                <div className="p-4 space-y-3">
+                  {filteredJobs.map((job) => (
+                    <EvalRunCard
+                      key={job.id}
+                      job={job}
+                      assistantConfig={job.assistant_id ? assistantConfigs.get(job.assistant_id) : undefined}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="p-16 text-center">
+                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
+                  <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                </div>
+              );
+            })()}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-// ============ EVAL JOB CARD COMPONENT ============
-interface EvalJobCardProps {
+// ============ EVAL RUN CARD COMPONENT ============
+interface EvalRunCardProps {
   job: EvalJob;
   assistantConfig?: AssistantConfig;
 }
 
-function EvalJobCard({ job, assistantConfig }: EvalJobCardProps) {
+function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
   const router = useRouter();
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  // Using imported utility functions
-  const statusColors = getStatusColor(job.status);
+  const isCompleted = job.status?.toLowerCase() === 'completed';
+  const scoreObj = getScoreObject(job);
+  const statusColor = getStatusColor(job.status || '');
+
   return (
-    <div className="border rounded-lg" style={{
-      backgroundColor: '#ffffff',
-      borderColor: '#e5e5e5',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
-      transition: 'all 0.15s ease'
-    }}>
-      {/* Header - Always Visible (Clickable) */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center justify-between"
-        style={{
-          backgroundColor: isExpanded ? '#fafafa' : 'transparent',
-          transition: 'all 0.15s ease'
-        }}
-        onMouseEnter={(e) => {
-          if (!isExpanded) e.currentTarget.style.backgroundColor = '#fafafa';
-        }}
-        onMouseLeave={(e) => {
-          if (!isExpanded) e.currentTarget.style.backgroundColor = 'transparent';
-        }}
-      >
-        <div className="flex items-center gap-4 flex-1">
-          {/* Expand/Collapse Icon */}
-          <svg
-            className="w-5 h-5 flex-shrink-0"
-            style={{
-              color: '#737373',
-              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.15s ease'
-            }}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-
-          {/* Job Info */}
-          <div className="flex-1 text-left">
-            <div className="flex items-center gap-3">
-              <h3 className="font-semibold" style={{ color: '#171717' }}>
-                {job.run_name}
-              </h3>
-              {/* <span className="text-xs" style={{ color: '#737373' }}>
-                ID: {job.id}
-              </span> */}
+    <div
+      className="rounded-lg overflow-hidden"
+      style={{
+        backgroundColor: colors.bg.primary,
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        borderLeft: `3px solid ${statusColor.border}`,
+      }}
+    >
+      <div className="px-5 py-4">
+        {/* Row 1: Run Name (left) | Status (right) */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+              {job.run_name}
             </div>
-            <div className="flex items-center gap-4 mt-2 text-sm" style={{ color: '#737373' }}>
-              {/* <span>{job.dataset_name}</span>
-              <span>•</span>
-              <span>{job.total_items} items</span>
-              <span>•</span> */}
-              <ScoreDisplay score={getScoreObject(job)} errorMessage={job.error_message} />
-            </div>
-          </div>
-
-          {/* Status Badge */}
-          <div
-            className="px-3 py-1 rounded-md text-sm font-medium"
-            style={{
-              backgroundColor: statusColors.bg,
-              borderWidth: '1px',
-              borderColor: statusColors.border,
-              color: statusColors.text
-            }}
-          >
-            {job.status.toUpperCase()}
-          </div>
-        </div>
-      </button>
-
-      {/* Expanded Content */}
-      {isExpanded && (
-        <div className="px-4 pb-4 border-t" style={{ borderColor: '#e5e5e5' }}>
-          {/* Timestamps */}
-          <div className="flex items-center justify-between text-xs mt-4 mb-4" style={{ color: '#737373' }}>
-            <div>
-              <span className="font-medium">Started At:</span> {formatDate(job.inserted_at)}
-            </div>
-            <div>
-              <span className="font-medium">Last Updated At:</span> {formatDate(job.updated_at)}
-            </div>
-          </div>
-
-          {/* Error message (if failed) */}
-          {job.error_message && (
-            <div className="border rounded-lg p-3 mb-4" style={{
-              backgroundColor: 'hsl(0, 84%, 96%)',
-              borderColor: 'hsl(0, 84%, 80%)'
-            }}>
-              <div className="text-xs uppercase font-semibold mb-1" style={{ color: 'hsl(0, 84%, 50%)' }}>Error</div>
-              <div className="text-sm" style={{ color: 'hsl(0, 84%, 50%)' }}>
+            {/* Error message (if failed) */}
+            {job.error_message && (
+              <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
                 {job.error_message}
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          <span
+            className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
+            style={{ backgroundColor: statusColor.bg, color: statusColor.text }}
+          >
+            {job.status}
+          </span>
+        </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
+        {/* Row 2: Scores */}
+        {scoreObj && (
+          <div className="mt-3">
+            <ScoreDisplay score={scoreObj} errorMessage={job.error_message} />
+          </div>
+        )}
+
+        {/* Row 3: Dataset + Config (left) | Actions (right) */}
+        <div className="flex items-center justify-between gap-4 mt-3">
+          <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
+            {job.dataset_name && (
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                </svg>
+                {job.dataset_name}
+              </span>
+            )}
+            {job.assistant_id && assistantConfig?.name && (
+              <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                {assistantConfig.name}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsConfigModalOpen(true);
-              }}
-              className="px-3 py-2 rounded-md text-sm font-medium"
+              onClick={() => setIsConfigModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border"
               style={{
-                backgroundColor: '#ffffff',
-                borderWidth: '1px',
-                borderColor: '#e5e5e5',
-                color: '#171717',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#fafafa';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#ffffff';
+                backgroundColor: 'transparent',
+                borderColor: colors.border,
+                color: colors.text.primary,
               }}
             >
               View Config
             </button>
             <button
               onClick={() => router.push(`/evaluations/${job.id}`)}
-              className="px-4 py-2 rounded-md text-sm font-medium"
-              disabled={job.status?.toLowerCase() !== 'completed'}
+              disabled={!isCompleted}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border"
               style={{
-                backgroundColor: job.status?.toLowerCase() === 'completed' ? '#171717' : '#a0a0a0',
-                color: '#ffffff',
-                border: 'none',
-                transition: 'all 0.15s ease',
-                cursor: job.status?.toLowerCase() === 'completed' ? 'pointer' : 'not-allowed',
-                opacity: job.status?.toLowerCase() === 'completed' ? 1 : 0.6
-              }}
-              onMouseEnter={(e) => {
-                if (job.status?.toLowerCase() === 'completed') {
-                  e.currentTarget.style.backgroundColor = '#404040';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (job.status?.toLowerCase() === 'completed') {
-                  e.currentTarget.style.backgroundColor = '#171717';
-                }
+                backgroundColor: 'transparent',
+                borderColor: colors.border,
+                color: isCompleted ? colors.text.primary : colors.text.secondary,
+                cursor: isCompleted ? 'pointer' : 'not-allowed',
+                opacity: isCompleted ? 1 : 0.5,
               }}
             >
               View Results
             </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Config Modal */}
       <ConfigModal
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}

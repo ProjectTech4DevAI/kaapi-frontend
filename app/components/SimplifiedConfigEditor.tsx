@@ -488,14 +488,10 @@ export default function SimplifiedConfigEditor({
 
   return (
     <>
-      <div className="border rounded-lg p-6" style={{
-        backgroundColor: '#ffffff',
-        borderColor: '#e5e5e5',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
-      }}>
+      <div className="border rounded-lg p-6 bg-[#ffffff] border-[#e5e5e5] shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         {/* Header with Actions */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold" style={{ color: '#171717' }}>
+          <h2 className="text-lg font-semibold text-[#171717]">
             Evaluation Configuration
           </h2>
 
@@ -515,7 +511,7 @@ export default function SimplifiedConfigEditor({
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = hasUnsavedChanges ? '#fffbeb' : '#ffffff'}
             >
               {hasUnsavedChanges && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#f59e0b]" />
               )}
               ⚙️ Config
             </button>
@@ -567,19 +563,16 @@ export default function SimplifiedConfigEditor({
 
         {/* Unsaved Changes Warning */}
         {hasUnsavedChanges && (
-          <div className="mt-4 border rounded-lg p-4" style={{
-            backgroundColor: '#fffbeb',
-            borderColor: '#fcd34d',
-          }}>
+          <div className="mt-4 border rounded-lg p-4 bg-[#fffbeb] border-[#fcd34d]">
             <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#f59e0b' }}>
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: '#b45309' }}>
+                <p className="text-sm font-medium text-[#b45309]">
                   Configuration has unsaved changes
                 </p>
-                <p className="text-xs mt-1" style={{ color: '#b45309' }}>
+                <p className="text-xs mt-1 text-[#b45309]">
                   Please save your configuration using the <strong>⚙️ Config</strong> button before running an evaluation.
                 </p>
               </div>
@@ -590,8 +583,8 @@ export default function SimplifiedConfigEditor({
         <div className="space-y-6">
           {/* Experiment Name */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-              Experiment Name <span style={{ color: '#dc2626' }}>*</span>
+            <label className="block text-sm font-medium mb-2 text-[#171717]">
+              Experiment Name <span className="text-[#dc2626]">*</span>
             </label>
             <input
               type="text"
@@ -612,20 +605,16 @@ export default function SimplifiedConfigEditor({
           {/* Load Saved Config (Dropdown Selector) */}
           {isLoading ? (
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+              <label className="block text-sm font-medium mb-2 text-[#171717]">
                 Load Saved Configuration
               </label>
-              <div className="w-full px-4 py-2 rounded-md border text-sm" style={{
-                borderColor: '#e5e5e5',
-                backgroundColor: '#fafafa',
-                color: '#737373',
-              }}>
+              <div className="w-full px-4 py-2 rounded-md border text-sm border-[#e5e5e5] bg-[#fafafa] text-[#737373]">
                 Loading configurations...
               </div>
             </div>
           ) : savedConfigs.length > 0 ? (
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
+              <label className="block text-sm font-medium mb-2 text-[#171717]">
                 Load Saved Configuration
               </label>
               <select
@@ -647,7 +636,7 @@ export default function SimplifiedConfigEditor({
                   </option>
                 ))}
               </select>
-              <p className="text-xs mt-1" style={{ color: '#737373' }}>
+              <p className="text-xs mt-1 text-[#737373]">
                 Select a saved config to load or create a new one
               </p>
             </div>
@@ -655,8 +644,8 @@ export default function SimplifiedConfigEditor({
 
           {/* Prompt Instructions */}
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#171717' }}>
-              Prompt Instructions <span style={{ color: '#dc2626' }}>*</span>
+            <label className="block text-sm font-medium mb-2 text-[#171717]">
+              Prompt Instructions <span className="text-[#dc2626]">*</span>
             </label>
             <textarea
               value={instructions}
@@ -675,22 +664,22 @@ export default function SimplifiedConfigEditor({
           </div>
 
           {/* Model Info (Read-only display) */}
-          <div className="border rounded-lg p-4" style={{ backgroundColor: '#fafafa', borderColor: '#e5e5e5' }}>
+          <div className="border rounded-lg p-4 bg-[#fafafa] border-[#e5e5e5]">
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#737373' }}>Provider</div>
-                <div className="font-medium" style={{ color: '#171717' }}>{provider}</div>
+                <div className="text-xs font-medium mb-1 text-[#737373]">Provider</div>
+                <div className="font-medium text-[#171717]">{provider}</div>
               </div>
               <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#737373' }}>Model</div>
-                <div className="font-medium" style={{ color: '#171717' }}>{modelName}</div>
+                <div className="text-xs font-medium mb-1 text-[#737373]">Model</div>
+                <div className="font-medium text-[#171717]">{modelName}</div>
               </div>
               <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#737373' }}>Temperature</div>
-                <div className="font-medium" style={{ color: '#171717' }}>{temperature.toFixed(2)}</div>
+                <div className="text-xs font-medium mb-1 text-[#737373]">Temperature</div>
+                <div className="font-medium text-[#171717]">{temperature.toFixed(2)}</div>
               </div>
             </div>
-            <p className="text-xs mt-3" style={{ color: '#737373' }}>
+            <p className="text-xs mt-3 text-[#737373]">
               💡 Click "⚙️ Config" to edit model settings, save configs, or compare versions
             </p>
           </div>

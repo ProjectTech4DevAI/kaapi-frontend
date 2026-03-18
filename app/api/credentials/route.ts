@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
   try {
+    const body = await request.json();
     const { status, data } = await apiClient(request, "/api/v1/credentials/", {
       method: "POST",
       body: JSON.stringify(body),

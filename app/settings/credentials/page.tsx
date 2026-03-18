@@ -12,16 +12,23 @@ import Sidebar from "@/app/components/Sidebar";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import { APIKey, STORAGE_KEY } from "@/app/keystore/page";
-import { PROVIDERS, Credential, ProviderDef } from "@/app/lib/types/credentials";
+import {
+  PROVIDERS,
+  Credential,
+  ProviderDef,
+} from "@/app/lib/types/credentials";
 import { getExistingForProvider } from "@/app/lib/utils";
 import ProviderList from "@/app/components/settings/credentials/ProviderList";
 import CredentialForm from "@/app/components/settings/credentials/CredentialForm";
+import Link from "next/link";
 
 export default function CredentialsPage() {
   const toast = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderDef>(PROVIDERS[0]);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderDef>(
+    PROVIDERS[0],
+  );
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,13 +36,18 @@ export default function CredentialsPage() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isActive, setIsActive] = useState(true);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());
-  const [existingCredential, setExistingCredential] = useState<Credential | null>(null);
+  const [existingCredential, setExistingCredential] =
+    useState<Credential | null>(null);
 
   // Load API keys from localStorage
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      try { setApiKeys(JSON.parse(stored)); } catch { /* ignore */ }
+      try {
+        setApiKeys(JSON.parse(stored));
+      } catch {
+        /* ignore */
+      }
     }
   }, []);
 
@@ -52,13 +64,17 @@ export default function CredentialsPage() {
       setExistingCredential(existing);
       setIsActive(existing.is_active);
       const populated: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => { populated[f.key] = existing.credential[f.key] || ""; });
+      selectedProvider.fields.forEach((f) => {
+        populated[f.key] = existing.credential[f.key] || "";
+      });
       setFormValues(populated);
     } else {
       setExistingCredential(null);
       setIsActive(true);
       const blank: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => { blank[f.key] = ""; });
+      selectedProvider.fields.forEach((f) => {
+        blank[f.key] = "";
+      });
       setFormValues(blank);
     }
     setVisibleFields(new Set());
@@ -71,8 +87,11 @@ export default function CredentialsPage() {
         headers: { "X-API-KEY": apiKeys[0].key },
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.message || "Failed to fetch credentials");
-      setCredentials(Array.isArray(data) ? data : (data.data || []));
+      if (!res.ok)
+        throw new Error(
+          data.error || data.message || "Failed to fetch credentials",
+        );
+      setCredentials(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       console.error("Failed to load credentials:", err);
     } finally {
@@ -85,7 +104,9 @@ export default function CredentialsPage() {
       toast.error("Please add an API key in Keystore first");
       return;
     }
-    const missing = selectedProvider.fields.filter((f) => !formValues[f.key]?.trim());
+    const missing = selectedProvider.fields.filter(
+      (f) => !formValues[f.key]?.trim(),
+    );
     if (missing.length > 0) {
       toast.error(`Please fill in: ${missing.map((f) => f.label).join(", ")}`);
       return;
@@ -94,7 +115,9 @@ export default function CredentialsPage() {
     setIsSaving(true);
     try {
       const credentialPayload: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => { credentialPayload[f.key] = formValues[f.key].trim(); });
+      selectedProvider.fields.forEach((f) => {
+        credentialPayload[f.key] = formValues[f.key].trim();
+      });
 
       const body = {
         provider: selectedProvider.credentialKey,
@@ -105,20 +128,32 @@ export default function CredentialsPage() {
       if (existingCredential) {
         const res = await fetch(`/api/credentials/${existingCredential.id}`, {
           method: "PATCH",
-          headers: { "X-API-KEY": apiKeys[0].key, "Content-Type": "application/json" },
+          headers: {
+            "X-API-KEY": apiKeys[0].key,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify(body),
         });
         const resData = await res.json();
-        if (!res.ok) throw new Error(resData.error || resData.message || "Failed to update credential");
+        if (!res.ok)
+          throw new Error(
+            resData.error || resData.message || "Failed to update credential",
+          );
         toast.success(`${selectedProvider.name} credentials updated`);
       } else {
         const res = await fetch("/api/credentials", {
           method: "POST",
-          headers: { "X-API-KEY": apiKeys[0].key, "Content-Type": "application/json" },
+          headers: {
+            "X-API-KEY": apiKeys[0].key,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify(body),
         });
         const resData = await res.json();
-        if (!res.ok) throw new Error(resData.error || resData.message || "Failed to create credential");
+        if (!res.ok)
+          throw new Error(
+            resData.error || resData.message || "Failed to create credential",
+          );
         toast.success(`${selectedProvider.name} credentials saved`);
       }
       await loadCredentials();
@@ -134,11 +169,15 @@ export default function CredentialsPage() {
     if (existing) {
       setIsActive(existing.is_active);
       const populated: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => { populated[f.key] = existing.credential[f.key] || ""; });
+      selectedProvider.fields.forEach((f) => {
+        populated[f.key] = existing.credential[f.key] || "";
+      });
       setFormValues(populated);
     } else {
       const blank: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => { blank[f.key] = ""; });
+      selectedProvider.fields.forEach((f) => {
+        blank[f.key] = "";
+      });
       setFormValues(blank);
       setIsActive(true);
     }
@@ -158,30 +197,57 @@ export default function CredentialsPage() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
+    <div
+      className="w-full h-screen flex flex-col"
+      style={{ backgroundColor: colors.bg.secondary }}
+    >
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsed={sidebarCollapsed} activeRoute="/settings/credentials" />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          activeRoute="/settings/credentials"
+        />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div
             className="border-b px-4 py-3 flex items-center gap-3 shrink-0"
-            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+            style={{
+              backgroundColor: colors.bg.primary,
+              borderColor: colors.border,
+            }}
           >
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-1.5 rounded-md"
               style={{ color: colors.text.secondary }}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 {sidebarCollapsed ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
                 ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                  />
                 )}
               </svg>
             </button>
             <div>
-              <h1 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              <h1
+                className="text-base font-semibold"
+                style={{ color: colors.text.primary }}
+              >
                 Settings
               </h1>
               <p className="text-xs" style={{ color: colors.text.secondary }}>
@@ -202,12 +268,20 @@ export default function CredentialsPage() {
               {apiKeys.length === 0 ? (
                 <div
                   className="max-w-lg rounded-lg border p-6 text-sm"
-                  style={{ borderColor: colors.border, backgroundColor: colors.bg.primary, color: colors.text.secondary }}
+                  style={{
+                    borderColor: colors.border,
+                    backgroundColor: colors.bg.primary,
+                    color: colors.text.secondary,
+                  }}
                 >
                   No API key found. Please add one in{" "}
-                  <a href="/keystore" className="underline" style={{ color: colors.text.primary }}>
+                  <Link
+                    href="/keystore"
+                    className="underline"
+                    style={{ color: colors.text.primary }}
+                  >
                     Keystore
-                  </a>{" "}
+                  </Link>{" "}
                   first.
                 </div>
               ) : (

@@ -22,3 +22,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { status, data } = await apiClient(request, "/api/v1/credentials/", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    return NextResponse.json(data, { status });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}

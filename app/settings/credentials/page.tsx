@@ -123,7 +123,7 @@ export default function CredentialsPage() {
 
       if (existingCredential) {
         await apiFetch(
-          `/api/credentials/${existingCredential.id}`,
+          "/api/credentials",
           apiKeys[0].key,
           { method: "PATCH", body: JSON.stringify(body) },
         );

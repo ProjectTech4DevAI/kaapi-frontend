@@ -3,7 +3,7 @@ name: Deploy Kaapi to EC2 Staging
 on:
   push:
     branches:
-      - main
+      - feat/frontend-cicd-deployment
 
 jobs:
   deploy:

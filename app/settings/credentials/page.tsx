@@ -32,7 +32,6 @@ export default function CredentialsPage() {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isActive, setIsActive] = useState(true);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());

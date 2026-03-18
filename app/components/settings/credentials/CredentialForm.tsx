@@ -143,7 +143,7 @@ export default function CredentialForm({
               className="px-5 py-2 rounded-full text-sm font-medium transition-colors"
               style={{
                 backgroundColor: isSaving ? colors.accent.hover : colors.accent.primary,
-                color: "#fff",
+                color: colors.bg.primary,
                 opacity: isSaving ? 0.7 : 1,
               }}
             >

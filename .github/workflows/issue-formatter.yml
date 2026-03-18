@@ -1,0 +1,130 @@
+name: Format Issue with OpenAI
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  format-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rewrite issue body
+        id: body
+        uses: actions/github-script@v8
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            const response = await fetch('https://api.openai.com/v1/responses', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                input: `Rewrite this GitHub issue body using the exact format below. Keep it short, crisp and easy to understand. Do NOT add any information that wasn't in the original. Output ONLY the formatted markdown, nothing else.
+
+            Format:
+            **Is your feature request related to a problem?**
+            (Describe the problem in 1-2 sentences. Explain why it matters and what pain it causes.)
+
+            **Describe the solution you'd like**
+            (What should be done. Use bullet points if there are multiple items.)
+
+            Here is an example of a well-formatted body:
+
+            **Is your feature request related to a problem?**
+            After running an evaluation, the cost information is available in Langfuse but not visible in our UI. This is valuable information for users to understand the expense of their evaluation runs.
+
+            **Describe the solution you'd like**
+            Display evaluation cost in the UI. Two approaches:
+            1. Fetch from Langfuse - Retrieve cost data from Langfuse API when fetching results
+            2. Calculate locally - Compute cost ourselves once results are returned, based on token usage and model pricing
+
+            Original issue title: ${issue.title}
+            Original issue body:
+            ${issue.body || '(empty)'}`
+              })
+            });
+
+            const data = await response.json();
+
+            const text = data.output
+              ?.find(o => o.type === 'message')
+              ?.content?.find(c => c.type === 'output_text')
+              ?.text;
+
+            if (!text) {
+              core.setFailed(`OpenAI API error: ${JSON.stringify(data)}`);
+              return;
+            }
+
+            return text;
+
+      - name: Rewrite issue title
+        id: title
+        uses: actions/github-script@v8
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          script: |
+            const formattedBody = ${{ steps.body.outputs.result }};
+
+            const response = await fetch('https://api.openai.com/v1/responses', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                input: `Based on the issue body below, generate a short title in this exact format:
+            "Module Name: 4-5 word summary"
+
+            Examples:
+            - Evaluation: Automated metrics for STT
+            - Evaluation: Refactoring CRON
+            - Evaluation: Fix score format
+
+            Output ONLY the title, nothing else.
+
+            Issue body:
+            ${formattedBody}`
+              })
+            });
+
+            const data = await response.json();
+
+            const text = data.output
+              ?.find(o => o.type === 'message')
+              ?.content?.find(c => c.type === 'output_text')
+              ?.text;
+
+            if (!text) {
+              core.setFailed(`OpenAI API error: ${JSON.stringify(data)}`);
+              return;
+            }
+
+            return text.replace(/^["']|["']$/g, '');
+
+      - name: Update issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const formattedBody = ${{ steps.body.outputs.result }};
+            const formattedTitle = ${{ steps.title.outputs.result }};
+            const original = context.payload.issue.body || '(empty)';
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              title: formattedTitle,
+              body: `${formattedBody}\n\n<details><summary>Original issue</summary>\n\n${original}\n\n</details>`
+            });

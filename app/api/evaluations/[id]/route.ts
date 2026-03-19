@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // Real backend mode
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
     const searchParams = request.nextUrl.searchParams;
     const exportFormat = searchParams.get('export_format') || 'row';

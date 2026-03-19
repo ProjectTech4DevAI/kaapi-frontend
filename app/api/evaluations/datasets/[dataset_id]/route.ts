@@ -16,7 +16,7 @@ export async function GET(
     }
 
     const { dataset_id } = await params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     const searchParams = request.nextUrl.searchParams.toString();
     const queryString = searchParams ? `?${searchParams}` : '';
 
@@ -78,7 +78,7 @@ export async function DELETE(
     const { dataset_id } = await params;
 
     // Get backend URL from environment variable
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
     // Forward the request to the actual backend
     const response = await fetch(`${backendUrl}/api/v1/evaluations/datasets/${dataset_id}`, {

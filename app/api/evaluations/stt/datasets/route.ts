@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from 'next/server';
 
 export async function GET(request: 
   Request) {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   try {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       )
     }
     const body=await request.json();
-    const backendUrl=process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl=process.env.BACKEND_URL || 'http://localhost:8000';
 
     const response=await fetch(`${backendUrl}/api/v1/evaluations/stt/datasets`, {
       method:'POST',

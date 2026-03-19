@@ -1,10 +1,10 @@
-# Kaapi
+# Kaapi-Frontend
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 ![GitHub issues](https://img.shields.io/github/issues-raw/ProjectTech4DevAI/kaapi-frontend)
 [![Discord](https://img.shields.io/discord/717975833226248303.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/BRYzSYha)
 
-Kaapi is Project Tech4Dev’s AI platform that accelerates responsible AI adoption by acting as a middleware layer, enabling platforms like Avni, Glific, Evidential, and Dalgo to seamlessly integrate AI functionality without building or maintaining their own infrastructure. This is the frontend interface built using Next.js.
+This is a thin frontend UI for the [Kaapi backend](https://github.com/ProjectTech4DevAI/kaapi-backend) — a platform that acts as a middleware layer, enabling platforms like Avni, Glific, and Dalgo to seamlessly integrate AI functionality.
 
 ---
 
@@ -17,7 +17,6 @@ Kaapi is Project Tech4Dev’s AI platform that accelerates responsible AI adopti
 - [Clone Frontend Repo](#clone-frontend-repo)
   - [Git commands to clone](#git-commands-to-clone)
 - [Installation](#installation)
-  - [Start backend server](#start-backend-server)
   - [Start frontend server](#start-frontend-server)
 - [Available Scripts](#available-scripts)
 - [Deploying Release on EC2 with CD](#deploying-release-on-ec2-with-cd)
@@ -48,7 +47,7 @@ git clone git@github.com:ProjectTech4DevAI/kaapi-frontend.git
 
 ### Kaapi Backend
 
-You need to set up the Kaapi backend service. Follow the instructions here: 🔗 https://github.com/ProjectTech4DevAI/kaapi-backend
+You need to set up the [Kaapi backend](https://github.com/ProjectTech4DevAI/kaapi-backend) service and follow the instructions there.
 
 > 💡 Note: Ensure the backend is running and accessible before starting the frontend.
 
@@ -67,13 +66,9 @@ You need to set up the Kaapi backend service. Follow the instructions here: 🔗
 
    ```bash
    npm install
+   # or
+   yarn
    ```
-
----
-
-### Start backend server
-
-Ensure your Kaapi backend server is running and accessible before proceeding.
 
 ---
 
@@ -81,11 +76,11 @@ Ensure your Kaapi backend server is running and accessible before proceeding.
 
 ```bash
 npm run dev
+# or
+yarn dev
 ```
 
 Visit `http://localhost:3000` to open the app.
-
----
 
 ## Available Scripts
 

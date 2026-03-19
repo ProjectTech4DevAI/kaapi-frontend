@@ -1,10 +1,10 @@
-# Kaapi - Frontend
+# Kaapi
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 ![GitHub issues](https://img.shields.io/github/issues-raw/ProjectTech4DevAI/kaapi-frontend)
 [![Discord](https://img.shields.io/discord/717975833226248303.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/BRYzSYha)
 
-Kaapi is Project Tech4Dev’s AI platform that accelerates responsible AI adoption by acting as a middleware layer, enabling platforms like Avni, Glific, Evidential, and Dalgo to seamlessly integrate AI functionality without building or maintaining their own infrastructure.
+Kaapi is Project Tech4Dev’s AI platform that accelerates responsible AI adoption by acting as a middleware layer, enabling platforms like Avni, Glific, Evidential, and Dalgo to seamlessly integrate AI functionality without building or maintaining their own infrastructure. This is the frontend interface built using Next.js.
 
 ---
 

@@ -23,7 +23,7 @@ export async function GET(
     const { assistant_id } = await params;
 
     // Get backend URL from environment variable
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
     // Forward the request to the actual backend
     const response = await fetch(`${backendUrl}/api/v1/assistant/${assistant_id}`, {

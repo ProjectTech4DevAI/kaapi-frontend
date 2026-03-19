@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ run_id: string }> }
 ) {
   const { run_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   const { searchParams } = new URL(request.url);

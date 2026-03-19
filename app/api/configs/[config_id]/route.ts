@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ config_id: string }> }
 ) {
   const { config_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   try {
@@ -30,7 +30,7 @@ export async function PATCH(
   { params }: { params: Promise<{ config_id: string }> }
 ) {
   const { config_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   try {
@@ -60,7 +60,7 @@ export async function DELETE(
   { params }: { params: Promise<{ config_id: string }> }
 ) {
   const { config_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   try {

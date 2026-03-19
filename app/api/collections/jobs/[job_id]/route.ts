@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
 // GET /api/collections/jobs/[job_id] - Get collection job status
 export async function GET(

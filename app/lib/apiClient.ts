@@ -14,14 +14,13 @@ export async function apiClient(
   options: RequestInit = {},
 ) {
   const apiKey = request.headers.get("X-API-KEY") || "";
+  const headers = new Headers(options.headers);
+  headers.set("Content-Type", "application/json");
+  headers.set("X-API-KEY", apiKey);
 
   const response = await fetch(`${BACKEND_URL}${endpoint}`, {
     ...options,
-    headers: {
-      "X-API-KEY": apiKey,
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
+    headers,
   });
 
   // 204 No Content has no body
@@ -40,13 +39,12 @@ export async function apiFetch<T>(
   apiKey: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const headers = new Headers(options.headers);
+  headers.set("Content-Type", "application/json");
+  headers.set("X-API-KEY", apiKey);
   const res = await fetch(url, {
     ...options,
-    headers: {
-      "X-API-KEY": apiKey,
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
+    headers,
   });
   const data = await res.json();
   if (!res.ok)

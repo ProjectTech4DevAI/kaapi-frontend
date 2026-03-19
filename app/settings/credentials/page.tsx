@@ -96,6 +96,20 @@ export default function CredentialsPage() {
     }
   };
 
+  const buildCredentialBody = (isUpdate: boolean) => {
+    const innerPayload: Record<string, string> = {};
+    selectedProvider.fields.forEach((f) => {
+      innerPayload[f.key] = formValues[f.key].trim();
+    });
+    return {
+      provider: selectedProvider.credentialKey,
+      is_active: isActive,
+      credential: isUpdate
+        ? innerPayload
+        : { [selectedProvider.credentialKey]: innerPayload },
+    };
+  };
+
   const handleSave = async () => {
     if (apiKeys.length === 0) {
       toast.error("Please add an API key in Keystore first");
@@ -111,27 +125,16 @@ export default function CredentialsPage() {
 
     setIsSaving(true);
     try {
-      const credentialPayload: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        credentialPayload[f.key] = formValues[f.key].trim();
-      });
-
-      const body = {
-        provider: selectedProvider.credentialKey,
-        is_active: isActive,
-        credential: credentialPayload,
-      };
-
       if (existingCredential) {
         await apiFetch("/api/credentials", apiKeys[0].key, {
           method: "PATCH",
-          body: JSON.stringify(body),
+          body: JSON.stringify(buildCredentialBody(true)),
         });
         toast.success(`${selectedProvider.name} credentials updated`);
       } else {
         await apiFetch("/api/credentials", apiKeys[0].key, {
           method: "POST",
-          body: JSON.stringify(body),
+          body: JSON.stringify(buildCredentialBody(false)),
         });
         toast.success(`${selectedProvider.name} credentials saved`);
       }

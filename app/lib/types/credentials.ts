@@ -88,10 +88,10 @@ export const PROVIDERS: ProviderDef[] = [
     ],
   },
   {
-    id: "sarvam",
+    id: "sarvamai",
     name: "Sarvam AI",
     description: "Indian language speech and text models via Sarvam AI",
-    credentialKey: "sarvam",
+    credentialKey: "sarvamai",
     fields: [
       {
         key: "api_key",

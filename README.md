@@ -36,14 +36,6 @@ asdf plugin-add nodejs
 asdf install
 ```
 
-### Kaapi Backend
-
-You need to set up the Kaapi backend service. Follow the [instructions](https://github.com/ProjectTech4DevAI/kaapi-backend/blob/main/README.md) in the backend repository.
-
-> 💡 Note: Ensure the backend is running and accessible before starting the frontend.
-
----
-
 ## Clone Frontend Repo
 
 ### Git commands to clone
@@ -51,6 +43,14 @@ You need to set up the Kaapi backend service. Follow the [instructions](https://
 ```bash
 git clone git@github.com:ProjectTech4DevAI/kaapi-frontend.git
 ```
+
+---
+
+### Kaapi Backend
+
+You need to set up the Kaapi backend service. Follow the instructions here: 🔗 https://github.com/ProjectTech4DevAI/kaapi-backend
+
+> 💡 Note: Ensure the backend is running and accessible before starting the frontend.
 
 ---
 

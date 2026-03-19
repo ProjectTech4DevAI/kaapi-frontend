@@ -4,7 +4,7 @@
 ![GitHub issues](https://img.shields.io/github/issues-raw/ProjectTech4DevAI/kaapi-frontend)
 [![Discord](https://img.shields.io/discord/717975833226248303.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/BRYzSYha)
 
-This is a thin frontend UI for the [Kaapi backend](https://github.com/ProjectTech4DevAI/kaapi-backend) — a platform that acts as a middleware layer, enabling platforms like Avni, Glific, and Dalgo to seamlessly integrate AI functionality.
+This is a thin frontend UI for [Kaapi backend](https://github.com/ProjectTech4DevAI/kaapi-backend) — a platform that acts as a middleware layer, enabling platforms like Avni, Glific, and Dalgo to seamlessly integrate AI functionality.
 
 ---
 
@@ -50,6 +50,12 @@ git clone git@github.com:ProjectTech4DevAI/kaapi-frontend.git
 You need to set up the [Kaapi backend](https://github.com/ProjectTech4DevAI/kaapi-backend) service and follow the instructions there.
 
 > 💡 Note: Ensure the backend is running and accessible before starting the frontend.
+
+### Kaapi Guardrails Service _(coming soon)_
+
+The Guardrails UI (currently in development) will require the Kaapi Guardrails service to be running alongside the backend. Setup instructions will be added here once the service is available.
+
+> 🚧 No action needed for now — this is a placeholder for when the Guardrails feature lands in `main`.
 
 ---
 

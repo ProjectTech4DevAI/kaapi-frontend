@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
+const backendUrl = process.env.NEXT_PUBLIC_GUARDRAILS_URL || 'http://localhost:8001';
 
 export async function GET(
   request: Request,
@@ -65,7 +65,6 @@ export async function DELETE(
   { params }: { params: Promise<{ config_id: string }> }
 ) {
   const { config_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8001';
 
   // Get the guardrails token from environment variable
   const guardrailsToken = process.env.GUARDRAILS_TOKEN;

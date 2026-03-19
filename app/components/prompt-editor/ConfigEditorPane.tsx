@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
 import { ConfigBlob, Tool } from '@/app/configurations/prompt-editor/types';
 import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { Validator } from './ValidatorListPane';
+
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -19,6 +22,8 @@ interface ConfigEditorPaneProps {
   // Collapse functionality
   collapsed?: boolean;
   onToggle?: () => void;
+  // Guardrails
+  savedValidators?: Validator[];
 }
 
 // Group configs by name for nested dropdown
@@ -64,7 +69,9 @@ export default function ConfigEditorPane({
   isSaving = false,
   collapsed = false,
   onToggle,
+  savedValidators = [],
 }: ConfigEditorPaneProps) {
+  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState<number | null>(null);
 
@@ -588,7 +595,7 @@ export default function ConfigEditorPane({
                 }}
               >
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold" style={{ color: colors.text.primary }}>File Search</span>
+                  <span className="text-xs font-semibold" style={{ color: '#000000' }}>File Search</span>
                   <button
                     onClick={() => handleRemoveTool(index)}
                     className="text-xs"
@@ -605,7 +612,7 @@ export default function ConfigEditorPane({
                 <div className="mb-2">
                   <label
                     className="block text-xs mb-1"
-                    style={{ color: colors.text.primary }}
+                    style={{ color: '#000000' }}
                   >
                     Knowledge Base ID
                   </label>
@@ -628,7 +635,7 @@ export default function ConfigEditorPane({
                   <div className="flex items-center gap-1 mb-1">
                     <label
                       className="text-xs"
-                      style={{ color: colors.text.primary }}
+                      style={{ color: '#000000' }}
                     >
                       Max Results
                     </label>
@@ -726,6 +733,65 @@ export default function ConfigEditorPane({
               }}
             />
           </div>
+
+          {/* Guardrails Button */}
+          {savedValidators && savedValidators.length > 0 ? (
+            <div className="space-y-2">
+              <div
+                className="px-4 py-2 rounded-md text-sm"
+                style={{
+                  backgroundColor: colors.bg.secondary,
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold" style={{ color: colors.text.primary }}>
+                    Guardrails Configured
+                  </span>
+                  <span
+                    className="text-xs px-2 py-1 rounded"
+                    style={{
+                      backgroundColor: colors.status.success,
+                      color: '#ffffff',
+                    }}
+                  >
+                    {savedValidators.length} {savedValidators.length === 1 ? 'validator' : 'validators'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push(`/configurations/safety-guardrails${selectedConfig?.config_id ? `?config_id=${selectedConfig.config_id}&version=${selectedConfig.version}` : ''}`)}
+                className="w-full px-4 py-2 rounded-md text-sm font-semibold"
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  color: colors.text.primary,
+                  border: `1px solid ${colors.border}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+              >
+                View Guardrail Configuration
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => router.push(`/configurations/safety-guardrails${selectedConfig?.config_id ? `?config_id=${selectedConfig.config_id}&version=${selectedConfig.version}` : ''}`)}
+              className="w-full px-4 py-2 rounded-md text-sm font-semibold"
+              style={{
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+                border: `1px solid ${colors.border}`,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+            >
+              Add Guardrails
+            </button>
+          )}
 
           {/* Save Button */}
           <button

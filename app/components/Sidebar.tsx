@@ -90,6 +90,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
       submenu: [
         { name: 'Library', route: '/configurations' },
         { name: 'Prompt Editor', route: '/configurations/prompt-editor' },
+        { name: 'Safety Guardrails', route: '/configurations/safety-guardrails'}
       ]
     }
 //    {

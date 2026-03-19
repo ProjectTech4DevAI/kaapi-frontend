@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ dataset_id: string }> }
 ) {
   const { dataset_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   if (!apiKey) {
@@ -47,7 +47,7 @@ export async function DELETE(
   { params }: { params: Promise<{ dataset_id: string }> }
 ) {
   const { dataset_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   if (!apiKey) {

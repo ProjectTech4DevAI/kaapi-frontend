@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Kaapi Konsole is a Next.js 16 application by Tech4Dev for LLM development and evaluation. It provides:
+
 - LLM response evaluation against QnA datasets
 - Git-like version control for prompt templates
 - Configuration management with A/B testing
@@ -53,11 +54,13 @@ npm run lint
 ```
 
 **Coming Soon Routes** (placeholders):
+
 - `/model-testing`, `/speech-to-text`, `/text-to-speech`, `/guardrails`, `/redteaming`
 
 ### Component Organization
 
 **Shared Components** (`/app/components/`):
+
 - `Sidebar.tsx` - Main navigation (240px collapsible)
 - `TabNavigation.tsx` - Reusable tab switcher
 - `ConfigModal.tsx` - Modal for viewing evaluation configs
@@ -67,6 +70,7 @@ npm run lint
 - `utils.ts` - Date formatting, color utilities
 
 **Prompt Editor Components** (`/app/components/prompt-editor/`):
+
 - `Header.tsx` - Top nav with branch controls
 - `EditorView.tsx` - WYSIWYG prompt editor
 - `DiffView.tsx` - Side-by-side diff visualization
@@ -78,11 +82,13 @@ npm run lint
 ### State Management Pattern
 
 **No global state library** - uses React `useState` exclusively:
+
 - Component-level state with props drilling
 - LocalStorage for persistence (API keys, sidebar state)
 - No Context API or Redux/Zustand
 
 **LocalStorage Keys:**
+
 - `kaapi_api_keys` - API key storage
 - `sidebar-expanded-menus` - Sidebar expansion state
 
@@ -98,7 +104,7 @@ GET      /api/evaluations/datasets/[dataset_id]
 GET      /api/assistant/[assistant_id] → Fetch assistant config
 ```
 
-**Backend URL**: Configured via `NEXT_PUBLIC_BACKEND_URL` (default: `http://localhost:8000`)
+**Backend URL**: Configured via `BACKEND_URL` (default: `http://localhost:8000`)
 
 **Authentication**: Custom header `X-API-KEY` passed from client
 
@@ -109,6 +115,7 @@ GET      /api/assistant/[assistant_id] → Fetch assistant config
 **Complex Type Hierarchies** in `/app/components/types.ts`:
 
 **Evaluation Types:**
+
 - `EvalJob` - Main evaluation job entity
 - `ScoreObject` - Union type supporting 3 formats:
   - `NewScoreObjectV2` (with `traces[]` array)
@@ -120,6 +127,7 @@ GET      /api/assistant/[assistant_id] → Fetch assistant config
 **Type Guards**: `isNewScoreObjectV2()`, `isLegacyScoreObject()` for runtime type checking
 
 **Prompt Editor Types** in `/app/configurations/prompt-editor/types.ts`:
+
 - `Commit` - Git-like commit with branch/parent relationships
 - `Config` - LLM configuration blob with versioning
 - `Tool` - Vector store tool definition
@@ -131,18 +139,21 @@ GET      /api/assistant/[assistant_id] → Fetch assistant config
 **Current Design**: Vercel-style minimalist black/white theme
 
 **Color Management**:
+
 - All colors defined in `/app/lib/colors.ts` as TypeScript object
 - Synchronized with CSS variables in `globals.css`
 - Dark mode support via `prefers-color-scheme` media query
 - See `COLOR_SCHEME.md` for quick preset options
 
 **Styling Approach**:
+
 1. Tailwind CSS for layout and spacing
 2. Inline styles for colors (referencing `colors` object)
 3. Hover states managed via React event handlers
 4. No custom Tailwind classes or extended theme
 
 **Color Palette**:
+
 ```typescript
 bg: { primary: '#ffffff', secondary: '#fafafa' }
 text: { primary: '#171717', secondary: '#737373' }
@@ -156,6 +167,7 @@ status: { success: '#16a34a', error: '#dc2626', warning: '#f59e0b' }
 ### 1. LLM Evaluation Pipeline
 
 **Workflow**:
+
 1. Upload CSV with `question,answer` columns
 2. Configure experiment (model, instructions, vector stores)
 3. Backend creates evaluation job
@@ -163,10 +175,12 @@ status: { success: '#16a34a', error: '#dc2626', warning: '#f59e0b' }
 5. Results displayed with detailed metrics
 
 **Evaluation Modes**:
+
 - Config-based: Specify model, instructions, tools
 - Assistant-based: Use pre-configured assistant ID
 
 **Metrics Display**:
+
 - Summary scores (avg ± std for numeric, distribution for categorical)
 - Per-item traces with expandable Q&A pairs
 - Color-coded scores with dynamic thresholds
@@ -175,12 +189,14 @@ status: { success: '#16a34a', error: '#dc2626', warning: '#f59e0b' }
 ### 2. Git-like Prompt Version Control
 
 **Core Concepts** (see `/configurations/prompt-editor/page.tsx`):
+
 - **Commits**: Versioned prompt snapshots with author/message/timestamp
 - **Branches**: Parallel development streams (e.g., main, experiment-v2)
 - **Diffs**: Myers algorithm for side-by-side change visualization
 - **Merges**: Branch integration with duplicate commit detection
 
 **Implementation Details**:
+
 - All commits stored in-memory (no backend persistence yet)
 - `createBranch()` preserves uncommitted changes when branching from HEAD
 - `switchBranch()` loads latest commit from target branch
@@ -192,6 +208,7 @@ status: { success: '#16a34a', error: '#dc2626', warning: '#f59e0b' }
 ### 3. Configuration Management & A/B Testing
 
 **Config Structure**:
+
 ```javascript
 {
   id: string,
@@ -207,6 +224,7 @@ status: { success: '#16a34a', error: '#dc2626', warning: '#f59e0b' }
 ```
 
 **Features**:
+
 - Multi-version configs (auto-incremented)
 - "Use Current Prompt" syncs from editor
 - History tab shows all saved configs
@@ -265,16 +283,19 @@ See `CONFIG_AB.md` for complete feature specification.
 ## Backend Integration
 
 **Environment Variables**:
+
 ```bash
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8000  # Backend API base URL
+BACKEND_URL=http://localhost:8000  # Backend API base URL
 ```
 
 **Authentication**:
+
 - API keys stored in localStorage
 - Passed via `X-API-KEY` header
 - No JWT/OAuth implementation
 
 **Dataset Upload**:
+
 - CSV format: `question,expected_answer` columns
 - Duplication factor supported (1-10)
 - Backend handles file processing

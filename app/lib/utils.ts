@@ -1,4 +1,9 @@
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
+import { formatDistanceToNow } from "date-fns";
+
+export function timeAgo(dateStr: string): string {
+  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+}
 
 export function getExistingForProvider(
   provider: ProviderDef,

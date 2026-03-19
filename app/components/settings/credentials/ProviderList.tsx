@@ -20,15 +20,12 @@ export default function ProviderList({
   return (
     <div
       className="w-56 shrink-0 border-r overflow-y-auto"
-      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border }}
+      style={{
+        backgroundColor: colors.bg.secondary,
+        borderColor: colors.border,
+      }}
     >
       <div className="p-3">
-        <p
-          className="text-xs font-medium uppercase tracking-wide px-2 mb-2"
-          style={{ color: colors.text.secondary }}
-        >
-          Providers
-        </p>
         <nav className="space-y-0.5">
           {providers.map((provider) => {
             const hasExisting = !!getExistingForProvider(provider, credentials);
@@ -39,8 +36,12 @@ export default function ProviderList({
                 onClick={() => onSelect(provider)}
                 className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between gap-2"
                 style={{
-                  backgroundColor: isSelected ? colors.bg.primary : "transparent",
-                  color: isSelected ? colors.text.primary : colors.text.secondary,
+                  backgroundColor: isSelected
+                    ? colors.bg.primary
+                    : "transparent",
+                  color: isSelected
+                    ? colors.text.primary
+                    : colors.text.secondary,
                   fontWeight: isSelected ? 600 : 400,
                   border: isSelected
                     ? `1px solid ${colors.border}`

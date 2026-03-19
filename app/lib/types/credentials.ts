@@ -44,18 +44,61 @@ export const PROVIDERS: ProviderDef[] = [
     description: "Integrate Langfuse for LLM observability and tracing",
     credentialKey: "langfuse",
     fields: [
-      { key: "secret_key", label: "Secret Key", placeholder: "sk-lf-xxxxx", type: "password" },
+      {
+        key: "secret_key",
+        label: "Secret Key",
+        placeholder: "sk-lf-xxxxx",
+        type: "password",
+      },
       { key: "public_key", label: "Public Key", placeholder: "pk-lf-xxxxx" },
-      { key: "host", label: "Host URL", placeholder: "https://cloud.langfuse.com" },
+      {
+        key: "host",
+        label: "Host URL",
+        placeholder: "https://cloud.langfuse.com",
+      },
     ],
   },
   {
     id: "google",
     name: "Google",
-    description: "Use Google AI (Gemini) models for speech and text evaluations",
+    description:
+      "Use Google AI (Gemini) models for speech and text evaluations",
     credentialKey: "google",
     fields: [
-      { key: "api_key", label: "API Key", placeholder: "AIzaSy-xxxxx", type: "password" },
+      {
+        key: "api_key",
+        label: "API Key",
+        placeholder: "AIzaSy-xxxxx",
+        type: "password",
+      },
+    ],
+  },
+  {
+    id: "elevenlabs",
+    name: "ElevenLabs",
+    description: "High-quality text-to-speech synthesis via ElevenLabs",
+    credentialKey: "elevenlabs",
+    fields: [
+      {
+        key: "api_key",
+        label: "API Key",
+        placeholder: "sk_xxxxx",
+        type: "password",
+      },
+    ],
+  },
+  {
+    id: "sarvam",
+    name: "Sarvam AI",
+    description: "Indian language speech and text models via Sarvam AI",
+    credentialKey: "sarvam",
+    fields: [
+      {
+        key: "api_key",
+        label: "API Key",
+        placeholder: "xxxxx",
+        type: "password",
+      },
     ],
   },
 ];

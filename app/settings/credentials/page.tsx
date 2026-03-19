@@ -33,6 +33,7 @@ export default function CredentialsPage() {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isActive, setIsActive] = useState(true);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());
@@ -122,11 +123,10 @@ export default function CredentialsPage() {
       };
 
       if (existingCredential) {
-        await apiFetch(
-          "/api/credentials",
-          apiKeys[0].key,
-          { method: "PATCH", body: JSON.stringify(body) },
-        );
+        await apiFetch("/api/credentials", apiKeys[0].key, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        });
         toast.success(`${selectedProvider.name} credentials updated`);
       } else {
         await apiFetch("/api/credentials", apiKeys[0].key, {
@@ -163,6 +163,24 @@ export default function CredentialsPage() {
     setVisibleFields(new Set());
   };
 
+  const handleDelete = async () => {
+    if (!existingCredential || apiKeys.length === 0) return;
+    setIsDeleting(true);
+    try {
+      await apiFetch(
+        `/api/credentials/${selectedProvider.credentialKey}`,
+        apiKeys[0].key,
+        { method: "DELETE" },
+      );
+      toast.success(`${selectedProvider.name} credentials removed`);
+      await loadCredentials();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove credentials");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleFieldChange = (key: string, value: string) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
   };
@@ -188,50 +206,47 @@ export default function CredentialsPage() {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div
-            className="border-b px-4 py-3 flex items-center gap-3 shrink-0"
+            className="border-b px-4 py-3 flex items-center justify-between shrink-0"
             style={{
               backgroundColor: colors.bg.primary,
               borderColor: colors.border,
             }}
           >
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-1.5 rounded-md"
-              style={{ color: colors.text.secondary }}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="p-1.5 rounded-md"
+                style={{ color: colors.text.secondary }}
+                aria-label="Toggle sidebar"
               >
-                {sidebarCollapsed ? (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                    d="M4 6h16M4 12h16M4 18h16"
                   />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                  />
-                )}
-              </svg>
-            </button>
-            <div>
-              <h1
-                className="text-base font-semibold"
-                style={{ color: colors.text.primary }}
-              >
-                Settings
-              </h1>
-              <p className="text-xs" style={{ color: colors.text.secondary }}>
-                Manage provider credentials
-              </p>
+                </svg>
+              </button>
+              <div>
+                <h1
+                  className="text-base font-semibold"
+                  style={{
+                    color: colors.text.primary,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Settings
+                </h1>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  Manage provider credentials
+                </p>
+              </div>
             </div>
           </div>
 
@@ -271,12 +286,14 @@ export default function CredentialsPage() {
                   isActive={isActive}
                   isLoading={isLoading}
                   isSaving={isSaving}
+                  isDeleting={isDeleting}
                   visibleFields={visibleFields}
                   onChange={handleFieldChange}
                   onActiveChange={setIsActive}
                   onToggleVisibility={handleToggleVisibility}
                   onSave={handleSave}
                   onCancel={handleCancel}
+                  onDelete={handleDelete}
                 />
               )}
             </div>

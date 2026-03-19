@@ -3,6 +3,7 @@
 import { colors } from "@/app/lib/colors";
 import Loader from "@/app/components/Loader";
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
+import { timeAgo } from "@/app/lib/utils";
 
 interface Props {
   provider: ProviderDef;
@@ -11,12 +12,14 @@ interface Props {
   isActive: boolean;
   isLoading: boolean;
   isSaving: boolean;
+  isDeleting?: boolean;
   visibleFields: Set<string>;
   onChange: (key: string, value: string) => void;
   onActiveChange: (active: boolean) => void;
   onToggleVisibility: (key: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
 export default function CredentialForm({
@@ -26,16 +29,21 @@ export default function CredentialForm({
   isActive,
   isLoading,
   isSaving,
+  isDeleting,
   visibleFields,
   onChange,
   onActiveChange,
   onToggleVisibility,
   onSave,
   onCancel,
+  onDelete,
 }: Props) {
   return (
     <div className="max-w-lg">
-      <h2 className="text-xl font-semibold mb-1" style={{ color: colors.text.primary }}>
+      <h2
+        className="text-xl font-semibold mb-1"
+        style={{ color: colors.text.primary }}
+      >
         {provider.name}
       </h2>
       <p className="text-sm mb-6" style={{ color: colors.text.secondary }}>
@@ -64,7 +72,7 @@ export default function CredentialForm({
           {provider.fields.map((field) => {
             const isPassword = field.type === "password";
             const visible = visibleFields.has(field.key);
-            const hasSavedValue = !!existingCredential && !!formValues[field.key];
+            const hasValue = !!formValues[field.key];
             return (
               <div key={field.key}>
                 <label
@@ -72,17 +80,6 @@ export default function CredentialForm({
                   style={{ color: colors.text.primary }}
                 >
                   {field.label}
-                  {isPassword && hasSavedValue && (
-                    <span
-                      className="ml-2 text-xs font-normal px-1.5 py-0.5 rounded"
-                      style={{
-                        backgroundColor: `${colors.status.success}20`,
-                        color: colors.status.success,
-                      }}
-                    >
-                      Saved
-                    </span>
-                  )}
                 </label>
                 <div className="relative">
                   <input
@@ -95,31 +92,86 @@ export default function CredentialForm({
                       borderColor: colors.border,
                       backgroundColor: colors.bg.primary,
                       color: colors.text.primary,
-                      paddingRight: isPassword ? "2.75rem" : undefined,
+                      paddingRight: isPassword || hasValue ? "5rem" : undefined,
                     }}
-                    onFocus={(e) => { e.target.style.borderColor = colors.accent.primary; }}
-                    onBlur={(e) => { e.target.style.borderColor = colors.border; }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = colors.accent.primary;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = colors.border;
+                    }}
                   />
-                  {isPassword && (
-                    <button
-                      type="button"
-                      onClick={() => onToggleVisibility(field.key)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      style={{ color: colors.text.secondary }}
-                      tabIndex={-1}
-                    >
-                      {visible ? (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    {hasValue && (
+                      <button
+                        type="button"
+                        onClick={() => onChange(field.key, "")}
+                        className="flex items-center justify-center w-4 h-4 rounded-full"
+                        style={{ color: colors.text.secondary }}
+                        title="Clear field"
+                        tabIndex={-1}
+                      >
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      )}
-                    </button>
-                  )}
+                      </button>
+                    )}
+                    {isPassword && (
+                      <button
+                        type="button"
+                        onClick={() => onToggleVisibility(field.key)}
+                        className="flex items-center justify-center"
+                        style={{ color: colors.text.secondary }}
+                        tabIndex={-1}
+                      >
+                        {visible ? (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -130,7 +182,7 @@ export default function CredentialForm({
             <p className="text-xs" style={{ color: colors.text.secondary }}>
               Last updated:{" "}
               {existingCredential.updated_at
-                ? new Date(existingCredential.updated_at).toLocaleString()
+                ? timeAgo(existingCredential.updated_at)
                 : "—"}
             </p>
           )}
@@ -139,19 +191,21 @@ export default function CredentialForm({
           <div className="flex items-center gap-3 pt-1">
             <button
               onClick={onSave}
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               className="px-5 py-2 rounded-full text-sm font-medium transition-colors"
               style={{
-                backgroundColor: isSaving ? colors.accent.hover : colors.accent.primary,
+                backgroundColor: isSaving
+                  ? colors.accent.hover
+                  : colors.accent.primary,
                 color: colors.bg.primary,
-                opacity: isSaving ? 0.7 : 1,
+                opacity: isSaving || isDeleting ? 0.7 : 1,
               }}
             >
               {isSaving ? "Saving…" : existingCredential ? "Update" : "Save"}
             </button>
             <button
               onClick={onCancel}
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               className="px-5 py-2 rounded-full text-sm font-medium border transition-colors"
               style={{
                 borderColor: colors.border,
@@ -169,6 +223,15 @@ export default function CredentialForm({
             >
               Cancel
             </button>
+            {existingCredential && onDelete && (
+              <button
+                onClick={onDelete}
+                disabled={isSaving || isDeleting}
+                className={`ml-auto px-4 py-2 rounded-full text-sm font-medium border transition-colors bg-transparent border-[#ef444440] text-[#ef4444] hover:bg-[#ef444415] hover:border-[#ef4444] ${isDeleting ? "opacity-70" : ""}`}
+              >
+                {isDeleting ? "Removing…" : "Remove"}
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 /**
- * EvaluationReport.tsx - Separate page for detailed evaluation report
+ * EvaluationReport.tsx - Detailed evaluation report page
  *
- * Shows detailed metrics, summary, and per-item scores for a specific evaluation job
+ * Shows metrics overview and per-item scores for a specific evaluation job
  */
 
 "use client"
@@ -9,27 +9,28 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { APIKey, STORAGE_KEY } from '../../keystore/page';
 import { EvalJob, AssistantConfig, hasSummaryScores, isNewScoreObjectV2, getScoreObject, normalizeToIndividualScores, GroupedTraceItem, isGroupedFormat } from '../../components/types';
-import { formatDate, getStatusColor } from '../../components/utils';
+import { getStatusColor } from '../../components/utils';
 import ConfigModal from '../../components/ConfigModal';
 import Sidebar from '../../components/Sidebar';
 import DetailedResultsTable from '../../components/DetailedResultsTable';
 import { colors } from '@/app/lib/colors';
 import { useToast } from '@/app/components/Toast';
 import Loader from '@/app/components/Loader';
+
 interface ConfigVersionInfo {
   name: string;
   version: number;
   model?: string;
   instructions?: string;
   temperature?: number;
-  tools?: any[];
+  tools?: { type: string; [key: string]: unknown }[];
   provider?: string;
 }
 
 export default function EvaluationReport() {
   const router = useRouter();
   const params = useParams();
-  const toast=useToast()
+  const toast = useToast();
   const jobId = params.id as string;
 
   const [job, setJob] = useState<EvalJob | null>(null);
@@ -66,7 +67,6 @@ export default function EvaluationReport() {
       try {
         const keys = JSON.parse(stored);
         setApiKeys(keys);
-        // Auto-select the first API key
         if (keys.length > 0) {
           setSelectedKeyId(keys[0].id);
         }
@@ -87,12 +87,9 @@ export default function EvaluationReport() {
     setError(null);
 
     try {
-      // Fetch the specific evaluation by ID with export format
       const response = await fetch(`/api/evaluations/${jobId}?export_format=${exportFormat}`, {
         method: 'GET',
-        headers: {
-          'X-API-KEY': selectedKey.key,
-        },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
 
       if (!response.ok) {
@@ -102,95 +99,62 @@ export default function EvaluationReport() {
 
       const data = await response.json();
 
-      if (data.success === false && data.error){
+      if (data.success === false && data.error) {
         toast.error(data.error);
-        setExportFormat('row')
+        setExportFormat('row');
+        return;
       }
 
-      // Backend may return the job directly or wrapped in a data property
       const foundJob = data.data || data;
-
-      if (!foundJob) {
-        throw new Error('Evaluation job not found');
-      }
+      if (!foundJob) throw new Error('Evaluation job not found');
 
       setJob(foundJob);
 
-      // Fetch assistant config if assistant_id exists
       if (foundJob.assistant_id) {
         fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
       }
-
-      // Fetch config info if config_id exists
       if (foundJob.config_id && foundJob.config_version) {
         fetchConfigInfo(foundJob.config_id, foundJob.config_version, selectedKey.key);
       }
     } catch (err: any) {
-      console.error('Failed to fetch job details:', err);
       setError(err.message || 'Failed to fetch evaluation job');
     } finally {
       setIsLoading(false);
     }
   }, [apiKeys, selectedKeyId, jobId, exportFormat]);
 
-  // Fetch assistant config
   const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
     try {
       const response = await fetch(`/api/assistant/${assistantId}`, {
         method: 'GET',
-        headers: {
-          'X-API-KEY': apiKey,
-        },
+        headers: { 'X-API-KEY': apiKey },
       });
-
-      if (!response.ok) {
-        console.error(`Failed to fetch assistant config for ${assistantId}:`, response.status);
-        return;
-      }
-
+      if (!response.ok) return;
       const result = await response.json();
-      if (result.success && result.data) {
-        setAssistantConfig(result.data);
-      }
-    } catch (err: any) {
+      if (result.success && result.data) setAssistantConfig(result.data);
+    } catch (err) {
       console.error(`Failed to fetch assistant config for ${assistantId}:`, err);
     }
   };
 
-  // Fetch full config version info including config_blob
   const fetchConfigInfo = async (configId: string, configVersion: number, apiKey: string) => {
     try {
-      // Fetch config name first
       const configResponse = await fetch(`/api/configs/${configId}`, {
         headers: { 'X-API-KEY': apiKey },
       });
-
-      if (!configResponse.ok) {
-        console.error('Failed to fetch config info');
-        return;
-      }
-
+      if (!configResponse.ok) return;
       const configData = await configResponse.json();
       const configName = configData.success && configData.data ? configData.data.name : null;
 
-      // Fetch full version details including config_blob
       const versionResponse = await fetch(
         `/api/configs/${configId}/versions/${configVersion}`,
-        {
-          headers: { 'X-API-KEY': apiKey },
-        }
+        { headers: { 'X-API-KEY': apiKey } }
       );
-
-      if (!versionResponse.ok) {
-        console.error('Failed to fetch version details');
-        return;
-      }
-
+      if (!versionResponse.ok) return;
       const versionData = await versionResponse.json();
       if (versionData.success && versionData.data) {
         const blob = versionData.data.config_blob;
         const params = blob?.completion?.params || {};
-
         setConfigVersionInfo({
           name: configName || 'Unknown Config',
           version: configVersion,
@@ -206,60 +170,39 @@ export default function EvaluationReport() {
     }
   };
 
-  // Fetch on mount and when dependencies change
   useEffect(() => {
-    if (selectedKeyId && jobId) {
-      fetchJobDetails();
-    }
+    if (selectedKeyId && jobId) fetchJobDetails();
   }, [selectedKeyId, jobId, fetchJobDetails]);
 
-  // Export grouped format CSV (horizontal layout)
+  // Export grouped format CSV
   const exportGroupedCSV = (traces: GroupedTraceItem[]) => {
     if (!job) return;
-
     try {
       const maxAnswers = Math.max(...traces.map(g => g.llm_answers.length));
       const scoreNames = traces[0]?.scores[0]?.map(s => s.name) || [];
-
-      // Build CSV header
       let csvContent = 'Question ID,Question,Ground Truth';
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
-        scoreNames.forEach(name => {
-          const escapedName = escapeCSVValue(name);
-          csvContent += `,"${escapedName} (${i})","${escapedName} (${i}) - comment"`;
-        });
+        scoreNames.forEach(name => { csvContent += `,${name} (${i}),${sanitizeCSVCell(`${name} (${i}) Comment`)}`; });
       }
       csvContent += '\n';
-
-      // Build data rows
       traces.forEach(group => {
         const row: string[] = [
           String(group.question_id),
           sanitizeCSVCell(group.question || ''),
           sanitizeCSVCell(group.ground_truth_answer || '')
         ];
-
         for (let i = 0; i < maxAnswers; i++) {
-          // LLM Answer
-          const answer = group.llm_answers[i] || '';
-          row.push(sanitizeCSVCell(answer));
-
-          // Trace ID
+          row.push(`"${(group.llm_answers[i] || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`);
           row.push(group.trace_ids[i] || '');
-
-          // Scores with comments
           scoreNames.forEach(name => {
             const score = group.scores[i]?.find(s => s.name === name);
             row.push(score ? String(score.value) : '');
             row.push(score?.comment ? sanitizeCSVCell(score.comment, true) : '');
           });
         }
-
         csvContent += row.join(',') + '\n';
       });
-
-      // Create and download file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -269,53 +212,38 @@ export default function EvaluationReport() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
       toast.success(`Grouped CSV exported with ${traces.length} questions`);
     } catch (error) {
-      console.error('Error exporting grouped CSV:', error);
       toast.error('Failed to export grouped CSV');
     }
   };
 
-  // Export row format CSV (individual rows)
+  // Export row format CSV
   const exportRowCSV = () => {
     if (!job || !scoreObject) return;
-
     try {
       const individual_scores = normalizeToIndividualScores(scoreObject);
-
       if (!individual_scores || individual_scores.length === 0) {
         toast.error('No valid data available to export');
         return;
       }
-
       let csvContent = '';
       const firstItem = individual_scores[0];
       const scoreNames = firstItem?.trace_scores?.map(s => s.name) || [];
-
-      // Header row
       csvContent += 'Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,';
       csvContent += 'Question,Answer,Ground Truth,';
-      csvContent += scoreNames.map(name => {
-        const escapedName = escapeCSVValue(name);
-        return `"${escapedName}","${escapedName} (comment)"`;
-      }).join(',') + '\n';
-
-      // Data rows
+      csvContent += scoreNames.map(name => `${name},${name} (comment)`).join(',') + '\n';
       let rowCount = 0;
       individual_scores.forEach((item, index) => {
         const row = [
-          index + 1,
-          item.trace_id || 'N/A',
-          job.id,
-          sanitizeCSVCell(job.run_name),
-          sanitizeCSVCell(job.dataset_name),
+          index + 1, item.trace_id || 'N/A', job.id,
+          `"${job.run_name.replace(/"/g, '""')}"`,
+          `"${job.dataset_name.replace(/"/g, '""')}"`,
           assistantConfig?.model || job.config?.model || 'N/A',
-          job.status,
-          job.total_items,
-          sanitizeCSVCell(item.input?.question || ''),
-          sanitizeCSVCell(item.output?.answer || ''),
-          sanitizeCSVCell(item.metadata?.ground_truth || ''),
+          job.status, job.total_items,
+          `"${(item.input?.question || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+          `"${(item.output?.answer || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+          `"${(item.metadata?.ground_truth || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
           ...scoreNames.flatMap(name => {
             const score = item.trace_scores?.find(s => s.name === name);
             return [
@@ -324,11 +252,9 @@ export default function EvaluationReport() {
             ];
           })
         ].join(',');
-
         csvContent += row + '\n';
         rowCount++;
       });
-
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -338,115 +264,80 @@ export default function EvaluationReport() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
       toast.success(`CSV exported successfully with ${rowCount} rows`);
     } catch (error) {
-      console.error('Error exporting row CSV:', error);
       toast.error('Failed to export CSV');
     }
   };
 
-  // Export to CSV - detects format and calls appropriate export function
   const handleExportCSV = () => {
     if (!job || !scoreObject) {
       toast.error('No valid data available to export');
       return;
     }
-
     try {
       if (!isNewScoreObjectV2(scoreObject)) {
         toast.error('Export not available for this score format');
         return;
       }
-
       const traces = scoreObject.traces;
-
       if (!traces || traces.length === 0) {
         toast.error('No traces available to export');
         return;
       }
-
-      // Check format and export accordingly
       if (isGroupedFormat(traces)) {
         exportGroupedCSV(traces);
       } else {
         exportRowCSV();
       }
     } catch (error) {
-      console.error('Error exporting CSV:', error);
       toast.error('Failed to export CSV. Please check the console for details.');
     }
   };
 
-  // Resync metrics from backend
   const handleResync = async () => {
     if (!selectedKeyId || !jobId) return;
-
     const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
     if (!selectedKey) return;
 
     setIsResyncing(true);
-
     try {
-      // Fetch with resync_score=true to trigger backend resync
       const response = await fetch(`/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`, {
         method: 'GET',
-        headers: {
-          'X-API-KEY': selectedKey.key,
-        },
+        headers: { 'X-API-KEY': selectedKey.key },
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || errorData.message || `Failed to resync: ${response.status}`);
       }
-
       const data = await response.json();
       const foundJob = data.data || data;
+      if (!foundJob) throw new Error('Evaluation job not found');
 
-      if (!foundJob) {
-        throw new Error('Evaluation job not found');
-      }
-
-      // Check if the new data has traces
       const newScoreObject = getScoreObject(foundJob);
-      const hasTraces = newScoreObject && isNewScoreObjectV2(newScoreObject);
-
-      // If no traces in new data, show modal and don't update
-      if (!hasTraces) {
+      if (!newScoreObject || !isNewScoreObjectV2(newScoreObject)) {
         setShowNoTracesModal(true);
         setIsResyncing(false);
         return;
       }
 
       setJob(foundJob);
-
-      // Fetch assistant config if assistant_id exists
-      if (foundJob.assistant_id) {
-        fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
-      }
-
-      // Fetch config info if config_id exists
-      if (foundJob.config_id && foundJob.config_version) {
-        fetchConfigInfo(foundJob.config_id, foundJob.config_version, selectedKey.key);
-      }
-
+      if (foundJob.assistant_id) fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
+      if (foundJob.config_id && foundJob.config_version) fetchConfigInfo(foundJob.config_id, foundJob.config_version, selectedKey.key);
       toast.success('Metrics resynced successfully');
     } catch (error: any) {
-      console.error('Resync error:', error);
       toast.error(`Failed to resync metrics: ${error.message || 'Unknown error'}`);
     } finally {
       setIsResyncing(false);
     }
   };
 
-
   if (isLoading) {
     return (
       <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
-          <div className="flex-1 flex items-center justify-center p-6">
+          <div className="flex-1 flex items-center justify-center">
             <Loader size="lg" message="Loading evaluation report..." />
           </div>
         </div>
@@ -460,20 +351,14 @@ export default function EvaluationReport() {
         <div className="flex flex-1 overflow-hidden">
           <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
           <div className="flex-1 flex items-center justify-center">
-            <div className="border rounded-lg p-8 max-w-md" style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5' }}>
-              <p className="text-lg font-medium mb-4" style={{ color: '#dc2626' }}>
+            <div className="text-center">
+              <p className="text-sm mb-4" style={{ color: colors.status.error }}>
                 {error || 'Evaluation job not found'}
               </p>
               <button
                 onClick={() => router.push('/evaluations?tab=evaluations')}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: '#171717',
-                  color: '#ffffff',
-                  transition: 'background-color 0.15s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#404040'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#171717'}
+                className="px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
               >
                 Back to Evaluations
               </button>
@@ -486,348 +371,225 @@ export default function EvaluationReport() {
 
   const scoreObject = getScoreObject(job);
   const hasScore = !!scoreObject;
-  const statusColors = getStatusColor(job.status);
-
-  // Check if we have new score structure (V1, V2, or Basic)
+  const statusColor = getStatusColor(job.status);
   const isNewFormat = hasSummaryScores(scoreObject);
-
-  // Safe access to summary scores
-  const summaryScores = (isNewFormat && scoreObject)
-    ? scoreObject.summary_scores || []
-    : [];
+  const summaryScores = (isNewFormat && scoreObject) ? scoreObject.summary_scores || [] : [];
 
   return (
     <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header with Back Button */}
-          <div className="border-b px-6 py-4" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
-            <div className="flex items-center gap-4">
+          {/* Header */}
+          <div className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-md transition-colors flex-shrink-0"
-                style={{
-                  borderWidth: '1px',
-                  borderColor: colors.border,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+                className="p-1.5 rounded-md flex-shrink-0"
+                style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  {sidebarCollapsed ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
-                  )}
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-
-              {/* Back Button */}
               <button
                 onClick={() => router.push('/evaluations?tab=evaluations')}
-                className="p-2 rounded-md transition-colors flex items-center gap-2"
-                style={{
-                  borderWidth: '1px',
-                  borderColor: colors.border,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
+                className="p-1.5 rounded-md flex-shrink-0"
+                style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                <span className="text-sm font-medium">Back to Evaluations</span>
               </button>
-
-              <div className="flex-1">
-                <h1 className="text-2xl font-semibold" style={{ color: colors.text.primary }}>Evaluation Report</h1>
-                <div className="flex items-center gap-3 mt-1">
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>
-                    {job.run_name}
-                  </p>
-                  {configVersionInfo && (
-                    <>
-                      <span style={{ color: colors.text.secondary }}>•</span>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded" style={{ backgroundColor: '#f0f9ff', borderWidth: '1px', borderColor: '#bae6fd' }}>
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#0369a1' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold" style={{ color: '#0369a1' }}>
-                            {configVersionInfo.name} <span className="font-normal">v{configVersionInfo.version}</span>
-                          </span>
-                          {configVersionInfo.provider && configVersionInfo.model && (
-                            <span className="text-[10px]" style={{ color: '#0369a1', opacity: 0.8 }}>
-                              {configVersionInfo.provider}/{configVersionInfo.model}
-                            </span>
-                          )}
-                          {configVersionInfo.tools && configVersionInfo.tools.length > 0 && (() => {
-                            const knowledgeBaseIds = configVersionInfo.tools
-                              .filter(tool => Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0)
-                              .flatMap(tool => tool.knowledge_base_ids);
-                            return knowledgeBaseIds.length > 0 ? (
-                              <span className="text-[10px]" style={{ color: '#0369a1', opacity: 0.8 }}>
-                                KB: {knowledgeBaseIds.join(', ')}
-                              </span>
-                            ) : null;
-                          })()}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3">
-                {/* Format Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium" style={{ color: colors.text.secondary }}>Format:</span>
-                  <select
-                    value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value as 'row' | 'grouped')}
-                    className="px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-                    style={{
-                      backgroundColor: colors.bg.primary,
-                      borderWidth: '1px',
-                      borderColor: colors.border,
-                      color: colors.text.primary,
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="grouped">Grouped (by Question)</option>
-                    <option value="row">Row (Individual)</option>
-                  </select>
-                </div>
-                <button
-                  onClick={() => setIsConfigModalOpen(true)}
-                  className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderWidth: '1px',
-                    borderColor: colors.border,
-                    color: colors.text.primary
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
-                >
-                  View Config
-                </button>
-                <button
-                  onClick={handleExportCSV}
-                  disabled={!hasScore}
-                  className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: hasScore ? colors.accent.primary : colors.bg.secondary,
-                    color: hasScore ? colors.bg.primary : colors.text.secondary,
-                    cursor: hasScore ? 'pointer' : 'not-allowed',
-                    borderWidth: hasScore ? '0' : '1px',
-                    borderColor: hasScore ? 'transparent' : colors.border
-                  }}
-                  onMouseEnter={(e) => {
-                    if (hasScore) e.currentTarget.style.backgroundColor = colors.accent.hover;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (hasScore) e.currentTarget.style.backgroundColor = colors.accent.primary;
-                  }}
-                >
-                  Export CSV
-                </button>
-              </div>
-            </div>
-            {assistantConfig && (
-              <div className="flex items-center gap-2 mt-3 ml-20">
-                <span className="text-xs px-2 py-1 rounded-md font-medium" style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                  borderWidth: '1px',
-                  borderColor: colors.border
-                }}>
-                  Assistant: {assistantConfig.name}
+              <div className="min-w-0 flex items-center gap-3">
+                <h1 className="text-base font-semibold truncate" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>
+                  {job.run_name}
+                </h1>
+                <span className="flex items-center gap-1 text-xs flex-shrink-0" style={{ color: colors.text.secondary }}>
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                  </svg>
+                  {job.dataset_name}
                 </span>
               </div>
-            )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <div
+                className="inline-flex rounded-lg p-0.5"
+                style={{ backgroundColor: colors.bg.secondary }}
+              >
+                <button
+                  onClick={() => setExportFormat('row')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: exportFormat === 'row' ? colors.bg.primary : 'transparent',
+                    color: exportFormat === 'row' ? colors.text.primary : colors.text.primary,
+                    boxShadow: exportFormat === 'row' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    border: exportFormat === 'row' ? `1px solid ${colors.border}` : '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (exportFormat !== 'row') {
+                      e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.06)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (exportFormat !== 'row') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  Individual Rows
+                </button>
+                <button
+                  onClick={() => setExportFormat('grouped')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: exportFormat === 'grouped' ? colors.bg.primary : 'transparent',
+                    color: exportFormat === 'grouped' ? colors.text.primary : colors.text.primary,
+                    boxShadow: exportFormat === 'grouped' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                    border: exportFormat === 'grouped' ? `1px solid ${colors.border}` : '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (exportFormat !== 'grouped') {
+                      e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,0,0,0.06)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (exportFormat !== 'grouped') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Group by Questions
+                </button>
+              </div>
+              <button
+                onClick={() => setIsConfigModalOpen(true)}
+                className="px-3 py-1.5 rounded-md text-xs font-medium border"
+                style={{ backgroundColor: 'transparent', borderColor: colors.border, color: colors.text.primary }}
+              >
+                View Config
+              </button>
+              <button
+                onClick={handleExportCSV}
+                disabled={!hasScore}
+                className="px-3 py-1.5 rounded-md text-xs font-medium"
+                style={{
+                  backgroundColor: hasScore ? colors.accent.primary : colors.bg.secondary,
+                  color: hasScore ? '#fff' : colors.text.secondary,
+                  cursor: hasScore ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Export CSV
+              </button>
+            </div>
           </div>
 
-          {/* Scrollable Content */}
+          {/* Content */}
           <div className="flex-1 overflow-auto p-6" style={{ backgroundColor: colors.bg.secondary }}>
             <div className="max-w-7xl mx-auto space-y-6">
-              {/* Summary Section */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Summary</h3>
-                </div>
-                <div className="border rounded-lg p-6" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Dataset</div>
-                      <div className="text-base font-medium" style={{ color: colors.text.primary }}>{job.dataset_name}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Status</div>
-                      <div
-                        className="inline-block px-3 py-1 rounded text-sm font-semibold"
-                        style={{
-                          backgroundColor: statusColors.bg,
-                          borderWidth: '1px',
-                          borderColor: statusColors.border,
-                          color: statusColors.text
-                        }}
-                      >
-                        {job.status.toUpperCase()}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t" style={{ borderColor: colors.border }}>
-                    <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Started At</div>
-                      <div className="text-sm" style={{ color: colors.text.primary }}>{formatDate(job.inserted_at)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs uppercase font-semibold mb-2" style={{ color: colors.text.secondary }}>Last Updated At</div>
-                      <div className="text-sm" style={{ color: colors.text.primary }}>{formatDate(job.updated_at)}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Metrics Section */}
+              {/* Metrics */}
               {hasScore && isNewFormat ? (
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Metrics Overview</h3>
-                    </div>
+                    <h3 className="text-sm font-semibold" style={{ color: colors.text.secondary }}>
+                      Metrics Overview
+                    </h3>
                     <button
                       onClick={handleResync}
                       disabled={isResyncing}
-                      className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                      style={{
-                        backgroundColor: isResyncing ? colors.bg.secondary : colors.bg.primary,
-                        borderWidth: '1px',
-                        borderColor: colors.border,
-                        color: isResyncing ? colors.text.secondary : colors.text.primary,
-                        cursor: isResyncing ? 'not-allowed' : 'pointer'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isResyncing) e.currentTarget.style.backgroundColor = colors.bg.secondary;
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isResyncing) e.currentTarget.style.backgroundColor = colors.bg.primary;
-                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#171717] text-white disabled:opacity-50"
                     >
+                      <svg
+                        className={`w-3.5 h-3.5 ${isResyncing ? 'animate-spin' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
                       {isResyncing ? 'Resyncing...' : 'Resync'}
                     </button>
                   </div>
-                  <div className="border rounded-lg p-6" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
-                    {summaryScores.length > 0 ? (
-                      <div className={
-                        summaryScores.length === 2
-                        ? "flex justify-around items-start gap-6"
-                        : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                      }>
-                        {summaryScores.filter(s => s.data_type === 'NUMERIC').map((summary) => (
-                        <div key={summary.name} className="text-center">
-                          <div className="text-xs uppercase font-semibold mb-3" style={{ color: colors.text.secondary }}>{summary.name}</div>
-                          <div className="text-3xl font-bold" style={{ color: colors.accent.primary }}>
+                  {summaryScores.length > 0 ? (
+                    <div className="flex gap-4 flex-wrap">
+                      {summaryScores.filter(s => s.data_type === 'NUMERIC').map((summary) => (
+                        <div
+                          key={summary.name}
+                          className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px]"
+                          style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)' }}
+                        >
+                          <div className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
+                            {summary.name}
+                          </div>
+                          <div className="text-2xl font-bold" style={{ color: colors.text.primary }}>
                             {summary.avg !== undefined ? summary.avg.toFixed(3) : 'N/A'}
                           </div>
-                          {summary.std !== undefined && (
-                            <div className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-                              ±{summary.std.toFixed(3)}
-                            </div>
-                          )}
                           <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                            {summary.std !== undefined && `±${summary.std.toFixed(3)} · `}{summary.total_pairs} pairs
+                          </div>
+                        </div>
+                      ))}
+                      {summaryScores.filter(s => s.data_type === 'CATEGORICAL').map((summary) => (
+                        <div
+                          key={summary.name}
+                          className="rounded-lg px-6 py-5 flex-1 min-w-[180px]"
+                          style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)' }}
+                        >
+                          <div className="text-xs font-medium mb-3 text-center" style={{ color: colors.text.secondary }}>
+                            {summary.name}
+                          </div>
+                          <div className="space-y-1">
+                            {summary.distribution && Object.entries(summary.distribution).map(([key, value]) => (
+                              <div key={key} className="flex justify-between items-center px-3 py-1 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                <span className="text-xs font-medium" style={{ color: colors.text.primary }}>{key}</span>
+                                <span className="text-xs font-bold" style={{ color: colors.text.primary }}>{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-xs mt-2 text-center" style={{ color: colors.text.secondary }}>
                             {summary.total_pairs} pairs
                           </div>
                         </div>
-                        ))}
-                        {summaryScores.filter(s => s.data_type === 'CATEGORICAL').map((summary) => (
-                          <div key={summary.name} className="text-center">
-                            <div className="text-xs uppercase font-semibold mb-3" style={{ color: colors.text.secondary }}>{summary.name}</div>
-                            <div className="text-left">
-                              {summary.distribution && Object.entries(summary.distribution).map(([key, value]) => (
-                                <div key={key} className="flex justify-between items-center px-3 py-1 mb-1 rounded" style={{ backgroundColor: colors.bg.secondary }}>
-                                  <span className="text-sm font-medium" style={{ color: colors.text.primary }}>{key}</span>
-                                  <span className="text-sm font-bold" style={{ color: colors.accent.primary }}>{value}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="text-xs mt-2" style={{ color: colors.text.secondary }}>
-                              {summary.total_pairs} pairs
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4" style={{ color: colors.text.secondary }}>
-                        <p className="text-sm">No summary scores available</p>
-                      </div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-lg p-8 text-center" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)' }}>
+                      <p className="text-sm" style={{ color: colors.text.secondary }}>No summary scores available</p>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5' }}>
-                  <p className="text-sm font-medium" style={{ color: '#dc2626' }}>
-                    {job.error_message ? 'Evaluation Failed' : 'No results available yet'}
+                <div className="rounded-lg p-6 text-center" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)' }}>
+                  <p className="text-sm" style={{ color: job.error_message ? 'hsl(8, 86%, 40%)' : colors.text.secondary }}>
+                    {job.error_message || 'No results available yet'}
                   </p>
-                  {job.error_message && (
-                    <p className="text-xs mt-2" style={{ color: '#dc2626' }}>
-                      {job.error_message}
-                    </p>
-                  )}
                 </div>
               )}
 
-              {/* Detailed Results Section */}
+              {/* Detailed Results */}
               {hasScore && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                    <h3 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Detailed Results</h3>
+                    <h3 className="text-sm font-semibold" style={{ color: colors.text.secondary }}>
+                      Detailed Results
+                    </h3>
                     {isNewFormat && (
-                      <span className="text-sm" style={{ color: colors.text.secondary }}>
+                      <span className="text-xs" style={{ color: colors.text.secondary }}>
                         ({normalizeToIndividualScores(scoreObject).length} items)
                       </span>
                     )}
@@ -860,26 +622,17 @@ export default function EvaluationReport() {
             style={{ backgroundColor: colors.bg.primary }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2" style={{ color: colors.text.primary }}>
-                No Langfuse Traces Available
-              </h3>
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
-                This evaluation does not have Langfuse traces.
-              </p>
-            </div>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: colors.text.primary }}>
+              No Langfuse Traces Available
+            </h3>
+            <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>
+              This evaluation does not have Langfuse traces.
+            </p>
             <div className="flex justify-end">
               <button
                 onClick={() => setShowNoTracesModal(false)}
                 className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: colors.accent.primary,
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.accent.hover}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.accent.primary}
+                style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
               >
                 OK
               </button>

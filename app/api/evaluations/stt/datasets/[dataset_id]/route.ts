@@ -16,18 +16,15 @@ export async function GET(
   }
 
   try {
-    // Get query parameters from the request
+    // Forward all query parameters to the backend
     const { searchParams } = new URL(request.url);
-    const includeSamples = searchParams.get('include_samples');
-    const includeAudio = searchParams.get('include_audio');
-
-    // Build backend URL with query parameters
     const backendParams = new URLSearchParams();
-    if (includeSamples) backendParams.append('include_samples', includeSamples);
-    if (includeAudio) backendParams.append('include_audio', includeAudio);
+    for (const [key, value] of searchParams.entries()) {
+      backendParams.append(key, value);
+    }
+    const queryString = backendParams.toString() ? `?${backendParams.toString()}` : '';
 
-    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${backendParams.toString() ? `?${backendParams.toString()}` : ''
-      }`;
+    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${queryString}`;
 
     const response = await fetch(backendUrlWithParams, {
       headers: {
@@ -42,5 +39,30 @@ export async function GET(
       { success: false, error: 'Failed to fetch dataset', data: null },
       { status: 500 }
     );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ dataset_id: string }> }
+) {
+  const { dataset_id } = await params;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const apiKey = request.headers.get('X-API-KEY');
+
+  if (!apiKey) {
+    return NextResponse.json({ success: false, error: 'Unauthorized: Missing API key' }, { status: 401 });
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}`, {
+      method: 'DELETE',
+      headers: { 'X-API-KEY': apiKey },
+    });
+    let data;
+    try { data = await response.json(); } catch { data = { success: true }; }
+    return NextResponse.json(data, { status: response.ok ? 200 : response.status });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: 'Failed to delete dataset', details: error.message }, { status: 500 });
   }
 }

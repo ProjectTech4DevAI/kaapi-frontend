@@ -557,8 +557,6 @@ function PromptEditorContent() {
         output_guardrails: outputGuardrails.length > 0 ? outputGuardrails : [],
       };
 
-      console.log('[DEBUG] Config blob being sent:', JSON.stringify(configBlob, null, 2));
-
       // Check if updating existing config (same name exists)
       const existingConfig = savedConfigs.find(c => c.name === currentConfigName.trim());
 

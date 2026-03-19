@@ -303,7 +303,6 @@ export function useConfigs(): UseConfigsResult {
         }
 
         if (needsRefresh) {
-          console.log('Cache invalidated, refreshing configs...');
           inMemoryCache = null;
           fetchInProgress.current = false;
           if (refetchRef.current) {

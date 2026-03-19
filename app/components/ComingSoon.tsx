@@ -55,16 +55,10 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
           </h1>
 
           <div
-            className="inline-block px-4 py-2 rounded-full mb-6"
-            style={{
-              backgroundColor: '#fef3c7',
-              borderWidth: '1px',
-              borderColor: '#fde68a'
-            }}
+            className="inline-block px-4 py-2 rounded-full mb-6 bg-[#fef3c7] border border-[#fde68a]"
           >
             <p
-              className="text-sm font-semibold"
-              style={{ color: '#92400e' }}
+              className="text-sm font-semibold text-[#92400e]"
             >
               🚧 Being Brewed
             </p>

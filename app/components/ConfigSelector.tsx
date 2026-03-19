@@ -14,6 +14,8 @@ interface ConfigSelectorProps {
   selectedVersion: number;
   onConfigSelect: (configId: string, version: number) => void;
   disabled?: boolean;
+  /** Compact mode: no outer card, smaller heading — for use inside panels */
+  compact?: boolean;
   // Context to preserve when navigating to Prompt Editor
   datasetId?: string;
   experimentName?: string;
@@ -24,6 +26,7 @@ export default function ConfigSelector({
   selectedVersion,
   onConfigSelect,
   disabled = false,
+  compact = false,
   datasetId,
   experimentName,
 }: ConfigSelectorProps) {
@@ -90,12 +93,12 @@ export default function ConfigSelector({
   if (isLoading) {
     return (
       <div
-        className="border rounded-lg p-6"
-        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+        className={compact ? '' : 'border rounded-lg p-6'}
+        style={compact ? {} : { backgroundColor: colors.bg.primary, borderColor: colors.border }}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-            Select Configuration
+        <div className={`flex items-center gap-2 ${compact ? 'mb-1.5' : 'mb-4'}`}>
+          <h2 className={compact ? 'text-xs font-medium' : 'text-lg font-semibold'} style={{ color: compact ? colors.text.secondary : colors.text.primary }}>
+            {compact ? 'Configuration *' : 'Select Configuration'}
           </h2>
         </div>
         <div
@@ -111,17 +114,16 @@ export default function ConfigSelector({
   if (error) {
     return (
       <div
-        className="border rounded-lg p-6"
-        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+        className={compact ? '' : 'border rounded-lg p-6'}
+        style={compact ? {} : { backgroundColor: colors.bg.primary, borderColor: colors.border }}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-            Select Configuration
+        <div className={`flex items-center gap-2 ${compact ? 'mb-1.5' : 'mb-4'}`}>
+          <h2 className={compact ? 'text-xs font-medium' : 'text-lg font-semibold'} style={{ color: compact ? colors.text.secondary : colors.text.primary }}>
+            {compact ? 'Configuration *' : 'Select Configuration'}
           </h2>
         </div>
         <div
-          className="rounded-lg p-4 text-sm"
-          style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}
+          className="rounded-lg p-4 text-sm bg-[#fef2f2] border border-[#fecaca] text-[#dc2626]"
         >
           {error}
         </div>
@@ -131,18 +133,20 @@ export default function ConfigSelector({
 
   return (
     <div
-      className="border rounded-lg p-6"
-      style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+      className={compact ? '' : 'border rounded-lg p-6'}
+      style={compact ? {} : { backgroundColor: colors.bg.primary, borderColor: colors.border }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className={`flex items-center justify-between ${compact ? 'mb-1.5' : 'mb-4'}`}>
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-            Select Configuration
+          <h2 className={compact ? 'text-xs font-medium' : 'text-lg font-semibold'} style={{ color: compact ? colors.text.secondary : colors.text.primary }}>
+            {compact ? 'Configuration *' : 'Select Configuration'}
           </h2>
-          <span className="text-xs" style={{ color: colors.text.secondary }}>
-            (Required)
-          </span>
+          {!compact && (
+            <span className="text-xs" style={{ color: colors.text.secondary }}>
+              (Required)
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -151,16 +155,10 @@ export default function ConfigSelector({
             style={{
               backgroundColor: colors.bg.primary,
               border: `1px solid ${colors.border}`,
-              color: colors.text.secondary,
+              color: colors.text.primary,
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.bg.secondary;
-              e.currentTarget.style.color = colors.text.primary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.bg.primary;
-              e.currentTarget.style.color = colors.text.secondary;
-            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
           >
             Browse Library
           </button>
@@ -218,31 +216,44 @@ export default function ConfigSelector({
       ) : (
         <>
           {/* Dropdown Selector */}
-          <div className="relative">
+          <div className={`relative ${isDropdownOpen ? 'z-50' : ''}`}>
             {isDropdownOpen ? (
               /* Search Input when dropdown is open */
-              <div
-                className="w-full px-4 py-3 rounded-md flex items-center justify-between"
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search configurations..."
+                className="w-full px-3 py-2 rounded-md border text-sm focus:outline-none"
                 style={{
                   backgroundColor: colors.bg.primary,
-                  border: `1px solid ${colors.accent.primary}`,
+                  borderColor: colors.accent.primary,
+                  color: colors.text.primary,
                 }}
-              >
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search configurations..."
-                  className="flex-1 bg-transparent text-sm focus:outline-none"
-                  style={{ color: colors.text.primary }}
-                  autoFocus
-                />
-                <svg
-                  className="w-5 h-5 flex-shrink-0 ml-2 transition-transform"
+                autoFocus
+              />
+            ) : (
+              /* Button when dropdown is closed */
+              <div className="relative">
+                <button
+                  onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
+                  disabled={disabled}
+                  className="w-full px-3 py-2 pr-8 rounded-md border text-sm text-left transition-colors"
                   style={{
-                    color: colors.text.secondary,
-                    transform: 'rotate(180deg)'
+                    backgroundColor: disabled ? colors.bg.secondary : colors.bg.primary,
+                    borderColor: selectedConfig ? colors.accent.primary : colors.border,
+                    color: selectedConfig ? colors.text.primary : colors.text.secondary,
+                    cursor: disabled ? 'not-allowed' : 'pointer',
                   }}
+                >
+                  {selectedConfig
+                    ? `${selectedConfig.name} (v${selectedConfig.version})`
+                    : '-- Select a configuration --'
+                  }
+                </button>
+                <svg
+                  className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: colors.text.secondary }}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -250,50 +261,6 @@ export default function ConfigSelector({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-            ) : (
-              /* Button when dropdown is closed */
-              <button
-                onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
-                disabled={disabled}
-                className="w-full px-4 py-3 rounded-md text-left flex items-center justify-between transition-colors"
-                style={{
-                  backgroundColor: disabled ? colors.bg.secondary : colors.bg.primary,
-                  border: `1px solid ${selectedConfig ? colors.accent.primary : colors.border}`,
-                  color: colors.text.primary,
-                  cursor: disabled ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {selectedConfig ? (
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{selectedConfig.name}</span>
-                      <span
-                        className="text-xs px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
-                      >
-                        v{selectedConfig.version}
-                      </span>
-                    </div>
-                    <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-                      {selectedConfig.provider}/{selectedConfig.modelName} • T:{selectedConfig.temperature.toFixed(2)}
-                    </div>
-                  </div>
-                ) : (
-                  <span style={{ color: colors.text.secondary }}>Select a configuration...</span>
-                )}
-                <svg
-                  className="w-5 h-5 flex-shrink-0 ml-2 transition-transform"
-                  style={{
-                    color: colors.text.secondary,
-                    transform: 'rotate(0deg)'
-                  }}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
             )}
 
             {/* Dropdown Menu */}

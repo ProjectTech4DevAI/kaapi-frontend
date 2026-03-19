@@ -9,6 +9,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import Sidebar from '@/app/components/Sidebar';
+import TabNavigation from '@/app/components/TabNavigation';
+import StatusBadge from '@/app/components/StatusBadge';
+import Loader, { LoaderBox } from '@/app/components/Loader';
+import { getStatusColor } from '@/app/components/utils';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import ErrorModal from '@/app/components/ErrorModal';
@@ -217,21 +221,6 @@ function AudioPlayerFromUrl({
   );
 }
 
-// Helper function to format status
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'completed':
-      return { bg: colors.bg.primary, border: colors.status.success, text: colors.status.success };
-    case 'failed':
-      return { bg: colors.bg.primary, border: colors.status.error, text: colors.status.error };
-    case 'running':
-    case 'processing':
-      return { bg: colors.bg.primary, border: colors.accent.primary, text: colors.accent.primary };
-    default:
-      return { bg: colors.bg.primary, border: colors.border, text: colors.text.secondary };
-  }
-};
-
 export default function TextToSpeechPage() {
   const toast = useToast();
 
@@ -410,22 +399,6 @@ export default function TextToSpeechPage() {
     }
   }, [apiKeys, activeTab]);
 
-  // Auto-refresh runs every 10 seconds if there are running evaluations
-  useEffect(() => {
-    if (activeTab !== 'evaluations') return;
-
-    const hasRunningEvals = runs.some(run =>
-      run.status === 'running' || run.status === 'processing' || run.status === 'pending'
-    );
-
-    if (hasRunningEvals) {
-      const interval = setInterval(() => {
-        loadRuns();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [runs, activeTab]);
-
   // Add a new text sample
   const addTextSample = () => {
     setTextSamples(prev => [...prev, {
@@ -502,9 +475,7 @@ export default function TextToSpeechPage() {
       await loadDatasets();
     } catch (error) {
       console.error('Failed to create dataset:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while creating the dataset';
-      setErrorModalMessage(errorMessage);
-      setErrorModalOpen(true);
+      toast.error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsCreating(false);
     }
@@ -645,35 +616,32 @@ export default function TextToSpeechPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div
-            className="border-b flex gap-1 px-4"
-            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
-          >
-            <button
-              onClick={() => setActiveTab('datasets')}
-              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
-              style={{
-                borderColor: activeTab === 'datasets' ? colors.accent.primary : 'transparent',
-                color: activeTab === 'datasets' ? colors.accent.primary : colors.text.secondary,
-              }}
-            >
-              Datasets
-            </button>
-            <button
-              onClick={() => setActiveTab('evaluations')}
-              className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
-              style={{
-                borderColor: activeTab === 'evaluations' ? colors.accent.primary : 'transparent',
-                color: activeTab === 'evaluations' ? colors.accent.primary : colors.text.secondary,
-              }}
-            >
-              Evaluations
-            </button>
-          </div>
+          <TabNavigation
+            tabs={[
+              { id: 'datasets', label: 'Datasets' },
+              { id: 'evaluations', label: 'Evaluations' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as Tab)}
+          />
 
           {/* Tab Content */}
-          {activeTab === 'datasets' ? (
+          {apiKeys.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>API key required</p>
+                <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>Add an API key in the Keystore to start creating datasets and running evaluations</p>
+                <a href="/keystore" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}>
+                  Go to Keystore
+                </a>
+              </div>
+            </div>
+          ) : activeTab === 'datasets' ? (
             <DatasetsTab
+              leftPanelWidth={leftPanelWidth}
               datasetName={datasetName}
               setDatasetName={setDatasetName}
               datasetDescription={datasetDescription}
@@ -693,6 +661,9 @@ export default function TextToSpeechPage() {
                 setTextSamples([]);
               }}
               apiKeys={apiKeys}
+              datasets={datasets}
+              loadDatasets={loadDatasets}
+              toast={toast}
             />
           ) : (
             <EvaluationsTab
@@ -736,8 +707,36 @@ export default function TextToSpeechPage() {
   );
 }
 
+// ============ DATASET DESCRIPTION COMPONENT ============
+const TTS_DESCRIPTION_CHAR_LIMIT = 100;
+
+function TTSDatasetDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = description.length > TTS_DESCRIPTION_CHAR_LIMIT;
+
+  return (
+    <div className="mt-2 text-xs leading-relaxed break-words overflow-hidden" style={{ color: colors.text.secondary }}>
+      <span>
+        {isLong && !expanded
+          ? description.slice(0, TTS_DESCRIPTION_CHAR_LIMIT).trimEnd() + '...'
+          : description}
+      </span>
+      {isLong && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          className="mt-1 block text-xs font-medium"
+          style={{ color: colors.text.primary }}
+        >
+          {expanded ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ============ DATASETS TAB COMPONENT ============
 interface DatasetsTabProps {
+  leftPanelWidth: number;
   datasetName: string;
   setDatasetName: (name: string) => void;
   datasetDescription: string;
@@ -753,9 +752,13 @@ interface DatasetsTabProps {
   handleCreateDataset: () => void;
   resetForm: () => void;
   apiKeys: APIKey[];
+  datasets: TTSDataset[];
+  loadDatasets: () => void;
+  toast: ReturnType<typeof useToast>;
 }
 
 function DatasetsTab({
+  leftPanelWidth,
   datasetName,
   setDatasetName,
   datasetDescription,
@@ -771,225 +774,403 @@ function DatasetsTab({
   handleCreateDataset,
   resetForm,
   apiKeys,
+  datasets,
+  loadDatasets,
+  toast,
 }: DatasetsTabProps) {
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [viewModalData, setViewModalData] = useState<{ name: string; headers: string[]; rows: string[][] } | null>(null);
+  const samplesContainerRef = useRef<HTMLDivElement>(null);
+  const prevSamplesCount = useRef(textSamples.length);
+
+  useEffect(() => {
+    if (textSamples.length > prevSamplesCount.current) {
+      setTimeout(() => {
+        samplesContainerRef.current?.scrollTo({ top: samplesContainerRef.current.scrollHeight, behavior: 'smooth' });
+      }, 50);
+    }
+    prevSamplesCount.current = textSamples.length;
+  }, [textSamples.length]);
+
+  const handleViewDataset = async (datasetId: number, datasetName: string) => {
+    if (apiKeys.length === 0) return;
+    setViewingId(datasetId);
+    try {
+      const response = await fetch(`/api/evaluations/tts/datasets/${datasetId}?include_signed_url=true&fetch_content=true`, {
+        headers: { 'X-API-KEY': apiKeys[0].key },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch dataset');
+      }
+      const data = await response.json();
+      const csvText = data?.csv_content;
+      if (!csvText) {
+        toast.error('No data available for this dataset');
+        return;
+      }
+
+      // Split CSV into logical records (quote-aware)
+      const splitCSVRecords = (text: string): string[] => {
+        const records: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === '"') {
+            inQuotes = !inQuotes;
+            current += ch;
+          } else if ((ch === '\n' || (ch === '\r' && text[i + 1] === '\n')) && !inQuotes) {
+            if (current.trim()) records.push(current);
+            current = '';
+            if (ch === '\r') i++; // skip \n in \r\n
+          } else {
+            current += ch;
+          }
+        }
+        if (current.trim()) records.push(current);
+        return records;
+      };
+
+      const lines = splitCSVRecords(csvText);
+      const parseRow = (line: string): string[] => {
+        const result: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] === '"') {
+            if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+            else { inQuotes = !inQuotes; }
+          } else if (line[i] === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += line[i];
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      const headers = lines.length > 0 ? parseRow(lines[0]) : [];
+      const rows = lines.slice(1).map(parseRow);
+
+      setViewModalData({ name: datasetName, headers, rows });
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to view dataset');
+    } finally {
+      setViewingId(null);
+    }
+  };
+
+  const handleDownloadFromModal = () => {
+    if (!viewModalData) return;
+    const csvLines = [viewModalData.headers.join(',')];
+    viewModalData.rows.forEach(row => {
+      csvLines.push(row.map(cell => cell.includes(',') || cell.includes('"') || cell.includes('\n') ? `"${cell.replace(/"/g, '""')}"` : cell).join(','));
+    });
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${viewModalData.name}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+
   return (
-    <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
-      <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto space-y-4">
-          {/* Dataset Information Card */}
-          <div
-            className="border rounded-lg p-4"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <h2 className="text-lg font-semibold mb-3" style={{ color: colors.text.primary }}>
-              Dataset Information
+    <div className="flex-1 flex overflow-hidden">
+      {/* Left Panel - Create Dataset Form */}
+      <div
+        className="flex-shrink-0 border-r flex flex-col overflow-hidden"
+        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+      >
+        <div className="flex-1 overflow-auto p-4 space-y-4">
+          {/* Page Title */}
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              Create New Dataset
             </h2>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Dataset Name *
-                </label>
-                <input
-                  type="text"
-                  value={datasetName}
-                  onChange={e => setDatasetName(e.target.value)}
-                  placeholder="e.g., Hindi News Dataset"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={datasetDescription}
-                  onChange={e => setDatasetDescription(e.target.value)}
-                  placeholder="Optional description"
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                  Language *
-                </label>
-                <select
-                  value={datasetLanguageId}
-                  onChange={e => setDatasetLanguageId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-md text-sm"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                    color: colors.text.primary,
-                  }}
-                >
-                  {languages.map(lang => (
-                    <option key={lang.id} value={lang.id}>{lang.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              Add text samples for speech synthesis evaluation
+            </p>
           </div>
 
-          {/* Text Samples Section */}
-          <div
-            className="border rounded-lg flex flex-col overflow-hidden"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-              ...(textSamples.length > 0 && { flex: 1, minHeight: '400px' }),
-            }}
-          >
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: colors.border }}>
-              <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>
-                Text Samples *
-              </h2>
-              <button
-                onClick={apiKeys.length > 0 ? addTextSample : undefined}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: apiKeys.length > 0 ? colors.accent.primary : colors.bg.secondary,
-                  color: apiKeys.length > 0 ? '#fff' : colors.text.secondary,
-                  cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
-                }}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Sample
-              </button>
-            </div>
+          {/* Name */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Name *
+            </label>
+            <input
+              type="text"
+              value={datasetName}
+              onChange={e => setDatasetName(e.target.value)}
+              placeholder="e.g., Hindi News Dataset"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Description
+            </label>
+            <input
+              type="text"
+              value={datasetDescription}
+              onChange={e => setDatasetDescription(e.target.value)}
+              placeholder="Optional description"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            />
+          </div>
+
+          {/* Language */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              Language *
+            </label>
+            <select
+              value={datasetLanguageId}
+              onChange={e => setDatasetLanguageId(Number(e.target.value))}
+              className="w-full px-3 py-2 border rounded-md text-sm"
+              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+            >
+              {languages.map(lang => (
+                <option key={lang.id} value={lang.id}>{lang.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Text Samples */}
+          <div>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: colors.text.secondary }}>
+              Text Samples *
+            </label>
 
             {textSamples.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-sm" style={{ color: colors.text.secondary }}>
-                  {apiKeys.length > 0 ? 'No samples added yet. Use the "Add Sample" button above.' : 'Add an API key in Keystore first.'}
+              <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: colors.border }}>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  No samples added yet
                 </p>
               </div>
             ) : (
-              <div className="flex-1 overflow-auto p-4">
-                <div className="space-y-3">
-                  {textSamples.map((sample, idx) => (
-                    <div
-                      key={sample.id}
-                      className="border rounded-lg overflow-hidden"
-                      style={{
-                        borderColor: sample.text.trim() ? colors.status.success : colors.border,
-                        backgroundColor: sample.text.trim() ? 'rgba(22, 163, 74, 0.02)' : colors.bg.secondary,
-                      }}
+              <div ref={samplesContainerRef} className="space-y-2" style={{ maxHeight: '300px', overflow: 'auto' }}>
+                {textSamples.map((sample, idx) => (
+                  <div key={sample.id} className="flex gap-2">
+                    <textarea
+                      value={sample.text}
+                      onChange={e => updateSampleText(sample.id, e.target.value)}
+                      placeholder={`Sample ${idx + 1}...`}
+                      rows={2}
+                      className="flex-1 px-3 py-2 border rounded-md text-sm"
+                      style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary, resize: 'vertical' }}
+                    />
+                    <button
+                      onClick={() => removeTextSample(sample.id)}
+                      className="p-1 rounded flex-shrink-0 self-start mt-1.5"
+                      style={{ color: colors.text.secondary }}
                     >
-                      <div className="p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <span
-                              className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-medium"
-                              style={{ backgroundColor: colors.bg.primary, color: colors.text.secondary }}
-                            >
-                              {idx + 1}
-                            </span>
-                            <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
-                              Sample {idx + 1}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => removeTextSample(sample.id)}
-                            className="p-1 rounded flex-shrink-0"
-                            style={{ color: colors.text.secondary }}
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        <textarea
-                          value={sample.text}
-                          onChange={e => updateSampleText(sample.id, e.target.value)}
-                          placeholder="Enter text to be synthesized into speech..."
-                          rows={3}
-                          className="w-full px-3 py-2 border rounded text-sm"
-                          style={{
-                            backgroundColor: colors.bg.primary,
-                            borderColor: colors.border,
-                            color: colors.text.primary,
-                            resize: 'vertical',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-          </div>
 
+            <button
+              onClick={apiKeys.length > 0 ? addTextSample : undefined}
+              className="flex items-center gap-1 text-xs font-medium mt-2"
+              style={{
+                color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
+                cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+              }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Sample
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <button
+            onClick={resetForm}
+            className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ color: colors.text.secondary }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleCreateDataset}
+            disabled={isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0}
+            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium"
+            style={{
+              backgroundColor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0 ? colors.bg.secondary : colors.accent.primary,
+              color: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0 ? colors.text.secondary : '#fff',
+              cursor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isCreating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                Creating...
+              </>
+            ) : (
+              'Create Dataset'
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Fixed Action Buttons at Bottom */}
-      <div
-        className="flex-shrink-0 border-t px-6 py-4 flex gap-3"
-        style={{
-          borderColor: colors.border,
-          backgroundColor: colors.bg.primary,
-          boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.05)'
-        }}
-      >
-        <button
-          onClick={resetForm}
-          disabled={isCreating}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border"
-          style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border,
-            color: colors.text.primary,
-            cursor: isCreating ? 'not-allowed' : 'pointer',
-            opacity: isCreating ? 0.5 : 1,
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateDataset}
-          disabled={isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
-          style={{
-            backgroundColor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0
-              ? colors.bg.secondary
-              : colors.accent.primary,
-            color: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0
-              ? colors.text.secondary
-              : '#fff',
-            cursor: isCreating || !datasetName.trim() || textSamples.filter(s => s.text.trim()).length === 0
-              ? 'not-allowed'
-              : 'pointer',
-          }}
-        >
-          {isCreating ? (
-            <>
-              <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-              Creating Dataset...
-            </>
+      {/* Right Panel - Dataset List */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+        <div className="flex-1 overflow-auto p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>Datasets</h3>
+          </div>
+
+          {datasets.length === 0 ? (
+            <div className="p-16 text-center">
+              <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+              </svg>
+              <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No datasets yet</p>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset using the form on the left</p>
+            </div>
           ) : (
-            'Create Dataset'
+            <div className="space-y-3">
+              {datasets.map((dataset) => (
+                <div
+                  key={dataset.id}
+                  className="rounded-lg overflow-hidden"
+                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)', borderLeft: '3px solid #DCCFC3' }}
+                >
+                  <div className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                          {dataset.name}
+                        </div>
+                        {dataset.description && (
+                          <TTSDatasetDescription description={dataset.description} />
+                        )}
+                        {dataset.dataset_metadata?.sample_count !== undefined && (
+                          <div className="mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                            {dataset.dataset_metadata.sample_count} samples
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleViewDataset(dataset.id, dataset.name)}
+                          disabled={viewingId === dataset.id}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium border"
+                          style={{
+                            backgroundColor: 'transparent',
+                            borderColor: colors.border,
+                            color: colors.text.primary,
+                            opacity: viewingId === dataset.id ? 0.5 : 1,
+                          }}
+                        >
+                          {viewingId === dataset.id ? 'Loading...' : 'View'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
       </div>
+
+      {/* View Dataset Modal */}
+      {viewModalData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setViewModalData(null)}
+        >
+          <div
+            className="rounded-lg shadow-xl flex flex-col"
+            style={{ backgroundColor: colors.bg.primary, width: '80vw', maxWidth: '1000px', maxHeight: '80vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+              <div>
+                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                  {viewModalData.name}
+                </h3>
+                <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                  {viewModalData.rows.length} rows · {viewModalData.headers.length} columns
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadFromModal}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium"
+                  style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
+                >
+                  Download CSV
+                </button>
+                <button
+                  onClick={() => setViewModalData(null)}
+                  className="p-1.5 rounded"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body - Table */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '40px' }}>
+                    </th>
+                    {viewModalData.headers.map((header, i) => (
+                      <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewModalData.rows.map((row, rowIdx) => (
+                    <tr key={rowIdx} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                      <td className="px-4 py-2.5 text-xs" style={{ color: colors.text.secondary }}>
+                        {rowIdx + 1}
+                      </td>
+                      {row.map((cell, cellIdx) => (
+                        <td key={cellIdx} className="px-4 py-2.5" style={{ color: colors.text.primary }}>
+                          <div className="text-sm" style={{ maxHeight: '120px', overflow: 'auto', lineHeight: '1.5' }}>
+                            {cell || <span style={{ color: colors.text.secondary }}>—</span>}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1048,15 +1229,31 @@ function EvaluationsTab({
   toast,
   setActiveTab,
 }: EvaluationsTabProps) {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
+  const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
+  const [scoreInfoPos, setScoreInfoPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string) => {
+  // Close score info tooltip on outside click or scroll
+  useEffect(() => {
+    if (!openScoreInfo) return;
+    const handleClose = () => setOpenScoreInfo(null);
+    document.addEventListener('click', handleClose);
+    document.addEventListener('scroll', handleClose, true);
+    return () => {
+      document.removeEventListener('click', handleClose);
+      document.removeEventListener('scroll', handleClose, true);
+    };
+  }, [openScoreInfo]);
+
+  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string, score?: { [key: string]: any }) => {
     if (apiKeys.length === 0) return;
 
     try {
-      const payload: { is_correct?: boolean | null; comment?: string } = {};
+      const payload: { is_correct?: boolean | null; comment?: string; score?: { [key: string]: any } } = {};
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
+      if (score !== undefined) payload.score = score;
 
       const response = await fetch(`/api/evaluations/tts/results/${resultId}`, {
         method: 'PATCH',
@@ -1070,7 +1267,12 @@ function EvaluationsTab({
       if (!response.ok) throw new Error('Failed to update feedback');
 
       setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}), ...(comment !== undefined && { comment }) } : r
+        r.id === resultId ? {
+          ...r,
+          ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}),
+          ...(comment !== undefined && { comment }),
+          ...(score !== undefined && { score: { ...(r.score || {}), ...score } }),
+        } : r
       ));
     } catch (error) {
       console.error('Failed to update feedback:', error);
@@ -1092,10 +1294,20 @@ function EvaluationsTab({
           }}
         >
           <div className="flex-1 overflow-auto p-4 space-y-4">
+            {/* Page Title */}
+            <div>
+              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                Run New Evaluation
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                Evaluate speech synthesis quality across TTS models
+              </p>
+            </div>
+
             {/* Evaluation Name */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
-                Evaluation Name *
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+                Name *
               </label>
               <input
                 type="text"
@@ -1113,7 +1325,7 @@ function EvaluationsTab({
 
             {/* Model Selection */}
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                 Model *
               </label>
               <select
@@ -1132,14 +1344,11 @@ function EvaluationsTab({
 
             {/* Dataset Selection */}
             <div className="pt-2">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: colors.text.primary }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
                 Select Dataset *
               </label>
               {isLoadingDatasets ? (
-                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                  <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>Loading datasets...</p>
-                </div>
+                <LoaderBox message="Loading datasets..." size="sm" />
               ) : datasets.length === 0 ? (
                 <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
                   <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
@@ -1186,8 +1395,7 @@ function EvaluationsTab({
                       {selectedDataset.name}
                     </div>
                     <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
-                      <div>Samples: {selectedDataset.dataset_metadata?.sample_count || 0}</div>
-                      {selectedDataset.description && <div>Description: {selectedDataset.description}</div>}
+                      <div>{selectedDataset.dataset_metadata?.sample_count || 0} samples</div>
                     </div>
                   </div>
                 </div>
@@ -1237,51 +1445,75 @@ function EvaluationsTab({
       {/* Right Panel - Evaluation Runs List or Results */}
       <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
         <div className="flex-1 overflow-auto p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {selectedRunId !== null && (
-                <button
-                  onClick={() => setSelectedRunId(null)}
-                  className="p-1.5 rounded hover:bg-opacity-10"
-                  style={{ color: colors.text.secondary }}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              {selectedRunId !== null ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedRunId(null)}
+                    className="p-1 rounded"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                    {runs.find(r => r.id === selectedRunId)?.run_name}
+                  </h2>
+                </div>
+              ) : (
+                <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                  Evaluation Runs
+                </h2>
               )}
-              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
-                {selectedRunId !== null
-                  ? `Results - ${runs.find(r => r.id === selectedRunId)?.run_name}`
-                  : 'Evaluation Runs'}
-              </h2>
             </div>
             {selectedRunId === null && (
-              <button
-                onClick={loadRuns}
-                disabled={isLoadingRuns}
-                className="p-1.5 rounded"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <div className="flex items-center gap-2">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-2.5 py-1 rounded-md text-xs font-medium border appearance-none cursor-pointer pr-7"
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                    color: colors.text.primary,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 6px center',
+                  }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
+                  <option value="all">All Status</option>
+                  <option value="completed">Completed</option>
+                  <option value="processing">Processing</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+                <button
+                  onClick={loadRuns}
+                  disabled={isLoadingRuns}
+                  className="p-1.5 rounded"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <svg
+                    className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
 
-          <div className="rounded-lg border overflow-hidden" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+          <div className="rounded-lg overflow-visible" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
-                <div className="p-16 text-center">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading results...</p>
+                <div className="p-16">
+                  <Loader size="md" message="Loading results..." />
                 </div>
               ) : results.length === 0 ? (
                 <div className="p-16 text-center">
@@ -1289,13 +1521,111 @@ function EvaluationsTab({
                   <p className="text-xs" style={{ color: colors.text.secondary }}>This evaluation has no results yet</p>
                 </div>
               ) : (
-                <table className="w-full">
+                <table className="w-full" style={{ minWidth: '900px' }}>
                   <thead>
                     <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '35%' }}>Text</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Audio</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '15%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-semibold" style={{ color: colors.text.secondary, width: '25%' }}>Comment</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '24%' }}>Text</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '18%' }}>Audio</th>
+                      <th className="text-left px-3 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '12%' }}>
+                        <div>
+                          <div>Speech</div>
+                          <div>Naturalness{' '}
+                          <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer align-middle"
+                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setScoreInfoPos({ top: rect.bottom + 4, left: rect.left });
+                              setOpenScoreInfo(openScoreInfo === 'speech_naturalness' ? null : 'speech_naturalness');
+                            }}
+                          >
+                            i
+                          </span>
+                          {openScoreInfo === 'speech_naturalness' && (
+                            <div
+                              className="fixed z-50 rounded-lg shadow-lg border text-xs"
+                              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '340px', top: scoreInfoPos.top, left: scoreInfoPos.left }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="p-3">
+                                <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>Speech Naturalness</div>
+                                <p className="mb-3" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>
+                                  Assesses how human-like the generated speech sounds.
+                                </p>
+                                <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Scoring</div>
+                                <div className="space-y-2 p-2 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.success, width: '62px' }}>High:</span>
+                                    <span style={{ color: colors.text.primary }}>Very human-like, natural flow with appropriate pauses and inflections.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: '#ca8a04', width: '62px' }}>Medium:</span>
+                                    <span style={{ color: colors.text.primary }}>Some human qualities but with occasional robotic or awkward elements.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.error, width: '62px' }}>Low:</span>
+                                    <span style={{ color: colors.text.primary }}>Clearly robotic or artificial, with choppy or monotone speech.</span>
+                                  </div>
+                                </div>
+                                <div className="mt-2 font-semibold" style={{ color: colors.status.success }}>Higher is better.</div>
+                              </div>
+                            </div>
+                          )}
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-left px-3 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '12%' }}>
+                        <div>
+                          <div>Pronunciation</div>
+                          <div>Accuracy{' '}
+                          <span
+                            className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer align-middle"
+                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setScoreInfoPos({ top: rect.bottom + 4, left: rect.left });
+                              setOpenScoreInfo(openScoreInfo === 'pronunciation_accuracy' ? null : 'pronunciation_accuracy');
+                            }}
+                          >
+                            i
+                          </span>
+                          {openScoreInfo === 'pronunciation_accuracy' && (
+                            <div
+                              className="fixed z-50 rounded-lg shadow-lg border text-xs"
+                              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '340px', top: scoreInfoPos.top, left: scoreInfoPos.left }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="p-3">
+                                <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>Pronunciation Accuracy</div>
+                                <p className="mb-3" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>
+                                  Evaluates how clearly and correctly words are pronounced in the TTS output.
+                                </p>
+                                <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Scoring</div>
+                                <div className="space-y-2 p-2 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.success, width: '62px' }}>High:</span>
+                                    <span style={{ color: colors.text.primary }}>All words are pronounced clearly and correctly.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: '#ca8a04', width: '62px' }}>Medium:</span>
+                                    <span style={{ color: colors.text.primary }}>1-2 words are mispronounced or unclear.</span>
+                                  </div>
+                                  <div className="flex">
+                                    <span className="font-semibold shrink-0" style={{ color: colors.status.error, width: '62px' }}>Low:</span>
+                                    <span style={{ color: colors.text.primary }}>3 or more words are mispronounced or difficult to understand.</span>
+                                  </div>
+                                </div>
+                                <div className="mt-2 font-semibold" style={{ color: colors.status.success }}>Higher is better.</div>
+                              </div>
+                            </div>
+                          )}
+                          </div>
+                        </div>
+                      </th>
+                      <th className="text-left px-3 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '12%' }}>Is Correct</th>
+                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '18%' }}>Comment</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1329,7 +1659,109 @@ function EvaluationsTab({
                               </span>
                             )}
                           </td>
-                          <td className="px-4 py-3 text-sm align-top">
+                          {(() => {
+                            const snVal = result.score?.['Speech Naturalness'] || result.score?.speech_naturalness || '';
+                            const normalizedSn = snVal ? snVal.charAt(0).toUpperCase() + snVal.slice(1).toLowerCase() : '';
+                            return (
+                              <td className="px-3 py-3 text-sm align-top">
+                                <select
+                                  value={normalizedSn}
+                                  onChange={(e) => {
+                                    const value = e.target.value || null;
+                                    const newScore = { ...(result.score || {}), 'Speech Naturalness': value };
+                                    setResults(prev => prev.map(r =>
+                                      r.id === result.id ? { ...r, score: newScore } : r
+                                    ));
+                                    updateFeedback(result.id, result.is_correct, undefined, { 'Speech Naturalness': value });
+                                  }}
+                                  disabled={result.status !== 'SUCCESS'}
+                                  className="w-full px-2 py-1.5 border rounded text-xs font-medium"
+                                  style={{
+                                    backgroundColor: !normalizedSn
+                                      ? colors.bg.primary
+                                      : normalizedSn === 'High'
+                                        ? 'rgba(22, 163, 74, 0.1)'
+                                        : normalizedSn === 'Medium'
+                                          ? 'rgba(234, 179, 8, 0.1)'
+                                          : 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: !normalizedSn
+                                      ? colors.border
+                                      : normalizedSn === 'High'
+                                        ? colors.status.success
+                                        : normalizedSn === 'Medium'
+                                          ? '#eab308'
+                                          : colors.status.error,
+                                    color: !normalizedSn
+                                      ? colors.text.primary
+                                      : normalizedSn === 'High'
+                                        ? colors.status.success
+                                        : normalizedSn === 'Medium'
+                                          ? '#ca8a04'
+                                          : colors.status.error,
+                                    cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
+                                    opacity: result.status === 'SUCCESS' ? 1 : 0.5,
+                                  }}
+                                >
+                                  <option value="">-</option>
+                                  <option value="High">High</option>
+                                  <option value="Medium">Medium</option>
+                                  <option value="Low">Low</option>
+                                </select>
+                              </td>
+                            );
+                          })()}
+                          {(() => {
+                            const paVal = result.score?.['Pronunciation Accuracy'] || result.score?.pronunciation_accuracy || '';
+                            const normalizedPa = paVal ? paVal.charAt(0).toUpperCase() + paVal.slice(1).toLowerCase() : '';
+                            return (
+                              <td className="px-3 py-3 text-sm align-top">
+                                <select
+                                  value={normalizedPa}
+                                  onChange={(e) => {
+                                    const value = e.target.value || null;
+                                    const newScore = { ...(result.score || {}), 'Pronunciation Accuracy': value };
+                                    setResults(prev => prev.map(r =>
+                                      r.id === result.id ? { ...r, score: newScore } : r
+                                    ));
+                                    updateFeedback(result.id, result.is_correct, undefined, { 'Pronunciation Accuracy': value });
+                                  }}
+                                  disabled={result.status !== 'SUCCESS'}
+                                  className="w-full px-2 py-1.5 border rounded text-xs font-medium"
+                                  style={{
+                                    backgroundColor: !normalizedPa
+                                      ? colors.bg.primary
+                                      : normalizedPa === 'High'
+                                        ? 'rgba(22, 163, 74, 0.1)'
+                                        : normalizedPa === 'Medium'
+                                          ? 'rgba(234, 179, 8, 0.1)'
+                                          : 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: !normalizedPa
+                                      ? colors.border
+                                      : normalizedPa === 'High'
+                                        ? colors.status.success
+                                        : normalizedPa === 'Medium'
+                                          ? '#eab308'
+                                          : colors.status.error,
+                                    color: !normalizedPa
+                                      ? colors.text.primary
+                                      : normalizedPa === 'High'
+                                        ? colors.status.success
+                                        : normalizedPa === 'Medium'
+                                          ? '#ca8a04'
+                                          : colors.status.error,
+                                    cursor: result.status === 'SUCCESS' ? 'pointer' : 'not-allowed',
+                                    opacity: result.status === 'SUCCESS' ? 1 : 0.5,
+                                  }}
+                                >
+                                  <option value="">-</option>
+                                  <option value="High">High</option>
+                                  <option value="Medium">Medium</option>
+                                  <option value="Low">Low</option>
+                                </select>
+                              </td>
+                            );
+                          })()}
+                          <td className="px-3 py-3 text-sm align-top">
                             <select
                               value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
                               onChange={(e) => {
@@ -1337,7 +1769,7 @@ function EvaluationsTab({
                                 updateFeedback(result.id, value === '' ? null : value === 'true');
                               }}
                               disabled={result.status !== 'SUCCESS'}
-                              className="px-3 py-1.5 border rounded text-xs font-medium"
+                              className="w-full px-2 py-1.5 border rounded text-xs font-medium"
                               style={{
                                 backgroundColor: result.is_correct === null
                                   ? colors.bg.primary
@@ -1399,9 +1831,8 @@ function EvaluationsTab({
             ) : (
               // Runs List View
               isLoadingRuns ? (
-                <div className="p-16 text-center">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>Loading evaluation runs...</p>
+                <div className="p-16">
+                  <Loader size="md" message="Loading evaluation runs..." />
                 </div>
               ) : runs.length === 0 ? (
                 <div className="p-16 text-center">
@@ -1411,61 +1842,72 @@ function EvaluationsTab({
                   <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
                   <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
                 </div>
-              ) : (
-                <div className="p-3 space-y-3">
-                  {runs.map((run) => {
-                    const statusColors = getStatusColor(run.status);
+              ) : (() => {
+                const filteredRuns = statusFilter === 'all'
+                  ? runs
+                  : runs.filter(r => r.status.toLowerCase() === statusFilter);
+                return filteredRuns.length > 0 ? (
+                <div className="p-4 space-y-3">
+                  {filteredRuns.map((run) => {
                     const isCompleted = run.status.toLowerCase() === 'completed';
+                    const statusColor = getStatusColor(run.status);
                     return (
                       <div
                         key={run.id}
-                        className="border rounded-lg p-5"
+                        className="rounded-lg overflow-hidden"
                         style={{
-                          borderColor: colors.border,
-                          backgroundColor: colors.bg.secondary,
+                          backgroundColor: colors.bg.primary,
+                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+                          borderLeft: `3px solid ${statusColor.border}`,
                         }}
                       >
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div className="flex-1">
-                            <div className="text-base font-medium" style={{ color: colors.text.primary }}>
-                              {run.run_name}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-6 text-sm" style={{ color: colors.text.secondary }}>
-                            <div>
-                              <span className="font-medium">Dataset:</span> {run.dataset_name}
-                            </div>
-                            {run.models && run.models.length > 0 && (
-                              <div>
-                                <span className="font-medium">Model:</span> {run.models.join(', ')}
+                        <div className="px-5 py-4">
+                          {/* Row 1: Run Name + Status */}
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                                {run.run_name}
                               </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
+                              {/* Error message */}
+                              {run.error_message && (
+                                <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
+                                  {run.error_message}
+                                </div>
+                              )}
+                            </div>
                             <span
-                              className="inline-flex items-center px-3 py-1.5 rounded text-xs font-medium"
-                              style={{
-                                backgroundColor: statusColors.bg,
-                                borderWidth: '1px',
-                                borderColor: statusColors.border,
-                                color: statusColors.text,
-                              }}
+                              className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
+                              style={{ backgroundColor: statusColor.bg, color: statusColor.text }}
                             >
-                              {run.status.toUpperCase()}
+                              {run.status}
                             </span>
+                          </div>
+
+                          {/* Row 2: Dataset + Models (left) | Actions (right) */}
+                          <div className="flex items-center justify-between gap-4 mt-3">
+                            <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
+                              <span className="flex items-center gap-1.5">
+                                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                                </svg>
+                                {run.dataset_name}
+                              </span>
+                              {run.models && run.models.length > 0 && (
+                                <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+                                  {run.models.join(', ')}
+                                </span>
+                              )}
+                            </div>
                             <button
                               onClick={isCompleted ? () => loadResults(run.id) : undefined}
                               disabled={!isCompleted}
-                              className="px-4 py-2 rounded-lg text-sm font-medium border"
+                              className="px-3 py-1.5 rounded-lg text-xs font-medium border flex-shrink-0"
                               style={{
-                                backgroundColor: isCompleted ? colors.bg.primary : colors.bg.secondary,
+                                backgroundColor: 'transparent',
                                 borderColor: colors.border,
                                 color: isCompleted ? colors.text.primary : colors.text.secondary,
                                 cursor: isCompleted ? 'pointer' : 'not-allowed',
-                                opacity: isCompleted ? 1 : 0.6,
+                                opacity: isCompleted ? 1 : 0.5,
                               }}
                             >
                               View Results
@@ -1476,7 +1918,13 @@ function EvaluationsTab({
                     );
                   })}
                 </div>
-              )
+                ) : (
+                  <div className="p-16 text-center">
+                    <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                  </div>
+                );
+              })()
             )}
           </div>
         </div>

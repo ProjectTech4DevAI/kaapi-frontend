@@ -80,7 +80,6 @@ export default function DocumentPage() {
       }
 
       const data = await response.json();
-      console.log('Fetched documents:', data); // Debug log
       const documentList = Array.isArray(data) ? data : (data.data || []);
 
       // Load file sizes from localStorage
@@ -95,7 +94,6 @@ export default function DocumentPage() {
         new Date(b.inserted_at || 0).getTime() - new Date(a.inserted_at || 0).getTime()
       );
 
-      console.log('Document list:', sortedDocuments); // Debug log
       setDocuments(sortedDocuments);
     } catch (err: any) {
       console.error('Failed to fetch documents:', err);
@@ -137,8 +135,6 @@ export default function DocumentPage() {
       }
 
       const data = await response.json();
-      console.log('Document uploaded successfully:', data);
-
       // Store file size in localStorage for the uploaded document
       if (selectedFile && data.data?.id) {
         const fileSizeMap = JSON.parse(localStorage.getItem('document_file_sizes') || '{}');
@@ -643,8 +639,6 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
     );
   }
 
-  console.log('Document preview:', document); // Debug log
-
   return (
     <div className="h-full overflow-y-auto p-8" style={{ backgroundColor: 'hsl(0, 0%, 98%)' }}>
       <div className="max-w-4xl mx-auto">
@@ -702,10 +696,8 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                     alt={document.fname}
                     className="max-w-full h-auto rounded"
                     onError={() => {
-                      console.error('Failed to load image:', document.signed_url);
                       setImageLoadError(true);
                     }}
-                    onLoad={() => console.log('Image loaded successfully')}
                   />
                 )
               ) : getMimeType(document.fname) === 'application/pdf' ? (
@@ -714,7 +706,6 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                   className="w-full h-[700px] rounded border"
                   title={document.fname}
                   style={{ borderColor: 'hsl(0, 0%, 85%)' }}
-                  onLoad={() => console.log('PDF iframe loaded successfully')}
                 />
               ) : getMimeType(document.fname).startsWith('text/') ? (
                 <div className="border rounded p-4 min-h-[400px]" style={{ backgroundColor: 'hsl(0, 0%, 98%)', borderColor: 'hsl(0, 0%, 85%)', color: 'hsl(330, 3%, 19%)' }}>
@@ -724,7 +715,6 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                     className="w-full h-[500px] rounded border"
                     title={document.fname}
                     style={{ borderColor: 'hsl(0, 0%, 85%)', backgroundColor: 'white' }}
-                    onLoad={() => console.log('Text file loaded successfully')}
                   />
                 </div>
               ) : (

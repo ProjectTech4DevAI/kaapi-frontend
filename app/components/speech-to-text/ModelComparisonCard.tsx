@@ -116,8 +116,7 @@ export default function ModelComparisonCard({
             {/* Best Badge - small */}
             {isBest && (
               <span
-                className="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
-                style={{ backgroundColor: '#dcfce7', color: '#15803d' }}
+                className="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 bg-[#dcfce7] text-[#15803d]"
               >
                 Best
               </span>
@@ -134,7 +133,7 @@ export default function ModelComparisonCard({
             )}
 
             {status === 'error' && (
-              <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-[#fee2e2] text-[#dc2626]">
                 Error
               </span>
             )}

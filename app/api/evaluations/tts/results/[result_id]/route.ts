@@ -5,7 +5,7 @@ export async function GET(
   { params }: { params: Promise<{ result_id: string }> }
 ) {
   const { result_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   try {
@@ -30,7 +30,7 @@ export async function PATCH(
   { params }: { params: Promise<{ result_id: string }> }
 ) {
   const { result_id } = await params;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
 
   if (!apiKey) {

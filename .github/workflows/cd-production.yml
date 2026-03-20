@@ -2,8 +2,8 @@ name: Deploy Kaapi to EC2 Production
 
 on:
   push:
-    branches:
-      - release
+    tags:
+      - "v*" # Deploy only when tags like v1.0.0, v2.1.0, etc., are created
 
 jobs:
   deploy:

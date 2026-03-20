@@ -8,7 +8,7 @@
  */
 
 "use client"
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { colors } from '@/app/lib/colors';
@@ -37,6 +37,7 @@ function PromptEditorContent() {
   const urlVersion = searchParams.get('version');
   const showHistory = searchParams.get('history') === 'true';
   const isNewConfig = searchParams.get('new') === 'true';
+  const urlValidators = searchParams.get('validators'); // Comma-separated validator_config_ids
 
   // Evaluation context to preserve (when coming from evaluations page)
   const urlDatasetId = searchParams.get('dataset');
@@ -82,6 +83,10 @@ function PromptEditorContent() {
   // History viewing state
   const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(null);
   const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
+
+  // Guardrails validators state
+  const [savedValidators, setSavedValidators] = useState<any[]>([]);
+  const isLoadingFromUrl = useRef<boolean>(false);
 
   // Get API key from localStorage
   const getApiKey = (): string | null => {
@@ -138,7 +143,9 @@ function PromptEditorContent() {
       if (targetConfig) {
         // Load the config
         setCurrentContent(targetConfig.promptContent);
-        setCurrentConfigBlob({
+
+        // Parse config blob to extract guardrails if present
+        const loadedConfigBlob: any = {
           completion: {
             provider: targetConfig.provider as any,
             params: {
@@ -148,7 +155,27 @@ function PromptEditorContent() {
               tools: targetConfig.tools || [],
             },
           },
-        });
+        };
+
+        // Check if this config has guardrails in the blob
+        // Note: SavedConfig type needs to be checked for these fields
+        const savedConfig = targetConfig as any;
+
+        if (savedConfig.input_guardrails || savedConfig.output_guardrails) {
+          console.log('[DEBUG] Found guardrails in saved config');
+          // Store guardrails in the blob for later saving
+          if (savedConfig.input_guardrails) {
+            loadedConfigBlob.input_guardrails = savedConfig.input_guardrails;
+          }
+          if (savedConfig.output_guardrails) {
+            loadedConfigBlob.output_guardrails = savedConfig.output_guardrails;
+          }
+        } else {
+          console.log('[DEBUG] No guardrails found in saved config');
+        }
+
+        console.log('[DEBUG] Final loadedConfigBlob:', loadedConfigBlob);
+        setCurrentConfigBlob(loadedConfigBlob);
         setProvider(targetConfig.provider);
         setTemperature(targetConfig.temperature);
         setSelectedConfigId(targetConfig.id);
@@ -164,6 +191,262 @@ function PromptEditorContent() {
       }
     }
   }, [initialLoadComplete, savedConfigs, urlConfigId, urlVersion, showHistory, isNewConfig]);
+
+  // Load validators from config blob
+  useEffect(() => {
+    const loadValidators = async () => {
+      // Skip if we're currently loading from URL parameters
+      if (isLoadingFromUrl.current) {
+        console.log('[ValidatorLoad] Skipping - loading from URL');
+        return;
+      }
+
+      try {
+        // Check if the config blob has guardrails
+        const inputGuardrails = (currentConfigBlob as any).input_guardrails || [];
+        const outputGuardrails = (currentConfigBlob as any).output_guardrails || [];
+
+        if (inputGuardrails.length === 0 && outputGuardrails.length === 0) {
+          setSavedValidators([]);
+          return;
+        }
+
+        const apiKey = getApiKey();
+        if (!apiKey) {
+          console.error('[ValidatorLoad] No API key found');
+          setSavedValidators([]);
+          return;
+        }
+
+        // Get organization_id and project_id
+        const verifyResponse = await fetch('/api/apikeys/verify', {
+          method: 'GET',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!verifyResponse.ok) {
+          console.error('[ValidatorLoad] Failed to verify API key');
+          setSavedValidators([]);
+          return;
+        }
+
+        const verifyData = await verifyResponse.json();
+        const organizationId = verifyData.data?.organization_id;
+        const projectId = verifyData.data?.project_id;
+
+        if (!organizationId || !projectId) {
+          console.error('[ValidatorLoad] Could not retrieve organization or project ID');
+          setSavedValidators([]);
+          return;
+        }
+
+        const queryParams = new URLSearchParams({
+          organization_id: organizationId,
+          project_id: projectId,
+        });
+
+        // Fetch all validators from both input and output guardrails
+        const allGuardrails = [
+          ...inputGuardrails.map((g: any) => ({ ...g, stage: 'input' })),
+          ...outputGuardrails.map((g: any) => ({ ...g, stage: 'output' })),
+        ];
+
+        const validatorPromises = allGuardrails.map(async (guardrail: any) => {
+          try {
+            const response = await fetch(
+              `/api/guardrails/validators/configs/${guardrail.validator_config_id}?${queryParams.toString()}`
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data) {
+                // Map backend response to validator format
+                return {
+                  id: data.data.type,
+                  name: data.data.type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                  description: 'Configured guardrail',
+                  enabled: data.data.is_enabled !== undefined ? data.data.is_enabled : true,
+                  validator_config_id: guardrail.validator_config_id,
+                  config: {
+                    stage: guardrail.stage,
+                    type: data.data.type,
+                    ...data.data,
+                  }
+                };
+              }
+            }
+          } catch (error) {
+            console.error(`[ValidatorLoad] Failed to fetch validator ${guardrail.validator_config_id}:`, error);
+          }
+          return null;
+        });
+
+        const fetchedValidators = await Promise.all(validatorPromises);
+        const validValidators = fetchedValidators.filter(v => v !== null);
+        console.log('[ValidatorLoad] Loaded validators from config blob:', validValidators.length, validValidators);
+        setSavedValidators(validValidators);
+      } catch (e) {
+        console.error('Failed to load validators:', e);
+        setSavedValidators([]);
+      }
+    };
+
+    loadValidators();
+  }, [currentConfigBlob]);
+
+  // Handle validators from URL query param (when returning from safety-guardrails page)
+  useEffect(() => {
+    const fetchValidatorsFromUrl = async () => {
+      // If urlValidators is null/undefined, don't do anything (not returning from guardrails page)
+      // If urlValidators is empty string, it means all validators were removed
+      if (urlValidators === null || urlValidators === undefined) {
+        isLoadingFromUrl.current = false;
+        return;
+      }
+
+      // Set flag to prevent config blob effect from interfering
+      isLoadingFromUrl.current = true;
+
+      // Handle empty validators (all removed)
+      if (urlValidators === '') {
+        setSavedValidators([]);
+        setCurrentConfigBlob(prev => {
+          const updated = { ...prev };
+          delete (updated as any).input_guardrails;
+          delete (updated as any).output_guardrails;
+          return updated;
+        });
+        console.log('[ValidatorURL] All validators removed from config');
+        // Reset flag after a longer delay to ensure config blob updates are complete
+        setTimeout(() => {
+          isLoadingFromUrl.current = false;
+          console.log('[ValidatorURL] Reset loading flag');
+        }, 500);
+        return;
+      }
+
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        console.error('[ValidatorURL] No API key found');
+        return;
+      }
+
+      try {
+        // Get organization_id and project_id
+        const verifyResponse = await fetch('/api/apikeys/verify', {
+          method: 'GET',
+          headers: {
+            'X-API-KEY': apiKey,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!verifyResponse.ok) {
+          console.error('[ValidatorURL] Failed to verify API key');
+          return;
+        }
+
+        const verifyData = await verifyResponse.json();
+        const organizationId = verifyData.data?.organization_id;
+        const projectId = verifyData.data?.project_id;
+
+        if (!organizationId || !projectId) {
+          console.error('[ValidatorURL] Could not retrieve organization or project ID');
+          return;
+        }
+
+        // Parse validator IDs from URL
+        const validatorIds = urlValidators.split(',').filter(id => id.trim());
+
+        const queryParams = new URLSearchParams({
+          organization_id: organizationId,
+          project_id: projectId,
+        });
+
+        // Fetch each validator from backend
+        const validatorPromises = validatorIds.map(async (validatorId) => {
+          try {
+            const response = await fetch(
+              `/api/guardrails/validators/configs/${validatorId}?${queryParams.toString()}`
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success && data.data) {
+                // Map backend response to validator format
+                return {
+                  id: data.data.type,
+                  name: data.data.type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+                  description: 'Configured guardrail',
+                  enabled: data.data.is_enabled !== undefined ? data.data.is_enabled : true,
+                  validator_config_id: validatorId,
+                  config: {
+                    stage: data.data.stage || 'input',
+                    type: data.data.type,
+                    ...data.data,
+                  }
+                };
+              }
+            }
+          } catch (error) {
+            console.error(`[ValidatorURL] Failed to fetch validator ${validatorId}:`, error);
+          }
+          return null;
+        });
+
+        const fetchedValidators = await Promise.all(validatorPromises);
+        const validValidators = fetchedValidators.filter(v => v !== null);
+
+        console.log('[ValidatorURL] Fetched validators from URL:', validValidators.length, validValidators);
+
+        if (validValidators.length > 0) {
+          setSavedValidators(validValidators);
+
+          // IMPORTANT: Update the currentConfigBlob with the new validators
+          // This ensures the changes are detected and can be saved as a new version
+          const inputGuardrails = validValidators
+            .filter(v => (v.config?.stage || 'input') === 'input' && v.validator_config_id)
+            .map(v => ({ validator_config_id: v.validator_config_id }));
+
+          const outputGuardrails = validValidators
+            .filter(v => v.config?.stage === 'output' && v.validator_config_id)
+            .map(v => ({ validator_config_id: v.validator_config_id }));
+
+          setCurrentConfigBlob(prev => ({
+            ...prev,
+            ...(inputGuardrails.length > 0 ? { input_guardrails: inputGuardrails } : {}),
+            ...(outputGuardrails.length > 0 ? { output_guardrails: outputGuardrails } : {}),
+          }));
+
+          console.log('[ValidatorURL] Updated config blob with validators from URL');
+        } else {
+          // No validators in URL - remove guardrails from config blob
+          setSavedValidators([]);
+          setCurrentConfigBlob(prev => {
+            const updated = { ...prev };
+            delete (updated as any).input_guardrails;
+            delete (updated as any).output_guardrails;
+            return updated;
+          });
+          console.log('[ValidatorURL] Removed all guardrails from config blob');
+        }
+
+        // Reset flag after a longer delay to ensure config blob updates are complete
+        setTimeout(() => {
+          isLoadingFromUrl.current = false;
+          console.log('[ValidatorURL] Reset loading flag');
+        }, 500);
+      } catch (error) {
+        console.error('[ValidatorURL] Error fetching validators from URL:', error);
+        isLoadingFromUrl.current = false;
+      }
+    };
+
+    fetchValidatorsFromUrl();
+  }, [urlValidators]);
 
   // Detect unsaved changes
   useEffect(() => {
@@ -181,7 +464,9 @@ function PromptEditorContent() {
 
     // Compare current state with selected config
     const promptChanged = currentContent !== selectedConfig.promptContent;
-    const configChanged = hasConfigChanges(currentConfigBlob, {
+
+    // Build comparison config including guardrails if present
+    const savedConfigForComparison: any = {
       completion: {
         provider: selectedConfig.provider as any,
         params: {
@@ -191,10 +476,21 @@ function PromptEditorContent() {
           tools: selectedConfig.tools || [],
         },
       },
-    });
+    };
+
+    // Include guardrails from saved config for proper comparison
+    const savedConfigAny = selectedConfig as any;
+    if (savedConfigAny.input_guardrails) {
+      savedConfigForComparison.input_guardrails = savedConfigAny.input_guardrails;
+    }
+    if (savedConfigAny.output_guardrails) {
+      savedConfigForComparison.output_guardrails = savedConfigAny.output_guardrails;
+    }
+
+    const configChanged = hasConfigChanges(currentConfigBlob, savedConfigForComparison);
 
     setHasUnsavedChanges(promptChanged || configChanged);
-  }, [selectedConfigId, currentContent, currentConfigBlob, provider, temperature, tools, savedConfigs]);
+  }, [selectedConfigId, currentContent, currentConfigBlob, provider, temperature, tools, savedConfigs, savedValidators]);
 
   // Save current configuration
   const handleSaveConfig = async () => {
@@ -229,6 +525,16 @@ function PromptEditorContent() {
         }
       });
 
+      // IMPORTANT: Only include validators that are enabled (toggle is ON)
+      const inputGuardrails = savedValidators
+        .filter(v => (v.config?.stage || 'input') === 'input' && v.validator_config_id && v.enabled !== false)
+        .map(v => ({ validator_config_id: v.validator_config_id! }));
+
+      const outputGuardrails = savedValidators
+        .filter(v => v.config?.stage === 'output' && v.validator_config_id && v.enabled !== false)
+        .map(v => ({ validator_config_id: v.validator_config_id! }));
+
+
       const configBlob: ConfigBlob = {
         completion: {
           provider: currentConfigBlob.completion.provider,
@@ -244,6 +550,11 @@ function PromptEditorContent() {
             }),
           },
         },
+
+        // IMPORTANT: Always send guardrails fields - use empty arrays if no validators
+        // This ensures the backend removes validators that were toggled off
+        input_guardrails: inputGuardrails.length > 0 ? inputGuardrails : [],
+        output_guardrails: outputGuardrails.length > 0 ? outputGuardrails : [],
       };
 
       // Check if updating existing config (same name exists)
@@ -336,7 +647,9 @@ function PromptEditorContent() {
     if (!config) return;
 
     setCurrentContent(config.promptContent);
-    setCurrentConfigBlob({
+
+    // Build config blob with guardrails if present
+    const loadedConfigBlob: any = {
       completion: {
         provider: config.provider as any,
         type: config.type,
@@ -347,7 +660,18 @@ function PromptEditorContent() {
           tools: config.tools || [],
         },
       },
-    });
+    };
+
+    // Include guardrails if present
+    const savedConfig = config as any;
+    if (savedConfig.input_guardrails) {
+      loadedConfigBlob.input_guardrails = savedConfig.input_guardrails;
+    }
+    if (savedConfig.output_guardrails) {
+      loadedConfigBlob.output_guardrails = savedConfig.output_guardrails;
+    }
+
+    setCurrentConfigBlob(loadedConfigBlob);
     setProvider(config.provider);
     setTemperature(config.temperature);
     setSelectedConfigId(config.id);
@@ -441,6 +765,7 @@ function PromptEditorContent() {
                     isSaving={isSaving}
                     collapsed={!showConfigPane}
                     onToggle={() => setShowConfigPane(!showConfigPane)}
+                    savedValidators={savedValidators}
                   />
                 </div>
               </div>

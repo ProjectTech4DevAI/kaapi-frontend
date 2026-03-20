@@ -44,6 +44,9 @@ export interface ConfigBlob {
       max_num_results?: number;
     };
   };
+  // Guardrails validators
+  input_guardrails?: Array<{ validator_config_id: string }>;
+  output_guardrails?: Array<{ validator_config_id: string }>;
 }
 
 export interface Config {

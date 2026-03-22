@@ -1,7 +1,5 @@
-import React from 'react';
 import { colors } from '@/app/lib/colors';
-import { ConfigBlob } from '@/app/configurations/prompt-editor/types';
-import { SavedConfig } from '@/app/lib/useConfigs';
+import { SavedConfig } from '@/app/lib/types/configs';
 
 interface ConfigDiffPaneProps {
   selectedCommit: SavedConfig;

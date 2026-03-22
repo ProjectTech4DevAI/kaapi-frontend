@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 import { ConfigBlob, Tool } from '@/app/configurations/prompt-editor/types';
-import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { SavedConfig } from '@/app/lib/types/configs';
+import { formatRelativeTime } from '@/app/lib/utils';
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -19,6 +20,8 @@ interface ConfigEditorPaneProps {
   // Collapse functionality
   collapsed?: boolean;
   onToggle?: () => void;
+  /** Lazily loads all historical versions for a given config_id */
+  loadVersionsForConfig?: (config_id: string) => Promise<void>;
 }
 
 // Group configs by name for nested dropdown
@@ -64,8 +67,17 @@ export default function ConfigEditorPane({
   isSaving = false,
   collapsed = false,
   onToggle,
+  loadVersionsForConfig,
 }: ConfigEditorPaneProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const handleOpenLoadDropdown = () => {
+    // When opening, trigger lazy loading for any config that only has its latest version
+    if (!isDropdownOpen && loadVersionsForConfig) {
+      configGroups.forEach(group => loadVersionsForConfig(group.config_id));
+    }
+    setIsDropdownOpen(prev => !prev);
+  };
   const [showTooltip, setShowTooltip] = useState<number | null>(null);
 
   const provider = configBlob.completion.provider;
@@ -284,7 +296,7 @@ export default function ConfigEditorPane({
               Load Configuration
             </label>
             <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={handleOpenLoadDropdown}
               className="w-full px-3 py-2.5 rounded-md text-left flex items-center justify-between transition-colors"
               style={{
                 backgroundColor: colors.bg.primary,

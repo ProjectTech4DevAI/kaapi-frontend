@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { colors } from '@/app/lib/colors';
 import PromptDiffPane from './PromptDiffPane';
 import ConfigDiffPane from './ConfigDiffPane';
-import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { SavedConfig, ConfigVersionItems } from '@/app/lib/types/configs';
+import { formatRelativeTime } from '@/app/lib/utils';
 
 interface DiffViewProps {
   selectedCommit: SavedConfig;
@@ -10,13 +11,26 @@ interface DiffViewProps {
   commits: SavedConfig[];
   onCompareChange: (commit: SavedConfig | null) => void;
   onLoadVersion: (versionId: string) => void;
+  /** Lazily loads the lightweight version list for a given config_id (1 call or no-op) */
+  loadVersionsForConfig?: (config_id: string) => Promise<void>;
+  /**
+   * Lightweight version items per config_id. When provided, the compare dropdown
+   * shows ALL versions (not just loaded ones); full details are fetched on selection.
+   */
+  versionItemsMap?: Record<string, ConfigVersionItems[]>;
+  /**
+   * Fetches a single version's full details on demand (1 GET call).
+   * Called when the user picks a version that isn't yet in `commits`.
+   */
+  onFetchVersionDetail?: (config_id: string, version: number) => Promise<SavedConfig | null>;
 }
 
 // Group configs by name for the dropdown
 interface ConfigGroupForCompare {
   config_id: string;
   name: string;
-  versions: SavedConfig[];
+  /** Lightweight items used for the option list */
+  items: ConfigVersionItems[];
 }
 
 export default function DiffView({
@@ -24,10 +38,26 @@ export default function DiffView({
   compareWith,
   commits,
   onCompareChange,
-  onLoadVersion
+  onLoadVersion,
+  loadVersionsForConfig,
+  versionItemsMap,
+  onFetchVersionDetail,
 }: DiffViewProps) {
-  // Group configs by config_id for nested dropdown
-  const configGroups = useMemo(() => {
+  const [isLoadingCompare, setIsLoadingCompare] = useState(false);
+
+  // Build groups for the compare dropdown.
+  // Prefer the lightweight versionItemsMap (full history, no config_blob) over
+  // the loaded commits (which may only have the latest version per config).
+  const configGroups = useMemo((): ConfigGroupForCompare[] => {
+    if (versionItemsMap && Object.keys(versionItemsMap).length > 0) {
+      // Use lightweight items as the authoritative list; derive config names from commits
+      return Object.entries(versionItemsMap).map(([config_id, items]) => {
+        const nameFallback = commits.find(c => c.config_id === config_id)?.name ?? config_id;
+        const sorted = [...items].sort((a, b) => b.version - a.version);
+        return { config_id, name: nameFallback, items: sorted };
+      });
+    }
+    // Fallback: use loaded commits
     const grouped = new Map<string, SavedConfig[]>();
     commits.forEach((config) => {
       const existing = grouped.get(config.config_id) || [];
@@ -35,14 +65,49 @@ export default function DiffView({
       grouped.set(config.config_id, existing);
     });
     return Array.from(grouped.entries()).map(([config_id, versions]) => {
-      const sortedVersions = versions.sort((a, b) => b.version - a.version);
+      const sorted = versions.sort((a, b) => b.version - a.version);
       return {
         config_id,
-        name: sortedVersions[0].name,
-        versions: sortedVersions,
-      } as ConfigGroupForCompare;
+        name: sorted[0].name,
+        items: sorted.map(v => ({
+          id: v.id,
+          config_id: v.config_id,
+          version: v.version,
+          commit_message: v.commit_message ?? null,
+          inserted_at: v.timestamp,
+          updated_at: v.timestamp,
+        })),
+      };
     });
-  }, [commits]);
+  }, [commits, versionItemsMap]);
+
+  // Encode option value as "config_id:version" so we can look up or fetch on select
+  const encodeValue = (config_id: string, version: number) => `${config_id}:${version}`;
+  const decodeValue = (val: string): { config_id: string; version: number } | null => {
+    const idx = val.lastIndexOf(':');
+    if (idx === -1) return null;
+    return { config_id: val.slice(0, idx), version: parseInt(val.slice(idx + 1), 10) };
+  };
+  const currentValue = compareWith ? encodeValue(compareWith.config_id, compareWith.version) : '';
+
+  const handleCompareSelect = async (rawValue: string) => {
+    if (!rawValue) { onCompareChange(null); return; }
+    const decoded = decodeValue(rawValue);
+    if (!decoded) return;
+    const { config_id, version } = decoded;
+
+    // Fast path: already loaded
+    let detail = commits.find(c => c.config_id === config_id && c.version === version);
+    if (detail) { onCompareChange(detail); return; }
+
+    // Fetch on demand — 1 API call
+    if (onFetchVersionDetail) {
+      setIsLoadingCompare(true);
+      detail = (await onFetchVersionDetail(config_id, version)) ?? undefined;
+      setIsLoadingCompare(false);
+    }
+    onCompareChange(detail ?? null);
+  };
 
   // Format timestamp
   const formatTimestamp = (timestamp: string) => {
@@ -67,27 +132,32 @@ export default function DiffView({
         <div className="space-y-2">
           <div className="flex gap-3 items-center">
             <select
-              onChange={(e) => {
-                const commit = commits.find(c => c.id === e.target.value);
-                onCompareChange(commit || null);
+              onFocus={() => {
+                // Ensure lightweight version lists are populated for all configs
+                if (loadVersionsForConfig) {
+                  configGroups.forEach(g => loadVersionsForConfig(g.config_id));
+                }
               }}
-              value={compareWith?.id || ''}
+              onChange={(e) => { handleCompareSelect(e.target.value); }}
+              value={currentValue}
+              disabled={isLoadingCompare}
               className="px-3 py-2 rounded-md text-sm min-w-[300px]"
               style={{
                 border: `1px solid ${colors.border}`,
                 backgroundColor: colors.bg.primary,
                 color: colors.text.primary,
-                outline: 'none'
+                outline: 'none',
+                opacity: isLoadingCompare ? 0.6 : 1,
               }}
             >
-              <option value="">Select version to compare...</option>
+              <option value="">{isLoadingCompare ? 'Loading…' : 'Select version to compare...'}</option>
               {configGroups.map(group => (
-                <optgroup key={group.config_id} label={`${group.name} (${group.versions.length} versions)`}>
-                  {group.versions
-                    .filter(v => v.id !== selectedCommit.id)
-                    .map(version => (
-                      <option key={version.id} value={version.id}>
-                        v{version.version} - {version.commit_message || 'No message'} ({formatTimestamp(version.timestamp)})
+                <optgroup key={group.config_id} label={`${group.name} (${group.items.length} versions)`}>
+                  {group.items
+                    .filter(v => !(v.config_id === selectedCommit.config_id && v.version === selectedCommit.version))
+                    .map(item => (
+                      <option key={item.id} value={encodeValue(item.config_id, item.version)}>
+                        v{item.version} - {item.commit_message || 'No message'} ({formatTimestamp(item.inserted_at)})
                       </option>
                     ))}
                 </optgroup>

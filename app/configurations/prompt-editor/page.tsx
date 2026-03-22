@@ -25,7 +25,9 @@ import ConfigEditorPane from '@/app/components/prompt-editor/ConfigEditorPane';
 import DiffView from '@/app/components/prompt-editor/DiffView';
 import { useToast } from '@/app/components/Toast';
 import Loader from '@/app/components/Loader';
-import { useConfigs, invalidateConfigCache, SavedConfig } from '@/app/lib/useConfigs';
+import { useConfigs } from '@/app/hooks/useConfigs';
+import { SavedConfig } from '@/app/lib/types/configs';
+import { invalidateConfigCache } from '@/app/lib/utils';
 
 function PromptEditorContent() {
   const toast = useToast();
@@ -58,7 +60,7 @@ function PromptEditorContent() {
   };
 
   // Use shared configs hook with caching
-  const { configs: savedConfigs, isLoading, refetch: refetchConfigs } = useConfigs();
+  const { configs: savedConfigs, isLoading, refetch: refetchConfigs, loadVersionsForConfig, loadSingleVersion, versionItemsMap } = useConfigs();
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const initialLoadComplete = !isLoading && savedConfigs.length >= 0;
 
@@ -117,6 +119,10 @@ function PromptEditorContent() {
 
     // If a specific config/version is requested via URL params
     if (urlConfigId) {
+      // Eagerly load all versions for this config so history sidebar and version
+      // picker are fully populated (only the latest version is fetched on initial load)
+      loadVersionsForConfig(urlConfigId);
+
       // Find the config by config_id and optionally version
       let targetConfig: SavedConfig | undefined;
 
@@ -163,7 +169,7 @@ function PromptEditorContent() {
         }
       }
     }
-  }, [initialLoadComplete, savedConfigs, urlConfigId, urlVersion, showHistory, isNewConfig]);
+  }, [initialLoadComplete, savedConfigs, urlConfigId, urlVersion, showHistory, isNewConfig, loadVersionsForConfig]);
 
   // Detect unsaved changes
   useEffect(() => {
@@ -335,6 +341,9 @@ function PromptEditorContent() {
     const config = savedConfigs.find(c => c.id === configId);
     if (!config) return;
 
+    // Lazily load all versions for this config (history sidebar needs them)
+    loadVersionsForConfig(config.config_id);
+
     setCurrentContent(config.promptContent);
     setCurrentConfigBlob({
       completion: {
@@ -395,6 +404,11 @@ function PromptEditorContent() {
                 setCompareWith(null);
               }}
               isLoading={isLoading}
+              versionItems={currentConfigParentId ? (versionItemsMap[currentConfigParentId] ?? []) : undefined}
+              onFetchVersionDetail={currentConfigParentId
+                ? (version) => loadSingleVersion(currentConfigParentId, version)
+                : undefined
+              }
             />
 
             {/* Show DiffView only when comparing versions (sidebar open + version selected) */}
@@ -404,6 +418,9 @@ function PromptEditorContent() {
                 compareWith={compareWith}
                 commits={savedConfigs}
                 onCompareChange={setCompareWith}
+                loadVersionsForConfig={loadVersionsForConfig}
+                versionItemsMap={versionItemsMap}
+                onFetchVersionDetail={loadSingleVersion}
                 onLoadVersion={(versionId) => {
                   handleLoadConfigById(versionId);
                   setSelectedVersion(null);
@@ -441,6 +458,7 @@ function PromptEditorContent() {
                     isSaving={isSaving}
                     collapsed={!showConfigPane}
                     onToggle={() => setShowConfigPane(!showConfigPane)}
+                    loadVersionsForConfig={loadVersionsForConfig}
                   />
                 </div>
               </div>

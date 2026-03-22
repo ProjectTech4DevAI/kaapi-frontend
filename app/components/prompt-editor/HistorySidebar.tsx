@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { colors } from '@/app/lib/colors';
-import { SavedConfig } from '@/app/lib/useConfigs';
+import { SavedConfig, ConfigVersionItems } from '@/app/lib/types/configs';
 
 interface HistorySidebarProps {
   savedConfigs: SavedConfig[];
@@ -12,6 +12,17 @@ interface HistorySidebarProps {
   collapsed: boolean; // Whether the sidebar is collapsed
   isLoading?: boolean;
   currentConfigId?: string; // To filter versions for current config only
+  /**
+   * Lightweight version list for the current config (no config_blob).
+   * When provided, this is used as the authoritative list for history display
+   * instead of the loaded SavedConfigs, which may only have the latest version.
+   */
+  versionItems?: ConfigVersionItems[];
+  /**
+   * Called when a version's full details are needed but not yet loaded.
+   * Returns the full SavedConfig (1 API call) or null on failure.
+   */
+  onFetchVersionDetail?: (version: number) => Promise<SavedConfig | null>;
 }
 
 export default function HistorySidebar({
@@ -23,9 +34,13 @@ export default function HistorySidebar({
   onToggle,
   collapsed,
   isLoading = false,
-  currentConfigId
+  currentConfigId,
+  versionItems,
+  onFetchVersionDetail,
 }: HistorySidebarProps) {
   const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(new Set());
+  /** Which version number is currently being fetched on-demand (for loading indicator) */
+  const [fetchingVersion, setFetchingVersion] = useState<number | null>(null);
 
   // Toggle expand/collapse
   const toggleExpand = (configName: string) => {
@@ -56,6 +71,19 @@ export default function HistorySidebar({
   Object.keys(groupedConfigs).forEach(name => {
     groupedConfigs[name].sort((a, b) => b.version - a.version);
   });
+
+  // When versionItems is provided for the current config, use it as the
+  // authoritative (lightweight) list; the fully-loaded SavedConfig entries
+  // are still looked up per-entry for action callbacks.
+  // Sort lightweight items newest-first too.
+  const sortedVersionItems = versionItems
+    ? [...versionItems].sort((a, b) => b.version - a.version)
+    : null;
+
+  // Total version count for the header subtitle
+  const totalVersionCount = currentConfigId
+    ? (sortedVersionItems?.length ?? filteredConfigs.length)
+    : filteredConfigs.length;
 
   // Format timestamp - calculate relative time from UTC timestamps
   const formatTimestamp = (timestamp: string) => {
@@ -103,7 +131,7 @@ export default function HistorySidebar({
               {titleText}
             </div>
             <div className="text-xs whitespace-nowrap" style={{ color: colors.text.secondary }}>
-              {filteredConfigs.length} version{filteredConfigs.length !== 1 ? 's' : ''}
+              {totalVersionCount} version{totalVersionCount !== 1 ? 's' : ''}
               {!currentConfigId && ` • ${Object.keys(groupedConfigs).length} config${Object.keys(groupedConfigs).length !== 1 ? 's' : ''}`}
             </div>
           </div>
@@ -188,7 +216,7 @@ export default function HistorySidebar({
               Fetching config history from backend
             </p>
           </div>
-        ) : Object.keys(groupedConfigs).length === 0 ? (
+        ) : Object.keys(groupedConfigs).length === 0 && !sortedVersionItems?.length ? (
           <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: colors.border }}>
             <p className="text-sm" style={{ color: colors.text.secondary }}>
               No saved configurations yet
@@ -199,7 +227,140 @@ export default function HistorySidebar({
           </div>
         ) : (
           <div className="space-y-3">
-            {Object.entries(groupedConfigs).map(([configName, versions]) => {
+            {/*
+              When versionItems + currentConfigId are provided, render the lightweight
+              list directly (no config_blob required for display). Full details are
+              fetched on-demand when the user clicks Load or Compare.
+              Otherwise fall back to the loaded SavedConfig groups.
+            */}
+            {currentConfigId && sortedVersionItems ? (() => {
+              // Find the config name from loaded data (latest version is always loaded)
+              const configName = savedConfigs.find(c => c.config_id === currentConfigId)?.name ?? '';
+              const isExpanded = expandedConfigs.has(configName || currentConfigId);
+
+              return (
+                <div
+                  className="border rounded-lg overflow-hidden"
+                  style={{ borderColor: colors.border, transition: 'all 0.15s ease' }}
+                >
+                  {/* Config header */}
+                  <div
+                    onClick={() => toggleExpand(configName || currentConfigId)}
+                    className="p-3 cursor-pointer"
+                    style={{ backgroundColor: colors.bg.secondary, transition: 'all 0.15s ease' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm" style={{ color: colors.text.secondary }}>
+                        {isExpanded ? '▼' : '▶'}
+                      </span>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                          {configName || 'Config'}
+                        </div>
+                        <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                          {sortedVersionItems.length} version{sortedVersionItems.length !== 1 ? 's' : ''} • Latest: v{sortedVersionItems[0]?.version}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lightweight version entries */}
+                  {isExpanded && (
+                    <div className="border-t" style={{ borderColor: colors.border }}>
+                      {sortedVersionItems.map((item, idx) => {
+                        // Look up the already-loaded full version if available
+                        const full = savedConfigs.find(
+                          c => c.config_id === currentConfigId && c.version === item.version
+                        );
+                        const isSelected = selectedVersion?.config_id === currentConfigId &&
+                          selectedVersion?.version === item.version;
+                        const isFetchingThis = fetchingVersion === item.version;
+
+                        const handleAction = async (action: 'load' | 'compare') => {
+                          let detail = full;
+                          if (!detail && onFetchVersionDetail) {
+                            setFetchingVersion(item.version);
+                            detail = (await onFetchVersionDetail(item.version)) ?? undefined;
+                            setFetchingVersion(null);
+                          }
+                          if (!detail) return;
+                          if (action === 'load') onLoadVersion(detail);
+                          else onSelectVersion(detail);
+                        };
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="p-3 border-l-2"
+                            style={{
+                              backgroundColor: isSelected ? '#f0fdf4' : idx === 0 ? '#fafafa' : colors.bg.primary,
+                              borderLeftColor: isSelected ? colors.status.success : idx === 0 ? colors.accent.primary : colors.border,
+                              marginLeft: '12px',
+                              borderTop: idx > 0 ? `1px solid ${colors.border}` : 'none',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <span
+                                className="px-2 py-0.5 rounded text-xs font-medium"
+                                style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary, border: `1px solid ${colors.border}` }}
+                              >
+                                v{item.version}
+                              </span>
+                              {idx === 0 && (
+                                <span
+                                  className="px-2 py-0.5 rounded text-xs font-medium"
+                                  style={{ backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }}
+                                >
+                                  Latest
+                                </span>
+                              )}
+                            </div>
+
+                            {item.commit_message && (
+                              <div className="text-xs mb-1" style={{ color: colors.text.primary }}>
+                                {item.commit_message}
+                              </div>
+                            )}
+
+                            <div className="text-xs mb-2" style={{ color: colors.text.secondary }}>
+                              {formatTimestamp(item.inserted_at)}
+                              {full ? ` • ${full.provider}/${full.modelName}` : ''}
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleAction('load'); }}
+                                disabled={isFetchingThis}
+                                className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style={{ backgroundColor: colors.accent.primary, color: '#ffffff', border: 'none', opacity: isFetchingThis ? 0.6 : 1 }}
+                                onMouseEnter={(e) => { if (!isFetchingThis) e.currentTarget.style.opacity = '0.85'; }}
+                                onMouseLeave={(e) => { if (!isFetchingThis) e.currentTarget.style.opacity = '1'; }}
+                              >
+                                {isFetchingThis ? '…' : 'Load'}
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleAction('compare'); }}
+                                disabled={isFetchingThis}
+                                className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary, border: `1px solid ${colors.border}`, opacity: isFetchingThis ? 0.6 : 1 }}
+                                onMouseEnter={(e) => { if (!isFetchingThis) { e.currentTarget.style.backgroundColor = colors.bg.primary; e.currentTarget.style.color = colors.text.primary; } }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.secondary; e.currentTarget.style.color = colors.text.secondary; }}
+                              >
+                                Compare
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })() : Object.entries(groupedConfigs).map(([configName, versions]) => {
               const isExpanded = expandedConfigs.has(configName);
               const latestVersion = versions[0];
 
@@ -207,19 +368,13 @@ export default function HistorySidebar({
                 <div
                   key={configName}
                   className="border rounded-lg overflow-hidden"
-                  style={{
-                    borderColor: colors.border,
-                    transition: 'all 0.15s ease'
-                  }}
+                  style={{ borderColor: colors.border, transition: 'all 0.15s ease' }}
                 >
                   {/* Config Header */}
                   <div
                     onClick={() => toggleExpand(configName)}
                     className="p-3 cursor-pointer"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      transition: 'all 0.15s ease'
-                    }}
+                    style={{ backgroundColor: colors.bg.secondary, transition: 'all 0.15s ease' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
                   >
@@ -238,7 +393,7 @@ export default function HistorySidebar({
                     </div>
                   </div>
 
-                  {/* Versions List */}
+                  {/* Versions List (already-loaded SavedConfigs) */}
                   {isExpanded && (
                     <div className="border-t" style={{ borderColor: colors.border }}>
                       {versions.map((version, idx) => (
@@ -250,29 +405,21 @@ export default function HistorySidebar({
                             borderLeftColor: selectedVersion?.id === version.id ? colors.status.success : idx === 0 ? colors.accent.primary : colors.border,
                             marginLeft: '12px',
                             borderTop: idx > 0 ? `1px solid ${colors.border}` : 'none',
-                            transition: 'all 0.15s ease'
+                            transition: 'all 0.15s ease',
                           }}
                         >
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div className="flex items-center gap-2">
                               <span
                                 className="px-2 py-0.5 rounded text-xs font-medium"
-                                style={{
-                                  backgroundColor: colors.bg.secondary,
-                                  color: colors.text.primary,
-                                  border: `1px solid ${colors.border}`
-                                }}
+                                style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary, border: `1px solid ${colors.border}` }}
                               >
                                 v{version.version}
                               </span>
                               {idx === 0 && (
                                 <span
                                   className="px-2 py-0.5 rounded text-xs font-medium"
-                                  style={{
-                                    backgroundColor: '#dcfce7',
-                                    color: '#15803d',
-                                    border: '1px solid #86efac'
-                                  }}
+                                  style={{ backgroundColor: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }}
                                 >
                                   Latest
                                 </span>
@@ -293,40 +440,20 @@ export default function HistorySidebar({
                           {/* Action buttons */}
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onLoadVersion(version);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); onLoadVersion(version); }}
                               className="px-2 py-1 rounded text-xs font-medium transition-colors"
-                              style={{
-                                backgroundColor: colors.accent.primary,
-                                color: '#ffffff',
-                                border: 'none'
-                              }}
+                              style={{ backgroundColor: colors.accent.primary, color: '#ffffff', border: 'none' }}
                               onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
                               onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                             >
                               Load
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectVersion(version);
-                              }}
+                              onClick={(e) => { e.stopPropagation(); onSelectVersion(version); }}
                               className="px-2 py-1 rounded text-xs font-medium transition-colors"
-                              style={{
-                                backgroundColor: colors.bg.secondary,
-                                color: colors.text.secondary,
-                                border: `1px solid ${colors.border}`
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.bg.primary;
-                                e.currentTarget.style.color = colors.text.primary;
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.bg.secondary;
-                                e.currentTarget.style.color = colors.text.secondary;
-                              }}
+                              style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary, border: `1px solid ${colors.border}` }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.bg.primary; e.currentTarget.style.color = colors.text.primary; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = colors.bg.secondary; e.currentTarget.style.color = colors.text.secondary; }}
                             >
                               Compare
                             </button>

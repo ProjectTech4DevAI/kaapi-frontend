@@ -8,8 +8,10 @@
 import { useState, useRef, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
-import { useConfigs, SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { useConfigs } from '@/app/hooks/useConfigs';
+import { SavedConfig } from '@/app/lib/types/configs';
 import { ChevronUpIcon, ChevronDownIcon, EditIcon, GearIcon, CheckIcon } from '@/app/components/icons';
+import { formatRelativeTime } from '@/app/lib/utils';
 
 interface ConfigSelectorProps {
   selectedConfigId: string;
@@ -33,7 +35,7 @@ export default function ConfigSelector({
   experimentName,
 }: ConfigSelectorProps) {
   const router = useRouter();
-  const { configs, configGroups, isLoading, error } = useConfigs();
+  const { configs, configGroups, isLoading, error, loadVersionsForConfig } = useConfigs();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [promptExpanded, setPromptExpanded] = useState(false);
@@ -73,6 +75,19 @@ export default function ConfigSelector({
   const handleCloseDropdown = () => {
     setIsDropdownOpen(false);
     setSearchQuery(''); // Clear search on close
+  };
+
+  // When opening the dropdown, lazily load full version history for all configs
+  const handleOpenDropdown = () => {
+    if (disabled) return;
+    if (!isDropdownOpen) {
+      configGroups.forEach(group => {
+        if (!group.versionsFullyLoaded) {
+          loadVersionsForConfig(group.config_id);
+        }
+      });
+    }
+    setIsDropdownOpen(prev => !prev);
   };
 
   // Build URL params preserving evaluation context
@@ -243,7 +258,7 @@ export default function ConfigSelector({
               /* Button when dropdown is closed */
               <div className="relative">
                 <button
-                  onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
+                  onClick={handleOpenDropdown}
                   disabled={disabled}
                   className="w-full px-3 py-2 pr-8 rounded-md border text-sm text-left transition-colors cursor-pointer disabled:cursor-not-allowed"
                   style={{

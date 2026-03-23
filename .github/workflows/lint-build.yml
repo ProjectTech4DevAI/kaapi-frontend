@@ -15,11 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v4
         with:
-          node-version-file: '.tool-versions'
           cache: 'npm'
 
       - name: Install dependencies

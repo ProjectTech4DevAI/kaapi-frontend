@@ -4,7 +4,7 @@ import { ConfigBlob, Tool } from "@/app/configurations/prompt-editor/types";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { ConfigPublic } from "@/app/lib/configTypes";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
+import { MODEL_OPTIONS, PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -14,7 +14,6 @@ interface ConfigEditorPaneProps {
   // Additional props for full functionality
   savedConfigs: SavedConfig[];
   selectedConfigId: string;
-  /** Called when user selects a version. Null = new (unsaved) config. */
   onLoadConfig: (config: SavedConfig | null) => void;
   commitMessage: string;
   onCommitMessageChange: (message: string) => void;
@@ -31,28 +30,6 @@ interface ConfigEditorPaneProps {
     version: number,
   ) => Promise<SavedConfig | null>;
 }
-
-// Provider-specific models
-const MODEL_OPTIONS = {
-  openai: [
-    { value: "gpt-4o", label: "GPT-4o" },
-    { value: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-    { value: "gpt-4", label: "GPT-4" },
-    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-  ],
-  // anthropic: [
-  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  // ],
-  // google: [
-  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  //   { value: 'gemini-pro', label: 'Gemini Pro' },
-  // ],
-};
 
 export default function ConfigEditorPane({
   configBlob,

@@ -9,11 +9,12 @@ import {
   ConfigListResponse,
   ConfigVersionListResponse,
   ConfigVersionResponse,
-} from './configTypes';
-import { SavedConfig, ConfigCache, FetchResult } from './types/configs';
-import { CACHE_INVALIDATED_EVENT } from './constants';
-import { configState, saveCache } from './store/configStore';
-import { flattenConfigVersion } from './utils';
+} from "@/app/lib/configTypes";
+import { SavedConfig, ConfigCache, FetchResult } from "@/app/lib/types/configs";
+import { CACHE_INVALIDATED_EVENT } from "@/app/lib/constants";
+import { configState } from "@/app/lib/store/configStore";
+import { flattenConfigVersion } from "@/app/lib/utils";
+import { apiFetch } from "@/app/lib/apiClient";
 
 /**
  * Schedules a single background validation pass.
@@ -25,14 +26,16 @@ import { flattenConfigVersion } from './utils';
  * When a new version is created the backend bumps the parent config's updated_at,
  * so the updated_at check is sufficient to detect all changes.
  */
-export function scheduleBackgroundValidation(cache: ConfigCache, apiKey: string): void {
+export function scheduleBackgroundValidation(
+  cache: ConfigCache,
+  apiKey: string,
+): void {
   if (configState.validationInProgress) return;
   configState.validationInProgress = true;
 
   (async () => {
     try {
-      const response = await fetch('/api/configs', { headers: { 'X-API-KEY': apiKey } });
-      const data: ConfigListResponse = await response.json();
+      const data = await apiFetch<ConfigListResponse>("/api/configs", apiKey);
       if (!data.success || !data.data) return;
 
       let needsRefresh = false;
@@ -49,7 +52,7 @@ export function scheduleBackgroundValidation(cache: ConfigCache, apiKey: string)
 
       // Check for deleted configs
       if (!needsRefresh) {
-        const currentIds = new Set(data.data.map(c => c.id));
+        const currentIds = new Set(data.data.map((c) => c.id));
         for (const cachedId of Object.keys(currentMeta)) {
           if (!currentIds.has(cachedId)) {
             needsRefresh = true;
@@ -61,7 +64,7 @@ export function scheduleBackgroundValidation(cache: ConfigCache, apiKey: string)
       if (needsRefresh) {
         configState.inMemoryCache = null;
         configState.versionItemsCache = {};
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           window.dispatchEvent(new Event(CACHE_INVALIDATED_EVENT));
         }
       }
@@ -81,14 +84,14 @@ export function scheduleBackgroundValidation(cache: ConfigCache, apiKey: string)
  * When pageSize is provided, only the first N configs get version details fetched.
  * The full lightweight config list is always stored in configState.allConfigMeta.
  */
-export async function fetchAllConfigs(apiKey: string, pageSize?: number): Promise<FetchResult> {
-  const response = await fetch('/api/configs', {
-    headers: { 'X-API-KEY': apiKey },
-  });
-  const data: ConfigListResponse = await response.json();
+export async function fetchAllConfigs(
+  apiKey: string,
+  pageSize?: number,
+): Promise<FetchResult> {
+  const data = await apiFetch<ConfigListResponse>("/api/configs", apiKey);
 
   if (!data.success || !data.data) {
-    throw new Error(data.error || 'Failed to fetch configs');
+    throw new Error(data.error || "Failed to fetch configs");
   }
 
   // Always store the full lightweight list so loadMoreConfigs knows what's available
@@ -96,10 +99,14 @@ export async function fetchAllConfigs(apiKey: string, pageSize?: number): Promis
   const totalConfigCount = data.data.length;
 
   const allVersions: SavedConfig[] = [];
-  const configMeta: Record<string, { updated_at: string; version_count: number }> = {};
+  const configMeta: Record<
+    string,
+    { updated_at: string; version_count: number }
+  > = {};
   const versionCounts: Record<string, number> = {};
 
-  const configsToFetch = pageSize !== undefined ? data.data.slice(0, pageSize) : data.data;
+  const configsToFetch =
+    pageSize !== undefined ? data.data.slice(0, pageSize) : data.data;
 
   const BATCH_SIZE = 5;
 
@@ -107,30 +114,41 @@ export async function fetchAllConfigs(apiKey: string, pageSize?: number): Promis
     const batch = configsToFetch.slice(i, i + BATCH_SIZE);
     const batchPromises = batch.map(async (config) => {
       try {
-        const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
-          headers: { 'X-API-KEY': apiKey },
-        });
-        const versionsData: ConfigVersionListResponse = await versionsResponse.json();
+        const versionsData = await apiFetch<ConfigVersionListResponse>(
+          `/api/configs/${config.id}/versions`,
+          apiKey,
+        );
 
-        if (versionsData.success && versionsData.data && versionsData.data.length > 0) {
+        if (
+          versionsData.success &&
+          versionsData.data &&
+          versionsData.data.length > 0
+        ) {
           const versionCount = versionsData.data.length;
-          configMeta[config.id] = { updated_at: config.updated_at, version_count: versionCount };
+          configMeta[config.id] = {
+            updated_at: config.updated_at,
+            version_count: versionCount,
+          };
           versionCounts[config.id] = versionCount;
           // Cache the lightweight version list so loadVersionsForConfig doesn't re-fetch it
           configState.versionItemsCache[config.id] = versionsData.data;
 
-          const latestItem = versionsData.data.reduce((a, b) => (b.version > a.version ? b : a));
+          const latestItem = versionsData.data.reduce((a, b) =>
+            b.version > a.version ? b : a,
+          );
           try {
-            const versionResponse = await fetch(
+            const versionData = await apiFetch<ConfigVersionResponse>(
               `/api/configs/${config.id}/versions/${latestItem.version}`,
-              { headers: { 'X-API-KEY': apiKey } },
+              apiKey,
             );
-            const versionData: ConfigVersionResponse = await versionResponse.json();
             if (versionData.success && versionData.data) {
               return [flattenConfigVersion(config, versionData.data)];
             }
           } catch (e) {
-            console.error(`Failed to fetch latest version for config ${config.id}:`, e);
+            console.error(
+              `Failed to fetch latest version for config ${config.id}:`,
+              e,
+            );
           }
         }
       } catch (e) {
@@ -140,7 +158,7 @@ export async function fetchAllConfigs(apiKey: string, pageSize?: number): Promis
     });
 
     const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach(versions => allVersions.push(...versions));
+    batchResults.forEach((versions) => allVersions.push(...versions));
   }
 
   return {
@@ -168,25 +186,29 @@ export async function fetchRemainingVersions(
     name: configSource.name,
     description: configSource.description ?? null,
     project_id: 0,
-    inserted_at: '',
-    updated_at: '',
+    inserted_at: "",
+    updated_at: "",
   };
 
   // Use the cached version-items list, falling back to a fresh API call only if
   // the cache was invalidated (e.g. after a force-refetch).
-  let versionItems: ConfigVersionItems[] | undefined = configState.versionItemsCache[config_id];
+  let versionItems: ConfigVersionItems[] | undefined =
+    configState.versionItemsCache[config_id];
   if (!versionItems) {
     const versionsResponse = await fetch(`/api/configs/${config_id}/versions`, {
-      headers: { 'X-API-KEY': apiKey },
+      headers: { "X-API-KEY": apiKey },
     });
-    const versionsData: ConfigVersionListResponse = await versionsResponse.json();
+    const versionsData: ConfigVersionListResponse =
+      await versionsResponse.json();
     if (!versionsData.success || !versionsData.data) return [];
     versionItems = versionsData.data;
     configState.versionItemsCache[config_id] = versionItems;
   }
 
-  const loadedVersionNumbers = new Set(alreadyLoaded.map(v => v.version));
-  const missingVersions = versionItems.filter(v => !loadedVersionNumbers.has(v.version));
+  const loadedVersionNumbers = new Set(alreadyLoaded.map((v) => v.version));
+  const missingVersions = versionItems.filter(
+    (v) => !loadedVersionNumbers.has(v.version),
+  );
 
   if (missingVersions.length === 0) return [];
 
@@ -195,14 +217,17 @@ export async function fetchRemainingVersions(
       try {
         const versionResponse = await fetch(
           `/api/configs/${config_id}/versions/${versionItem.version}`,
-          { headers: { 'X-API-KEY': apiKey } },
+          { headers: { "X-API-KEY": apiKey } },
         );
         const versionData: ConfigVersionResponse = await versionResponse.json();
         if (versionData.success && versionData.data) {
           return flattenConfigVersion(config, versionData.data);
         }
       } catch (e) {
-        console.error(`Failed to fetch version ${versionItem.version} for config ${config_id}:`, e);
+        console.error(
+          `Failed to fetch version ${versionItem.version} for config ${config_id}:`,
+          e,
+        );
       }
       return null;
     }),
@@ -226,14 +251,18 @@ export async function fetchNextConfigBatch(
   newConfigMeta: Record<string, { updated_at: string; version_count: number }>;
 }> {
   const allMeta = configState.allConfigMeta;
-  if (!allMeta) return { newVersions: [], newVersionCounts: {}, newConfigMeta: {} };
+  if (!allMeta)
+    return { newVersions: [], newVersionCounts: {}, newConfigMeta: {} };
 
-  const remaining = allMeta.filter(c => !loadedIds.has(c.id));
+  const remaining = allMeta.filter((c) => !loadedIds.has(c.id));
   const batch = remaining.slice(0, batchSize);
 
   const newVersions: SavedConfig[] = [];
   const newVersionCounts: Record<string, number> = {};
-  const newConfigMeta: Record<string, { updated_at: string; version_count: number }> = {};
+  const newConfigMeta: Record<
+    string,
+    { updated_at: string; version_count: number }
+  > = {};
 
   const INNER_BATCH = 5;
   for (let i = 0; i < batch.length; i += INNER_BATCH) {
@@ -241,21 +270,29 @@ export async function fetchNextConfigBatch(
     const results = await Promise.all(
       subBatch.map(async (config) => {
         try {
-          const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
-            headers: { 'X-API-KEY': apiKey },
-          });
-          const versionsData: ConfigVersionListResponse = await versionsResponse.json();
-          if (versionsData.success && versionsData.data && versionsData.data.length > 0) {
+          const versionsData = await apiFetch<ConfigVersionListResponse>(
+            `/api/configs/${config.id}/versions`,
+            apiKey,
+          );
+          if (
+            versionsData.success &&
+            versionsData.data &&
+            versionsData.data.length > 0
+          ) {
             const versionCount = versionsData.data.length;
-            newConfigMeta[config.id] = { updated_at: config.updated_at, version_count: versionCount };
+            newConfigMeta[config.id] = {
+              updated_at: config.updated_at,
+              version_count: versionCount,
+            };
             newVersionCounts[config.id] = versionCount;
             configState.versionItemsCache[config.id] = versionsData.data;
-            const latestItem = versionsData.data.reduce((a, b) => (b.version > a.version ? b : a));
-            const versionResponse = await fetch(
-              `/api/configs/${config.id}/versions/${latestItem.version}`,
-              { headers: { 'X-API-KEY': apiKey } },
+            const latestItem = versionsData.data.reduce((a, b) =>
+              b.version > a.version ? b : a,
             );
-            const versionData: ConfigVersionResponse = await versionResponse.json();
+            const versionData = await apiFetch<ConfigVersionResponse>(
+              `/api/configs/${config.id}/versions/${latestItem.version}`,
+              apiKey,
+            );
             if (versionData.success && versionData.data) {
               return [flattenConfigVersion(config, versionData.data)];
             }
@@ -266,7 +303,7 @@ export async function fetchNextConfigBatch(
         return [];
       }),
     );
-    results.forEach(v => newVersions.push(...v));
+    results.forEach((v) => newVersions.push(...v));
   }
 
   return { newVersions, newVersionCounts, newConfigMeta };

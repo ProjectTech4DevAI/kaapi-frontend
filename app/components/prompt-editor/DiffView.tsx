@@ -13,11 +13,7 @@ interface DiffViewProps {
   onLoadVersion: (config: SavedConfig) => void;
   /** Lazily loads the lightweight version list for a given config_id (1 call or no-op) */
   loadVersionsForConfig?: (config_id: string) => Promise<void>;
-  /**
-   * Lightweight version items per config_id. When provided, the compare dropdown
-   * shows ALL versions (not just loaded ones); full details are fetched on selection.
-   */
-  versionItemsMap?: Record<string, ConfigVersionItems[]>;
+  versionItemsMap?: Record<string, ConfigVersionItems[]>; // Lightweight version items per config_id. When provided, the compare dropdown shows ALL version
   /**
    * Fetches a single version's full details on demand (1 GET call).
    * Called when the user picks a version that isn't yet in `commits`.
@@ -29,7 +25,6 @@ interface DiffViewProps {
 interface ConfigGroupForCompare {
   config_id: string;
   name: string;
-  /** Lightweight items used for the option list */
   items: ConfigVersionItems[];
 }
 
@@ -46,18 +41,14 @@ export default function DiffView({
   const [isLoadingCompare, setIsLoadingCompare] = useState(false);
 
   // Build groups for the compare dropdown.
-  // Prefer the lightweight versionItemsMap (full history, no config_blob) over
-  // the loaded commits (which may only have the latest version per config).
   const configGroups = useMemo((): ConfigGroupForCompare[] => {
     if (versionItemsMap && Object.keys(versionItemsMap).length > 0) {
-      // Use lightweight items as the authoritative list; derive config names from commits
       return Object.entries(versionItemsMap).map(([config_id, items]) => {
         const nameFallback = commits.find(c => c.config_id === config_id)?.name ?? config_id;
         const sorted = [...items].sort((a, b) => b.version - a.version);
         return { config_id, name: nameFallback, items: sorted };
       });
     }
-    // Fallback: use loaded commits
     const grouped = new Map<string, SavedConfig[]>();
     commits.forEach((config) => {
       const existing = grouped.get(config.config_id) || [];

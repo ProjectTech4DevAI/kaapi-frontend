@@ -12,16 +12,7 @@ interface HistorySidebarProps {
   collapsed: boolean; // Whether the sidebar is collapsed
   isLoading?: boolean;
   currentConfigId?: string; // To filter versions for current config only
-  /**
-   * Lightweight version list for the current config (no config_blob).
-   * When provided, this is used as the authoritative list for history display
-   * instead of the loaded SavedConfigs, which may only have the latest version.
-   */
   versionItems?: ConfigVersionItems[];
-  /**
-   * Called when a version's full details are needed but not yet loaded.
-   * Returns the full SavedConfig (1 API call) or null on failure.
-   */
   onFetchVersionDetail?: (version: number) => Promise<SavedConfig | null>;
 }
 
@@ -84,8 +75,6 @@ export default function HistorySidebar({
 
   // When versionItems is provided for the current config, use it as the
   // authoritative (lightweight) list; the fully-loaded SavedConfig entries
-  // are still looked up per-entry for action callbacks.
-  // Sort lightweight items newest-first too.
   const sortedVersionItems = versionItems
     ? [...versionItems].sort((a, b) => b.version - a.version)
     : null;
@@ -237,17 +226,8 @@ export default function HistorySidebar({
           </div>
         ) : (
           <div className="space-y-3">
-            {/*
-              When versionItems + currentConfigId are provided, render the lightweight
-              list directly (no config_blob required for display). Full details are
-              fetched on-demand when the user clicks Load or Compare.
-              Otherwise fall back to the loaded SavedConfig groups.
-            */}
             {currentConfigId && sortedVersionItems ? (() => {
-              // Find the config name from loaded data (latest version is always loaded)
               const configName = savedConfigs.find(c => c.config_id === currentConfigId)?.name ?? '';
-              // Always key on currentConfigId (stable) — configName is not known immediately
-              // with pageSize:0 and would cause the expanded key to flip once savedConfigs loads.
               const isExpanded = expandedConfigs.has(currentConfigId);
 
               return (

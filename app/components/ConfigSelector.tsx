@@ -122,7 +122,6 @@ export default function ConfigSelector({
     setSearchQuery(""); // Clear search on close
   };
 
-  // Open dropdown — auto-expand the currently-selected config group if any
   const handleOpenDropdown = () => {
     if (disabled) return;
     if (!isDropdownOpen) {

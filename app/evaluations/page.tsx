@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { colors } from '@/app/lib/colors';
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import { Dataset } from '@/app/datasets/page';
 import Sidebar from '@/app/components/Sidebar';
@@ -24,7 +24,6 @@ type Tab = 'datasets' | 'evaluations';
 const leftPanelWidth = 450;
 
 function SimplifiedEvalContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
 

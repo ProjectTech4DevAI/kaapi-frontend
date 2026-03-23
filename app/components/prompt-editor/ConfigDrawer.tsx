@@ -22,7 +22,6 @@ interface ConfigDrawerProps {
   temperature: number;
   tools: Tool[];
   configCommitMsg: string;
-  currentContent: string;
   onConfigNameChange: (name: string) => void;
   onProviderChange: (provider: string) => void;
   onModelChange: (model: string) => void;
@@ -59,8 +58,6 @@ export default function ConfigDrawer({
   temperature,
   tools,
   configCommitMsg,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  currentContent,
   onConfigNameChange,
   onProviderChange,
   onModelChange,

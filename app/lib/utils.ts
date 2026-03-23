@@ -54,8 +54,6 @@ export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
 
-// ============ CONFIG HELPERS ============
-
 /** Reads the first stored API key from localStorage. */
 export const getApiKey = (): string | null => {
   if (typeof window === 'undefined') return null;

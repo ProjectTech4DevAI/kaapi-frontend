@@ -10,7 +10,7 @@ interface DiffViewProps {
   compareWith: SavedConfig | null;
   commits: SavedConfig[];
   onCompareChange: (commit: SavedConfig | null) => void;
-  onLoadVersion: (versionId: string) => void;
+  onLoadVersion: (config: SavedConfig) => void;
   /** Lazily loads the lightweight version list for a given config_id (1 call or no-op) */
   loadVersionsForConfig?: (config_id: string) => Promise<void>;
   /**
@@ -166,7 +166,7 @@ export default function DiffView({
             {compareWith && (
               <div className="flex gap-2 ml-auto">
                 <button
-                  onClick={() => onLoadVersion(compareWith.id)}
+                  onClick={() => onLoadVersion(compareWith)}
                   className="px-3 py-1.5 rounded text-xs font-medium"
                   style={{
                     backgroundColor: colors.bg.secondary,
@@ -192,7 +192,7 @@ export default function DiffView({
                   }
                 </button>
                 <button
-                  onClick={() => onLoadVersion(selectedCommit.id)}
+                  onClick={() => onLoadVersion(selectedCommit)}
                   className="px-3 py-1.5 rounded text-xs font-medium"
                   style={{
                     backgroundColor: colors.accent.primary,

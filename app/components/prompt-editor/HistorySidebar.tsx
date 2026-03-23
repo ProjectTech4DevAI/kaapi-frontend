@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { colors } from '@/app/lib/colors';
 import { SavedConfig, ConfigVersionItems } from '@/app/lib/types/configs';
 
@@ -41,6 +41,16 @@ export default function HistorySidebar({
   const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(new Set());
   /** Which version number is currently being fetched on-demand (for loading indicator) */
   const [fetchingVersion, setFetchingVersion] = useState<number | null>(null);
+
+  // Auto-expand the current config's group when arriving from URL params
+  useEffect(() => {
+    if (currentConfigId) {
+      setExpandedConfigs(prev => {
+        if (prev.has(currentConfigId)) return prev;
+        return new Set([...prev, currentConfigId]);
+      });
+    }
+  }, [currentConfigId]);
 
   // Toggle expand/collapse
   const toggleExpand = (configName: string) => {
@@ -236,7 +246,9 @@ export default function HistorySidebar({
             {currentConfigId && sortedVersionItems ? (() => {
               // Find the config name from loaded data (latest version is always loaded)
               const configName = savedConfigs.find(c => c.config_id === currentConfigId)?.name ?? '';
-              const isExpanded = expandedConfigs.has(configName || currentConfigId);
+              // Always key on currentConfigId (stable) — configName is not known immediately
+              // with pageSize:0 and would cause the expanded key to flip once savedConfigs loads.
+              const isExpanded = expandedConfigs.has(currentConfigId);
 
               return (
                 <div
@@ -245,7 +257,7 @@ export default function HistorySidebar({
                 >
                   {/* Config header */}
                   <div
-                    onClick={() => toggleExpand(configName || currentConfigId)}
+                    onClick={() => toggleExpand(currentConfigId)}
                     className="p-3 cursor-pointer"
                     style={{ backgroundColor: colors.bg.secondary, transition: 'all 0.15s ease' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}

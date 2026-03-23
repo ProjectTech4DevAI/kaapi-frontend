@@ -4,7 +4,7 @@
  * flattened from the raw API response shapes in configTypes.ts.
  */
 
-import { ConfigVersionItems, Tool } from '@/app/lib/configTypes';
+import { ConfigVersionItems, Tool, ConfigPublic } from "@/app/lib/configTypes";
 
 // Re-export so consumers don't need to reach into configTypes directly
 export type { ConfigVersionItems, Tool };
@@ -21,7 +21,7 @@ export interface SavedConfig {
   promptContent: string; // Same as instructions for compatibility
   modelName: string;
   provider: string;
-  type: 'text' | 'stt' | 'tts'; // Config type - always present in UI (defaults to 'text')
+  type: "text" | "stt" | "tts"; // Config type - always present in UI (defaults to 'text')
   temperature: number;
   vectorStoreIds: string;
   tools?: Tool[];
@@ -54,6 +54,7 @@ export interface ConfigCache {
   totalConfigCount?: number;
   /** True when only a subset of configs have had their version details fetched */
   partialFetch?: boolean;
+  allConfigMeta?: ConfigPublic[]; // Full lightweight config list.
 }
 
 // Result shape returned by fetchAllConfigs

@@ -51,14 +51,14 @@ export interface UseConfigsResult {
   hasMoreConfigs: boolean;
   /** True while loadMoreConfigs is in progress */
   isLoadingMore: boolean;
-  /**
-   * Fetches the full details (config_blob) for a single version on demand.
+  /** Fetches the full details (config_blob) for a single version on demand.
    * Returns the SavedConfig immediately if already loaded; makes 1 GET call otherwise.
    * Safe to call concurrently – duplicate in-flight requests are coalesced.
    */
   loadSingleVersion: (config_id: string, version: number) => Promise<SavedConfig | null>;
   /** Lightweight version items per config, indexed by config_id. */
   versionItemsMap: Record<string, ConfigVersionItems[]>;
+  allConfigMeta: ConfigPublic[]; // Full lightweight config list from GET /api/configs.
 }
 
 export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
@@ -66,6 +66,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
   const [configs, setConfigs] = useState<SavedConfig[]>([]);
   const [versionCounts, setVersionCounts] = useState<Record<string, number>>({});
   const [versionItemsMap, setVersionItemsMap] = useState<Record<string, ConfigVersionItems[]>>({});
+  const [allConfigMeta, setAllConfigMeta] = useState<ConfigPublic[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +95,11 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
             setTotalKnownCount(
               configState.inMemoryCache.totalConfigCount ?? configState.inMemoryCache.configs.length,
             );
+            // Restore allConfigMeta from cache or derive from loaded configs as fallback
+            if (!configState.allConfigMeta) {
+              configState.allConfigMeta = configState.inMemoryCache.allConfigMeta ?? null;
+            }
+            setAllConfigMeta(configState.allConfigMeta ?? []);
             setIsCached(true);
             setIsLoading(false);
             scheduleBackgroundValidation(configState.inMemoryCache, apiKey);
@@ -115,6 +121,11 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
             // populate it on demand (1 GET /versions call) when a config is opened.
             setVersionItemsMap({ ...configState.versionItemsCache });
             setTotalKnownCount(lsCache.totalConfigCount ?? lsCache.configs.length);
+            // Restore allConfigMeta from localStorage cache if not already in module state
+            if (!configState.allConfigMeta && lsCache.allConfigMeta) {
+              configState.allConfigMeta = lsCache.allConfigMeta;
+            }
+            setAllConfigMeta(configState.allConfigMeta ?? []);
             setIsCached(true);
             setIsLoading(false);
             configState.inMemoryCache = lsCache;
@@ -136,6 +147,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         setTotalKnownCount(
           configState.inMemoryCache.totalConfigCount ?? configState.inMemoryCache.configs.length,
         );
+        setAllConfigMeta(configState.allConfigMeta ?? []);
         setIsCached(false);
       } else {
         setError('Failed to load configurations. Please try again.');
@@ -158,6 +170,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         versionCounts: result.versionCounts,
         totalConfigCount: result.totalConfigCount,
         partialFetch: result.partialFetch,
+        allConfigMeta: configState.allConfigMeta ?? [],
       };
       saveCache(newCache);
       configState.inMemoryCache = newCache;
@@ -165,6 +178,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       setVersionCounts(result.versionCounts);
       setVersionItemsMap({ ...configState.versionItemsCache });
       setTotalKnownCount(result.totalConfigCount);
+      setAllConfigMeta(configState.allConfigMeta ?? []);
     })().finally(() => {
       configState.pendingFetch = null;
     });
@@ -249,16 +263,13 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
     if (!apiKey) return null;
 
     const configSource = configs.find(c => c.config_id === config_id);
-    if (!configSource) return null;
+    // Fall back to the lightweight allConfigMeta when the config hasn't been detail-fetched yet
+    const metaSource = configState.allConfigMeta?.find(m => m.id === config_id);
+    if (!configSource && !metaSource) return null;
 
-    const configPublic: ConfigPublic = {
-      id: config_id,
-      name: configSource.name,
-      description: configSource.description ?? null,
-      project_id: 0,
-      inserted_at: '',
-      updated_at: '',
-    };
+    const configPublic: ConfigPublic = configSource
+      ? { id: config_id, name: configSource.name, description: configSource.description ?? null, project_id: 0, inserted_at: '', updated_at: '' }
+      : metaSource!;
 
     const loadPromise: Promise<SavedConfig | null> = (async () => {
       try {
@@ -386,5 +397,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
     isLoadingMore,
     loadSingleVersion,
     versionItemsMap,
+    allConfigMeta,
   };
 }

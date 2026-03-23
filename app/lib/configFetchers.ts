@@ -130,7 +130,6 @@ export async function fetchAllConfigs(
             version_count: versionCount,
           };
           versionCounts[config.id] = versionCount;
-          // Cache the lightweight version list so loadVersionsForConfig doesn't re-fetch it
           configState.versionItemsCache[config.id] = versionsData.data;
 
           const latestItem = versionsData.data.reduce((a, b) =>
@@ -195,11 +194,11 @@ export async function fetchRemainingVersions(
   let versionItems: ConfigVersionItems[] | undefined =
     configState.versionItemsCache[config_id];
   if (!versionItems) {
-    const versionsResponse = await fetch(`/api/configs/${config_id}/versions`, {
-      headers: { "X-API-KEY": apiKey },
-    });
-    const versionsData: ConfigVersionListResponse =
-      await versionsResponse.json();
+    const versionsResponse = await apiFetch<ConfigVersionListResponse>(
+      `/api/configs/${config_id}/versions`,
+      apiKey,
+    );
+    const versionsData: ConfigVersionListResponse = versionsResponse;
     if (!versionsData.success || !versionsData.data) return [];
     versionItems = versionsData.data;
     configState.versionItemsCache[config_id] = versionItems;
@@ -215,11 +214,11 @@ export async function fetchRemainingVersions(
   const fetchedVersions = await Promise.all(
     missingVersions.map(async (versionItem) => {
       try {
-        const versionResponse = await fetch(
+        const versionDataResponse = await apiFetch<ConfigVersionResponse>(
           `/api/configs/${config_id}/versions/${versionItem.version}`,
-          { headers: { "X-API-KEY": apiKey } },
+          apiKey,
         );
-        const versionData: ConfigVersionResponse = await versionResponse.json();
+        const versionData: ConfigVersionResponse = versionDataResponse;
         if (versionData.success && versionData.data) {
           return flattenConfigVersion(config, versionData.data);
         }

@@ -124,7 +124,7 @@ export default function KnowledgeBasePage() {
     jobStatusMap: Map<string, { status: string | null; collectionId: string | null }>
   ): Promise<Collection> => {
     // First try to look up cached data by collection_id
-    let cached = getCollectionDataByCollectionId(collection.id);
+    const cached = getCollectionDataByCollectionId(collection.id);
 
     let jobId = cached.job_id;
     let collectionJobStatus = null;

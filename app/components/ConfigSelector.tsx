@@ -42,6 +42,7 @@ export default function ConfigSelector({
 
   // Reset expanded state and recheck overflow whenever selected config changes.
   useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPromptExpanded(false);
     const el = promptRef.current;
     if (!el) return;

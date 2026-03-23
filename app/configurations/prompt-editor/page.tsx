@@ -140,6 +140,7 @@ function PromptEditorContent() {
         setCurrentContent(targetConfig.promptContent);
         setCurrentConfigBlob({
           completion: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             provider: targetConfig.provider as any,
             params: {
               model: targetConfig.modelName,
@@ -163,6 +164,7 @@ function PromptEditorContent() {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLoadComplete, savedConfigs, urlConfigId, urlVersion, showHistory, isNewConfig]);
 
   // Detect unsaved changes
@@ -183,6 +185,7 @@ function PromptEditorContent() {
     const promptChanged = currentContent !== selectedConfig.promptContent;
     const configChanged = hasConfigChanges(currentConfigBlob, {
       completion: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         provider: selectedConfig.provider as any,
         params: {
           model: selectedConfig.modelName,
@@ -195,6 +198,7 @@ function PromptEditorContent() {
 
     setHasUnsavedChanges(promptChanged || configChanged);
   }, [selectedConfigId, currentContent, currentConfigBlob, provider, temperature, tools, savedConfigs]);
+
 
   // Save current configuration
   const handleSaveConfig = async () => {
@@ -338,6 +342,7 @@ function PromptEditorContent() {
     setCurrentContent(config.promptContent);
     setCurrentConfigBlob({
       completion: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         provider: config.provider as any,
         type: config.type,
         params: {

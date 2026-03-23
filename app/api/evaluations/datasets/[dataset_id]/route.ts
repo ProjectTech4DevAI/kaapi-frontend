@@ -46,10 +46,10 @@ export async function GET(
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error.message },
+      { error: 'Failed to forward request to backend', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -92,7 +92,7 @@ export async function DELETE(
     let data;
     try {
       data = await response.json();
-    } catch (e) {
+    } catch (_e) {
       // If response is not JSON, just return success
       data = { success: true };
     }
@@ -103,10 +103,10 @@ export async function DELETE(
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error.message },
+      { error: 'Failed to forward request to backend', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

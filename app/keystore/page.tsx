@@ -4,9 +4,9 @@
  * Allows users to securely store and manage API keys for various LLM providers
  */
 
-"use client"
+"use client";
+
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'
 import Sidebar from '../components/Sidebar';
 
 export interface APIKey {
@@ -20,7 +20,6 @@ export interface APIKey {
 export const STORAGE_KEY = 'kaapi_api_keys';
 
 export default function KaapiKeystore() {
-  const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
@@ -34,6 +33,7 @@ export default function KaapiKeystore() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setApiKeys(JSON.parse(stored));
       } catch (e) {
         console.error('Failed to load API keys:', e);
@@ -351,7 +351,7 @@ function StoredKeysTab({
               Security Note
             </p>
             <p className="text-sm mt-1 text-[hsl(202,100%,30%)]">
-              API keys are stored in your browser's local storage. For production use, consider implementing secure server-side storage.
+              API keys are stored in your browser&apos;s local storage. For production use, consider implementing secure server-side storage.
             </p>
           </div>
         </div>
@@ -482,7 +482,7 @@ function AddKeyModal({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-xs text-[hsl(202,100%,30%)]">
-                API keys are stored in your browser's local storage.
+                API keys are stored in your browser&apos;s local storage.
               </p>
             </div>
           </div>

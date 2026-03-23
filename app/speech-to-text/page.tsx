@@ -15,8 +15,7 @@ import Loader, { LoaderBox } from '@/app/components/Loader';
 import { useToast } from '@/app/components/Toast';
 import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
-import { computeWordDiff, DiffSegment } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
-import { formatDate } from '@/app/components/utils';
+import { computeWordDiff } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
 import ErrorModal from '@/app/components/ErrorModal';
 
 type Tab = 'datasets' | 'evaluations';
@@ -43,6 +42,7 @@ interface Dataset {
   object_store_url: string | null;
   dataset_metadata: {
     sample_count?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   };
   organization_id: number;
@@ -62,6 +62,7 @@ interface STTRun {
   status: string;
   total_items: number;
   score: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   } | null;
   error_message: string | null;
@@ -77,6 +78,7 @@ interface STTResult {
   provider: string;
   status: string;
   score: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   } | null;
   is_correct: boolean | null;
@@ -173,11 +175,13 @@ function AudioPlayer({
 
         {/* Waveform Visualizer */}
         <div className="flex-1 min-w-0">
+          {/* eslint-disable react-hooks/refs -- accessing ref in render for waveform display */}
           <WaveformVisualizer
             audioElement={audioRef.current}
             isPlaying={isPlaying}
             height={32}
           />
+          {/* eslint-enable react-hooks/refs */}
         </div>
 
         <span className="text-xs tabular-nums flex-shrink-0" style={{ color: colors.text.secondary }}>
@@ -309,36 +313,14 @@ const DEFAULT_LANGUAGES: Language[] = [
   { id: 2, code: 'hi', name: 'Hindi' },
 ];
 
-// Helper function to map language ID to language name
-const getLanguageName = (languageId: number | null, languages: Language[] = DEFAULT_LANGUAGES): string => {
-  const lang = languages.find(l => l.id === languageId);
-  return lang ? lang.name : languageId ? 'Unknown' : 'N/A';
-};
-
-// Helper function to map language code to language ID
-const getLanguageId = (languageCode: string, languages: Language[] = DEFAULT_LANGUAGES): number => {
-  const lang = languages.find(l => l.code === languageCode);
-  return lang ? lang.id : 1;
-};
-
-
 export default function SpeechToTextPage() {
   const toast = useToast();
 
-  // Tab state
   const [activeTab, setActiveTab] = useState<Tab>('datasets');
-
-  // UI State
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [leftPanelWidth] = useState(450);
-
-  // API Keys
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-
-  // Languages
   const [languages, setLanguages] = useState<Language[]>([]);
-
-  // Dataset form (Tab 1)
   const [datasetName, setDatasetName] = useState('');
   const [datasetDescription, setDatasetDescription] = useState('');
   const [datasetLanguageId, setDatasetLanguageId] = useState<number>(1);
@@ -394,6 +376,7 @@ export default function SpeechToTextPage() {
 
       const data = await response.json();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawList: any[] = [];
       if (Array.isArray(data)) {
         rawList = data;
@@ -406,7 +389,9 @@ export default function SpeechToTextPage() {
       }
 
       const languagesList: Language[] = rawList
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((l: any) => l.is_active !== false)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((l: any) => ({
           id: l.id,
           code: l.locale || l.code || '',
@@ -500,6 +485,7 @@ export default function SpeechToTextPage() {
     if (activeTab === 'evaluations') {
       loadRuns();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Handle audio file selection and upload
@@ -772,6 +758,7 @@ export default function SpeechToTextPage() {
 
       // Enrich results with sample data (filename, ground truth, signed URL)
       // The structure is: data.results[].sample contains all sample information
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       resultsList = resultsList.map((result: any) => {
         const sample = result.sample;
 
@@ -1013,8 +1000,6 @@ function DatasetsTab({
   isCreating,
   handleCreateDataset,
   datasets,
-  isLoadingDatasets,
-  loadDatasets,
   apiKeys,
   languages,
   toast,
@@ -1031,6 +1016,7 @@ function DatasetsTab({
       ground_truth: string;
       language_id: number;
       signed_url?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       sample_metadata?: { original_filename?: string; [key: string]: any };
     }[];
   } | null>(null);
@@ -1056,8 +1042,8 @@ function DatasetsTab({
         return;
       }
       setViewModalData({ name: datasetName, datasetId, samples });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to view dataset');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to view dataset');
     } finally {
       setViewingId(null);
     }
@@ -1084,8 +1070,8 @@ function DatasetsTab({
         ...prev,
         samples: prev.samples.map(s => s.id === sampleId ? { ...s, [field]: value } : s),
       } : null);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update sample');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update sample');
     } finally {
       setSavingSampleId(null);
     }
@@ -1618,6 +1604,7 @@ interface EvaluationsTabProps {
   isLoadingResults: boolean;
   loadResults: (runId: number) => void;
   apiKeys: APIKey[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toast: any;
   setActiveTab: (tab: Tab) => void;
 }
@@ -1646,6 +1633,7 @@ function EvaluationsTab({
   loadResults,
   apiKeys,
   toast,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setActiveTab,
 }: EvaluationsTabProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -2006,7 +1994,7 @@ function EvaluationsTab({
                               >
                                 {/* Tab navigation */}
                                 <div className="flex border-b" style={{ borderColor: colors.border }}>
-                                  {metrics.map((m, idx) => (
+                                  {metrics.map((m, _idx) => (
                                     <button
                                       key={m.key}
                                       className="flex-1 px-2 py-2 text-xs font-medium"
@@ -2375,7 +2363,7 @@ function EvaluationsTab({
                 ) : (
                   <div className="p-16 text-center">
                     <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
-                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status &quot;{statusFilter}&quot;</p>
                   </div>
                 );
               })()

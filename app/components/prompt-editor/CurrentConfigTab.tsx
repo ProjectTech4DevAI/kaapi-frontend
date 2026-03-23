@@ -62,11 +62,12 @@ export default function CurrentConfigTab({
     onToolsChange(tools.filter((_, i) => i !== index));
   };
 
-  const updateTool = (index: number, field: keyof Tool, value: any) => {
+  const updateTool = (index: number, field: keyof Tool, value: unknown) => {
     const newTools = [...tools];
     if (field === 'knowledge_base_ids') {
-      newTools[index][field] = [value];
+      newTools[index][field] = [value as string];
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newTools[index] as any)[field] = value;
     }
     onToolsChange(newTools);

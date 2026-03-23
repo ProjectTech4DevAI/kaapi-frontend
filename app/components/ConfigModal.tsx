@@ -96,7 +96,9 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
           // 2. Check tools array for knowledge_base_ids
           if (params.tools) {
             const toolKbIds = params.tools
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               .filter((tool: any) => Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               .flatMap((tool: any) => tool.knowledge_base_ids);
             knowledgeBaseIds.push(...toolKbIds);
           }
@@ -275,11 +277,13 @@ export default function ConfigModal({ isOpen, onClose, job, assistantConfig }: C
                 <ConfigField label="Tools">
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
-                      {job.config.tools.map((tool, idx) => (
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {job.config.tools.map((tool: any, idx) => (
                         <Tag key={idx}>{tool.type}</Tag>
                       ))}
                     </div>
-                    {job.config.tools.map((tool, idx) => (
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {job.config.tools.map((tool: any, idx: number) => (
                       <React.Fragment key={`tool-details-${idx}`}>
                         {Array.isArray(tool.knowledge_base_ids) && tool.knowledge_base_ids.length > 0 && (
                           <div>

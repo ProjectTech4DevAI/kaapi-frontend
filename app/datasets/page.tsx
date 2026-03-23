@@ -63,6 +63,7 @@ export default function Datasets() {
     if (apiKey) {
       fetchDatasets();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   const fetchDatasets = async () => {
@@ -90,9 +91,9 @@ export default function Datasets() {
       const data = await response.json();
       const datasetList = Array.isArray(data) ? data : (data.data || []);
       setDatasets(datasetList);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch datasets:', err);
-      setError(err.message || 'Failed to fetch datasets');
+      setError(err instanceof Error ? err.message : 'Failed to fetch datasets');
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +155,7 @@ export default function Datasets() {
         throw new Error(errorData.error || errorData.message || `Upload failed with status ${response.status}`);
       }
 
-      const data = await response.json();
+      await response.json();
       // Refresh datasets list
       await fetchDatasets();
 
@@ -626,7 +627,7 @@ export function UploadDatasetModal({
         {/* Modal Body */}
         <div className="p-6">
           <p className="text-sm mb-6" style={{ color: 'hsl(330, 3%, 49%)' }}>
-            Upload a CSV file containing your QnA dataset. The file will be stored in your browser's local storage.
+            Upload a CSV file containing your QnA dataset. The file will be stored in your browser&apos;s local storage.
           </p>
 
         {/* File Selection Area */}

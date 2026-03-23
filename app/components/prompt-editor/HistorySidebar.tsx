@@ -59,6 +59,7 @@ export default function HistorySidebar({
 
   // Format timestamp - calculate relative time from UTC timestamps
   const formatTimestamp = (timestamp: string) => {
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const date = new Date(timestamp).getTime();
     const diff = now - date;

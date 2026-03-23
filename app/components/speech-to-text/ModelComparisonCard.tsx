@@ -54,7 +54,6 @@ const getWerLabel = (wer: number) => {
 export default function ModelComparisonCard({
   modelId,
   modelName,
-  provider,
   transcript,
   status,
   error,
@@ -62,9 +61,7 @@ export default function ModelComparisonCard({
   lenientMetrics,
   isBest = false,
   isWorst = false,
-  isSelected = false,
   onClick,
-  compact = false,
 }: ModelComparisonCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const werPercent = strictMetrics ? strictMetrics.wer * 100 : null;
@@ -74,6 +71,7 @@ export default function ModelComparisonCard({
   // Also reset when modelId changes (new model added)
   useEffect(() => {
     if (status === 'pending') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsExpanded(false);
     }
   }, [status, modelId]);

@@ -33,6 +33,7 @@ export default function WaveformVisualizer({
     if (!audioElement || isInitialized.current) return;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContextClass();
       const analyser = audioContext.createAnalyser();

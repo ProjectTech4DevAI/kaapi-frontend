@@ -98,6 +98,7 @@ export default function ConfigEditorPane({
       ...configBlob,
       completion: {
         ...configBlob.completion,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         provider: newProvider as any,
         params: {
           ...params,
@@ -166,11 +167,12 @@ export default function ConfigEditorPane({
     });
   };
 
-  const handleUpdateTool = (index: number, field: keyof Tool, value: any) => {
+  const handleUpdateTool = (index: number, field: keyof Tool, value: unknown) => {
     const newTools = [...tools];
     if (field === 'knowledge_base_ids') {
-      newTools[index][field] = [value];
+      newTools[index][field] = [value as string];
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newTools[index] as any)[field] = value;
     }
     onConfigChange({

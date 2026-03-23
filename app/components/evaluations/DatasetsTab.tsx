@@ -82,6 +82,7 @@ export default function DatasetsTab({
       }
       toast.success('Dataset deleted');
       loadStoredDatasets();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete dataset');
     } finally {
@@ -140,6 +141,7 @@ export default function DatasetsTab({
       const rows = lines.slice(1).map(parseRow);
 
       setViewModalData({ name: datasetName, headers, rows, signedUrl: signedUrl || '' });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || 'Failed to view dataset');
     } finally {

@@ -6,8 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { IndividualScore, TraceScore, getScoreObject, normalizeToIndividualScores, hasSummaryScores, isNewScoreObjectV2, isGroupedFormat, GroupedTraceItem } from './types';
-import { EvalJob } from './types';
+import { TraceScore, getScoreObject, normalizeToIndividualScores, hasSummaryScores, isNewScoreObjectV2, isGroupedFormat, GroupedTraceItem, EvalJob } from '@/app/components/types';
 
 // Helper function to format score value with color
 const formatScoreValue = (score: TraceScore | undefined) => {

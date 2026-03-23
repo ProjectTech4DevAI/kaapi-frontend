@@ -18,8 +18,11 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "error",
-      "no-unused-vars": "off", // use @typescript-eslint/no-unused-vars instead
+      "@typescript-eslint/no-unused-vars": ["error", {
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }],
       "react/no-unescaped-entities": "error",
       "no-duplicate-imports": "error",
       "prefer-const": "error",

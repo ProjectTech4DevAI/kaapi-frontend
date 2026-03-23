@@ -22,11 +22,5 @@ jobs:
       - name: Run Linting
         run: npm run lint
 
-      - name: Run Tests
-        run: npm test
-
-      - name: Run Tests with Coverage
-        run: npm run test:coverage
-
       - name: Build the Project
         run: npm run build

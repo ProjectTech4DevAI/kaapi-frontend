@@ -13,8 +13,6 @@ export function timeAgo(dateStr: string): string {
   return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
 }
 
-// Format timestamp as relative time
-// Handles UTC timestamps from the database and converts them to local time
 export function getExistingForProvider(
   provider: ProviderDef,
   creds: Credential[],

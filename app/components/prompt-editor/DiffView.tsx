@@ -11,14 +11,9 @@ interface DiffViewProps {
   commits: SavedConfig[];
   onCompareChange: (commit: SavedConfig | null) => void;
   onLoadVersion: (config: SavedConfig) => void;
-  /** Lazily loads the lightweight version list for a given config_id (1 call or no-op) */
-  loadVersionsForConfig?: (config_id: string) => Promise<void>;
+  loadVersionsForConfig?: (config_id: string) => Promise<void>; // lightweight version list for a given config_id
   versionItemsMap?: Record<string, ConfigVersionItems[]>; // Lightweight version items per config_id. When provided, the compare dropdown shows ALL version
-  /**
-   * Fetches a single version's full details on demand (1 GET call).
-   * Called when the user picks a version that isn't yet in `commits`.
-   */
-  onFetchVersionDetail?: (config_id: string, version: number) => Promise<SavedConfig | null>;
+  onFetchVersionDetail?: (config_id: string, version: number) => Promise<SavedConfig | null>; // Fetches a single version's full details
 }
 
 // Group configs by name for the dropdown
@@ -91,18 +86,12 @@ export default function DiffView({
     let detail = commits.find(c => c.config_id === config_id && c.version === version);
     if (detail) { onCompareChange(detail); return; }
 
-    // Fetch on demand — 1 API call
     if (onFetchVersionDetail) {
       setIsLoadingCompare(true);
       detail = (await onFetchVersionDetail(config_id, version)) ?? undefined;
       setIsLoadingCompare(false);
     }
     onCompareChange(detail ?? null);
-  };
-
-  // Format timestamp
-  const formatTimestamp = (timestamp: string) => {
-    return formatRelativeTime(timestamp);
   };
 
   return (
@@ -116,7 +105,7 @@ export default function DiffView({
             {selectedCommit.name} v{selectedCommit.version}
           </div>
           <div className="text-xs" style={{ color: colors.text.secondary }}>
-            {formatTimestamp(selectedCommit.timestamp)} • {selectedCommit.provider}/{selectedCommit.modelName}
+            {formatRelativeTime(selectedCommit.timestamp)} • {selectedCommit.provider}/{selectedCommit.modelName}
             {selectedCommit.commit_message && ` • ${selectedCommit.commit_message}`}
           </div>
         </div>
@@ -124,7 +113,6 @@ export default function DiffView({
           <div className="flex gap-3 items-center">
             <select
               onFocus={() => {
-                // Ensure lightweight version lists are populated for all configs
                 if (loadVersionsForConfig) {
                   configGroups.forEach(g => loadVersionsForConfig(g.config_id));
                 }
@@ -148,7 +136,7 @@ export default function DiffView({
                     .filter(v => !(v.config_id === selectedCommit.config_id && v.version === selectedCommit.version))
                     .map(item => (
                       <option key={item.id} value={encodeValue(item.config_id, item.version)}>
-                        v{item.version} - {item.commit_message || 'No message'} ({formatTimestamp(item.inserted_at)})
+                        v{item.version} - {item.commit_message || 'No message'} ({formatRelativeTime(item.inserted_at)})
                       </option>
                     ))}
                 </optgroup>

@@ -56,6 +56,7 @@ export default function CredentialsPage() {
   useEffect(() => {
     if (apiKeys.length === 0) return;
     loadCredentials();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys]);
 
   // Re-populate form when provider or credentials change
@@ -139,8 +140,8 @@ export default function CredentialsPage() {
         toast.success(`${selectedProvider.name} credentials saved`);
       }
       await loadCredentials();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save credentials");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save credentials");
     } finally {
       setIsSaving(false);
     }
@@ -177,8 +178,8 @@ export default function CredentialsPage() {
       );
       toast.success(`${selectedProvider.name} credentials removed`);
       await loadCredentials();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to remove credentials");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to remove credentials");
     } finally {
       setIsDeleting(false);
     }
@@ -191,7 +192,11 @@ export default function CredentialsPage() {
   const handleToggleVisibility = (key: string) => {
     setVisibleFields((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   };

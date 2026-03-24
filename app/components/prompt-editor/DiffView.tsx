@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 import PromptDiffPane from './PromptDiffPane';
 import ConfigDiffPane from './ConfigDiffPane';

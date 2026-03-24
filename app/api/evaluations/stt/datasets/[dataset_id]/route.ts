@@ -34,7 +34,7 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch dataset', data: null },
       { status: 500 }
@@ -62,7 +62,7 @@ export async function DELETE(
     let data;
     try { data = await response.json(); } catch { data = { success: true }; }
     return NextResponse.json(data, { status: response.ok ? 200 : response.status });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: 'Failed to delete dataset', details: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: 'Failed to delete dataset', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

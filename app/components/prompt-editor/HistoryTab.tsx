@@ -14,6 +14,7 @@ export default function HistoryTab({
   onLoadConfig,
 }: HistoryTabProps) {
   const formatTimestamp = (timestamp: number) => {
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now();
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);

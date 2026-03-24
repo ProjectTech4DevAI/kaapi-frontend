@@ -19,6 +19,7 @@ export interface CompletionParams {
   // Backend expects these as direct fields (flattened from tools array)
   knowledge_base_ids?: string[];
   max_num_results?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; // Allow additional provider-specific params
 }
 
@@ -89,7 +90,7 @@ export interface APIResponse<T> {
   success: boolean;
   data: T | null;
   error?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 // Helper type for list responses

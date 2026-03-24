@@ -12,8 +12,8 @@ export async function GET(
       `/api/v1/credentials/provider/${provider}`,
     );
     return NextResponse.json(data, { status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }
 
@@ -33,7 +33,7 @@ export async function DELETE(
     }
 
     return NextResponse.json(data, { status });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
 }

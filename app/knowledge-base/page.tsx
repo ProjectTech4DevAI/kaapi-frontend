@@ -124,7 +124,7 @@ export default function KnowledgeBasePage() {
     jobStatusMap: Map<string, { status: string | null; collectionId: string | null }>
   ): Promise<Collection> => {
     // First try to look up cached data by collection_id
-    let cached = getCollectionDataByCollectionId(collection.id);
+    const cached = getCollectionDataByCollectionId(collection.id);
 
     let jobId = cached.job_id;
     let collectionJobStatus = null;
@@ -242,6 +242,7 @@ export default function KnowledgeBasePage() {
   };
 
   // Fetch collections
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchCollections = async () => {
     if (!apiKey) return;
 
@@ -749,6 +750,7 @@ export default function KnowledgeBasePage() {
       fetchCollections();
       fetchDocuments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   // Keep apiKeyRef in sync so polling always has the current key

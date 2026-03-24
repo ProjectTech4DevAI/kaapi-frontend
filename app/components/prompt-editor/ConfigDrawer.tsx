@@ -1,5 +1,6 @@
 import React from 'react';
 import { colors } from '@/app/lib/colors';
+import { Tool } from '@/app/lib/configTypes';
 import { Config, Commit, LegacyVariant, TestResult } from '@/app/configurations/prompt-editor/types';
 import CurrentConfigTab from './CurrentConfigTab';
 import HistoryTab from './HistoryTab';
@@ -19,15 +20,14 @@ interface ConfigDrawerProps {
   model: string;
   instructions: string;
   temperature: number;
-  tools: any[];
+  tools: Tool[];
   configCommitMsg: string;
-  currentContent: string;
   onConfigNameChange: (name: string) => void;
   onProviderChange: (provider: string) => void;
   onModelChange: (model: string) => void;
   onInstructionsChange: (instructions: string) => void;
   onTemperatureChange: (temp: number) => void;
-  onToolsChange: (tools: any[]) => void;
+  onToolsChange: (tools: Tool[]) => void;
   onConfigCommitMsgChange: (msg: string) => void;
   onSaveConfig: () => void;
   onLoadConfig: (configId: string) => void;
@@ -58,7 +58,6 @@ export default function ConfigDrawer({
   temperature,
   tools,
   configCommitMsg,
-  currentContent,
   onConfigNameChange,
   onProviderChange,
   onModelChange,

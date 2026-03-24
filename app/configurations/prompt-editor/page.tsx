@@ -72,13 +72,8 @@ function PromptEditorContent() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const initialLoadComplete = !isLoading;
   const editorInitialized = React.useRef(false);
-  // False while we are still fetching the URL-specified config — prevents the flash
-  // of empty/default state that would otherwise show before applyConfig() is called.
   const [editorReady, setEditorReady] = useState<boolean>(!urlConfigId);
 
-  // Stable version items map that only grows — never wiped by background refetches.
-  // Background revalidation clears configState.versionItemsCache then re-fetches;
-  // we merge the hook's map into our local copy so already-loaded entries survive.
   const [stableVersionItemsMap, setStableVersionItemsMap] = useState<
     Record<string, import("@/app/lib/types/configs").ConfigVersionItems[]>
   >({});
@@ -464,7 +459,7 @@ function PromptEditorContent() {
                     setSelectedVersion(null);
                     setCompareWith(null);
                   }}
-                  isLoading={!editorReady}
+                  isLoading={isLoading}
                   versionItems={
                     currentConfigParentId
                       ? (versionItemsMap[currentConfigParentId] ?? [])
@@ -476,6 +471,10 @@ function PromptEditorContent() {
                           loadSingleVersion(currentConfigParentId, version)
                       : undefined
                   }
+                  allConfigMeta={allConfigMeta}
+                  fullVersionItemsMap={versionItemsMap}
+                  loadVersionsForConfig={loadVersionsForConfig}
+                  loadSingleVersionForConfig={loadSingleVersion}
                 />
 
                 {/* Show DiffView only when comparing versions (sidebar open + version selected) */}

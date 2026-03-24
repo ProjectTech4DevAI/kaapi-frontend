@@ -79,7 +79,8 @@ body {
 }
 
 /* Smooth transitions for all interactive elements */
-button, a {
+button,
+a {
   transition: all 0.2s ease-in-out;
 }
 

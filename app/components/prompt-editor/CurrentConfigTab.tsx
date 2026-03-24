@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { colors } from '@/app/lib/colors';
-import { Config, Tool } from '@/app/configurations/prompt-editor/types';
+import { useState } from "react";
+import { colors } from "@/app/lib/colors";
+import { Config, Tool } from "@/app/configurations/prompt-editor/types";
 
 interface CurrentConfigTabProps {
   configs: Config[];
@@ -51,8 +51,8 @@ export default function CurrentConfigTab({
     onToolsChange([
       ...tools,
       {
-        type: 'file_search',
-        knowledge_base_ids: [''],
+        type: "file_search",
+        knowledge_base_ids: [""],
         max_num_results: 20,
       },
     ]);
@@ -64,7 +64,7 @@ export default function CurrentConfigTab({
 
   const updateTool = (index: number, field: keyof Tool, value: unknown) => {
     const newTools = [...tools];
-    if (field === 'knowledge_base_ids') {
+    if (field === "knowledge_base_ids") {
       newTools[index][field] = [value as string];
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,21 +74,21 @@ export default function CurrentConfigTab({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {/* Config Name Selector */}
       <div>
         <label
           style={{
-            display: 'block',
-            fontSize: '12px',
+            display: "block",
+            fontSize: "12px",
             fontWeight: 600,
             color: colors.text.primary,
-            marginBottom: '6px',
+            marginBottom: "6px",
           }}
         >
           Configuration
         </label>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: "flex", gap: "8px" }}>
           {!isCreatingNew ? (
             <>
               <select
@@ -100,10 +100,10 @@ export default function CurrentConfigTab({
                 }}
                 style={{
                   flex: 1,
-                  padding: '8px',
+                  padding: "8px",
                   border: `1px solid ${colors.border}`,
-                  borderRadius: '4px',
-                  fontSize: '13px',
+                  borderRadius: "4px",
+                  fontSize: "13px",
                   backgroundColor: colors.bg.primary,
                 }}
               >
@@ -117,16 +117,16 @@ export default function CurrentConfigTab({
               <button
                 onClick={() => {
                   setIsCreatingNew(true);
-                  onConfigNameChange('');
+                  onConfigNameChange("");
                 }}
                 style={{
-                  padding: '8px 12px',
+                  padding: "8px 12px",
                   backgroundColor: colors.accent.primary,
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "13px",
                   fontWeight: 500,
                 }}
               >
@@ -142,22 +142,22 @@ export default function CurrentConfigTab({
                 placeholder="Enter config name..."
                 style={{
                   flex: 1,
-                  padding: '8px',
+                  padding: "8px",
                   border: `1px solid ${colors.border}`,
-                  borderRadius: '4px',
-                  fontSize: '13px',
+                  borderRadius: "4px",
+                  fontSize: "13px",
                 }}
               />
               <button
                 onClick={() => setIsCreatingNew(false)}
                 style={{
-                  padding: '8px 12px',
+                  padding: "8px 12px",
                   backgroundColor: colors.bg.secondary,
                   color: colors.text.primary,
                   border: `1px solid ${colors.border}`,
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "13px",
                 }}
               >
                 Cancel
@@ -171,11 +171,11 @@ export default function CurrentConfigTab({
       <div>
         <label
           style={{
-            display: 'block',
-            fontSize: '12px',
+            display: "block",
+            fontSize: "12px",
             fontWeight: 600,
             color: colors.text.primary,
-            marginBottom: '6px',
+            marginBottom: "6px",
           }}
         >
           Provider
@@ -184,11 +184,11 @@ export default function CurrentConfigTab({
           value={provider}
           onChange={(e) => onProviderChange(e.target.value)}
           style={{
-            width: '100%',
-            padding: '8px',
+            width: "100%",
+            padding: "8px",
             border: `1px solid ${colors.border}`,
-            borderRadius: '4px',
-            fontSize: '13px',
+            borderRadius: "4px",
+            fontSize: "13px",
             backgroundColor: colors.bg.primary,
           }}
         >
@@ -202,11 +202,11 @@ export default function CurrentConfigTab({
       <div>
         <label
           style={{
-            display: 'block',
-            fontSize: '12px',
+            display: "block",
+            fontSize: "12px",
             fontWeight: 600,
             color: colors.text.primary,
-            marginBottom: '6px',
+            marginBottom: "6px",
           }}
         >
           Model
@@ -215,11 +215,11 @@ export default function CurrentConfigTab({
           value={model}
           onChange={(e) => onModelChange(e.target.value)}
           style={{
-            width: '100%',
-            padding: '8px',
+            width: "100%",
+            padding: "8px",
             border: `1px solid ${colors.border}`,
-            borderRadius: '4px',
-            fontSize: '13px',
+            borderRadius: "4px",
+            fontSize: "13px",
             backgroundColor: colors.bg.primary,
           }}
         >
@@ -234,15 +234,15 @@ export default function CurrentConfigTab({
       <div>
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '6px',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "6px",
           }}
         >
           <label
             style={{
-              fontSize: '12px',
+              fontSize: "12px",
               fontWeight: 600,
               color: colors.text.primary,
             }}
@@ -252,13 +252,13 @@ export default function CurrentConfigTab({
           <button
             onClick={onUseCurrentPrompt}
             style={{
-              padding: '4px 8px',
+              padding: "4px 8px",
               backgroundColor: colors.bg.secondary,
               color: colors.text.primary,
               border: `1px solid ${colors.border}`,
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '11px',
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "11px",
             }}
           >
             Use Current Prompt
@@ -269,14 +269,14 @@ export default function CurrentConfigTab({
           onChange={(e) => onInstructionsChange(e.target.value)}
           placeholder="Enter instructions..."
           style={{
-            width: '100%',
-            minHeight: '120px',
-            padding: '8px',
+            width: "100%",
+            minHeight: "120px",
+            padding: "8px",
             border: `1px solid ${colors.border}`,
-            borderRadius: '4px',
-            fontSize: '13px',
-            fontFamily: 'monospace',
-            resize: 'vertical',
+            borderRadius: "4px",
+            fontSize: "13px",
+            fontFamily: "monospace",
+            resize: "vertical",
           }}
         />
       </div>
@@ -285,11 +285,11 @@ export default function CurrentConfigTab({
       <div>
         <label
           style={{
-            display: 'block',
-            fontSize: '12px',
+            display: "block",
+            fontSize: "12px",
             fontWeight: 600,
             color: colors.text.primary,
-            marginBottom: '6px',
+            marginBottom: "6px",
           }}
         >
           Temperature: {temperature.toFixed(1)}
@@ -301,15 +301,15 @@ export default function CurrentConfigTab({
           step="0.1"
           value={temperature}
           onChange={(e) => onTemperatureChange(parseFloat(e.target.value))}
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
         />
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '11px',
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "11px",
             color: colors.text.secondary,
-            marginTop: '4px',
+            marginTop: "4px",
           }}
         >
           <span>Focused (0)</span>
@@ -322,15 +322,15 @@ export default function CurrentConfigTab({
       <div>
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '8px',
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "8px",
           }}
         >
           <label
             style={{
-              fontSize: '12px',
+              fontSize: "12px",
               fontWeight: 600,
               color: colors.text.primary,
             }}
@@ -340,13 +340,13 @@ export default function CurrentConfigTab({
           <button
             onClick={addTool}
             style={{
-              padding: '4px 8px',
+              padding: "4px 8px",
               backgroundColor: colors.accent.primary,
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '11px',
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "11px",
             }}
           >
             + Add Tool
@@ -356,67 +356,71 @@ export default function CurrentConfigTab({
           <div
             key={index}
             style={{
-              padding: '12px',
+              padding: "12px",
               border: `1px solid ${colors.border}`,
-              borderRadius: '4px',
-              marginBottom: '8px',
+              borderRadius: "4px",
+              marginBottom: "8px",
               backgroundColor: colors.bg.secondary,
             }}
           >
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px',
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "8px",
               }}
             >
-              <span style={{ fontSize: '12px', fontWeight: 600 }}>File Search</span>
+              <span style={{ fontSize: "12px", fontWeight: 600 }}>
+                File Search
+              </span>
               <button
                 onClick={() => removeTool(index)}
                 style={{
-                  background: 'none',
-                  border: 'none',
+                  background: "none",
+                  border: "none",
                   color: colors.status.error,
-                  cursor: 'pointer',
-                  fontSize: '12px',
+                  cursor: "pointer",
+                  fontSize: "12px",
                 }}
               >
                 Remove
               </button>
             </div>
-            <div style={{ marginBottom: '8px' }}>
+            <div style={{ marginBottom: "8px" }}>
               <label
                 style={{
-                  display: 'block',
-                  fontSize: '11px',
+                  display: "block",
+                  fontSize: "11px",
                   color: colors.text.secondary,
-                  marginBottom: '4px',
+                  marginBottom: "4px",
                 }}
               >
                 Knowledge Base ID
               </label>
               <input
                 type="text"
-                value={tool.knowledge_base_ids[0] || ''}
-                onChange={(e) => updateTool(index, 'knowledge_base_ids', e.target.value)}
+                value={tool.knowledge_base_ids[0] || ""}
+                onChange={(e) =>
+                  updateTool(index, "knowledge_base_ids", e.target.value)
+                }
                 placeholder="vs_abc123"
                 style={{
-                  width: '100%',
-                  padding: '6px',
+                  width: "100%",
+                  padding: "6px",
                   border: `1px solid ${colors.border}`,
-                  borderRadius: '4px',
-                  fontSize: '12px',
+                  borderRadius: "4px",
+                  fontSize: "12px",
                 }}
               />
             </div>
             <div>
               <label
                 style={{
-                  display: 'block',
-                  fontSize: '11px',
+                  display: "block",
+                  fontSize: "11px",
                   color: colors.text.secondary,
-                  marginBottom: '4px',
+                  marginBottom: "4px",
                 }}
               >
                 Max Results
@@ -425,14 +429,18 @@ export default function CurrentConfigTab({
                 type="number"
                 value={tool.max_num_results}
                 onChange={(e) =>
-                  updateTool(index, 'max_num_results', parseInt(e.target.value) || 20)
+                  updateTool(
+                    index,
+                    "max_num_results",
+                    parseInt(e.target.value) || 20,
+                  )
                 }
                 style={{
-                  width: '100%',
-                  padding: '6px',
+                  width: "100%",
+                  padding: "6px",
                   border: `1px solid ${colors.border}`,
-                  borderRadius: '4px',
-                  fontSize: '12px',
+                  borderRadius: "4px",
+                  fontSize: "12px",
                 }}
               />
             </div>
@@ -444,11 +452,11 @@ export default function CurrentConfigTab({
       <div>
         <label
           style={{
-            display: 'block',
-            fontSize: '12px',
+            display: "block",
+            fontSize: "12px",
             fontWeight: 600,
             color: colors.text.primary,
-            marginBottom: '6px',
+            marginBottom: "6px",
           }}
         >
           Commit Message (Optional)
@@ -459,11 +467,11 @@ export default function CurrentConfigTab({
           onChange={(e) => onConfigCommitMsgChange(e.target.value)}
           placeholder="Describe this configuration..."
           style={{
-            width: '100%',
-            padding: '8px',
+            width: "100%",
+            padding: "8px",
             border: `1px solid ${colors.border}`,
-            borderRadius: '4px',
-            fontSize: '13px',
+            borderRadius: "4px",
+            fontSize: "13px",
           }}
         />
       </div>
@@ -472,14 +480,14 @@ export default function CurrentConfigTab({
       <button
         onClick={onSaveConfig}
         style={{
-          width: '100%',
-          padding: '12px',
+          width: "100%",
+          padding: "12px",
           backgroundColor: colors.status.success,
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '14px',
+          color: "#ffffff",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer",
+          fontSize: "14px",
           fontWeight: 600,
         }}
       >

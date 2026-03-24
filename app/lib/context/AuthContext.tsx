@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-} from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import type { APIKey } from "@/app/keystore/page";
 
 const STORAGE_KEY = "kaapi_api_keys";
@@ -22,19 +16,16 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-
-  useEffect(() => {
+  const [apiKeys, setApiKeys] = useState<APIKey[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setApiKeys(JSON.parse(raw));
-      }
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) return JSON.parse(stored);
     } catch {
-      setApiKeys([]);
+      /* ignore malformed data */
     }
-  }, []);
+    return [];
+  });
 
   const persist = useCallback((keys: APIKey[]) => {
     setApiKeys(keys);
@@ -49,12 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (key: APIKey) => persist([...apiKeys, key]),
     [apiKeys, persist],
   );
-
   const removeKey = useCallback(
     (id: string) => persist(apiKeys.filter((k) => k.id !== id)),
     [apiKeys, persist],
   );
-
   const setKeys = useCallback((keys: APIKey[]) => persist(keys), [persist]);
 
   return (

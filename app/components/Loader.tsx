@@ -3,15 +3,19 @@
  * Matches the design system with smooth animations
  */
 
-import React from 'react';
+import React from "react";
 
 interface LoaderProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   message?: string;
   fullScreen?: boolean;
 }
 
-export default function Loader({ size = 'md', message, fullScreen = false }: LoaderProps) {
+export default function Loader({
+  size = "md",
+  message,
+  fullScreen = false,
+}: LoaderProps) {
   const sizeMap = {
     sm: 20,
     md: 32,
@@ -27,19 +31,15 @@ export default function Loader({ size = 'md', message, fullScreen = false }: Loa
         style={{
           width: `${spinnerSize}px`,
           height: `${spinnerSize}px`,
-          border: '3px solid #e5e5e5',
-          borderTopColor: '#171717',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
+          border: "3px solid #e5e5e5",
+          borderTopColor: "#171717",
+          borderRadius: "50%",
+          animation: "spin 0.8s linear infinite",
         }}
       />
       {/* Message */}
       {message && (
-        <p
-          className="text-sm font-medium text-[#737373]"
-        >
-          {message}
-        </p>
+        <p className="text-sm font-medium text-[#737373]">{message}</p>
       )}
       {/* CSS Animation */}
       <style jsx>{`
@@ -54,9 +54,7 @@ export default function Loader({ size = 'md', message, fullScreen = false }: Loa
 
   if (fullScreen) {
     return (
-      <div
-        className="w-full h-screen flex items-center justify-center bg-[#fafafa]"
-      >
+      <div className="w-full h-screen flex items-center justify-center bg-[#fafafa]">
         {loaderContent}
       </div>
     );
@@ -68,11 +66,15 @@ export default function Loader({ size = 'md', message, fullScreen = false }: Loa
 /**
  * LoaderBox - Loader inside a bordered container
  */
-export function LoaderBox({ message, size = 'md' }: { message?: string; size?: 'sm' | 'md' | 'lg' }) {
+export function LoaderBox({
+  message,
+  size = "md",
+}: {
+  message?: string;
+  size?: "sm" | "md" | "lg";
+}) {
   return (
-    <div
-      className="border rounded-lg p-8 text-center bg-[#ffffff] border-[#e5e5e5]"
-    >
+    <div className="border rounded-lg p-8 text-center bg-[#ffffff] border-[#e5e5e5]">
       <Loader size={size} message={message} />
     </div>
   );

@@ -130,7 +130,9 @@ export default function CredentialsPage() {
       }
       await loadCredentials();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to save credentials");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save credentials",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -168,7 +170,9 @@ export default function CredentialsPage() {
       toast.success(`${selectedProvider.name} credentials removed`);
       await loadCredentials();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to remove credentials");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to remove credentials",
+      );
     } finally {
       setIsDeleting(false);
     }

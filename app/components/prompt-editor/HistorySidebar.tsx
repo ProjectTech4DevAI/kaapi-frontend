@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { colors } from '@/app/lib/colors';
-import { SavedConfig } from '@/app/lib/useConfigs';
+import { useState } from "react";
+import { colors } from "@/app/lib/colors";
+import { SavedConfig } from "@/app/lib/useConfigs";
 
 interface HistorySidebarProps {
   savedConfigs: SavedConfig[];
@@ -23,9 +23,11 @@ export default function HistorySidebar({
   onToggle,
   collapsed,
   isLoading = false,
-  currentConfigId
+  currentConfigId,
 }: HistorySidebarProps) {
-  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(new Set());
+  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Toggle expand/collapse
   const toggleExpand = (configName: string) => {
@@ -40,20 +42,23 @@ export default function HistorySidebar({
 
   // Filter configs - if currentConfigId is provided, only show that config's versions
   const filteredConfigs = currentConfigId
-    ? savedConfigs.filter(c => c.config_id === currentConfigId)
+    ? savedConfigs.filter((c) => c.config_id === currentConfigId)
     : savedConfigs;
 
   // Group saved configs by name
-  const groupedConfigs = filteredConfigs.reduce((acc, config) => {
-    if (!acc[config.name]) {
-      acc[config.name] = [];
-    }
-    acc[config.name].push(config);
-    return acc;
-  }, {} as Record<string, SavedConfig[]>);
+  const groupedConfigs = filteredConfigs.reduce(
+    (acc, config) => {
+      if (!acc[config.name]) {
+        acc[config.name] = [];
+      }
+      acc[config.name].push(config);
+      return acc;
+    },
+    {} as Record<string, SavedConfig[]>,
+  );
 
   // Sort versions within each group (newest first)
-  Object.keys(groupedConfigs).forEach(name => {
+  Object.keys(groupedConfigs).forEach((name) => {
     groupedConfigs[name].sort((a, b) => b.version - a.version);
   });
 
@@ -67,23 +72,23 @@ export default function HistorySidebar({
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'just now';
+    if (minutes < 1) return "just now";
     if (minutes < 60) return `${minutes} min ago`;
     if (hours < 24) return `${hours} hr ago`;
-    return `${days} day${days > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? "s" : ""} ago`;
   };
 
-  const titleText = currentConfigId ? 'Version History' : 'All Configurations';
+  const titleText = currentConfigId ? "Version History" : "All Configurations";
 
   return (
     <div
       className="border-r flex flex-col flex-shrink-0"
       style={{
-        width: collapsed ? '40px' : '320px',
+        width: collapsed ? "40px" : "320px",
         backgroundColor: colors.bg.primary,
         borderColor: colors.border,
-        transition: 'width 0.2s ease-in-out',
-        overflow: 'hidden',
+        transition: "width 0.2s ease-in-out",
+        overflow: "hidden",
       }}
     >
       {/* Header - always visible */}
@@ -91,21 +96,29 @@ export default function HistorySidebar({
         className="border-b flex items-center flex-shrink-0"
         style={{
           borderColor: colors.border,
-          padding: collapsed ? '0' : '12px 16px',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          height: collapsed ? '40px' : 'auto',
-          transition: 'padding 0.2s ease-in-out',
+          padding: collapsed ? "0" : "12px 16px",
+          justifyContent: collapsed ? "center" : "space-between",
+          height: collapsed ? "40px" : "auto",
+          transition: "padding 0.2s ease-in-out",
         }}
       >
         {/* Title - hidden when collapsed */}
         {!collapsed && (
           <div className="flex-1 overflow-hidden mr-2">
-            <div className="text-sm font-semibold mb-0.5 whitespace-nowrap" style={{ color: colors.text.primary }}>
+            <div
+              className="text-sm font-semibold mb-0.5 whitespace-nowrap"
+              style={{ color: colors.text.primary }}
+            >
               {titleText}
             </div>
-            <div className="text-xs whitespace-nowrap" style={{ color: colors.text.secondary }}>
-              {filteredConfigs.length} version{filteredConfigs.length !== 1 ? 's' : ''}
-              {!currentConfigId && ` • ${Object.keys(groupedConfigs).length} config${Object.keys(groupedConfigs).length !== 1 ? 's' : ''}`}
+            <div
+              className="text-xs whitespace-nowrap"
+              style={{ color: colors.text.secondary }}
+            >
+              {filteredConfigs.length} version
+              {filteredConfigs.length !== 1 ? "s" : ""}
+              {!currentConfigId &&
+                ` • ${Object.keys(groupedConfigs).length} config${Object.keys(groupedConfigs).length !== 1 ? "s" : ""}`}
             </div>
           </div>
         )}
@@ -114,13 +127,13 @@ export default function HistorySidebar({
           onClick={onToggle}
           className="rounded flex-shrink-0 flex items-center justify-center"
           style={{
-            width: '28px',
-            height: '28px',
-            borderWidth: '1px',
+            width: "28px",
+            height: "28px",
+            borderWidth: "1px",
             borderColor: colors.border,
             backgroundColor: colors.bg.primary,
             color: colors.text.secondary,
-            transition: 'all 0.15s ease'
+            transition: "all 0.15s ease",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = colors.bg.secondary;
@@ -130,7 +143,7 @@ export default function HistorySidebar({
             e.currentTarget.style.backgroundColor = colors.bg.primary;
             e.currentTarget.style.color = colors.text.secondary;
           }}
-          title={collapsed ? 'Show version history' : 'Hide version history'}
+          title={collapsed ? "Show version history" : "Hide version history"}
         >
           <svg
             className="w-4 h-4"
@@ -138,11 +151,16 @@ export default function HistorySidebar({
             viewBox="0 0 24 24"
             stroke="currentColor"
             style={{
-              transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease-in-out',
+              transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.2s ease-in-out",
             }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 19l-7-7 7-7"
+            />
           </svg>
         </button>
       </div>
@@ -158,9 +176,9 @@ export default function HistorySidebar({
           <span
             className="text-xs font-medium whitespace-nowrap"
             style={{
-              writingMode: 'vertical-rl',
-              textOrientation: 'mixed',
-              transform: 'rotate(180deg)',
+              writingMode: "vertical-rl",
+              textOrientation: "mixed",
+              transform: "rotate(180deg)",
             }}
           >
             {titleText}
@@ -171,176 +189,233 @@ export default function HistorySidebar({
       {/* Content - hidden when collapsed */}
       {!collapsed && (
         <div className="flex-1 overflow-auto p-3">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-8">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center p-8">
+              <div
+                className="animate-spin rounded-full border-4 border-solid mb-3"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderColor: colors.bg.secondary,
+                  borderTopColor: colors.accent.primary,
+                }}
+              />
+              <p
+                className="text-sm font-medium"
+                style={{ color: colors.text.primary }}
+              >
+                Loading versions...
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: colors.text.secondary }}
+              >
+                Fetching config history from backend
+              </p>
+            </div>
+          ) : Object.keys(groupedConfigs).length === 0 ? (
             <div
-              className="animate-spin rounded-full border-4 border-solid mb-3"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderColor: colors.bg.secondary,
-                borderTopColor: colors.accent.primary,
-              }}
-            />
-            <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
-              Loading versions...
-            </p>
-            <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-              Fetching config history from backend
-            </p>
-          </div>
-        ) : Object.keys(groupedConfigs).length === 0 ? (
-          <div className="border-2 border-dashed rounded-lg p-6 text-center" style={{ borderColor: colors.border }}>
-            <p className="text-sm" style={{ color: colors.text.secondary }}>
-              No saved configurations yet
-            </p>
-            <p className="text-xs mt-2" style={{ color: colors.text.secondary }}>
-              Create and save your first config to see version history
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {Object.entries(groupedConfigs).map(([configName, versions]) => {
-              const isExpanded = expandedConfigs.has(configName);
-              const latestVersion = versions[0];
+              className="border-2 border-dashed rounded-lg p-6 text-center"
+              style={{ borderColor: colors.border }}
+            >
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                No saved configurations yet
+              </p>
+              <p
+                className="text-xs mt-2"
+                style={{ color: colors.text.secondary }}
+              >
+                Create and save your first config to see version history
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(groupedConfigs).map(([configName, versions]) => {
+                const isExpanded = expandedConfigs.has(configName);
+                const latestVersion = versions[0];
 
-              return (
-                <div
-                  key={configName}
-                  className="border rounded-lg overflow-hidden"
-                  style={{
-                    borderColor: colors.border,
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  {/* Config Header */}
+                return (
                   <div
-                    onClick={() => toggleExpand(configName)}
-                    className="p-3 cursor-pointer"
+                    key={configName}
+                    className="border rounded-lg overflow-hidden"
                     style={{
-                      backgroundColor: colors.bg.secondary,
-                      transition: 'all 0.15s ease'
+                      borderColor: colors.border,
+                      transition: "all 0.15s ease",
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
                   >
-                    <div className="flex items-start gap-2">
-                      <span className="text-sm" style={{ color: colors.text.secondary }}>
-                        {isExpanded ? '▼' : '▶'}
-                      </span>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
-                          {configName}
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
-                          {versions.length} version{versions.length > 1 ? 's' : ''} • Latest: v{latestVersion.version}
+                    {/* Config Header */}
+                    <div
+                      onClick={() => toggleExpand(configName)}
+                      className="p-3 cursor-pointer"
+                      style={{
+                        backgroundColor: colors.bg.secondary,
+                        transition: "all 0.15s ease",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#f5f5f5")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor =
+                          colors.bg.secondary)
+                      }
+                    >
+                      <div className="flex items-start gap-2">
+                        <span
+                          className="text-sm"
+                          style={{ color: colors.text.secondary }}
+                        >
+                          {isExpanded ? "▼" : "▶"}
+                        </span>
+                        <div className="flex-1">
+                          <div
+                            className="text-sm font-semibold"
+                            style={{ color: colors.text.primary }}
+                          >
+                            {configName}
+                          </div>
+                          <div
+                            className="text-xs mt-0.5"
+                            style={{ color: colors.text.secondary }}
+                          >
+                            {versions.length} version
+                            {versions.length > 1 ? "s" : ""} • Latest: v
+                            {latestVersion.version}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Versions List */}
-                  {isExpanded && (
-                    <div className="border-t" style={{ borderColor: colors.border }}>
-                      {versions.map((version, idx) => (
-                        <div
-                          key={version.id}
-                          className="p-3 border-l-2"
-                          style={{
-                            backgroundColor: selectedVersion?.id === version.id ? '#f0fdf4' : idx === 0 ? '#fafafa' : colors.bg.primary,
-                            borderLeftColor: selectedVersion?.id === version.id ? colors.status.success : idx === 0 ? colors.accent.primary : colors.border,
-                            marginLeft: '12px',
-                            borderTop: idx > 0 ? `1px solid ${colors.border}` : 'none',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="px-2 py-0.5 rounded text-xs font-medium"
-                                style={{
-                                  backgroundColor: colors.bg.secondary,
-                                  color: colors.text.primary,
-                                  border: `1px solid ${colors.border}`
-                                }}
-                              >
-                                v{version.version}
-                              </span>
-                              {idx === 0 && (
+                    {/* Versions List */}
+                    {isExpanded && (
+                      <div
+                        className="border-t"
+                        style={{ borderColor: colors.border }}
+                      >
+                        {versions.map((version, idx) => (
+                          <div
+                            key={version.id}
+                            className="p-3 border-l-2"
+                            style={{
+                              backgroundColor:
+                                selectedVersion?.id === version.id
+                                  ? "#f0fdf4"
+                                  : idx === 0
+                                    ? "#fafafa"
+                                    : colors.bg.primary,
+                              borderLeftColor:
+                                selectedVersion?.id === version.id
+                                  ? colors.status.success
+                                  : idx === 0
+                                    ? colors.accent.primary
+                                    : colors.border,
+                              marginLeft: "12px",
+                              borderTop:
+                                idx > 0 ? `1px solid ${colors.border}` : "none",
+                              transition: "all 0.15s ease",
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2">
                                 <span
                                   className="px-2 py-0.5 rounded text-xs font-medium"
                                   style={{
-                                    backgroundColor: '#dcfce7',
-                                    color: '#15803d',
-                                    border: '1px solid #86efac'
+                                    backgroundColor: colors.bg.secondary,
+                                    color: colors.text.primary,
+                                    border: `1px solid ${colors.border}`,
                                   }}
                                 >
-                                  Latest
+                                  v{version.version}
                                 </span>
-                              )}
+                                {idx === 0 && (
+                                  <span
+                                    className="px-2 py-0.5 rounded text-xs font-medium"
+                                    style={{
+                                      backgroundColor: "#dcfce7",
+                                      color: "#15803d",
+                                      border: "1px solid #86efac",
+                                    }}
+                                  >
+                                    Latest
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {version.commit_message && (
+                              <div
+                                className="text-xs mb-1"
+                                style={{ color: colors.text.primary }}
+                              >
+                                {version.commit_message}
+                              </div>
+                            )}
+
+                            <div
+                              className="text-xs mb-2"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              {formatTimestamp(version.timestamp)} •{" "}
+                              {version.provider}/{version.modelName}
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onLoadVersion(version);
+                                }}
+                                className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style={{
+                                  backgroundColor: colors.accent.primary,
+                                  color: "#ffffff",
+                                  border: "none",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.opacity = "0.85")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.opacity = "1")
+                                }
+                              >
+                                Load
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onSelectVersion(version);
+                                }}
+                                className="px-2 py-1 rounded text-xs font-medium transition-colors"
+                                style={{
+                                  backgroundColor: colors.bg.secondary,
+                                  color: colors.text.secondary,
+                                  border: `1px solid ${colors.border}`,
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    colors.bg.primary;
+                                  e.currentTarget.style.color =
+                                    colors.text.primary;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    colors.bg.secondary;
+                                  e.currentTarget.style.color =
+                                    colors.text.secondary;
+                                }}
+                              >
+                                Compare
+                              </button>
                             </div>
                           </div>
-
-                          {version.commit_message && (
-                            <div className="text-xs mb-1" style={{ color: colors.text.primary }}>
-                              {version.commit_message}
-                            </div>
-                          )}
-
-                          <div className="text-xs mb-2" style={{ color: colors.text.secondary }}>
-                            {formatTimestamp(version.timestamp)} • {version.provider}/{version.modelName}
-                          </div>
-
-                          {/* Action buttons */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onLoadVersion(version);
-                              }}
-                              className="px-2 py-1 rounded text-xs font-medium transition-colors"
-                              style={{
-                                backgroundColor: colors.accent.primary,
-                                color: '#ffffff',
-                                border: 'none'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                            >
-                              Load
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onSelectVersion(version);
-                              }}
-                              className="px-2 py-1 rounded text-xs font-medium transition-colors"
-                              style={{
-                                backgroundColor: colors.bg.secondary,
-                                color: colors.text.secondary,
-                                border: `1px solid ${colors.border}`
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.bg.primary;
-                                e.currentTarget.style.color = colors.text.primary;
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = colors.bg.secondary;
-                                e.currentTarget.style.color = colors.text.secondary;
-                              }}
-                            >
-                              Compare
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -351,13 +426,13 @@ export default function HistorySidebar({
             className="w-full px-4 py-2 rounded-md text-sm font-medium"
             style={{
               backgroundColor: colors.accent.primary,
-              color: '#ffffff',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              color: "#ffffff",
+              border: "none",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             ← Back to Editor
           </button>

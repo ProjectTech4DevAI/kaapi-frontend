@@ -11,7 +11,7 @@ export interface Commit {
 }
 
 export interface DiffLine {
-  type: 'added' | 'removed' | 'unchanged';
+  type: "added" | "removed" | "unchanged";
   oldLine: string | null;
   newLine: string | null;
   oldNum: number | null;
@@ -24,15 +24,15 @@ export interface DiffStats {
 }
 
 export interface Tool {
-  type: 'file_search';
+  type: "file_search";
   knowledge_base_ids: string[];
   max_num_results: number;
 }
 
 export interface ConfigBlob {
   completion: {
-    provider: 'openai'; // | 'anthropic' | 'google'; // Only OpenAI supported for now
-    type?: 'text' | 'stt' | 'tts'; // Config type - optional for backward compatibility
+    provider: "openai"; // | 'anthropic' | 'google'; // Only OpenAI supported for now
+    type?: "text" | "stt" | "tts"; // Config type - optional for backward compatibility
     params: {
       model: string;
       instructions: string;

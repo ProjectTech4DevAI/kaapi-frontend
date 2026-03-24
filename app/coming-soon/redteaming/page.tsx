@@ -2,7 +2,7 @@
  * Redteaming - Coming Soon Page
  */
 
-import ComingSoon from '@/app/components/ComingSoon';
+import ComingSoon from "@/app/components/ComingSoon";
 
 export default function RedteamingPage() {
   return (

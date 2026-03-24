@@ -5,22 +5,24 @@
  * Tab 2 - Evaluations: Run and monitor STT evaluations
  */
 
-"use client"
-import { useState, useEffect, useRef } from 'react';
-import { colors } from '@/app/lib/colors';
-import Sidebar from '@/app/components/Sidebar';
-import TabNavigation from '@/app/components/TabNavigation';
-import StatusBadge from '@/app/components/StatusBadge';
-import Loader, { LoaderBox } from '@/app/components/Loader';
-import { useToast } from '@/app/components/Toast';
-import { useAuth } from '@/app/lib/context/AuthContext';
-import { useApp } from '@/app/lib/context/AppContext';
-import type { APIKey } from '@/app/keystore/page';
-import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
-import { computeWordDiff } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
-import ErrorModal from '@/app/components/ErrorModal';
+"use client";
 
-type Tab = 'datasets' | 'evaluations';
+import { useState, useEffect, useRef } from "react";
+import { colors } from "@/app/lib/colors";
+import Sidebar from "@/app/components/Sidebar";
+import TabNavigation from "@/app/components/TabNavigation";
+import StatusBadge from "@/app/components/StatusBadge";
+import Loader, { LoaderBox } from "@/app/components/Loader";
+import { useToast } from "@/app/components/Toast";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useApp } from "@/app/lib/context/AppContext";
+import { apiFetch } from "@/app/lib/apiClient";
+import type { APIKey } from "@/app/keystore/page";
+import WaveformVisualizer from "@/app/components/speech-to-text/WaveformVisualizer";
+import { computeWordDiff } from "@/app/components/speech-to-text/TranscriptionDiffViewer";
+import ErrorModal from "@/app/components/ErrorModal";
+
+type Tab = "datasets" | "evaluations";
 
 // Types
 interface AudioFile {
@@ -32,7 +34,7 @@ interface AudioFile {
   mediaType: string;
   groundTruth: string;
   languageId: number;
-  fileId?: string; // Backend file ID after upload
+  fileId?: string;
 }
 
 interface Dataset {
@@ -124,14 +126,14 @@ function AudioPlayer({
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleEnded = () => onPlayToggle();
 
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
 
     return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
     };
   }, [onPlayToggle]);
 
@@ -147,7 +149,7 @@ function AudioPlayer({
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
@@ -159,8 +161,10 @@ function AudioPlayer({
           onClick={onPlayToggle}
           className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
           style={{
-            backgroundColor: isPlaying ? colors.accent.primary : colors.bg.secondary,
-            color: isPlaying ? '#fff' : colors.text.primary,
+            backgroundColor: isPlaying
+              ? colors.accent.primary
+              : colors.bg.secondary,
+            color: isPlaying ? "#fff" : colors.text.primary,
           }}
         >
           {isPlaying ? (
@@ -186,7 +190,10 @@ function AudioPlayer({
           {/* eslint-enable react-hooks/refs */}
         </div>
 
-        <span className="text-xs tabular-nums flex-shrink-0" style={{ color: colors.text.secondary }}>
+        <span
+          className="text-xs tabular-nums flex-shrink-0"
+          style={{ color: colors.text.secondary }}
+        >
           {isPlaying ? formatTime(currentTime) : formatTime(duration)}
         </span>
       </div>
@@ -199,9 +206,9 @@ function AudioPlayer({
         <div
           className="h-full rounded-full"
           style={{
-            width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
+            width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
             backgroundColor: colors.accent.primary,
-            transition: 'width 0.1s linear',
+            transition: "width 0.1s linear",
           }}
         />
       </div>
@@ -233,14 +240,14 @@ function AudioPlayerFromUrl({
     const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleEnded = () => onPlayToggle();
 
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
 
     return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
     };
   }, [onPlayToggle]);
 
@@ -263,24 +270,35 @@ function AudioPlayerFromUrl({
           className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 border-2"
           style={{
             borderColor: colors.accent.primary,
-            backgroundColor: 'transparent',
+            backgroundColor: "transparent",
             color: colors.accent.primary,
           }}
         >
           {isPlaying ? (
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-2.5 h-2.5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <rect x="7" y="5" width="3" height="14" />
               <rect x="14" y="5" width="3" height="14" />
             </svg>
           ) : (
-            <svg className="w-2.5 h-2.5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-2.5 h-2.5 ml-0.5"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M8 5v14l11-7z" />
             </svg>
           )}
         </button>
 
         {sampleName && (
-          <div className="flex-1 font-medium" style={{ color: colors.text.primary }}>
+          <div
+            className="flex-1 font-medium"
+            style={{ color: colors.text.primary }}
+          >
             {sampleName}
           </div>
         )}
@@ -294,9 +312,9 @@ function AudioPlayerFromUrl({
         <div
           className="h-full rounded-full"
           style={{
-            width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%',
+            width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
             backgroundColor: colors.accent.primary,
-            transition: 'width 0.05s ease-out',
+            transition: "width 0.05s ease-out",
           }}
         />
       </div>
@@ -311,20 +329,20 @@ interface Language {
 }
 
 const DEFAULT_LANGUAGES: Language[] = [
-  { id: 1, code: 'en', name: 'English' },
-  { id: 2, code: 'hi', name: 'Hindi' },
+  { id: 1, code: "en", name: "English" },
+  { id: 2, code: "hi", name: "Hindi" },
 ];
 
 export default function SpeechToTextPage() {
   const toast = useToast();
 
-  const [activeTab, setActiveTab] = useState<Tab>('datasets');
+  const [activeTab, setActiveTab] = useState<Tab>("datasets");
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [leftPanelWidth] = useState(450);
   const { apiKeys } = useAuth();
   const [languages, setLanguages] = useState<Language[]>([]);
-  const [datasetName, setDatasetName] = useState('');
-  const [datasetDescription, setDatasetDescription] = useState('');
+  const [datasetName, setDatasetName] = useState("");
+  const [datasetDescription, setDatasetDescription] = useState("");
   const [datasetLanguageId, setDatasetLanguageId] = useState<number>(1);
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
   const [playingFileId, setPlayingFileId] = useState<string | null>(null);
@@ -335,9 +353,11 @@ export default function SpeechToTextPage() {
   const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
 
   // Evaluation form (Tab 2)
-  const [evaluationName, setEvaluationName] = useState('');
-  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(null);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-pro');
+  const [evaluationName, setEvaluationName] = useState("");
+  const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
+    null,
+  );
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-pro");
   const [isRunning, setIsRunning] = useState(false);
 
   // Evaluation runs (Tab 2)
@@ -351,20 +371,15 @@ export default function SpeechToTextPage() {
 
   // Error modal state
   const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const [errorModalMessage, setErrorModalMessage] = useState('');
+  const [errorModalMessage, setErrorModalMessage] = useState("");
 
   // Load languages
   const loadLanguages = async () => {
     if (apiKeys.length === 0) return;
 
     try {
-      const response = await fetch('/api/languages', {
-        headers: { 'X-API-KEY': apiKeys[0].key },
-      });
-
-      if (!response.ok) throw new Error('Failed to load languages');
-
-      const data = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>("/api/languages", apiKeys[0].key);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawList: any[] = [];
@@ -384,8 +399,8 @@ export default function SpeechToTextPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((l: any) => ({
           id: l.id,
-          code: l.locale || l.code || '',
-          name: l.label || l.name || '',
+          code: l.locale || l.code || "",
+          name: l.label || l.name || "",
         }));
 
       if (languagesList.length > 0) {
@@ -398,7 +413,7 @@ export default function SpeechToTextPage() {
         setLanguages(DEFAULT_LANGUAGES);
       }
     } catch (error) {
-      console.error('Failed to load languages:', error);
+      console.error("Failed to load languages:", error);
       setLanguages(DEFAULT_LANGUAGES);
     }
   };
@@ -409,13 +424,11 @@ export default function SpeechToTextPage() {
 
     setIsLoadingDatasets(true);
     try {
-      const response = await fetch('/api/evaluations/stt/datasets', {
-        headers: { 'X-API-KEY': apiKeys[0].key },
-      });
-
-      if (!response.ok) throw new Error('Failed to load datasets');
-
-      const data = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>(
+        "/api/evaluations/stt/datasets",
+        apiKeys[0].key,
+      );
 
       let datasetsList = [];
       if (Array.isArray(data)) {
@@ -428,8 +441,8 @@ export default function SpeechToTextPage() {
 
       setDatasets(datasetsList);
     } catch (error) {
-      console.error('Failed to load datasets:', error);
-      toast.error('Failed to load datasets');
+      console.error("Failed to load datasets:", error);
+      toast.error("Failed to load datasets");
       setDatasets([]);
     } finally {
       setIsLoadingDatasets(false);
@@ -442,13 +455,11 @@ export default function SpeechToTextPage() {
 
     setIsLoadingRuns(true);
     try {
-      const response = await fetch('/api/evaluations/stt/runs', {
-        headers: { 'X-API-KEY': apiKeys[0].key },
-      });
-
-      if (!response.ok) throw new Error('Failed to load runs');
-
-      const data = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>(
+        "/api/evaluations/stt/runs",
+        apiKeys[0].key,
+      );
 
       let runsList = [];
       if (Array.isArray(data)) {
@@ -461,8 +472,8 @@ export default function SpeechToTextPage() {
 
       setRuns(runsList);
     } catch (error) {
-      console.error('Failed to load runs:', error);
-      toast.error('Failed to load evaluation runs');
+      console.error("Failed to load runs:", error);
+      toast.error("Failed to load evaluation runs");
       setRuns([]);
     } finally {
       setIsLoadingRuns(false);
@@ -472,27 +483,29 @@ export default function SpeechToTextPage() {
   useEffect(() => {
     loadLanguages();
     loadDatasets();
-    if (activeTab === 'evaluations') {
+    if (activeTab === "evaluations") {
       loadRuns();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Handle audio file selection and upload
-  const handleAudioFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = event.target.files;
 
     if (!files || files.length === 0) return;
 
     if (apiKeys.length === 0) {
-      toast.error('Please add an API key in Keystore first');
+      toast.error("Please add an API key in Keystore first");
       return;
     }
 
-    const validTypes = ['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.webm'];
+    const validTypes = [".mp3", ".wav", ".m4a", ".ogg", ".flac", ".webm"];
 
     for (const file of Array.from(files)) {
-      if (!validTypes.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      if (!validTypes.some((ext) => file.name.toLowerCase().endsWith(ext))) {
         toast.error(`${file.name}: Invalid file type`);
         continue;
       }
@@ -501,7 +514,7 @@ export default function SpeechToTextPage() {
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onload = () => {
           const result = reader.result as string;
-          const base64 = result.split(',')[1];
+          const base64 = result.split(",")[1];
           resolve(base64);
         };
         reader.onerror = reject;
@@ -512,105 +525,116 @@ export default function SpeechToTextPage() {
         const base64 = await base64Promise;
         const localId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
-        setAudioFiles(prev => [...prev, {
-          id: localId,
-          file,
-          name: file.name,
-          size: file.size,
-          base64,
-          mediaType: file.type || 'audio/mpeg',
-          groundTruth: '',
-          languageId: datasetLanguageId,
-          fileId: undefined,
-        }]);
+        setAudioFiles((prev) => [
+          ...prev,
+          {
+            id: localId,
+            file,
+            name: file.name,
+            size: file.size,
+            base64,
+            mediaType: file.type || "audio/mpeg",
+            groundTruth: "",
+            languageId: datasetLanguageId,
+            fileId: undefined,
+          },
+        ]);
 
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append("file", file);
 
-        const uploadResponse = await fetch('/api/evaluations/stt/files', {
-          method: 'POST',
-          headers: { 'X-API-KEY': apiKeys[0].key },
+        const uploadData = await apiFetch<{
+          file_id?: string;
+          id?: string;
+          data?: { file_id?: string; id?: string };
+        }>("/api/evaluations/stt/files", apiKeys[0].key, {
+          method: "POST",
           body: formData,
         });
 
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          console.error(`Upload failed with status ${uploadResponse.status}:`, errorText);
-          throw new Error(`Upload failed: ${uploadResponse.status}`);
-        }
-
-        const uploadData = await uploadResponse.json();
-
-        const backendFileId = uploadData.file_id || uploadData.id || uploadData.data?.file_id || uploadData.data?.id;
+        const backendFileId =
+          uploadData.file_id ||
+          uploadData.id ||
+          uploadData.data?.file_id ||
+          uploadData.data?.id;
 
         if (!backendFileId) {
-          console.error('No file ID found in response. Full response:', JSON.stringify(uploadData, null, 2));
-          throw new Error(`No file ID returned from backend. Response: ${JSON.stringify(uploadData)}`);
+          console.error(
+            "No file ID found in response. Full response:",
+            JSON.stringify(uploadData, null, 2),
+          );
+          throw new Error(
+            `No file ID returned from backend. Response: ${JSON.stringify(uploadData)}`,
+          );
         }
 
-        setAudioFiles(prev => prev.map(f =>
-          f.id === localId ? { ...f, fileId: backendFileId } : f
-        ));
+        setAudioFiles((prev) =>
+          prev.map((f) =>
+            f.id === localId ? { ...f, fileId: backendFileId } : f,
+          ),
+        );
 
         // toast.success(`${file.name} uploaded`); // Removed toast notification
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
         toast.error(`Failed to upload ${file.name}`);
-        setAudioFiles(prev => prev.filter(f => f.name !== file.name));
+        setAudioFiles((prev) => prev.filter((f) => f.name !== file.name));
       }
     }
 
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const triggerAudioUpload = () => {
-    const input = document.getElementById('audio-upload') as HTMLInputElement;
+    const input = document.getElementById("audio-upload") as HTMLInputElement;
     if (input) input.click();
   };
 
   const removeAudioFile = (id: string) => {
-    setAudioFiles(prev => prev.filter(f => f.id !== id));
+    setAudioFiles((prev) => prev.filter((f) => f.id !== id));
     if (playingFileId === id) setPlayingFileId(null);
   };
 
   const updateGroundTruth = (id: string, groundTruth: string) => {
-    setAudioFiles(prev => prev.map(f =>
-      f.id === id ? { ...f, groundTruth } : f
-    ));
+    setAudioFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, groundTruth } : f)),
+    );
   };
 
   const updateFileLanguage = (id: string, languageId: number) => {
-    setAudioFiles(prev => prev.map(f =>
-      f.id === id ? { ...f, languageId } : f
-    ));
+    setAudioFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, languageId } : f)),
+    );
   };
 
   const handleCreateDataset = async () => {
     if (!datasetName.trim()) {
-      toast.error('Please enter a dataset name');
+      toast.error("Please enter a dataset name");
       return;
     }
 
     if (audioFiles.length === 0) {
-      toast.error('Please add at least one audio file');
+      toast.error("Please add at least one audio file");
       return;
     }
 
     if (apiKeys.length === 0) {
-      toast.error('Please add an API key in Keystore first');
+      toast.error("Please add an API key in Keystore first");
       return;
     }
 
-    const filesNotUploaded = audioFiles.filter(f => !f.fileId);
+    const filesNotUploaded = audioFiles.filter((f) => !f.fileId);
     if (filesNotUploaded.length > 0) {
-      toast.error(`${filesNotUploaded.length} file(s) still uploading. Please wait...`);
+      toast.error(
+        `${filesNotUploaded.length} file(s) still uploading. Please wait...`,
+      );
       return;
     }
 
     setIsCreating(true);
 
     try {
-      const samples = audioFiles.map(audioFile => ({
+      const samples = audioFiles.map((audioFile) => ({
         file_id: audioFile.fileId!,
         ground_truth: audioFile.groundTruth.trim() || undefined,
         language_id: audioFile.languageId,
@@ -622,34 +646,25 @@ export default function SpeechToTextPage() {
         language_id: datasetLanguageId,
         samples: samples,
       };
-      const createDatasetResponse = await fetch('/api/evaluations/stt/datasets', {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': apiKeys[0].key,
-          'Content-Type': 'application/json',
-        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await apiFetch<any>("/api/evaluations/stt/datasets", apiKeys[0].key, {
+        method: "POST",
         body: JSON.stringify(payload),
       });
 
-      if (!createDatasetResponse.ok) {
-        const errorData = await createDatasetResponse.json();
-        const errorMessage = errorData.error || errorData.message || 'Failed to create dataset';
-        throw new Error(errorMessage);
-      }
-
-      await createDatasetResponse.json();
-
       toast.success(`Dataset "${datasetName}" created successfully!`);
 
-      setDatasetName('');
-      setDatasetDescription('');
+      setDatasetName("");
+      setDatasetDescription("");
       setDatasetLanguageId(1);
       setAudioFiles([]);
 
       await loadDatasets();
     } catch (error) {
-      console.error('Failed to create dataset:', error);
-      toast.error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Failed to create dataset:", error);
+      toast.error(
+        `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     } finally {
       setIsCreating(false);
     }
@@ -657,29 +672,26 @@ export default function SpeechToTextPage() {
 
   const handleRunEvaluation = async () => {
     if (apiKeys.length === 0) {
-      toast.error('Please add an API key in Keystore first');
+      toast.error("Please add an API key in Keystore first");
       return;
     }
 
     if (!selectedDatasetId) {
-      toast.error('Please select a dataset');
+      toast.error("Please select a dataset");
       return;
     }
 
     if (!evaluationName.trim()) {
-      toast.error('Please enter an evaluation name');
+      toast.error("Please enter an evaluation name");
       return;
     }
 
     setIsRunning(true);
 
     try {
-      const response = await fetch('/api/evaluations/stt/runs', {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': apiKeys[0].key,
-          'Content-Type': 'application/json',
-        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await apiFetch<any>("/api/evaluations/stt/runs", apiKeys[0].key, {
+        method: "POST",
         body: JSON.stringify({
           run_name: evaluationName.trim(),
           dataset_id: selectedDatasetId,
@@ -687,24 +699,19 @@ export default function SpeechToTextPage() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.error || errorData.message || 'Failed to start evaluation';
-        throw new Error(errorMessage);
-      }
-
-      await response.json();
-
       // toast.success(`Evaluation "${evaluationName}" started successfully!`);
-      setSelectedModel('gemini-2.5-pro');
+      setSelectedModel("gemini-2.5-pro");
 
-      setEvaluationName('');
+      setEvaluationName("");
       setSelectedDatasetId(null);
 
       await loadRuns();
     } catch (error) {
-      console.error('Failed to run evaluation:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while starting the evaluation';
+      console.error("Failed to run evaluation:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred while starting the evaluation";
       setErrorModalMessage(errorMessage);
       setErrorModalOpen(true);
     } finally {
@@ -725,13 +732,11 @@ export default function SpeechToTextPage() {
     setIsLoadingResults(true);
     try {
       // Fetch run details with results
-      const runResponse = await fetch(`/api/evaluations/stt/runs/${runId}?include_results=true&include_signed_url=true`, {
-        headers: { 'X-API-KEY': apiKeys[0].key },
-      });
-
-      if (!runResponse.ok) throw new Error('Failed to load results');
-
-      const runData = await runResponse.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const runData = await apiFetch<any>(
+        `/api/evaluations/stt/runs/${runId}?include_results=true&include_signed_url=true`,
+        apiKeys[0].key,
+      );
 
       // Extract results
       let resultsList = [];
@@ -741,10 +746,13 @@ export default function SpeechToTextPage() {
         resultsList = runData.results;
       } else if (runData.data && Array.isArray(runData.data)) {
         resultsList = runData.data;
-      } else if (runData.data && runData.data.results && Array.isArray(runData.data.results)) {
+      } else if (
+        runData.data &&
+        runData.data.results &&
+        Array.isArray(runData.data.results)
+      ) {
         resultsList = runData.data.results;
       }
-
 
       // Enrich results with sample data (filename, ground truth, signed URL)
       // The structure is: data.results[].sample contains all sample information
@@ -753,14 +761,15 @@ export default function SpeechToTextPage() {
         const sample = result.sample;
 
         // Extract sample name from sample_metadata.original_filename
-        const sampleName = sample?.sample_metadata?.original_filename ||
+        const sampleName =
+          sample?.sample_metadata?.original_filename ||
           `Sample ${result.stt_sample_id}`;
 
         // Extract ground truth
-        const groundTruth = sample?.ground_truth || '';
+        const groundTruth = sample?.ground_truth || "";
 
         // Extract signed URL
-        const signedUrl = sample?.signed_url || '';
+        const signedUrl = sample?.signed_url || "";
 
         // Extract file ID
         const fileId = sample?.file_id;
@@ -770,25 +779,28 @@ export default function SpeechToTextPage() {
           sampleName,
           groundTruth,
           fileId,
-          signedUrl
+          signedUrl,
         };
       });
 
       setResults(resultsList);
       setSelectedRunId(runId);
     } catch (error) {
-      console.error('Failed to load results:', error);
-      toast.error('Failed to load evaluation results');
+      console.error("Failed to load results:", error);
+      toast.error("Failed to load evaluation results");
       setResults([]);
     } finally {
       setIsLoadingResults(false);
     }
   };
 
-  const selectedDataset = datasets.find(d => d.id === selectedDatasetId);
+  const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
+    <div
+      className="w-full h-screen flex flex-col"
+      style={{ backgroundColor: colors.bg.secondary }}
+    >
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/speech-to-text" />
 
@@ -796,7 +808,10 @@ export default function SpeechToTextPage() {
           {/* Header */}
           <div
             className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0"
-            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+            style={{
+              backgroundColor: colors.bg.primary,
+              borderColor: colors.border,
+            }}
           >
             <div className="flex items-center gap-3">
               <button
@@ -804,12 +819,25 @@ export default function SpeechToTextPage() {
                 className="p-1.5 rounded-md"
                 style={{ color: colors.text.secondary }}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               </button>
               <div>
-                <h1 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                <h1
+                  className="text-base font-semibold"
+                  style={{ color: colors.text.primary }}
+                >
                   Speech-to-Text Evaluation
                 </h1>
                 <p className="text-xs" style={{ color: colors.text.secondary }}>
@@ -822,8 +850,8 @@ export default function SpeechToTextPage() {
           {/* Tab Navigation */}
           <TabNavigation
             tabs={[
-              { id: 'datasets', label: 'Datasets' },
-              { id: 'evaluations', label: 'Evaluations' },
+              { id: "datasets", label: "Datasets" },
+              { id: "evaluations", label: "Evaluations" },
             ]}
             activeTab={activeTab}
             onTabChange={(tabId) => setActiveTab(tabId as Tab)}
@@ -831,19 +859,51 @@ export default function SpeechToTextPage() {
 
           {/* Tab Content */}
           {apiKeys.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+            <div
+              className="flex-1 flex items-center justify-center"
+              style={{ backgroundColor: colors.bg.secondary }}
+            >
               <div className="text-center">
-                <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                <svg
+                  className="mx-auto h-12 w-12 mb-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{ color: colors.border }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                  />
                 </svg>
-                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>API key required</p>
-                <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>Add an API key in the Keystore to start creating datasets and running evaluations</p>
-                <a href="/keystore" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}>
+                <p
+                  className="text-sm font-medium mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  API key required
+                </p>
+                <p
+                  className="text-xs mb-4"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Add an API key in the Keystore to start creating datasets and
+                  running evaluations
+                </p>
+                <a
+                  href="/keystore"
+                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
+                  style={{
+                    backgroundColor: colors.accent.primary,
+                    color: "#ffffff",
+                  }}
+                >
                   Go to Keystore
                 </a>
               </div>
             </div>
-          ) : activeTab === 'datasets' ? (
+          ) : activeTab === "datasets" ? (
             <DatasetsTab
               leftPanelWidth={leftPanelWidth}
               datasetName={datasetName}
@@ -921,19 +981,25 @@ function DatasetDescription({ description }: { description: string }) {
   const isLong = description.length > DESCRIPTION_CHAR_LIMIT;
 
   return (
-    <div className="mt-2 text-xs leading-relaxed break-words overflow-hidden" style={{ color: colors.text.secondary }}>
+    <div
+      className="mt-2 text-xs leading-relaxed break-words overflow-hidden"
+      style={{ color: colors.text.secondary }}
+    >
       <span>
         {isLong && !expanded
-          ? description.slice(0, DESCRIPTION_CHAR_LIMIT).trimEnd() + '...'
+          ? description.slice(0, DESCRIPTION_CHAR_LIMIT).trimEnd() + "..."
           : description}
       </span>
       {isLong && (
         <button
-          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
           className="mt-1 block text-xs font-medium"
           style={{ color: colors.text.primary }}
         >
-          {expanded ? 'Show less' : 'Read more'}
+          {expanded ? "Show less" : "Read more"}
         </button>
       )}
     </div>
@@ -1017,66 +1083,94 @@ function DatasetsTab({
     if (apiKeys.length === 0) return;
     setViewingId(datasetId);
     try {
-      const response = await fetch(
+      const data = await apiFetch<{
+        data?: {
+          samples?: {
+            id: number;
+            text: string;
+            ground_truth: string;
+            language_id: number;
+            signed_url?: string;
+            sample_metadata?: {
+              original_filename?: string;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              [key: string]: any;
+            };
+          }[];
+        };
+        samples?: {
+          id: number;
+          text: string;
+          ground_truth: string;
+          language_id: number;
+          signed_url?: string;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          sample_metadata?: { original_filename?: string; [key: string]: any };
+        }[];
+      }>(
         `/api/evaluations/stt/datasets/${datasetId}?include_samples=true&include_signed_url=true&sample_limit=100&sample_offset=0`,
-        { headers: { 'X-API-KEY': apiKeys[0].key } }
+        apiKeys[0].key,
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to fetch dataset');
-      }
-      const data = await response.json();
       const samples = data?.data?.samples || data?.samples || [];
       if (samples.length === 0) {
-        toast.error('No samples found in this dataset');
+        toast.error("No samples found in this dataset");
         return;
       }
       setViewModalData({ name: datasetName, datasetId, samples });
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to view dataset');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to view dataset",
+      );
     } finally {
       setViewingId(null);
     }
   };
 
-  const handleUpdateSample = async (sampleId: number, field: 'ground_truth' | 'language_id', value: string | number) => {
+  const handleUpdateSample = async (
+    sampleId: number,
+    field: "ground_truth" | "language_id",
+    value: string | number,
+  ) => {
     if (!viewModalData || apiKeys.length === 0) return;
     setSavingSampleId(sampleId);
     try {
-      const response = await fetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await apiFetch<any>(
         `/api/evaluations/stt/samples/${sampleId}`,
+        apiKeys[0].key,
         {
-          method: 'PATCH',
-          headers: { 'X-API-KEY': apiKeys[0].key, 'Content-Type': 'application/json' },
+          method: "PATCH",
           body: JSON.stringify({ [field]: value }),
-        }
+        },
       );
-      const responseData = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const msg = responseData?.detail || responseData?.error || responseData?.message || `Failed to update sample (${response.status})`;
-        throw new Error(msg);
-      }
-      setViewModalData(prev => prev ? {
-        ...prev,
-        samples: prev.samples.map(s => s.id === sampleId ? { ...s, [field]: value } : s),
-      } : null);
+      setViewModalData((prev) =>
+        prev
+          ? {
+              ...prev,
+              samples: prev.samples.map((s) =>
+                s.id === sampleId ? { ...s, [field]: value } : s,
+              ),
+            }
+          : null,
+      );
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to update sample');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update sample",
+      );
     } finally {
       setSavingSampleId(null);
     }
   };
 
-
   useEffect(() => {
     if (!showLanguageInfo) return;
     const handleClick = () => setShowLanguageInfo(false);
     const handleScroll = () => setShowLanguageInfo(false);
-    document.addEventListener('click', handleClick);
-    window.addEventListener('scroll', handleScroll, true);
+    document.addEventListener("click", handleClick);
+    window.addEventListener("scroll", handleScroll, true);
     return () => {
-      document.removeEventListener('click', handleClick);
-      window.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener("click", handleClick);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [showLanguageInfo]);
 
@@ -1085,64 +1179,100 @@ function DatasetsTab({
       {/* Left Panel - Create Dataset Form */}
       <div
         className="flex-shrink-0 border-r flex flex-col overflow-hidden"
-        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+        style={{
+          width: `${leftPanelWidth}px`,
+          backgroundColor: colors.bg.primary,
+          borderColor: colors.border,
+        }}
       >
         <div className="flex-1 overflow-auto p-4 space-y-4">
           {/* Page Title */}
           <div>
-            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+            <h2
+              className="text-base font-semibold"
+              style={{ color: colors.text.primary }}
+            >
               Create New Dataset
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+            <p
+              className="text-xs mt-0.5"
+              style={{ color: colors.text.secondary }}
+            >
               Add audio samples that will be transcribed during evaluation
             </p>
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ color: colors.text.secondary }}
+            >
               Name *
             </label>
             <input
               type="text"
               value={datasetName}
-              onChange={e => setDatasetName(e.target.value)}
+              onChange={(e) => setDatasetName(e.target.value)}
               placeholder="e.g., English Podcast Dataset"
               className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ color: colors.text.secondary }}
+            >
               Description
             </label>
             <input
               type="text"
               value={datasetDescription}
-              onChange={e => setDatasetDescription(e.target.value)}
+              onChange={(e) => setDatasetDescription(e.target.value)}
               placeholder="Optional description"
               className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
             />
           </div>
 
           {/* Language */}
           <div>
-            <label className="text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+            <label
+              className="text-xs font-medium mb-1.5"
+              style={{ color: colors.text.secondary }}
+            >
               <span className="inline-flex items-center gap-1">
                 Language *
                 <button
                   type="button"
                   aria-label="Show language information"
                   className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
-                  style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary, padding: 0, lineHeight: 1 }}
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    border: `1px solid ${colors.border}`,
+                    color: colors.text.secondary,
+                    padding: 0,
+                    lineHeight: 1,
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    setLanguageInfoPos({ top: rect.bottom + 4, left: rect.left });
+                    setLanguageInfoPos({
+                      top: rect.bottom + 4,
+                      left: rect.left,
+                    });
                     setShowLanguageInfo(!showLanguageInfo);
                   }}
                 >
@@ -1151,12 +1281,30 @@ function DatasetsTab({
                 {showLanguageInfo && (
                   <div
                     className="fixed z-50 rounded-lg shadow-lg border text-xs p-3"
-                    style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '280px', top: languageInfoPos.top, left: languageInfoPos.left }}
+                    style={{
+                      backgroundColor: colors.bg.primary,
+                      borderColor: colors.border,
+                      width: "280px",
+                      top: languageInfoPos.top,
+                      left: languageInfoPos.left,
+                    }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="font-semibold mb-1" style={{ color: colors.text.primary }}>Default Language</div>
-                    <p style={{ color: colors.text.secondary, lineHeight: '1.5' }}>
-                      This is the default language applied to all samples in the dataset. You can override the language for individual samples in the audio files section below.
+                    <div
+                      className="font-semibold mb-1"
+                      style={{ color: colors.text.primary }}
+                    >
+                      Default Language
+                    </div>
+                    <p
+                      style={{
+                        color: colors.text.secondary,
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      This is the default language applied to all samples in the
+                      dataset. You can override the language for individual
+                      samples in the audio files section below.
                     </p>
                   </div>
                 )}
@@ -1164,16 +1312,24 @@ function DatasetsTab({
             </label>
             <select
               value={datasetLanguageId}
-              onChange={e => {
+              onChange={(e) => {
                 const newId = Number(e.target.value);
                 setDatasetLanguageId(newId);
-                setAudioFiles(prev => prev.map(f => ({ ...f, languageId: newId })));
+                setAudioFiles((prev) =>
+                  prev.map((f) => ({ ...f, languageId: newId })),
+                );
               }}
               className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+              style={{
+                backgroundColor: colors.bg.primary,
+                borderColor: colors.border,
+                color: colors.text.primary,
+              }}
             >
-              {languages.map(lang => (
-                <option key={lang.id} value={lang.id}>{lang.name}</option>
+              {languages.map((lang) => (
+                <option key={lang.id} value={lang.id}>
+                  {lang.name}
+                </option>
               ))}
             </select>
           </div>
@@ -1181,7 +1337,10 @@ function DatasetsTab({
           {/* Audio Samples */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+              <label
+                className="text-xs font-medium"
+                style={{ color: colors.text.secondary }}
+              >
                 Audio Samples *
               </label>
             </div>
@@ -1202,17 +1361,39 @@ function DatasetsTab({
                 style={{
                   borderColor: colors.border,
                   backgroundColor: colors.bg.primary,
-                  cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                  cursor: apiKeys.length > 0 ? "pointer" : "not-allowed",
                   opacity: apiKeys.length > 0 ? 1 : 0.5,
                 }}
-                onMouseEnter={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
-                onMouseLeave={(e) => apiKeys.length > 0 && (e.currentTarget.style.backgroundColor = colors.bg.primary)}
+                onMouseEnter={(e) =>
+                  apiKeys.length > 0 &&
+                  (e.currentTarget.style.backgroundColor = colors.bg.secondary)
+                }
+                onMouseLeave={(e) =>
+                  apiKeys.length > 0 &&
+                  (e.currentTarget.style.backgroundColor = colors.bg.primary)
+                }
               >
-                <svg className="w-8 h-8 mx-auto mb-2" style={{ color: colors.text.secondary }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                <svg
+                  className="w-8 h-8 mx-auto mb-2"
+                  style={{ color: colors.text.secondary }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                  />
                 </svg>
-                <p className="text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
-                  {apiKeys.length > 0 ? 'Click to upload audio samples' : 'Add an API key to upload'}
+                <p
+                  className="text-xs font-medium mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  {apiKeys.length > 0
+                    ? "Click to upload audio samples"
+                    : "Add an API key to upload"}
                 </p>
                 <p className="text-xs" style={{ color: colors.text.secondary }}>
                   MP3, WAV, M4A, OGG, FLAC, WebM
@@ -1220,102 +1401,178 @@ function DatasetsTab({
               </div>
             ) : (
               <div>
-                <div className="space-y-3" style={{ maxHeight: '400px', overflow: 'auto' }}>
-
-                {audioFiles.map((audioFile, idx) => (
-                  <div
-                    key={audioFile.id}
-                    className="rounded-lg overflow-hidden"
-                    style={{
-                      backgroundColor: colors.bg.primary,
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                    }}
-                  >
-                    <div className="p-4">
-                      {/* Header: number, filename, status, remove */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <span
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-medium"
-                            style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                <div
+                  className="space-y-3"
+                  style={{ maxHeight: "400px", overflow: "auto" }}
+                >
+                  {audioFiles.map((audioFile, idx) => (
+                    <div
+                      key={audioFile.id}
+                      className="rounded-lg overflow-hidden"
+                      style={{
+                        backgroundColor: colors.bg.primary,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      <div className="p-4">
+                        {/* Header: number, filename, status, remove */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <span
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 font-medium"
+                              style={{
+                                backgroundColor: colors.bg.secondary,
+                                color: colors.text.secondary,
+                              }}
+                            >
+                              {idx + 1}
+                            </span>
+                            <span
+                              className="text-sm font-medium truncate"
+                              style={{ color: colors.text.primary }}
+                            >
+                              {audioFile.name}
+                            </span>
+                            <span
+                              className="text-xs flex-shrink-0"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              {formatFileSize(audioFile.size)}
+                            </span>
+                            {audioFile.fileId ? (
+                              <svg
+                                className="w-3.5 h-3.5 flex-shrink-0"
+                                style={{ color: colors.status.success }}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            ) : (
+                              <div
+                                className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0"
+                                style={{
+                                  borderColor: colors.accent.primary,
+                                  borderTopColor: "transparent",
+                                }}
+                              />
+                            )}
+                          </div>
+                          <button
+                            onClick={() => removeAudioFile(audioFile.id)}
+                            className="p-1 rounded flex-shrink-0"
+                            style={{ color: colors.text.secondary }}
                           >
-                            {idx + 1}
-                          </span>
-                          <span className="text-sm font-medium truncate" style={{ color: colors.text.primary }}>
-                            {audioFile.name}
-                          </span>
-                          <span className="text-xs flex-shrink-0" style={{ color: colors.text.secondary }}>
-                            {formatFileSize(audioFile.size)}
-                          </span>
-                          {audioFile.fileId ? (
-                            <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.status.success }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
                             </svg>
-                          ) : (
-                            <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin flex-shrink-0" style={{ borderColor: colors.accent.primary, borderTopColor: 'transparent' }} />
-                          )}
+                          </button>
                         </div>
-                        <button
-                          onClick={() => removeAudioFile(audioFile.id)}
-                          className="p-1 rounded flex-shrink-0"
-                          style={{ color: colors.text.secondary }}
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
 
-                      {/* Audio Player */}
-                      <AudioPlayer
-                        audioBase64={audioFile.base64}
-                        mediaType={audioFile.mediaType}
-                        isPlaying={playingFileId === audioFile.id}
-                        onPlayToggle={() => setPlayingFileId(playingFileId === audioFile.id ? null : audioFile.id)}
-                      />
+                        {/* Audio Player */}
+                        <AudioPlayer
+                          audioBase64={audioFile.base64}
+                          mediaType={audioFile.mediaType}
+                          isPlaying={playingFileId === audioFile.id}
+                          onPlayToggle={() =>
+                            setPlayingFileId(
+                              playingFileId === audioFile.id
+                                ? null
+                                : audioFile.id,
+                            )
+                          }
+                        />
 
-                      {/* Language + Ground Truth */}
-                      <div className="mt-3 flex items-start gap-3">
-                        <div className="flex-shrink-0" style={{ width: '120px' }}>
-                          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide" style={{ color: colors.text.secondary }}>
-                            Language
-                          </label>
-                          <select
-                            value={audioFile.languageId}
-                            onChange={e => updateFileLanguage(audioFile.id, Number(e.target.value))}
-                            className="w-full px-2 py-1.5 border rounded-md text-xs"
-                            style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, color: colors.text.primary }}
+                        {/* Language + Ground Truth */}
+                        <div className="mt-3 flex items-start gap-3">
+                          <div
+                            className="flex-shrink-0"
+                            style={{ width: "120px" }}
                           >
-                            {languages.map(lang => (
-                              <option key={lang.id} value={lang.id}>{lang.name}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-[10px] font-medium mb-1 uppercase tracking-wide" style={{ color: colors.text.secondary }}>
-                            Ground Truth
-                          </label>
-                          <textarea
-                            value={audioFile.groundTruth}
-                            onChange={e => updateGroundTruth(audioFile.id, e.target.value)}
-                            placeholder={audioFile.fileId ? "Expected transcription..." : "Uploading..."}
-                            disabled={!audioFile.fileId}
-                            rows={2}
-                            className="w-full px-2 py-1.5 border rounded-md text-xs"
-                            style={{
-                              backgroundColor: audioFile.fileId ? colors.bg.primary : colors.bg.secondary,
-                              borderColor: colors.border,
-                              color: audioFile.fileId ? colors.text.primary : colors.text.secondary,
-                              cursor: audioFile.fileId ? 'text' : 'not-allowed',
-                              opacity: audioFile.fileId ? 1 : 0.6,
-                              resize: 'vertical',
-                            }}
-                          />
+                            <label
+                              className="block text-[10px] font-medium mb-1 uppercase tracking-wide"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              Language
+                            </label>
+                            <select
+                              value={audioFile.languageId}
+                              onChange={(e) =>
+                                updateFileLanguage(
+                                  audioFile.id,
+                                  Number(e.target.value),
+                                )
+                              }
+                              className="w-full px-2 py-1.5 border rounded-md text-xs"
+                              style={{
+                                backgroundColor: colors.bg.primary,
+                                borderColor: colors.border,
+                                color: colors.text.primary,
+                              }}
+                            >
+                              {languages.map((lang) => (
+                                <option key={lang.id} value={lang.id}>
+                                  {lang.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex-1">
+                            <label
+                              className="block text-[10px] font-medium mb-1 uppercase tracking-wide"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              Ground Truth
+                            </label>
+                            <textarea
+                              value={audioFile.groundTruth}
+                              onChange={(e) =>
+                                updateGroundTruth(audioFile.id, e.target.value)
+                              }
+                              placeholder={
+                                audioFile.fileId
+                                  ? "Expected transcription..."
+                                  : "Uploading..."
+                              }
+                              disabled={!audioFile.fileId}
+                              rows={2}
+                              className="w-full px-2 py-1.5 border rounded-md text-xs"
+                              style={{
+                                backgroundColor: audioFile.fileId
+                                  ? colors.bg.primary
+                                  : colors.bg.secondary,
+                                borderColor: colors.border,
+                                color: audioFile.fileId
+                                  ? colors.text.primary
+                                  : colors.text.secondary,
+                                cursor: audioFile.fileId
+                                  ? "text"
+                                  : "not-allowed",
+                                opacity: audioFile.fileId ? 1 : 0.6,
+                                resize: "vertical",
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
                 </div>
 
                 {/* Upload more - below scrollable area */}
@@ -1323,16 +1580,30 @@ function DatasetsTab({
                   onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
                   className="flex items-center gap-1 text-xs font-medium mt-2"
                   style={{
-                    color: apiKeys.length > 0 ? colors.accent.primary : colors.text.secondary,
-                    cursor: apiKeys.length > 0 ? 'pointer' : 'not-allowed',
+                    color:
+                      apiKeys.length > 0
+                        ? colors.accent.primary
+                        : colors.text.secondary,
+                    cursor: apiKeys.length > 0 ? "pointer" : "not-allowed",
                   }}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   Add more samples
                   <span style={{ color: colors.text.secondary }}>
-                    ({audioFiles.filter(f => f.fileId).length}/{audioFiles.length} uploaded)
+                    ({audioFiles.filter((f) => f.fileId).length}/
+                    {audioFiles.length} uploaded)
                   </span>
                 </button>
               </div>
@@ -1341,11 +1612,17 @@ function DatasetsTab({
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+        <div
+          className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3"
+          style={{
+            borderColor: colors.border,
+            backgroundColor: colors.bg.primary,
+          }}
+        >
           <button
             onClick={() => {
-              setDatasetName('');
-              setDatasetDescription('');
+              setDatasetName("");
+              setDatasetDescription("");
               setDatasetLanguageId(1);
               setAudioFiles([]);
               setPlayingFileId(null);
@@ -1358,40 +1635,83 @@ function DatasetsTab({
           </button>
           <button
             onClick={handleCreateDataset}
-            disabled={isCreating || !datasetName.trim() || audioFiles.length === 0}
+            disabled={
+              isCreating || !datasetName.trim() || audioFiles.length === 0
+            }
             className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium"
             style={{
-              backgroundColor: isCreating || !datasetName.trim() || audioFiles.length === 0 ? colors.bg.secondary : colors.accent.primary,
-              color: isCreating || !datasetName.trim() || audioFiles.length === 0 ? colors.text.secondary : '#fff',
-              cursor: isCreating || !datasetName.trim() || audioFiles.length === 0 ? 'not-allowed' : 'pointer',
+              backgroundColor:
+                isCreating || !datasetName.trim() || audioFiles.length === 0
+                  ? colors.bg.secondary
+                  : colors.accent.primary,
+              color:
+                isCreating || !datasetName.trim() || audioFiles.length === 0
+                  ? colors.text.secondary
+                  : "#fff",
+              cursor:
+                isCreating || !datasetName.trim() || audioFiles.length === 0
+                  ? "not-allowed"
+                  : "pointer",
             }}
           >
             {isCreating ? (
               <>
-                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                <div
+                  className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                  style={{
+                    borderColor: colors.text.secondary,
+                    borderTopColor: "transparent",
+                  }}
+                />
                 Creating...
               </>
             ) : (
-              'Create Dataset'
+              "Create Dataset"
             )}
           </button>
         </div>
       </div>
 
       {/* Right Panel - Dataset List */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+      <div
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{ backgroundColor: colors.bg.secondary }}
+      >
         <div className="flex-1 overflow-auto p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold" style={{ color: colors.text.primary }}>Datasets</h3>
+            <h3
+              className="text-base font-semibold"
+              style={{ color: colors.text.primary }}
+            >
+              Datasets
+            </h3>
           </div>
 
           {datasets.length === 0 ? (
             <div className="p-16 text-center">
-              <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+              <svg
+                className="w-12 h-12 mx-auto mb-3"
+                style={{ color: colors.border }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3"
+                />
               </svg>
-              <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No datasets yet</p>
-              <p className="text-xs" style={{ color: colors.text.secondary }}>Create your first dataset using the form on the left</p>
+              <p
+                className="text-sm font-medium mb-1"
+                style={{ color: colors.text.primary }}
+              >
+                No datasets yet
+              </p>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>
+                Create your first dataset using the form on the left
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1399,36 +1719,51 @@ function DatasetsTab({
                 <div
                   key={dataset.id}
                   className="rounded-lg overflow-hidden"
-                  style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)', borderLeft: '3px solid #DCCFC3' }}
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                    borderLeft: "3px solid #DCCFC3",
+                  }}
                 >
                   <div className="px-5 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+                        <div
+                          className="text-sm font-semibold truncate"
+                          style={{ color: colors.text.primary }}
+                        >
                           {dataset.name}
                         </div>
                         {dataset.description && (
-                          <DatasetDescription description={dataset.description} />
+                          <DatasetDescription
+                            description={dataset.description}
+                          />
                         )}
-                        {dataset.dataset_metadata?.sample_count !== undefined && (
-                          <div className="mt-2 text-xs" style={{ color: colors.text.secondary }}>
+                        {dataset.dataset_metadata?.sample_count !==
+                          undefined && (
+                          <div
+                            className="mt-2 text-xs"
+                            style={{ color: colors.text.secondary }}
+                          >
                             {dataset.dataset_metadata.sample_count} samples
                           </div>
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
-                          onClick={() => handleViewDataset(dataset.id, dataset.name)}
+                          onClick={() =>
+                            handleViewDataset(dataset.id, dataset.name)
+                          }
                           disabled={viewingId === dataset.id}
                           className="px-3 py-1.5 rounded-lg text-xs font-medium border"
                           style={{
-                            backgroundColor: 'transparent',
+                            backgroundColor: "transparent",
                             borderColor: colors.border,
                             color: colors.text.primary,
                             opacity: viewingId === dataset.id ? 0.5 : 1,
                           }}
                         >
-                          {viewingId === dataset.id ? 'Loading...' : 'View'}
+                          {viewingId === dataset.id ? "Loading..." : "View"}
                         </button>
                       </div>
                     </div>
@@ -1444,31 +1779,61 @@ function DatasetsTab({
       {viewModalData && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-          onClick={() => { setViewModalData(null); setViewPlayingId(null); }}
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+          onClick={() => {
+            setViewModalData(null);
+            setViewPlayingId(null);
+          }}
         >
           <div
             className="rounded-lg shadow-xl flex flex-col"
-            style={{ backgroundColor: colors.bg.primary, width: '90vw', maxWidth: '900px', maxHeight: '85vh' }}
+            style={{
+              backgroundColor: colors.bg.primary,
+              width: "90vw",
+              maxWidth: "900px",
+              maxHeight: "85vh",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0" style={{ borderColor: colors.border }}>
+            <div
+              className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
+              style={{ borderColor: colors.border }}
+            >
               <div>
-                <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+                <h3
+                  className="text-sm font-semibold"
+                  style={{ color: colors.text.primary }}
+                >
                   {viewModalData.name}
                 </h3>
-                <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+                <p
+                  className="text-xs mt-0.5"
+                  style={{ color: colors.text.secondary }}
+                >
                   {viewModalData.samples.length} audio samples
                 </p>
               </div>
               <button
-                onClick={() => { setViewModalData(null); setViewPlayingId(null); }}
+                onClick={() => {
+                  setViewModalData(null);
+                  setViewPlayingId(null);
+                }}
                 className="p-1.5 rounded"
                 style={{ color: colors.text.secondary }}
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -1477,30 +1842,72 @@ function DatasetsTab({
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '40px' }}>
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                  <tr
+                    style={{
+                      backgroundColor: colors.bg.secondary,
+                      borderBottom: `1px solid ${colors.border}`,
+                    }}
+                  >
+                    <th
+                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0"
+                      style={{
+                        color: colors.text.secondary,
+                        backgroundColor: colors.bg.secondary,
+                        width: "40px",
+                      }}
+                    ></th>
+                    <th
+                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0"
+                      style={{
+                        color: colors.text.secondary,
+                        backgroundColor: colors.bg.secondary,
+                      }}
+                    >
                       Sample
                     </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary, width: '120px' }}>
+                    <th
+                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0"
+                      style={{
+                        color: colors.text.secondary,
+                        backgroundColor: colors.bg.secondary,
+                        width: "120px",
+                      }}
+                    >
                       Language
                     </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0" style={{ color: colors.text.secondary, backgroundColor: colors.bg.secondary }}>
+                    <th
+                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0"
+                      style={{
+                        color: colors.text.secondary,
+                        backgroundColor: colors.bg.secondary,
+                      }}
+                    >
                       Ground Truth
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {viewModalData.samples.map((sample, idx) => (
-                    <tr key={sample.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
-                      <td className="px-4 py-3 text-xs align-top" style={{ color: colors.text.secondary }}>
+                    <tr
+                      key={sample.id}
+                      style={{ borderBottom: `1px solid ${colors.border}` }}
+                    >
+                      <td
+                        className="px-4 py-3 text-xs align-top"
+                        style={{ color: colors.text.secondary }}
+                      >
                         {idx + 1}
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="space-y-1.5">
                           {sample.sample_metadata?.original_filename && (
-                            <div className="text-xs font-medium truncate" style={{ color: colors.text.primary, maxWidth: '280px' }}>
+                            <div
+                              className="text-xs font-medium truncate"
+                              style={{
+                                color: colors.text.primary,
+                                maxWidth: "280px",
+                              }}
+                            >
                               {sample.sample_metadata.original_filename}
                             </div>
                           )}
@@ -1508,17 +1915,34 @@ function DatasetsTab({
                             <AudioPlayerFromUrl
                               signedUrl={sample.signed_url}
                               isPlaying={viewPlayingId === sample.id}
-                              onPlayToggle={() => setViewPlayingId(viewPlayingId === sample.id ? null : sample.id)}
+                              onPlayToggle={() =>
+                                setViewPlayingId(
+                                  viewPlayingId === sample.id
+                                    ? null
+                                    : sample.id,
+                                )
+                              }
                             />
                           ) : (
-                            <span className="text-xs" style={{ color: colors.text.secondary }}>No audio</span>
+                            <span
+                              className="text-xs"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              No audio
+                            </span>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
                         <select
                           value={sample.language_id}
-                          onChange={e => handleUpdateSample(sample.id, 'language_id', Number(e.target.value))}
+                          onChange={(e) =>
+                            handleUpdateSample(
+                              sample.id,
+                              "language_id",
+                              Number(e.target.value),
+                            )
+                          }
                           disabled={savingSampleId === sample.id}
                           className="w-full px-2 py-1.5 border rounded-md text-xs"
                           style={{
@@ -1528,22 +1952,38 @@ function DatasetsTab({
                             opacity: savingSampleId === sample.id ? 0.5 : 1,
                           }}
                         >
-                          {languages.map(lang => (
-                            <option key={lang.id} value={lang.id}>{lang.name}</option>
+                          {languages.map((lang) => (
+                            <option key={lang.id} value={lang.id}>
+                              {lang.name}
+                            </option>
                           ))}
                         </select>
                       </td>
                       <td className="px-4 py-3 align-top">
                         <textarea
-                          value={sample.ground_truth || ''}
-                          onChange={e => {
+                          value={sample.ground_truth || ""}
+                          onChange={(e) => {
                             const newVal = e.target.value;
-                            setViewModalData(prev => prev ? {
-                              ...prev,
-                              samples: prev.samples.map(s => s.id === sample.id ? { ...s, ground_truth: newVal } : s),
-                            } : null);
+                            setViewModalData((prev) =>
+                              prev
+                                ? {
+                                    ...prev,
+                                    samples: prev.samples.map((s) =>
+                                      s.id === sample.id
+                                        ? { ...s, ground_truth: newVal }
+                                        : s,
+                                    ),
+                                  }
+                                : null,
+                            );
                           }}
-                          onBlur={e => handleUpdateSample(sample.id, 'ground_truth', e.target.value)}
+                          onBlur={(e) =>
+                            handleUpdateSample(
+                              sample.id,
+                              "ground_truth",
+                              e.target.value,
+                            )
+                          }
                           placeholder="Enter ground truth..."
                           disabled={savingSampleId === sample.id}
                           rows={3}
@@ -1553,7 +1993,7 @@ function DatasetsTab({
                             borderColor: colors.border,
                             color: colors.text.primary,
                             opacity: savingSampleId === sample.id ? 0.5 : 1,
-                            resize: 'vertical',
+                            resize: "vertical",
                           }}
                         />
                       </td>
@@ -1565,7 +2005,6 @@ function DatasetsTab({
           </div>
         </div>
       )}
-
     </div>
   );
 }
@@ -1626,8 +2065,10 @@ function EvaluationsTab({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setActiveTab,
 }: EvaluationsTabProps) {
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [expandedTranscriptions, setExpandedTranscriptions] = useState<Set<number>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [expandedTranscriptions, setExpandedTranscriptions] = useState<
+    Set<number>
+  >(new Set());
   const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
   const [scoreInfoPos, setScoreInfoPos] = useState({ top: 0, left: 0 });
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
@@ -1636,16 +2077,16 @@ function EvaluationsTab({
     if (!openScoreInfo) return;
     const handleClick = () => setOpenScoreInfo(null);
     const handleScroll = () => setOpenScoreInfo(null);
-    document.addEventListener('click', handleClick);
-    window.addEventListener('scroll', handleScroll, true);
+    document.addEventListener("click", handleClick);
+    window.addEventListener("scroll", handleScroll, true);
     return () => {
-      document.removeEventListener('click', handleClick);
-      window.removeEventListener('scroll', handleScroll, true);
+      document.removeEventListener("click", handleClick);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [openScoreInfo]);
 
   const toggleTranscription = (resultId: number) => {
-    setExpandedTranscriptions(prev => {
+    setExpandedTranscriptions((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(resultId)) {
         newSet.delete(resultId);
@@ -1656,7 +2097,11 @@ function EvaluationsTab({
     });
   };
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string) => {
+  const updateFeedback = async (
+    resultId: number,
+    isCorrect: boolean | null,
+    comment?: string,
+  ) => {
     if (apiKeys.length === 0) return;
 
     try {
@@ -1664,26 +2109,33 @@ function EvaluationsTab({
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
 
-      const response = await fetch(`/api/evaluations/stt/results/${resultId}`, {
-        method: 'PATCH',
-        headers: {
-          'X-API-KEY': apiKeys[0].key,
-          'Content-Type': 'application/json',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await apiFetch<any>(
+        `/api/evaluations/stt/results/${resultId}`,
+        apiKeys[0].key,
+        {
+          method: "PATCH",
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) throw new Error('Failed to update feedback');
+      );
 
       // Update local state
-      setResults(prev => prev.map(r =>
-        r.id === resultId ? { ...r, ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}), ...(comment !== undefined && { comment }) } : r
-      ));
+      setResults((prev) =>
+        prev.map((r) =>
+          r.id === resultId
+            ? {
+                ...r,
+                ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}),
+                ...(comment !== undefined && { comment }),
+              }
+            : r,
+        ),
+      );
 
       //   toast.success('Feedback updated successfully');
     } catch (error) {
-      console.error('Failed to update feedback:', error);
-      toast.error('Failed to update feedback');
+      console.error("Failed to update feedback:", error);
+      toast.error("Failed to update feedback");
     }
   };
 
@@ -1702,23 +2154,32 @@ function EvaluationsTab({
           <div className="flex-1 overflow-auto p-4 space-y-4">
             {/* Page Title */}
             <div>
-              <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+              <h2
+                className="text-base font-semibold"
+                style={{ color: colors.text.primary }}
+              >
                 Run New Evaluation
               </h2>
-              <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: colors.text.secondary }}
+              >
                 Compare transcription quality across STT models
               </p>
             </div>
 
             {/* Evaluation Name */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ color: colors.text.secondary }}
+              >
                 Name *
               </label>
               <input
                 type="text"
                 value={evaluationName}
-                onChange={e => setEvaluationName(e.target.value)}
+                onChange={(e) => setEvaluationName(e.target.value)}
                 placeholder="e.g., English Podcast Evaluation v1"
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 style={{
@@ -1731,12 +2192,15 @@ function EvaluationsTab({
 
             {/* Model Selection */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ color: colors.text.secondary }}
+              >
                 Model *
               </label>
               <select
                 value={selectedModel}
-                onChange={e => setSelectedModel(e.target.value)}
+                onChange={(e) => setSelectedModel(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md text-sm"
                 style={{
                   backgroundColor: colors.bg.primary,
@@ -1750,22 +2214,40 @@ function EvaluationsTab({
 
             {/* Dataset Selection */}
             <div className="pt-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+              <label
+                className="block text-xs font-medium mb-1.5"
+                style={{ color: colors.text.secondary }}
+              >
                 Select Dataset *
               </label>
               {isLoadingDatasets ? (
                 <LoaderBox message="Loading datasets..." size="sm" />
               ) : datasets.length === 0 ? (
-                <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                  <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
-                  <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
+                <div
+                  className="border rounded-md p-8 text-center"
+                  style={{ borderColor: colors.border }}
+                >
+                  <p
+                    className="text-sm"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    No datasets available
+                  </p>
+                  <p
+                    className="text-xs mt-1"
+                    style={{ color: colors.text.secondary }}
+                  >
                     Create a dataset first in the Datasets tab
                   </p>
                 </div>
               ) : (
                 <select
-                  value={selectedDatasetId || ''}
-                  onChange={e => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
+                  value={selectedDatasetId || ""}
+                  onChange={(e) =>
+                    setSelectedDatasetId(
+                      e.target.value ? parseInt(e.target.value) : null,
+                    )
+                  }
                   className="w-full px-3 py-2 border rounded-md text-sm"
                   style={{
                     backgroundColor: colors.bg.primary,
@@ -1774,9 +2256,10 @@ function EvaluationsTab({
                   }}
                 >
                   <option value="">-- Select a dataset --</option>
-                  {datasets.map(dataset => (
+                  {datasets.map((dataset) => (
                     <option key={dataset.id} value={dataset.id}>
-                      {dataset.name} ({dataset.dataset_metadata?.sample_count || 0} samples)
+                      {dataset.name} (
+                      {dataset.dataset_metadata?.sample_count || 0} samples)
                     </option>
                   ))}
                 </select>
@@ -1789,19 +2272,39 @@ function EvaluationsTab({
                 className="border rounded-lg p-3"
                 style={{
                   borderColor: colors.status.success,
-                  backgroundColor: 'rgba(22, 163, 74, 0.02)',
+                  backgroundColor: "rgba(22, 163, 74, 0.02)",
                 }}
               >
                 <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-5 h-5 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    style={{ color: colors.status.success }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <div className="flex-1">
-                    <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                    <div
+                      className="text-sm font-medium"
+                      style={{ color: colors.text.primary }}
+                    >
                       {selectedDataset.name}
                     </div>
-                    <div className="text-xs mt-1 space-y-0.5" style={{ color: colors.text.secondary }}>
-                      <div>{selectedDataset.dataset_metadata?.sample_count || 0} samples</div>
+                    <div
+                      className="text-xs mt-1 space-y-0.5"
+                      style={{ color: colors.text.secondary }}
+                    >
+                      <div>
+                        {selectedDataset.dataset_metadata?.sample_count || 0}{" "}
+                        samples
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1809,37 +2312,53 @@ function EvaluationsTab({
             )}
           </div>
 
-
-
           {/* Run Evaluation Button */}
           <div
             className="flex-shrink-0 border-t px-4 py-3"
-            style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+            style={{
+              borderColor: colors.border,
+              backgroundColor: colors.bg.primary,
+            }}
           >
             <button
               onClick={handleRunEvaluation}
-              disabled={isRunning || !evaluationName.trim() || !selectedDatasetId}
+              disabled={
+                isRunning || !evaluationName.trim() || !selectedDatasetId
+              }
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
               style={{
-                backgroundColor: isRunning || !evaluationName.trim() || !selectedDatasetId
-                  ? colors.bg.secondary
-                  : colors.accent.primary,
-                color: isRunning || !evaluationName.trim() || !selectedDatasetId
-                  ? colors.text.secondary
-                  : '#fff',
-                cursor: isRunning || !evaluationName.trim() || !selectedDatasetId
-                  ? 'not-allowed'
-                  : 'pointer',
+                backgroundColor:
+                  isRunning || !evaluationName.trim() || !selectedDatasetId
+                    ? colors.bg.secondary
+                    : colors.accent.primary,
+                color:
+                  isRunning || !evaluationName.trim() || !selectedDatasetId
+                    ? colors.text.secondary
+                    : "#fff",
+                cursor:
+                  isRunning || !evaluationName.trim() || !selectedDatasetId
+                    ? "not-allowed"
+                    : "pointer",
               }}
             >
               {isRunning ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                  <div
+                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                    style={{
+                      borderColor: colors.text.secondary,
+                      borderTopColor: "transparent",
+                    }}
+                  />
                   Starting Evaluation...
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path d="M8 5v14l11-7z" />
                   </svg>
                   Run Evaluation
@@ -1851,7 +2370,10 @@ function EvaluationsTab({
       )}
 
       {/* Right Panel - Evaluation Runs List or Results */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+      <div
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{ backgroundColor: colors.bg.secondary }}
+      >
         <div className="flex-1 overflow-auto p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -1862,16 +2384,32 @@ function EvaluationsTab({
                     className="p-1 rounded"
                     style={{ color: colors.text.secondary }}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
                     </svg>
                   </button>
-                  <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
-                    {runs.find(r => r.id === selectedRunId)?.run_name}
+                  <h2
+                    className="text-base font-semibold"
+                    style={{ color: colors.text.primary }}
+                  >
+                    {runs.find((r) => r.id === selectedRunId)?.run_name}
                   </h2>
                 </div>
               ) : (
-                <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+                <h2
+                  className="text-base font-semibold"
+                  style={{ color: colors.text.primary }}
+                >
                   Evaluation Runs
                 </h2>
               )}
@@ -1887,8 +2425,8 @@ function EvaluationsTab({
                     borderColor: colors.border,
                     color: colors.text.primary,
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 6px center',
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 6px center",
                   }}
                 >
                   <option value="all">All Status</option>
@@ -1904,19 +2442,30 @@ function EvaluationsTab({
                   style={{ color: colors.text.secondary }}
                 >
                   <svg
-                    className={`w-4 h-4 ${isLoadingRuns ? 'animate-spin' : ''}`}
+                    className={`w-4 h-4 ${isLoadingRuns ? "animate-spin" : ""}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                 </button>
               </div>
             )}
           </div>
 
-          <div className="rounded-lg overflow-visible" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
+          <div
+            className="rounded-lg overflow-visible"
+            style={{
+              backgroundColor: colors.bg.primary,
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            }}
+          >
             {selectedRunId !== null ? (
               // Results View
               isLoadingResults ? (
@@ -1925,138 +2474,346 @@ function EvaluationsTab({
                 </div>
               ) : results.length === 0 ? (
                 <div className="p-16 text-center">
-                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No results found</p>
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>This evaluation has no results yet</p>
+                  <p
+                    className="text-sm font-medium mb-1"
+                    style={{ color: colors.text.primary }}
+                  >
+                    No results found
+                  </p>
+                  <p
+                    className="text-xs"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    This evaluation has no results yet
+                  </p>
                 </div>
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr style={{ backgroundColor: colors.bg.secondary, borderBottom: `1px solid ${colors.border}` }}>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '10%' }}>Sample</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '40%' }}>
+                    <tr
+                      style={{
+                        backgroundColor: colors.bg.secondary,
+                        borderBottom: `1px solid ${colors.border}`,
+                      }}
+                    >
+                      <th
+                        className="text-left px-4 py-3 text-xs font-medium align-top"
+                        style={{ color: colors.text.secondary, width: "10%" }}
+                      >
+                        Sample
+                      </th>
+                      <th
+                        className="text-left px-4 py-3 text-xs font-medium align-top"
+                        style={{ color: colors.text.secondary, width: "40%" }}
+                      >
                         <div>
                           <div>Ground Truth vs Transcription</div>
                           <div className="flex items-center gap-2 font-normal mt-1">
                             <span className="inline-flex items-center gap-1">
-                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#fee2e2' }} />
-                              <span style={{ color: colors.text.secondary }}>Deletion</span>
+                              <span
+                                className="inline-block w-2 h-2 rounded"
+                                style={{ backgroundColor: "#fee2e2" }}
+                              />
+                              <span style={{ color: colors.text.secondary }}>
+                                Deletion
+                              </span>
                             </span>
                             <span className="inline-flex items-center gap-1">
-                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#dcfce7' }} />
-                              <span style={{ color: colors.text.secondary }}>Insertion</span>
+                              <span
+                                className="inline-block w-2 h-2 rounded"
+                                style={{ backgroundColor: "#dcfce7" }}
+                              />
+                              <span style={{ color: colors.text.secondary }}>
+                                Insertion
+                              </span>
                             </span>
                             <span className="inline-flex items-center gap-1">
-                              <span className="inline-block w-2 h-2 rounded" style={{ backgroundColor: '#fef3c7' }} />
-                              <span style={{ color: colors.text.secondary }}>Substitution</span>
+                              <span
+                                className="inline-block w-2 h-2 rounded"
+                                style={{ backgroundColor: "#fef3c7" }}
+                              />
+                              <span style={{ color: colors.text.secondary }}>
+                                Substitution
+                              </span>
                             </span>
                           </div>
                         </div>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '15%' }}>
+                      <th
+                        className="text-left px-4 py-3 text-xs font-medium align-top"
+                        style={{ color: colors.text.secondary, width: "15%" }}
+                      >
                         <span className="inline-flex items-center gap-1">
                           Score
                           <span
                             className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0"
-                            style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}`, color: colors.text.secondary }}
+                            style={{
+                              backgroundColor: colors.bg.primary,
+                              border: `1px solid ${colors.border}`,
+                              color: colors.text.secondary,
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setScoreInfoPos({ top: rect.bottom + 4, left: rect.left });
-                              setOpenScoreInfo(openScoreInfo ? null : 'accuracy');
+                              const rect =
+                                e.currentTarget.getBoundingClientRect();
+                              setScoreInfoPos({
+                                top: rect.bottom + 4,
+                                left: rect.left,
+                              });
+                              setOpenScoreInfo(
+                                openScoreInfo ? null : "accuracy",
+                              );
                             }}
                           >
                             i
                           </span>
-                          {openScoreInfo && (() => {
-                            const metrics = [
-                              { key: 'accuracy', title: 'Accuracy (Word Information Preserved)', desc: 'Measures how much of the original information was correctly captured.', formula: 'WIP = (C / N) × (C / H)', formulaDesc: 'C = correct words\nN = total words in reference\nH = total words in hypothesis', example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat" (H=5)\nC = 3 (cat, on, mat)\n\nWIP = (3/6) × (3/5)\n    = 0.5 × 0.6 = 0.30 = 30%`, direction: 'Higher is better.', directionColor: colors.status.success },
-                              { key: 'wer', title: 'WER (Word Error Rate)', desc: 'The most widely used metric in STT evaluation.', formula: 'WER = (S + D + I) / N', formulaDesc: 'S = substitutions, D = deletions\nI = insertions, N = total words in reference', example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat"\n\nthe → a    (Substitution)\ncat → cat  (Correct)\nsat → sit  (Substitution)\non  → on   (Correct)\nthe → ∅    (Deletion)\nmat → mat  (Correct)\n\nS=2, D=1, I=0\nWER = (2+1+0) / 6 = 0.50 = 50%`, direction: 'Lower is better.', directionColor: colors.status.error },
-                              { key: 'cer', title: 'CER (Character Error Rate)', desc: 'Same concept as WER but at the character level — more granular, catches partial word errors.', formula: 'CER = (S + D + I) / N', formulaDesc: 'S, D, I = character-level errors\nN = total characters in reference', example: `Reference:  "the cat sat" (N=11 chars)\nHypothesis: "the bat set"\n\nt → t  (Correct)\nh → h  (Correct)\ne → e  (Correct)\n· → ·  (Correct)\nc → b  (Substitution)\na → a  (Correct)\nt → t  (Correct)\n· → ·  (Correct)\ns → s  (Correct)\na → e  (Substitution)\nt → t  (Correct)\n\nS=2, D=0, I=0\nCER = 2/11 = 0.18 = 18%`, direction: 'Lower is better.', directionColor: colors.status.error },
-                              { key: 'lenient_wer', title: 'Lenient WER', desc: 'Same as WER but ignores differences in casing and punctuation — useful when exact formatting doesn\'t matter.', formula: 'Same as WER after normalizing text', formulaDesc: 'Normalization: lowercase + remove punctuation', example: `Reference:  "Hello, World!"\nHypothesis: "hello world"\n\nAfter normalization:\n"hello world" vs "hello world"\n→ exact match\n\nLenient WER = 0%\n(strict WER would be higher)`, direction: 'Lower is better.', directionColor: colors.status.error },
-                            ];
-                            const currentIdx = metrics.findIndex(m => m.key === openScoreInfo);
-                            const current = metrics[currentIdx >= 0 ? currentIdx : 0];
-                            return (
-                              <div
-                                className="fixed z-50 rounded-lg shadow-lg border text-xs"
-                                style={{ backgroundColor: colors.bg.primary, borderColor: colors.border, width: '370px', top: scoreInfoPos.top, left: scoreInfoPos.left }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {/* Tab navigation */}
-                                <div className="flex border-b" style={{ borderColor: colors.border }}>
-                                  {metrics.map((m, _idx) => (
-                                    <button
-                                      key={m.key}
-                                      className="flex-1 px-2 py-2 text-xs font-medium"
-                                      style={{
-                                        color: openScoreInfo === m.key ? colors.accent.primary : colors.text.secondary,
-                                        borderBottom: openScoreInfo === m.key ? `2px solid ${colors.accent.primary}` : '2px solid transparent',
-                                        backgroundColor: 'transparent',
-                                        cursor: 'pointer',
-                                      }}
-                                      onClick={() => setOpenScoreInfo(m.key)}
+                          {openScoreInfo &&
+                            (() => {
+                              const metrics = [
+                                {
+                                  key: "accuracy",
+                                  title:
+                                    "Accuracy (Word Information Preserved)",
+                                  desc: "Measures how much of the original information was correctly captured.",
+                                  formula: "WIP = (C / N) × (C / H)",
+                                  formulaDesc:
+                                    "C = correct words\nN = total words in reference\nH = total words in hypothesis",
+                                  example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat" (H=5)\nC = 3 (cat, on, mat)\n\nWIP = (3/6) × (3/5)\n    = 0.5 × 0.6 = 0.30 = 30%`,
+                                  direction: "Higher is better.",
+                                  directionColor: colors.status.success,
+                                },
+                                {
+                                  key: "wer",
+                                  title: "WER (Word Error Rate)",
+                                  desc: "The most widely used metric in STT evaluation.",
+                                  formula: "WER = (S + D + I) / N",
+                                  formulaDesc:
+                                    "S = substitutions, D = deletions\nI = insertions, N = total words in reference",
+                                  example: `Reference:  "the cat sat on the mat" (N=6)\nHypothesis: "a cat sit on mat"\n\nthe → a    (Substitution)\ncat → cat  (Correct)\nsat → sit  (Substitution)\non  → on   (Correct)\nthe → ∅    (Deletion)\nmat → mat  (Correct)\n\nS=2, D=1, I=0\nWER = (2+1+0) / 6 = 0.50 = 50%`,
+                                  direction: "Lower is better.",
+                                  directionColor: colors.status.error,
+                                },
+                                {
+                                  key: "cer",
+                                  title: "CER (Character Error Rate)",
+                                  desc: "Same concept as WER but at the character level — more granular, catches partial word errors.",
+                                  formula: "CER = (S + D + I) / N",
+                                  formulaDesc:
+                                    "S, D, I = character-level errors\nN = total characters in reference",
+                                  example: `Reference:  "the cat sat" (N=11 chars)\nHypothesis: "the bat set"\n\nt → t  (Correct)\nh → h  (Correct)\ne → e  (Correct)\n· → ·  (Correct)\nc → b  (Substitution)\na → a  (Correct)\nt → t  (Correct)\n· → ·  (Correct)\ns → s  (Correct)\na → e  (Substitution)\nt → t  (Correct)\n\nS=2, D=0, I=0\nCER = 2/11 = 0.18 = 18%`,
+                                  direction: "Lower is better.",
+                                  directionColor: colors.status.error,
+                                },
+                                {
+                                  key: "lenient_wer",
+                                  title: "Lenient WER",
+                                  desc: "Same as WER but ignores differences in casing and punctuation — useful when exact formatting doesn't matter.",
+                                  formula: "Same as WER after normalizing text",
+                                  formulaDesc:
+                                    "Normalization: lowercase + remove punctuation",
+                                  example: `Reference:  "Hello, World!"\nHypothesis: "hello world"\n\nAfter normalization:\n"hello world" vs "hello world"\n→ exact match\n\nLenient WER = 0%\n(strict WER would be higher)`,
+                                  direction: "Lower is better.",
+                                  directionColor: colors.status.error,
+                                },
+                              ];
+                              const currentIdx = metrics.findIndex(
+                                (m) => m.key === openScoreInfo,
+                              );
+                              const current =
+                                metrics[currentIdx >= 0 ? currentIdx : 0];
+                              return (
+                                <div
+                                  className="fixed z-50 rounded-lg shadow-lg border text-xs"
+                                  style={{
+                                    backgroundColor: colors.bg.primary,
+                                    borderColor: colors.border,
+                                    width: "370px",
+                                    top: scoreInfoPos.top,
+                                    left: scoreInfoPos.left,
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {/* Tab navigation */}
+                                  <div
+                                    className="flex border-b"
+                                    style={{ borderColor: colors.border }}
+                                  >
+                                    {metrics.map((m, _idx) => (
+                                      <button
+                                        key={m.key}
+                                        className="flex-1 px-2 py-2 text-xs font-medium"
+                                        style={{
+                                          color:
+                                            openScoreInfo === m.key
+                                              ? colors.accent.primary
+                                              : colors.text.secondary,
+                                          borderBottom:
+                                            openScoreInfo === m.key
+                                              ? `2px solid ${colors.accent.primary}`
+                                              : "2px solid transparent",
+                                          backgroundColor: "transparent",
+                                          cursor: "pointer",
+                                        }}
+                                        onClick={() => setOpenScoreInfo(m.key)}
+                                      >
+                                        {m.key === "accuracy"
+                                          ? "Accuracy"
+                                          : m.key === "wer"
+                                            ? "WER"
+                                            : m.key === "cer"
+                                              ? "CER"
+                                              : "Lenient WER"}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {/* Content */}
+                                  <div
+                                    className="p-3"
+                                    style={{
+                                      fontFamily:
+                                        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                                    }}
+                                  >
+                                    <div
+                                      className="font-semibold mb-2"
+                                      style={{ color: colors.text.primary }}
                                     >
-                                      {m.key === 'accuracy' ? 'Accuracy' : m.key === 'wer' ? 'WER' : m.key === 'cer' ? 'CER' : 'Lenient WER'}
-                                    </button>
-                                  ))}
-                                </div>
-                                {/* Content */}
-                                <div className="p-3" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
-                                  <div className="font-semibold mb-2" style={{ color: colors.text.primary }}>{current.title}</div>
-                                  <p className="mb-2" style={{ color: colors.text.secondary, fontFamily: 'system-ui, sans-serif' }}>{current.desc}</p>
-                                  <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Formula</div>
-                                  <div className="mb-2 p-2 rounded whitespace-pre-wrap" style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary }}>
-                                    {current.formula}{'\n'}
-                                    <span style={{ color: colors.text.secondary }}>{current.formulaDesc}</span>
+                                      {current.title}
+                                    </div>
+                                    <p
+                                      className="mb-2"
+                                      style={{
+                                        color: colors.text.secondary,
+                                        fontFamily: "system-ui, sans-serif",
+                                      }}
+                                    >
+                                      {current.desc}
+                                    </p>
+                                    <div
+                                      className="mb-1 font-semibold"
+                                      style={{ color: colors.text.primary }}
+                                    >
+                                      Formula
+                                    </div>
+                                    <div
+                                      className="mb-2 p-2 rounded whitespace-pre-wrap"
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        color: colors.text.primary,
+                                      }}
+                                    >
+                                      {current.formula}
+                                      {"\n"}
+                                      <span
+                                        style={{ color: colors.text.secondary }}
+                                      >
+                                        {current.formulaDesc}
+                                      </span>
+                                    </div>
+                                    <div
+                                      className="mb-1 font-semibold"
+                                      style={{ color: colors.text.primary }}
+                                    >
+                                      Example
+                                    </div>
+                                    <div
+                                      className="p-2 rounded whitespace-pre-wrap"
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        color: colors.text.primary,
+                                        lineHeight: "1.6",
+                                      }}
+                                    >
+                                      {current.example}
+                                    </div>
+                                    <div
+                                      className="mt-2 font-semibold"
+                                      style={{ color: current.directionColor }}
+                                    >
+                                      {current.direction}
+                                    </div>
                                   </div>
-                                  <div className="mb-1 font-semibold" style={{ color: colors.text.primary }}>Example</div>
-                                  <div className="p-2 rounded whitespace-pre-wrap" style={{ backgroundColor: colors.bg.secondary, color: colors.text.primary, lineHeight: '1.6' }}>
-                                    {current.example}
-                                  </div>
-                                  <div className="mt-2 font-semibold" style={{ color: current.directionColor }}>{current.direction}</div>
                                 </div>
-                              </div>
-                            );
-                          })()}
+                              );
+                            })()}
                         </span>
                       </th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '8%' }}>Is Correct</th>
-                      <th className="text-left px-4 py-3 text-xs font-medium align-top" style={{ color: colors.text.secondary, width: '27%' }}>Comment</th>
+                      <th
+                        className="text-left px-4 py-3 text-xs font-medium align-top"
+                        style={{ color: colors.text.secondary, width: "8%" }}
+                      >
+                        Is Correct
+                      </th>
+                      <th
+                        className="text-left px-4 py-3 text-xs font-medium align-top"
+                        style={{ color: colors.text.secondary, width: "27%" }}
+                      >
+                        Comment
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {results.map((result) => (
-                      <tr key={result.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                      <tr
+                        key={result.id}
+                        style={{ borderBottom: `1px solid ${colors.border}` }}
+                      >
                         <td className="px-4 py-3 text-sm align-top">
                           {result.signedUrl ? (
                             <AudioPlayerFromUrl
                               signedUrl={result.signedUrl}
                               sampleName={result.sampleName}
                               isPlaying={playingResultId === result.id}
-                              onPlayToggle={() => setPlayingResultId(playingResultId === result.id ? null : result.id)}
+                              onPlayToggle={() =>
+                                setPlayingResultId(
+                                  playingResultId === result.id
+                                    ? null
+                                    : result.id,
+                                )
+                              }
                             />
                           ) : (
-                            <div className="font-medium" style={{ color: colors.text.primary }}>
-                              {result.sampleName || '-'}
+                            <div
+                              className="font-medium"
+                              style={{ color: colors.text.primary }}
+                            >
+                              {result.sampleName || "-"}
                             </div>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">
                           {(() => {
-                            const hasBoth = result.groundTruth && result.transcription;
-                            const segments = hasBoth ? computeWordDiff(result.groundTruth, result.transcription) : [];
-                            const isExpanded = expandedTranscriptions.has(result.id);
+                            const hasBoth =
+                              result.groundTruth && result.transcription;
+                            const segments = hasBoth
+                              ? computeWordDiff(
+                                  result.groundTruth,
+                                  result.transcription,
+                                )
+                              : [];
+                            const isExpanded = expandedTranscriptions.has(
+                              result.id,
+                            );
                             return (
                               <div>
                                 <div
                                   className="grid grid-cols-2 rounded-md overflow-hidden border"
-                                  style={{ borderColor: colors.border, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '12px' }}
+                                  style={{
+                                    borderColor: colors.border,
+                                    fontFamily:
+                                      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                                    fontSize: "12px",
+                                  }}
                                 >
                                   {/* Left Panel - Ground Truth */}
                                   <div>
                                     <div
                                       className="px-2 py-1.5 text-xs font-semibold border-b"
-                                      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border, color: colors.text.secondary }}
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        borderColor: colors.border,
+                                        color: colors.text.secondary,
+                                      }}
                                     >
                                       Ground Truth
                                     </div>
@@ -2064,46 +2821,78 @@ function EvaluationsTab({
                                       className="px-3 py-2 leading-relaxed"
                                       style={{
                                         backgroundColor: colors.bg.primary,
-                                        ...(!isExpanded ? {
-                                          display: '-webkit-box',
-                                          WebkitLineClamp: 3,
-                                          WebkitBoxOrient: 'vertical' as const,
-                                          overflow: 'hidden',
-                                        } : {}),
+                                        ...(!isExpanded
+                                          ? {
+                                              display: "-webkit-box",
+                                              WebkitLineClamp: 3,
+                                              WebkitBoxOrient:
+                                                "vertical" as const,
+                                              overflow: "hidden",
+                                            }
+                                          : {}),
                                       }}
                                     >
-                                      {hasBoth ? segments.map((seg, idx) => {
-                                        if (seg.type === 'insertion') return null;
-                                        const word = seg.reference || '';
-                                        return (
-                                          <span key={idx}>
-                                            <span
-                                              className="px-0.5 rounded"
-                                              style={{
-                                                backgroundColor:
-                                                  seg.type === 'substitution' ? '#fef3c7' :
-                                                    seg.type === 'deletion' ? '#fee2e2' :
-                                                      'transparent',
-                                                textDecoration: seg.type === 'deletion' ? 'line-through' : 'none',
-                                                color: seg.type === 'deletion' ? '#dc2626' : colors.text.primary,
-                                              }}
-                                              title={seg.type === 'substitution' ? `→ "${seg.hypothesis}"` : undefined}
-                                            >
-                                              {seg.type === 'deletion' && '- '}{word}
+                                      {hasBoth ? (
+                                        segments.map((seg, idx) => {
+                                          if (seg.type === "insertion")
+                                            return null;
+                                          const word = seg.reference || "";
+                                          return (
+                                            <span key={idx}>
+                                              <span
+                                                className="px-0.5 rounded"
+                                                style={{
+                                                  backgroundColor:
+                                                    seg.type === "substitution"
+                                                      ? "#fef3c7"
+                                                      : seg.type === "deletion"
+                                                        ? "#fee2e2"
+                                                        : "transparent",
+                                                  textDecoration:
+                                                    seg.type === "deletion"
+                                                      ? "line-through"
+                                                      : "none",
+                                                  color:
+                                                    seg.type === "deletion"
+                                                      ? "#dc2626"
+                                                      : colors.text.primary,
+                                                }}
+                                                title={
+                                                  seg.type === "substitution"
+                                                    ? `→ "${seg.hypothesis}"`
+                                                    : undefined
+                                                }
+                                              >
+                                                {seg.type === "deletion" &&
+                                                  "- "}
+                                                {word}
+                                              </span>{" "}
                                             </span>
-                                            {' '}
-                                          </span>
-                                        );
-                                      }) : (
-                                        <span style={{ color: colors.text.secondary }}>{result.groundTruth || '-'}</span>
+                                          );
+                                        })
+                                      ) : (
+                                        <span
+                                          style={{
+                                            color: colors.text.secondary,
+                                          }}
+                                        >
+                                          {result.groundTruth || "-"}
+                                        </span>
                                       )}
                                     </div>
                                   </div>
                                   {/* Right Panel - Transcription */}
-                                  <div className="border-l" style={{ borderColor: colors.border }}>
+                                  <div
+                                    className="border-l"
+                                    style={{ borderColor: colors.border }}
+                                  >
                                     <div
                                       className="px-2 py-1.5 text-xs font-semibold border-b"
-                                      style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border, color: colors.text.secondary }}
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        borderColor: colors.border,
+                                        color: colors.text.secondary,
+                                      }}
                                     >
                                       Transcription
                                     </div>
@@ -2111,69 +2900,102 @@ function EvaluationsTab({
                                       className="px-3 py-2 leading-relaxed"
                                       style={{
                                         backgroundColor: colors.bg.primary,
-                                        ...(!isExpanded ? {
-                                          display: '-webkit-box',
-                                          WebkitLineClamp: 3,
-                                          WebkitBoxOrient: 'vertical' as const,
-                                          overflow: 'hidden',
-                                        } : {}),
+                                        ...(!isExpanded
+                                          ? {
+                                              display: "-webkit-box",
+                                              WebkitLineClamp: 3,
+                                              WebkitBoxOrient:
+                                                "vertical" as const,
+                                              overflow: "hidden",
+                                            }
+                                          : {}),
                                       }}
                                     >
-                                      {hasBoth ? segments.map((seg, idx) => {
-                                        if (seg.type === 'deletion') {
+                                      {hasBoth ? (
+                                        segments.map((seg, idx) => {
+                                          if (seg.type === "deletion") {
+                                            return (
+                                              <span key={idx}>
+                                                <span
+                                                  className="px-0.5 rounded"
+                                                  style={{
+                                                    backgroundColor: "#fee2e2",
+                                                    color: "#dc2626",
+                                                  }}
+                                                  title={`Missing: "${seg.reference}"`}
+                                                >
+                                                  ___
+                                                </span>{" "}
+                                              </span>
+                                            );
+                                          }
+                                          const word =
+                                            seg.hypothesis ||
+                                            seg.reference ||
+                                            "";
                                           return (
                                             <span key={idx}>
                                               <span
                                                 className="px-0.5 rounded"
-                                                style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
-                                                title={`Missing: "${seg.reference}"`}
+                                                style={{
+                                                  backgroundColor:
+                                                    seg.type === "substitution"
+                                                      ? "#fef3c7"
+                                                      : seg.type === "insertion"
+                                                        ? "#dcfce7"
+                                                        : "transparent",
+                                                  color:
+                                                    seg.type === "insertion"
+                                                      ? "#16a34a"
+                                                      : colors.text.primary,
+                                                  fontWeight:
+                                                    seg.type === "insertion"
+                                                      ? 500
+                                                      : "normal",
+                                                }}
+                                                title={
+                                                  seg.type === "substitution"
+                                                    ? `Was: "${seg.reference}"`
+                                                    : seg.type === "insertion"
+                                                      ? "Inserted"
+                                                      : undefined
+                                                }
                                               >
-                                                ___
-                                              </span>
-                                              {' '}
+                                                {seg.type === "insertion" &&
+                                                  "+ "}
+                                                {word}
+                                              </span>{" "}
                                             </span>
                                           );
-                                        }
-                                        const word = seg.hypothesis || seg.reference || '';
-                                        return (
-                                          <span key={idx}>
-                                            <span
-                                              className="px-0.5 rounded"
-                                              style={{
-                                                backgroundColor:
-                                                  seg.type === 'substitution' ? '#fef3c7' :
-                                                    seg.type === 'insertion' ? '#dcfce7' :
-                                                      'transparent',
-                                                color:
-                                                  seg.type === 'insertion' ? '#16a34a' :
-                                                    colors.text.primary,
-                                                fontWeight: seg.type === 'insertion' ? 500 : 'normal',
-                                              }}
-                                              title={
-                                                seg.type === 'substitution' ? `Was: "${seg.reference}"` :
-                                                  seg.type === 'insertion' ? 'Inserted' : undefined
-                                              }
-                                            >
-                                              {seg.type === 'insertion' && '+ '}{word}
-                                            </span>
-                                            {' '}
-                                          </span>
-                                        );
-                                      }) : (
-                                        <span style={{ color: colors.text.secondary }}>{result.transcription || '-'}</span>
+                                        })
+                                      ) : (
+                                        <span
+                                          style={{
+                                            color: colors.text.secondary,
+                                          }}
+                                        >
+                                          {result.transcription || "-"}
+                                        </span>
                                       )}
                                     </div>
                                   </div>
                                 </div>
-                                {hasBoth && (result.groundTruth!.length > 100 || result.transcription!.length > 100) && (
-                                  <button
-                                    onClick={() => toggleTranscription(result.id)}
-                                    className="text-xs mt-1.5"
-                                    style={{ color: colors.accent.primary, cursor: 'pointer' }}
-                                  >
-                                    {isExpanded ? 'Show less' : 'Expand'}
-                                  </button>
-                                )}
+                                {hasBoth &&
+                                  (result.groundTruth!.length > 100 ||
+                                    result.transcription!.length > 100) && (
+                                    <button
+                                      onClick={() =>
+                                        toggleTranscription(result.id)
+                                      }
+                                      className="text-xs mt-1.5"
+                                      style={{
+                                        color: colors.accent.primary,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {isExpanded ? "Show less" : "Expand"}
+                                    </button>
+                                  )}
                               </div>
                             );
                           })()}
@@ -2182,54 +3004,119 @@ function EvaluationsTab({
                           {result.score ? (
                             <div className="space-y-2">
                               <div className="flex justify-between gap-2">
-                                <span style={{ color: colors.text.secondary }}>Accuracy</span>
-                                <span className="font-mono font-medium" style={{ color: result.score.wip >= 0.9 ? colors.status.success : result.score.wip >= 0.7 ? '#ca8a04' : colors.status.error }}>{(result.score.wip * 100).toFixed(1)}%</span>
+                                <span style={{ color: colors.text.secondary }}>
+                                  Accuracy
+                                </span>
+                                <span
+                                  className="font-mono font-medium"
+                                  style={{
+                                    color:
+                                      result.score.wip >= 0.9
+                                        ? colors.status.success
+                                        : result.score.wip >= 0.7
+                                          ? "#ca8a04"
+                                          : colors.status.error,
+                                  }}
+                                >
+                                  {(result.score.wip * 100).toFixed(1)}%
+                                </span>
                               </div>
                               <div>
-                                <div className="mb-1" style={{ color: colors.text.secondary, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Errors</div>
-                                <div className="space-y-1 pl-1" style={{ borderLeft: `2px solid ${colors.border}` }}>
+                                <div
+                                  className="mb-1"
+                                  style={{
+                                    color: colors.text.secondary,
+                                    fontSize: "10px",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                  }}
+                                >
+                                  Errors
+                                </div>
+                                <div
+                                  className="space-y-1 pl-1"
+                                  style={{
+                                    borderLeft: `2px solid ${colors.border}`,
+                                  }}
+                                >
                                   {[
-                                    { label: 'WER', value: result.score.wer },
-                                    { label: 'CER', value: result.score.cer },
-                                    { label: 'Lenient WER', value: result.score.lenient_wer },
+                                    { label: "WER", value: result.score.wer },
+                                    { label: "CER", value: result.score.cer },
+                                    {
+                                      label: "Lenient WER",
+                                      value: result.score.lenient_wer,
+                                    },
                                   ].map(({ label, value }) => (
-                                    <div key={label} className="flex justify-between gap-2 pl-1.5">
-                                      <span style={{ color: colors.text.secondary }}>{label}</span>
-                                      <span className="font-mono font-medium" style={{ color: value >= 0.8 ? colors.status.error : value >= 0.4 ? '#ca8a04' : colors.status.success }}>{(value * 100).toFixed(1)}%</span>
+                                    <div
+                                      key={label}
+                                      className="flex justify-between gap-2 pl-1.5"
+                                    >
+                                      <span
+                                        style={{ color: colors.text.secondary }}
+                                      >
+                                        {label}
+                                      </span>
+                                      <span
+                                        className="font-mono font-medium"
+                                        style={{
+                                          color:
+                                            value >= 0.8
+                                              ? colors.status.error
+                                              : value >= 0.4
+                                                ? "#ca8a04"
+                                                : colors.status.success,
+                                        }}
+                                      >
+                                        {(value * 100).toFixed(1)}%
+                                      </span>
                                     </div>
                                   ))}
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <span style={{ color: colors.text.secondary }}>-</span>
+                            <span style={{ color: colors.text.secondary }}>
+                              -
+                            </span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm align-top">
                           <select
-                            value={result.is_correct === null ? '' : result.is_correct ? 'true' : 'false'}
+                            value={
+                              result.is_correct === null
+                                ? ""
+                                : result.is_correct
+                                  ? "true"
+                                  : "false"
+                            }
                             onChange={(e) => {
                               const value = e.target.value;
-                              updateFeedback(result.id, value === '' ? null : value === 'true');
+                              updateFeedback(
+                                result.id,
+                                value === "" ? null : value === "true",
+                              );
                             }}
                             className="px-3 py-1.5 border rounded text-xs font-medium"
                             style={{
-                              backgroundColor: result.is_correct === null
-                                ? colors.bg.primary
-                                : result.is_correct
-                                  ? 'rgba(22, 163, 74, 0.1)'
-                                  : 'rgba(239, 68, 68, 0.1)',
-                              borderColor: result.is_correct === null
-                                ? colors.border
-                                : result.is_correct
-                                  ? colors.status.success
-                                  : colors.status.error,
-                              color: result.is_correct === null
-                                ? colors.text.primary
-                                : result.is_correct
-                                  ? colors.status.success
-                                  : colors.status.error,
-                              cursor: 'pointer',
+                              backgroundColor:
+                                result.is_correct === null
+                                  ? colors.bg.primary
+                                  : result.is_correct
+                                    ? "rgba(22, 163, 74, 0.1)"
+                                    : "rgba(239, 68, 68, 0.1)",
+                              borderColor:
+                                result.is_correct === null
+                                  ? colors.border
+                                  : result.is_correct
+                                    ? colors.status.success
+                                    : colors.status.error,
+                              color:
+                                result.is_correct === null
+                                  ? colors.text.primary
+                                  : result.is_correct
+                                    ? colors.status.success
+                                    : colors.status.error,
+                              cursor: "pointer",
                             }}
                           >
                             <option value="">-</option>
@@ -2240,14 +3127,22 @@ function EvaluationsTab({
                         <td className="px-4 py-3 text-sm align-top">
                           <div className="flex items-start gap-2">
                             <textarea
-                              value={result.comment || ''}
+                              value={result.comment || ""}
                               onChange={(e) => {
-                                setResults(prev => prev.map(r =>
-                                  r.id === result.id ? { ...r, comment: e.target.value } : r
-                                ));
+                                setResults((prev) =>
+                                  prev.map((r) =>
+                                    r.id === result.id
+                                      ? { ...r, comment: e.target.value }
+                                      : r,
+                                  ),
+                                );
                               }}
                               onBlur={(e) => {
-                                updateFeedback(result.id, result.is_correct!, e.target.value);
+                                updateFeedback(
+                                  result.id,
+                                  result.is_correct!,
+                                  e.target.value,
+                                );
                               }}
                               placeholder="Add your comment..."
                               rows={2}
@@ -2256,7 +3151,7 @@ function EvaluationsTab({
                                 backgroundColor: colors.bg.primary,
                                 borderColor: colors.border,
                                 color: colors.text.primary,
-                                resize: 'vertical',
+                                resize: "vertical",
                               }}
                             />
                           </div>
@@ -2266,94 +3161,158 @@ function EvaluationsTab({
                   </tbody>
                 </table>
               )
+            ) : // Runs List View
+            isLoadingRuns ? (
+              <div className="p-16">
+                <Loader size="md" message="Loading evaluation runs..." />
+              </div>
+            ) : runs.length === 0 ? (
+              <div className="p-16 text-center">
+                <svg
+                  className="w-12 h-12 mx-auto mb-3"
+                  style={{ color: colors.border }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+                <p
+                  className="text-sm font-medium mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  No evaluation runs yet
+                </p>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  Run your first evaluation to get started
+                </p>
+              </div>
             ) : (
-              // Runs List View
-              isLoadingRuns ? (
-                <div className="p-16">
-                  <Loader size="md" message="Loading evaluation runs..." />
-                </div>
-              ) : runs.length === 0 ? (
-                <div className="p-16 text-center">
-                  <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>Run your first evaluation to get started</p>
-                </div>
-              ) : (() => {
-                const filteredRuns = statusFilter === 'all'
-                  ? runs
-                  : runs.filter(r => r.status.toLowerCase() === statusFilter);
+              (() => {
+                const filteredRuns =
+                  statusFilter === "all"
+                    ? runs
+                    : runs.filter(
+                        (r) => r.status.toLowerCase() === statusFilter,
+                      );
                 return filteredRuns.length > 0 ? (
-                <div className="p-4 space-y-3">
-                  {filteredRuns.map((run) => {
-                    const isCompleted = run.status.toLowerCase() === 'completed';
-                    return (
-                      <div
-                        key={run.id}
-                        className="rounded-lg overflow-hidden"
-                        style={{
-                          backgroundColor: colors.bg.primary,
-                          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)',
-                          borderLeft: '3px solid #DCCFC3',
-                        }}
-                      >
-                        <div className="px-5 py-4">
-                          {/* Row 1: Run Name + Status */}
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
-                                {run.run_name}
-                              </div>
-                              {/* Error message */}
-                              {run.error_message && (
-                                <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
-                                  {run.error_message}
+                  <div className="p-4 space-y-3">
+                    {filteredRuns.map((run) => {
+                      const isCompleted =
+                        run.status.toLowerCase() === "completed";
+                      return (
+                        <div
+                          key={run.id}
+                          className="rounded-lg overflow-hidden"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
+                            borderLeft: "3px solid #DCCFC3",
+                          }}
+                        >
+                          <div className="px-5 py-4">
+                            {/* Row 1: Run Name + Status */}
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="min-w-0 flex-1">
+                                <div
+                                  className="text-sm font-semibold truncate"
+                                  style={{ color: colors.text.primary }}
+                                >
+                                  {run.run_name}
                                 </div>
-                              )}
+                                {/* Error message */}
+                                {run.error_message && (
+                                  <div
+                                    className="mt-2 text-xs break-words overflow-hidden"
+                                    style={{ color: "hsl(8, 86%, 40%)" }}
+                                  >
+                                    {run.error_message}
+                                  </div>
+                                )}
+                              </div>
+                              <StatusBadge status={run.status} size="sm" />
                             </div>
-                            <StatusBadge status={run.status} size="sm" />
-                          </div>
 
-                          {/* Row 2: Dataset + Models (left) | Actions (right) */}
-                          <div className="flex items-center justify-between gap-4 mt-3">
-                            <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
-                              <span className="flex items-center gap-1.5">
-                                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
-                                </svg>
-                                {run.dataset_name}
-                              </span>
-                              {run.models && run.models.length > 0 && (
-                                <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
-                                  {run.models.join(', ')}
+                            {/* Row 2: Dataset + Models (left) | Actions (right) */}
+                            <div className="flex items-center justify-between gap-4 mt-3">
+                              <div
+                                className="flex items-center gap-3 text-xs"
+                                style={{ color: colors.text.secondary }}
+                              >
+                                <span className="flex items-center gap-1.5">
+                                  <svg
+                                    className="w-3.5 h-3.5 flex-shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3"
+                                    />
+                                  </svg>
+                                  {run.dataset_name}
                                 </span>
-                              )}
+                                {run.models && run.models.length > 0 && (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded"
+                                    style={{
+                                      backgroundColor: colors.bg.secondary,
+                                    }}
+                                  >
+                                    {run.models.join(", ")}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={
+                                  isCompleted
+                                    ? () => loadResults(run.id)
+                                    : undefined
+                                }
+                                disabled={!isCompleted}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium border flex-shrink-0"
+                                style={{
+                                  backgroundColor: "transparent",
+                                  borderColor: colors.border,
+                                  color: isCompleted
+                                    ? colors.text.primary
+                                    : colors.text.secondary,
+                                  cursor: isCompleted
+                                    ? "pointer"
+                                    : "not-allowed",
+                                  opacity: isCompleted ? 1 : 0.5,
+                                }}
+                              >
+                                View Results
+                              </button>
                             </div>
-                            <button
-                              onClick={isCompleted ? () => loadResults(run.id) : undefined}
-                              disabled={!isCompleted}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium border flex-shrink-0"
-                              style={{
-                                backgroundColor: 'transparent',
-                                borderColor: colors.border,
-                                color: isCompleted ? colors.text.primary : colors.text.secondary,
-                                cursor: isCompleted ? 'pointer' : 'not-allowed',
-                                opacity: isCompleted ? 1 : 0.5,
-                              }}
-                            >
-                              View Results
-                            </button>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="p-16 text-center">
-                    <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
-                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status &quot;{statusFilter}&quot;</p>
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: colors.text.primary }}
+                    >
+                      No {statusFilter} runs
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: colors.text.secondary }}
+                    >
+                      No evaluation runs with status &quot;{statusFilter}&quot;
+                    </p>
                   </div>
                 );
               })()

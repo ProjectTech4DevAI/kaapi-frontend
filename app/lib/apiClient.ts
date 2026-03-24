@@ -43,7 +43,9 @@ export async function apiFetch<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   headers.set("X-API-KEY", apiKey);
   const res = await fetch(url, {
     ...options,

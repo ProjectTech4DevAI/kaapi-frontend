@@ -8,7 +8,7 @@
  * - In-memory cache to avoid redundant fetches within same session
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ConfigPublic,
   ConfigVersionPublic,
@@ -16,8 +16,9 @@ import {
   ConfigListResponse,
   ConfigVersionListResponse,
   ConfigVersionResponse,
-} from './configTypes';
-import { useAuth } from '@/app/lib/context/AuthContext';
+} from "./configTypes";
+import { apiFetch } from "./apiClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
 
 // ============ TYPES ============
 
@@ -33,7 +34,7 @@ export interface SavedConfig {
   promptContent: string; // Same as instructions for compatibility
   modelName: string;
   provider: string;
-  type: 'text' | 'stt' | 'tts'; // Config type - always present in UI (defaults to 'text')
+  type: "text" | "stt" | "tts"; // Config type - always present in UI (defaults to 'text')
   temperature: number;
   vectorStoreIds: string;
   tools?: Tool[];
@@ -60,7 +61,7 @@ interface ConfigCache {
 
 // ============ CONSTANTS ============
 
-const CACHE_KEY = 'kaapi_configs_cache';
+const CACHE_KEY = "kaapi_configs_cache";
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes - cache is considered stale after this
 
 // ============ HELPER FUNCTIONS ============
@@ -68,7 +69,7 @@ const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes - cache is considered stale
 // Flatten config version for UI
 const flattenConfigVersion = (
   config: ConfigPublic,
-  version: ConfigVersionPublic
+  version: ConfigVersionPublic,
 ): SavedConfig => {
   const blob = version.config_blob;
   const params = blob.completion.params;
@@ -86,9 +87,10 @@ const flattenConfigVersion = (
       : [params.knowledge_base_ids];
 
     kbIds.forEach((kbId: string) => {
-      if (kbId) { // Only add non-empty IDs
+      if (kbId) {
+        // Only add non-empty IDs
         tools.push({
-          type: 'file_search',
+          type: "file_search",
           knowledge_base_ids: [kbId], // Each tool gets one ID for UI
           max_num_results: params.max_num_results || 20,
         });
@@ -103,13 +105,13 @@ const flattenConfigVersion = (
     description: config.description,
     version: version.version,
     timestamp: version.inserted_at,
-    instructions: params.instructions || '',
-    promptContent: params.instructions || '',
-    modelName: params.model || '',
+    instructions: params.instructions || "",
+    promptContent: params.instructions || "",
+    modelName: params.model || "",
     provider: blob.completion.provider,
-    type: blob.completion.type || 'text', // Default to 'text' for backward compatibility
+    type: blob.completion.type || "text", // Default to 'text' for backward compatibility
     temperature: params.temperature ?? 0.7,
-    vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
+    vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools: tools,
     commit_message: version.commit_message,
   };
@@ -143,37 +145,37 @@ const groupConfigs = (configs: SavedConfig[]): ConfigGroup[] => {
 
 // Load cache from localStorage
 const loadCache = (): ConfigCache | null => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       return JSON.parse(cached);
     }
   } catch (e) {
-    console.error('Failed to load config cache:', e);
+    console.error("Failed to load config cache:", e);
   }
   return null;
 };
 
 // Save cache to localStorage
 const saveCache = (cache: ConfigCache): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch (e) {
-    console.error('Failed to save config cache:', e);
+    console.error("Failed to save config cache:", e);
   }
 };
 
 // Clear cache
 export const clearConfigCache = (): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     localStorage.removeItem(CACHE_KEY);
     // Also clear in-memory cache
     inMemoryCache = null;
   } catch (e) {
-    console.error('Failed to clear config cache:', e);
+    console.error("Failed to clear config cache:", e);
   }
 };
 
@@ -200,151 +202,157 @@ export function useConfigs(): UseConfigsResult {
   const fetchInProgress = useRef<boolean>(false);
 
   // Store refetch function in ref for background validation
-  const refetchRef = useRef<((force: boolean) => Promise<void>) | undefined>(undefined);
+  const refetchRef = useRef<((force: boolean) => Promise<void>) | undefined>(
+    undefined,
+  );
 
-  const fetchConfigs = useCallback(async (force: boolean = false) => {
-    // Prevent concurrent fetches
-    if (fetchInProgress.current) return;
+  const fetchConfigs = useCallback(
+    async (force: boolean = false) => {
+      // Prevent concurrent fetches
+      if (fetchInProgress.current) return;
 
-    const apiKey = activeKey?.key ?? null;
-    if (!apiKey) {
-      setError('No API key found. Please add an API key in the Keystore.');
-      setIsLoading(false);
-      return;
-    }
+      const apiKey = activeKey?.key ?? null;
+      if (!apiKey) {
+        setError("No API key found. Please add an API key in the Keystore.");
+        setIsLoading(false);
+        return;
+      }
 
-    // Validate cache in background without blocking UI
-    const validateCacheInBackground = async (cache: ConfigCache) => {
-      try {
-        // Fetch just the config list (lightweight call)
-        const response = await fetch('/api/configs', {
-          headers: { 'X-API-KEY': apiKey },
-        });
-        const data: ConfigListResponse = await response.json();
+      // Validate cache in background without blocking UI
+      const validateCacheInBackground = async (cache: ConfigCache) => {
+        try {
+          // Fetch just the config list (lightweight call)
+          const data = await apiFetch<ConfigListResponse>(
+            "/api/configs",
+            apiKey,
+          );
 
-        if (!data.success || !data.data) return;
+          if (!data.success || !data.data) return;
 
-        // Check if any config has been updated or new configs added
-        let needsRefresh = false;
-        const currentMeta = cache.configMeta;
+          // Check if any config has been updated or new configs added
+          let needsRefresh = false;
+          const currentMeta = cache.configMeta;
 
-        // Check for new or updated configs
-        for (const config of data.data) {
-          const cached = currentMeta[config.id];
-          if (!cached) {
-            needsRefresh = true;
-            break;
-          }
-          if (cached.updated_at !== config.updated_at) {
-            needsRefresh = true;
-            break;
-          }
-        }
-
-        // Check for deleted configs
-        if (!needsRefresh) {
-          const currentIds = new Set(data.data.map(c => c.id));
-          for (const cachedId of Object.keys(currentMeta)) {
-            if (!currentIds.has(cachedId)) {
+          // Check for new or updated configs
+          for (const config of data.data) {
+            const cached = currentMeta[config.id];
+            if (!cached) {
+              needsRefresh = true;
+              break;
+            }
+            if (cached.updated_at !== config.updated_at) {
               needsRefresh = true;
               break;
             }
           }
-        }
 
-        // Also check version counts by fetching version lists
-        if (!needsRefresh) {
-          for (const config of data.data) {
-            const cached = currentMeta[config.id];
-            if (cached) {
-              try {
-                const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
-                  headers: { 'X-API-KEY': apiKey },
-                });
-                const versionsData: ConfigVersionListResponse = await versionsResponse.json();
-                if (versionsData.success && versionsData.data) {
-                  if (versionsData.data.length !== cached.version_count) {
-                    needsRefresh = true;
-                    break;
-                  }
-                }
-              } catch {
-                // If we can't check, assume we need refresh to be safe
+          // Check for deleted configs
+          if (!needsRefresh) {
+            const currentIds = new Set(data.data.map((c) => c.id));
+            for (const cachedId of Object.keys(currentMeta)) {
+              if (!currentIds.has(cachedId)) {
                 needsRefresh = true;
                 break;
               }
             }
           }
-        }
 
-        if (needsRefresh) {
-          inMemoryCache = null;
-          fetchInProgress.current = false;
-          if (refetchRef.current) {
-            await refetchRef.current(true);
+          // Also check version counts by fetching version lists
+          if (!needsRefresh) {
+            for (const config of data.data) {
+              const cached = currentMeta[config.id];
+              if (cached) {
+                try {
+                  const versionsData =
+                    await apiFetch<ConfigVersionListResponse>(
+                      `/api/configs/${config.id}/versions`,
+                      apiKey,
+                    );
+                  if (versionsData.success && versionsData.data) {
+                    if (versionsData.data.length !== cached.version_count) {
+                      needsRefresh = true;
+                      break;
+                    }
+                  }
+                } catch {
+                  // If we can't check, assume we need refresh to be safe
+                  needsRefresh = true;
+                  break;
+                }
+              }
+            }
           }
+
+          if (needsRefresh) {
+            inMemoryCache = null;
+            fetchInProgress.current = false;
+            if (refetchRef.current) {
+              await refetchRef.current(true);
+            }
+          }
+        } catch {
+          console.error("Failed to validate cache");
         }
-      } catch {
-        console.error('Failed to validate cache');
-      }
-    };
+      };
 
-    // Check in-memory cache first (fastest)
-    if (!force && inMemoryCache) {
-      const cacheAge = Date.now() - inMemoryCache.cachedAt;
-      if (cacheAge < CACHE_MAX_AGE_MS) {
-        setConfigs(inMemoryCache.configs);
-        setIsCached(true);
-        setIsLoading(false);
-        // Validate cache in background
-        validateCacheInBackground(inMemoryCache);
-        return;
-      }
-    }
-
-    // Check localStorage cache
-    if (!force) {
-      const cache = loadCache();
-      if (cache) {
-        const cacheAge = Date.now() - cache.cachedAt;
+      // Check in-memory cache first (fastest)
+      if (!force && inMemoryCache) {
+        const cacheAge = Date.now() - inMemoryCache.cachedAt;
         if (cacheAge < CACHE_MAX_AGE_MS) {
-          setConfigs(cache.configs);
+          setConfigs(inMemoryCache.configs);
           setIsCached(true);
           setIsLoading(false);
-          inMemoryCache = cache;
           // Validate cache in background
-          validateCacheInBackground(cache);
+          validateCacheInBackground(inMemoryCache);
           return;
         }
       }
-    }
 
-    // No valid cache, fetch from API
-    fetchInProgress.current = true;
-    setIsLoading(true);
-    setError(null);
-    setIsCached(false);
+      // Check localStorage cache
+      if (!force) {
+        const cache = loadCache();
+        if (cache) {
+          const cacheAge = Date.now() - cache.cachedAt;
+          if (cacheAge < CACHE_MAX_AGE_MS) {
+            setConfigs(cache.configs);
+            setIsCached(true);
+            setIsLoading(false);
+            inMemoryCache = cache;
+            // Validate cache in background
+            validateCacheInBackground(cache);
+            return;
+          }
+        }
+      }
 
-    try {
-      const result = await fetchAllConfigs(apiKey);
-      setConfigs(result.configs);
+      // No valid cache, fetch from API
+      fetchInProgress.current = true;
+      setIsLoading(true);
+      setError(null);
+      setIsCached(false);
 
-      // Save to cache
-      const newCache: ConfigCache = {
-        configs: result.configs,
-        configMeta: result.configMeta,
-        cachedAt: Date.now(),
-      };
-      saveCache(newCache);
-      inMemoryCache = newCache;
-    } catch {
-      console.error('Failed to load saved configs');
-      setError('Failed to load configurations. Please try again.');
-    } finally {
-      setIsLoading(false);
-      fetchInProgress.current = false;
-    }
-  }, [activeKey]);
+      try {
+        const result = await fetchAllConfigs(apiKey);
+        setConfigs(result.configs);
+
+        // Save to cache
+        const newCache: ConfigCache = {
+          configs: result.configs,
+          configMeta: result.configMeta,
+          cachedAt: Date.now(),
+        };
+        saveCache(newCache);
+        inMemoryCache = newCache;
+      } catch {
+        console.error("Failed to load saved configs");
+        setError("Failed to load configurations. Please try again.");
+      } finally {
+        setIsLoading(false);
+        fetchInProgress.current = false;
+      }
+    },
+    [activeKey],
+  );
   refetchRef.current = fetchConfigs;
 
   useEffect(() => {
@@ -370,17 +378,17 @@ interface FetchResult {
 
 async function fetchAllConfigs(apiKey: string): Promise<FetchResult> {
   // Fetch all configs
-  const response = await fetch('/api/configs', {
-    headers: { 'X-API-KEY': apiKey },
-  });
-  const data: ConfigListResponse = await response.json();
+  const data = await apiFetch<ConfigListResponse>("/api/configs", apiKey);
 
   if (!data.success || !data.data) {
-    throw new Error(data.error || 'Failed to fetch configs');
+    throw new Error(data.error || "Failed to fetch configs");
   }
 
   const allVersions: SavedConfig[] = [];
-  const configMeta: Record<string, { updated_at: string; version_count: number }> = {};
+  const configMeta: Record<
+    string,
+    { updated_at: string; version_count: number }
+  > = {};
 
   // Fetch versions for all configs in parallel (batched)
   const BATCH_SIZE = 5; // Fetch 5 configs at a time
@@ -390,10 +398,10 @@ async function fetchAllConfigs(apiKey: string): Promise<FetchResult> {
     const batch = configs.slice(i, i + BATCH_SIZE);
     const batchPromises = batch.map(async (config) => {
       try {
-        const versionsResponse = await fetch(`/api/configs/${config.id}/versions`, {
-          headers: { 'X-API-KEY': apiKey },
-        });
-        const versionsData: ConfigVersionListResponse = await versionsResponse.json();
+        const versionsData = await apiFetch<ConfigVersionListResponse>(
+          `/api/configs/${config.id}/versions`,
+          apiKey,
+        );
 
         if (versionsData.success && versionsData.data) {
           // Store metadata for cache validation
@@ -405,17 +413,19 @@ async function fetchAllConfigs(apiKey: string): Promise<FetchResult> {
           // Fetch all version details in parallel
           const versionPromises = versionsData.data.map(async (versionItem) => {
             try {
-              const versionResponse = await fetch(
+              const versionData = await apiFetch<ConfigVersionResponse>(
                 `/api/configs/${config.id}/versions/${versionItem.version}`,
-                { headers: { 'X-API-KEY': apiKey } }
+                apiKey,
               );
-              const versionData: ConfigVersionResponse = await versionResponse.json();
 
               if (versionData.success && versionData.data) {
                 return flattenConfigVersion(config, versionData.data);
               }
             } catch (e) {
-              console.error(`Failed to fetch version ${versionItem.version}:`, e);
+              console.error(
+                `Failed to fetch version ${versionItem.version}:`,
+                e,
+              );
             }
             return null;
           });
@@ -430,7 +440,7 @@ async function fetchAllConfigs(apiKey: string): Promise<FetchResult> {
     });
 
     const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach(versions => allVersions.push(...versions));
+    batchResults.forEach((versions) => allVersions.push(...versions));
   }
 
   return { configs: allVersions, configMeta };
@@ -444,12 +454,15 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   const now = Date.now();
 
   let date: number;
-  if (typeof timestamp === 'string') {
+  if (typeof timestamp === "string") {
     // If timestamp doesn't include timezone info, assume it's UTC
     // and append 'Z' to ensure it's interpreted as UTC
-    const utcTimestamp = timestamp.endsWith('Z') || timestamp.includes('+') || timestamp.includes('T') && timestamp.split('T')[1].includes('-')
-      ? timestamp
-      : timestamp + 'Z';
+    const utcTimestamp =
+      timestamp.endsWith("Z") ||
+      timestamp.includes("+") ||
+      (timestamp.includes("T") && timestamp.split("T")[1].includes("-"))
+        ? timestamp
+        : timestamp + "Z";
     date = new Date(utcTimestamp).getTime();
   } else {
     date = timestamp;
@@ -460,7 +473,7 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return 'just now';
+  if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days < 30) return `${days}d ago`;

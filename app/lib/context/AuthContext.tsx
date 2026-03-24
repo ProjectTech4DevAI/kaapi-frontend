@@ -3,17 +3,13 @@
 import {
   createContext,
   useContext,
+  useState,
   useCallback,
-  useSyncExternalStore,
+  useEffect,
 } from "react";
 import type { APIKey } from "@/app/keystore/page";
 
 const STORAGE_KEY = "kaapi_api_keys";
-const STORAGE_EVENT = "kaapi_api_keys_changed";
-const EMPTY_KEYS: APIKey[] = [];
-
-let cachedRaw: string | null = null;
-let cachedKeys: APIKey[] = EMPTY_KEYS;
 
 interface AuthContextValue {
   apiKeys: APIKey[];
@@ -25,77 +21,40 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const readStoredKeys = (): APIKey[] => {
-  if (typeof window === "undefined") return EMPTY_KEYS;
-
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw === cachedRaw) {
-    return cachedKeys;
-  }
-
-  try {
-    cachedRaw = raw;
-    cachedKeys = raw ? JSON.parse(raw) : EMPTY_KEYS;
-    return cachedKeys;
-  } catch {
-    cachedRaw = raw;
-    cachedKeys = EMPTY_KEYS;
-    return cachedKeys;
-  }
-};
-
-const getServerSnapshot = () => EMPTY_KEYS;
-
-const subscribeToKeyChanges = (onStoreChange: () => void) => {
-  if (typeof window === "undefined") return () => {};
-
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEY) {
-      onStoreChange();
-    }
-  };
-
-  const handleCustomChange = () => {
-    onStoreChange();
-  };
-
-  window.addEventListener("storage", handleStorage);
-  window.addEventListener(STORAGE_EVENT, handleCustomChange);
-
-  return () => {
-    window.removeEventListener("storage", handleStorage);
-    window.removeEventListener(STORAGE_EVENT, handleCustomChange);
-  };
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const apiKeys = useSyncExternalStore(
-    subscribeToKeyChanges,
-    readStoredKeys,
-    getServerSnapshot,
-  );
+  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setApiKeys(JSON.parse(raw));
+      }
+    } catch {
+      setApiKeys([]);
+    }
+  }, []);
 
   const persist = useCallback((keys: APIKey[]) => {
+    setApiKeys(keys);
     if (keys.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
-      cachedRaw = localStorage.getItem(STORAGE_KEY);
-      cachedKeys = keys;
     } else {
       localStorage.removeItem(STORAGE_KEY);
-      cachedRaw = null;
-      cachedKeys = EMPTY_KEYS;
     }
-    window.dispatchEvent(new Event(STORAGE_EVENT));
   }, []);
 
   const addKey = useCallback(
     (key: APIKey) => persist([...apiKeys, key]),
     [apiKeys, persist],
   );
+
   const removeKey = useCallback(
     (id: string) => persist(apiKeys.filter((k) => k.id !== id)),
     [apiKeys, persist],
   );
+
   const setKeys = useCallback((keys: APIKey[]) => persist(keys), [persist]);
 
   return (

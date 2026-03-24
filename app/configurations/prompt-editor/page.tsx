@@ -100,6 +100,9 @@ function PromptEditorContent() {
   const [provider, setProvider] = useState<string>("openai");
   const [temperature, setTemperature] = useState<number>(0.7);
   const [tools, setTools] = useState<Tool[]>([]);
+  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
+    new Set(),
+  );
 
   // UI state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
@@ -119,6 +122,7 @@ function PromptEditorContent() {
       setCurrentContent(config.promptContent);
       setCurrentConfigBlob({
         completion: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           provider: config.provider as any,
           type: config.type,
           params: {
@@ -136,6 +140,9 @@ function PromptEditorContent() {
       setCurrentConfigParentId(config.config_id);
       setCurrentConfigVersion(config.version);
       setTools(config.tools || []);
+      setExpandedConfigs((prev) =>
+        prev.has(currentConfigParentId) ? prev : new Set([...prev, currentConfigParentId]),
+      );
       if (selectInHistory) setSelectedVersion(config);
     },
     [],
@@ -245,6 +252,7 @@ function PromptEditorContent() {
     const promptChanged = currentContent !== selectedConfig.promptContent;
     const configChanged = hasConfigChanges(currentConfigBlob, {
       completion: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         provider: selectedConfig.provider as any,
         params: {
           model: selectedConfig.modelName,
@@ -265,6 +273,7 @@ function PromptEditorContent() {
     tools,
     savedConfigs,
   ]);
+
 
   // Save current configuration
   const handleSaveConfig = async () => {
@@ -446,6 +455,8 @@ function PromptEditorContent() {
                   savedConfigs={savedConfigs}
                   selectedVersion={selectedVersion}
                   currentConfigId={currentConfigParentId || undefined}
+                  expandedConfigs={expandedConfigs}
+                  setExpandedConfigs={setExpandedConfigs}
                   collapsed={!showHistorySidebar}
                   onToggle={() => setShowHistorySidebar(!showHistorySidebar)}
                   onSelectVersion={(version) => {

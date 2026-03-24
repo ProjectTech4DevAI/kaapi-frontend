@@ -24,7 +24,7 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch the run', data: null },
       { status: 500 }

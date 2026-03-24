@@ -8,8 +8,8 @@ interface ConfigDiffPaneProps {
 
 interface ConfigDiff {
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   changed: boolean;
 }
 
@@ -64,10 +64,12 @@ export default function ConfigDiffPane({
 
   const hasChanges = configDiffs.length > 0;
 
-  const renderValue = (value: any): string => {
+  const renderValue = (value: unknown): string => {
     if (Array.isArray(value)) {
       if (value.length === 0) return '[]';
-      return value.map((tool, idx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return value.map((_idx: any) => {
+        const tool = _idx;
         if (tool.type === 'file_search') {
           return `File Search (${tool.knowledge_base_ids?.[0] || 'no store'})`;
         }

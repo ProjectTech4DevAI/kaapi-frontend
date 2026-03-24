@@ -110,6 +110,10 @@ export async function fetchAllConfigs(
 
   const BATCH_SIZE = 5;
 
+  for (const config of data.data) {
+    configMeta[config.id] = { updated_at: config.updated_at, version_count: 0 };
+  }
+
   for (let i = 0; i < configsToFetch.length; i += BATCH_SIZE) {
     const batch = configsToFetch.slice(i, i + BATCH_SIZE);
     const batchPromises = batch.map(async (config) => {

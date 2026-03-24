@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
 import { APIKey } from '@/app/keystore/page';
 import { Dataset } from '@/app/datasets/page';
@@ -46,7 +45,6 @@ export default function EvaluationsTab({
   handleRunEvaluation,
   setActiveTab,
 }: EvaluationsTabProps) {
-  const router = useRouter();
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +80,8 @@ export default function EvaluationsTab({
       }
       const data = await response.json();
       setEvalJobs(Array.isArray(data) ? data : (data.data || []));
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch evaluation jobs');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch evaluation jobs');
     } finally {
       setIsLoading(false);
     }
@@ -370,7 +368,7 @@ export default function EvaluationsTab({
               ) : (
                 <div className="p-16 text-center">
                   <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                  <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status &quot;{statusFilter}&quot;</p>
                 </div>
               );
             })()}

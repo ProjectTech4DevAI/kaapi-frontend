@@ -41,22 +41,13 @@ export default function ABTestTab({
 
   const updateVariant = (index: number, field: keyof LegacyVariant, value: string) => {
     const newVariants = [...variants];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (newVariants[index] as any)[field] = value;
     onVariantsChange(newVariants);
   };
 
   const getCommitDisplay = (commit: Commit) => {
     return `#${commit.id}: ${commit.message} (${commit.branch})`;
-  };
-
-  const getConfigByCommit = (commitId: string) => {
-    const commit = commits.find((c) => c.id === commitId);
-    if (!commit) return null;
-    return {
-      model: 'gpt-4o-mini', // Default for now
-      temp: 0.7, // Default for now
-      prompt: commit.content.split('\n')[0],
-    };
   };
 
   const getBestVariant = () => {

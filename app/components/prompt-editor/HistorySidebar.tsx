@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useState } from "react";
 import { colors } from "@/app/lib/colors";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { ConfigPublic } from "@/app/lib/configTypes";
@@ -429,6 +429,8 @@ interface HistorySidebarProps {
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
+  expandedConfigs: Set<string>;
+  setExpandedConfigs: Dispatch<SetStateAction<Set<string>>>;
 }
 
 export default function HistorySidebar({
@@ -447,31 +449,21 @@ export default function HistorySidebar({
   fullVersionItemsMap = {},
   loadVersionsForConfig,
   loadSingleVersionForConfig,
+  expandedConfigs,
+  setExpandedConfigs,
 }: HistorySidebarProps) {
-  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
-    new Set(),
-  );
   const [loadingAllConfigIds, setLoadingAllConfigIds] = useState<Set<string>>(
     new Set(),
   );
 
-  // Auto-expand the current config's group when arriving from URL params
-  useEffect(() => {
-    if (currentConfigId) {
-      setExpandedConfigs((prev) =>
-        prev.has(currentConfigId) ? prev : new Set([...prev, currentConfigId]),
-      );
-    }
-  }, [currentConfigId]);
-
   const toggleExpand = useCallback((configKey: string) => {
-    setExpandedConfigs((prev) => {
-      const next = new Set(prev);
+    setExpandedConfigs((prev: Set<string>) => {
+      const next = new Set<string>(prev);
       if (next.has(configKey)) next.delete(configKey);
       else next.add(configKey);
       return next;
     });
-  }, []);
+  }, [setExpandedConfigs]);
 
   const handleExpandAllConfig = useCallback(
     (meta: ConfigPublic) => {

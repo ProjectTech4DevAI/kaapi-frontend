@@ -17,7 +17,7 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch config', data: null },
       { status: 500 }
@@ -47,7 +47,7 @@ export async function PATCH(
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: 'Failed to update config', data: null },
       { status: 500 }
@@ -73,7 +73,7 @@ export async function DELETE(
 
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: 'Failed to delete config', data: null },
       { status: 500 }

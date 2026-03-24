@@ -88,10 +88,10 @@ export async function GET(
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch evaluation', details: error.message },
+      { error: 'Failed to fetch evaluation', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

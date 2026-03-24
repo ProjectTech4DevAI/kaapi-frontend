@@ -62,6 +62,7 @@ export default function ConfigSelector({
 
   // Reset expanded state and recheck overflow whenever selected config changes.
   useLayoutEffect(() => {
+     
     setPromptExpanded(false);
     const el = promptRef.current;
     if (!el) return;

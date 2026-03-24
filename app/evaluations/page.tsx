@@ -264,8 +264,8 @@ function SimplifiedEvalContent() {
       setIsEvaluating(false);
       toast.success(`Evaluation created! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
       return true;
-    } catch (error: any) {
-      toast.error(`Failed to run evaluation: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      toast.error(`Failed to run evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsEvaluating(false);
       return false;
     }

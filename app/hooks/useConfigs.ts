@@ -88,18 +88,19 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         const cacheAge = Date.now() - configState.inMemoryCache.cachedAt;
         if (cacheAge < CACHE_MAX_AGE_MS) {
           const cacheUsable = !configState.inMemoryCache.partialFetch || pageSize !== undefined;
-          if (cacheUsable) {
+          const resolvedMeta = configState.allConfigMeta ?? configState.inMemoryCache.allConfigMeta ?? null;
+          const totalCount = configState.inMemoryCache.totalConfigCount ?? 0;
+          // Skip cache if allConfigMeta is missing but configs exist (stale/old cache schema).
+          const cacheHasUsableMeta = resolvedMeta !== null || totalCount === 0;
+          if (cacheUsable && cacheHasUsableMeta) {
+            configState.allConfigMeta = resolvedMeta;
             setConfigs(configState.inMemoryCache.configs);
             setVersionCounts(configState.inMemoryCache.versionCounts || {});
             setVersionItemsMap({ ...configState.versionItemsCache });
             setTotalKnownCount(
               configState.inMemoryCache.totalConfigCount ?? configState.inMemoryCache.configs.length,
             );
-            // Restore allConfigMeta from cache or derive from loaded configs as fallback
-            if (!configState.allConfigMeta) {
-              configState.allConfigMeta = configState.inMemoryCache.allConfigMeta ?? null;
-            }
-            setAllConfigMeta(configState.allConfigMeta ?? []);
+            setAllConfigMeta(resolvedMeta ?? []);
             setIsCached(true);
             setIsLoading(false);
             scheduleBackgroundValidation(configState.inMemoryCache, apiKey);
@@ -114,21 +115,21 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         const cacheAge = Date.now() - lsCache.cachedAt;
         if (cacheAge < CACHE_MAX_AGE_MS) {
           const cacheUsable = !lsCache.partialFetch || pageSize !== undefined;
-          if (cacheUsable) {
+          const resolvedMeta = configState.allConfigMeta ?? lsCache.allConfigMeta ?? null;
+          const totalCount = lsCache.totalConfigCount ?? 0;
+          const cacheHasUsableMeta = resolvedMeta !== null || totalCount === 0;
+          if (cacheUsable && cacheHasUsableMeta) {
+            configState.allConfigMeta = resolvedMeta;
+            configState.inMemoryCache = lsCache;
             setConfigs(lsCache.configs);
             setVersionCounts(lsCache.versionCounts || {});
             // versionItemsCache may be empty on cold start; loadVersionsForConfig will
             // populate it on demand (1 GET /versions call) when a config is opened.
             setVersionItemsMap({ ...configState.versionItemsCache });
             setTotalKnownCount(lsCache.totalConfigCount ?? lsCache.configs.length);
-            // Restore allConfigMeta from localStorage cache if not already in module state
-            if (!configState.allConfigMeta && lsCache.allConfigMeta) {
-              configState.allConfigMeta = lsCache.allConfigMeta;
-            }
-            setAllConfigMeta(configState.allConfigMeta ?? []);
+            setAllConfigMeta(resolvedMeta ?? []);
             setIsCached(true);
             setIsLoading(false);
-            configState.inMemoryCache = lsCache;
             scheduleBackgroundValidation(lsCache, apiKey);
             return;
           }
@@ -136,7 +137,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       }
     }
 
-    // ── Deduplication: join an existing in-flight fetch ───────────────────
     if (configState.pendingFetch) {
       setIsLoading(true);
       await configState.pendingFetch.catch(() => { /* error handled by originator */ });
@@ -156,7 +156,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       return;
     }
 
-    // ── Primary fetch ── 
     setIsLoading(true);
     setError(null);
     setIsCached(false);
@@ -191,8 +190,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       setIsLoading(false);
     }
   }, [pageSize]);
-
-  // ── Lazy-load lightweight version list ── 
 
   /**
    * Ensures the lightweight version list (ConfigVersionItems, no config_blob) is
@@ -239,8 +236,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       console.error(`Failed to load version list for config ${config_id}`);
     }
   }, []);
-
-  // ── On-demand single version detail fetch ──
 
   /**
    * Fetches the full details (config_blob) for a single version on demand.
@@ -305,8 +300,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
     return loadPromise;
   }, [configs]);
 
-  // ── Paginated load more ──
-
   /**
    * Loads the next batch of configs (version list + latest detail) for configs
    * not yet represented in the loaded set. Used by the Config Library Load More button.
@@ -366,8 +359,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
     }
   }, [configs, pageSize]);
 
-  // ── Effects ──
-
   useEffect(() => {
     fetchConfigs();
   }, [fetchConfigs]);
@@ -378,8 +369,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
     window.addEventListener(CACHE_INVALIDATED_EVENT, handler);
     return () => window.removeEventListener(CACHE_INVALIDATED_EVENT, handler);
   }, [fetchConfigs]);
-
-  // ── Return ──
 
   const loadedConfigIds = new Set(configs.map(c => c.config_id));
   const hasMoreConfigs = totalKnownCount > 0 && loadedConfigIds.size < totalKnownCount;

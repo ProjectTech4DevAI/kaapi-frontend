@@ -35,9 +35,9 @@ export async function GET(
     }
 
     return NextResponse.json(data, { status: response.status });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error.message, data: null },
+      { success: false, error: error instanceof Error ? error.message : String(error), data: null },
       { status: 500 }
     );
   }

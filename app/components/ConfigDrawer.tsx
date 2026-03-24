@@ -6,8 +6,9 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { colors } from '@/app/lib/colors';
+import { MODEL_OPTIONS, isGpt5Model } from '@/app/lib/models';
 import { SavedConfig } from './SimplifiedConfigEditor';
 import { Tool } from '@/app/lib/configTypes';
 
@@ -38,27 +39,6 @@ interface ConfigDrawerProps {
   onLoadConfig: (config: SavedConfig) => void;
   onApplyConfig: (configId: string) => void;
 }
-
-const MODEL_OPTIONS = {
-  openai: [
-    { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-    { value: 'gpt-4', label: 'GPT-4' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-  ],
-  // anthropic: [
-  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  // ],
-  // google: [
-  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  //   { value: 'gemini-pro', label: 'Gemini Pro' },
-  // ],
-};
 
 function generateDiff(text1: string, text2: string): { left: DiffLine[], right: DiffLine[] } {
   const lines1 = text1.split('\n');
@@ -106,8 +86,10 @@ export default function ConfigDrawer({
   const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(new Set());
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
+  const isGpt5 = isGpt5Model(currentConfig.modelName);
+
   // Sync isCreatingNew with selectedConfigId
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedConfigId) {
       setIsCreatingNew(false);
     }
@@ -525,6 +507,7 @@ export default function ConfigDrawer({
               </div>
 
               {/* Temperature */}
+              {!isGpt5 && (
               <div>
                 <label
                   style={{
@@ -560,6 +543,7 @@ export default function ConfigDrawer({
                   <span>Creative (1)</span>
                 </div>
               </div>
+              )}
 
               {/* Tools Section */}
               <div>
@@ -653,6 +637,7 @@ export default function ConfigDrawer({
                         }}
                       />
                     </div>
+                    {!isGpt5 && (
                     <div>
                       <label
                         style={{
@@ -679,6 +664,7 @@ export default function ConfigDrawer({
                         }}
                       />
                     </div>
+                    )}
                   </div>
                 ))}
               </div>

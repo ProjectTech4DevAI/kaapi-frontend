@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { colors } from '@/app/lib/colors';
 import { ConfigBlob, Tool } from '@/app/configurations/prompt-editor/types';
 import { SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { MODEL_OPTIONS, isGpt5Model } from '@/app/lib/models';
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -28,28 +29,6 @@ interface ConfigGroupForDropdown {
   versions: SavedConfig[];
 }
 
-// Provider-specific models
-const MODEL_OPTIONS = {
-  openai: [
-    { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-    { value: 'gpt-4', label: 'GPT-4' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-  ],
-  // anthropic: [
-  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  // ],
-  // google: [
-  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  //   { value: 'gemini-pro', label: 'Gemini Pro' },
-  // ],
-};
-
 export default function ConfigEditorPane({
   configBlob,
   onConfigChange,
@@ -70,6 +49,7 @@ export default function ConfigEditorPane({
 
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
+  const isGpt5 = isGpt5Model(params.model);
   const tools = (params.tools || []) as Tool[];
 
   // Group configs by config_id for nested dropdown
@@ -531,7 +511,8 @@ export default function ConfigEditorPane({
             </select>
           </div>
 
-          {/* Temperature */}
+          {/* Temperature - hidden for GPT-5 models */}
+          {!isGpt5 && (
           <div>
             <label
               className="block text-xs font-semibold mb-2"
@@ -557,6 +538,7 @@ export default function ConfigEditorPane({
               <span>2</span>
             </div>
           </div>
+          )}
 
           {/* Tools */}
           <div>
@@ -626,6 +608,7 @@ export default function ConfigEditorPane({
                     }}
                   />
                 </div>
+                {!isGpt5 && (
                 <div>
                   <div className="flex items-center gap-1 mb-1">
                     <label
@@ -703,6 +686,7 @@ export default function ConfigEditorPane({
                     }}
                   />
                 </div>
+                )}
               </div>
             ))}
           </div>

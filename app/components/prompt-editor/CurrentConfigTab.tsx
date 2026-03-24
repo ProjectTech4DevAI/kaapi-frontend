@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { colors } from '@/app/lib/colors';
 import { Config, Tool } from '@/app/configurations/prompt-editor/types';
+import { MODEL_OPTIONS, isGpt5Model } from '@/app/lib/models';
 
 interface CurrentConfigTabProps {
   configs: Config[];
@@ -46,6 +47,7 @@ export default function CurrentConfigTab({
   onUseCurrentPrompt,
 }: CurrentConfigTabProps) {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const isGpt5 = isGpt5Model(model);
 
   const addTool = () => {
     onToolsChange([
@@ -223,10 +225,9 @@ export default function CurrentConfigTab({
             backgroundColor: colors.bg.primary,
           }}
         >
-          <option value="gpt-4o-mini">gpt-4o-mini</option>
-          <option value="gpt-4o">gpt-4o</option>
-          <option value="gpt-4-turbo">gpt-4-turbo</option>
-          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          {MODEL_OPTIONS.openai.map((m) => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
         </select>
       </div>
 
@@ -282,6 +283,7 @@ export default function CurrentConfigTab({
       </div>
 
       {/* Temperature Slider */}
+      {!isGpt5 && (
       <div>
         <label
           style={{
@@ -317,6 +319,7 @@ export default function CurrentConfigTab({
           <span>Creative (1)</span>
         </div>
       </div>
+      )}
 
       {/* Tools Section */}
       <div>
@@ -410,6 +413,7 @@ export default function CurrentConfigTab({
                 }}
               />
             </div>
+            {!isGpt5 && (
             <div>
               <label
                 style={{
@@ -436,6 +440,7 @@ export default function CurrentConfigTab({
                 }}
               />
             </div>
+            )}
           </div>
         ))}
       </div>

@@ -1,4 +1,4 @@
-name: CI - Lint and Build
+name: Kaapi CI
 
 on:
   push:

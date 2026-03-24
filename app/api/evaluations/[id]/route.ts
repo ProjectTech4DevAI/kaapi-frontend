@@ -1,9 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from "next/server";
+import { apiClient } from "@/app/lib/apiClient";
+import fs from "fs";
+import path from "path";
 
 // Set to true to use mock data, false to use real backend
 const USE_MOCK_DATA = false;
+
+// === MOCK DATA (remove this section when no longer needed) ===
+const MOCK_FILE_MAP: Record<string, string> = {
+  "44": "evaluation-sample-2.json",
+  "2": "evaluation-sample-2.json",
+  "10": "evaluation-sample-3.json",
+  "3": "evaluation-sample-3.json",
+};
+
+function getMockEvaluation(id: string): NextResponse {
+  const mockFileName = MOCK_FILE_MAP[id] || "evaluation-sample-1.json";
+  const filePath = path.join(
+    process.cwd(),
+    "public",
+    "mock-data",
+    mockFileName,
+  );
+
+  try {
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    const mockData = JSON.parse(fileContent);
+    return NextResponse.json(mockData, { status: 200 });
+  } catch (err) {
+    console.error("Error reading mock data:", err);
+    return NextResponse.json(
+      {
+        error: "Mock data not found",
+        details: err instanceof Error ? err.message : String(err),
+      },
+      { status: 404 },
+    );
+  }
+}
 
 /**
  * GET /api/evaluations/[id]
@@ -11,88 +45,49 @@ const USE_MOCK_DATA = false;
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const apiKey = request.headers.get('X-API-KEY');
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Missing X-API-KEY' }, { status: 401 });
-    }
-
     const { id } = await params;
 
-    // Mock data mode
     if (USE_MOCK_DATA) {
-      try {
-        // Map IDs to mock files
-        let mockFileName = 'evaluation-sample-1.json';
-        if (id === '44' || id === '2') {
-          mockFileName = 'evaluation-sample-2.json';
-        } else if (id === '10' || id === '3') {
-          // Use the new schema for ID 10 (from the JSON) or ID 3
-          mockFileName = 'evaluation-sample-3.json';
-        }
-
-        const filePath = path.join(process.cwd(), 'public', 'mock-data', mockFileName);
-        const fileContent = fs.readFileSync(filePath, 'utf-8');
-        const mockData = JSON.parse(fileContent);
-
-        return NextResponse.json(mockData, { status: 200 });
-      } catch (err) {
-        console.error('Error reading mock data:', err);
-        return NextResponse.json(
-          { error: 'Mock data not found', details: err.message },
-          { status: 404 }
-        );
-      }
+      return getMockEvaluation(id);
     }
-
-    // Real backend mode
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
     const searchParams = request.nextUrl.searchParams;
-    const exportFormat = searchParams.get('export_format') || 'row';
-    const resyncScore = searchParams.get('resync_score') || 'false';
+    const exportFormat = searchParams.get("export_format") || "row";
+    const resyncScore = searchParams.get("resync_score") || "false";
 
-    // Build URL with query parameters
-    const url = new URL(`${backendUrl}/api/v1/evaluations/${id}`);
-    url.searchParams.set('get_trace_info', 'true');
-    url.searchParams.set('resync_score', resyncScore);
-    url.searchParams.set('export_format', exportFormat);
+    const queryParams = new URLSearchParams();
+    queryParams.set("get_trace_info", "true");
+    queryParams.set("resync_score", resyncScore);
+    queryParams.set("export_format", exportFormat);
 
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'X-API-KEY': apiKey,
-      },
-    });
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/evaluations/${id}?${queryParams.toString()}`,
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[REAL BACKEND] Error response: ${errorText}`);
-      return NextResponse.json(
-        { error: `Backend error: ${response.statusText}`, details: errorText },
-        { status: response.status }
-      );
+    if (status < 200 || status >= 300) {
+      return NextResponse.json(data ?? { error: "Backend error" }, { status });
     }
 
-    const data = await response.json();
-
-    // Validate that we received valid data
-    if (!data || typeof data !== 'object') {
-      console.error('[REAL BACKEND] Invalid response format');
+    if (!data || typeof data !== "object") {
       return NextResponse.json(
-        { error: 'Invalid response format from backend' },
-        { status: 500 }
+        { error: "Invalid response format from backend" },
+        { status: 500 },
       );
     }
 
     return NextResponse.json(data, { status: 200 });
   } catch (error: unknown) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch evaluation', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: "Failed to fetch evaluation",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

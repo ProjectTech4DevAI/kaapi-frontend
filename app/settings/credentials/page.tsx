@@ -11,7 +11,8 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
-import { APIKey, STORAGE_KEY } from "@/app/keystore/page";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useApp } from "@/app/lib/context/AppContext";
 import {
   PROVIDERS,
   Credential,
@@ -25,8 +26,8 @@ import Link from "next/link";
 
 export default function CredentialsPage() {
   const toast = useToast();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { apiKeys } = useAuth();
   const [selectedProvider, setSelectedProvider] = useState<ProviderDef>(
     PROVIDERS[0],
   );
@@ -39,18 +40,6 @@ export default function CredentialsPage() {
   const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());
   const [existingCredential, setExistingCredential] =
     useState<Credential | null>(null);
-
-  // Load API keys from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setApiKeys(JSON.parse(stored));
-      } catch {
-        /* ignore */
-      }
-    }
-  }, []);
 
   // Load credentials once we have an API key
   useEffect(() => {

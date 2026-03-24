@@ -9,7 +9,7 @@
  */
 
 "use client"
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { colors } from '@/app/lib/colors';
@@ -17,10 +17,14 @@ import { useConfigs, SavedConfig } from '@/app/lib/useConfigs';
 import ConfigCard from '@/app/components/ConfigCard';
 import { LoaderBox } from '@/app/components/Loader';
 import { EvalJob } from '@/app/components/types';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
+import { apiFetch } from '@/app/lib/apiClient';
 
 export default function ConfigLibraryPage() {
   const router = useRouter();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { activeKey } = useAuth();
   const { configGroups, isLoading, error, refetch, isCached } = useConfigs();
   const [searchQuery, setSearchQuery] = useState('');
   const [evaluationCounts, setEvaluationCounts] = useState<Record<string, number>>({});
@@ -28,20 +32,10 @@ export default function ConfigLibraryPage() {
   // Fetch evaluation counts for each config
   useEffect(() => {
     const fetchEvaluationCounts = async () => {
+      if (!activeKey) return;
+
       try {
-        const stored = localStorage.getItem('kaapi_api_keys');
-        if (!stored) return;
-
-        const keys = JSON.parse(stored);
-        if (keys.length === 0) return;
-
-        const response = await fetch('/api/evaluations', {
-          headers: { 'X-API-KEY': keys[0].key },
-        });
-
-        if (!response.ok) return;
-
-        const data = await response.json();
+        const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>('/api/evaluations', activeKey.key);
         const jobs: EvalJob[] = Array.isArray(data) ? data : (data.data || []);
 
         // Count evaluations per config_id
@@ -59,7 +53,7 @@ export default function ConfigLibraryPage() {
     };
 
     fetchEvaluationCounts();
-  }, []);
+  }, [activeKey]);
 
   // Filter configs based on search query
   const filteredConfigs = configGroups.filter((group) =>
@@ -82,7 +76,6 @@ export default function ConfigLibraryPage() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/configurations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
           <div
             className="border-b px-6 py-4"
             style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}

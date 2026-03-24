@@ -17,6 +17,7 @@ import {
   ConfigVersionListResponse,
   ConfigVersionResponse,
 } from './configTypes';
+import { useAuth } from '@/app/lib/context/AuthContext';
 
 // ============ TYPES ============
 
@@ -63,21 +64,6 @@ const CACHE_KEY = 'kaapi_configs_cache';
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes - cache is considered stale after this
 
 // ============ HELPER FUNCTIONS ============
-
-// Get API key from localStorage
-const getApiKey = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = localStorage.getItem('kaapi_api_keys');
-    if (stored) {
-      const keys = JSON.parse(stored);
-      return keys.length > 0 ? keys[0].key : null;
-    }
-  } catch (e) {
-    console.error('Failed to get API key:', e);
-  }
-  return null;
-};
 
 // Flatten config version for UI
 const flattenConfigVersion = (
@@ -206,6 +192,7 @@ export interface UseConfigsResult {
 }
 
 export function useConfigs(): UseConfigsResult {
+  const { activeKey } = useAuth();
   const [configs, setConfigs] = useState<SavedConfig[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -219,7 +206,7 @@ export function useConfigs(): UseConfigsResult {
     // Prevent concurrent fetches
     if (fetchInProgress.current) return;
 
-    const apiKey = getApiKey();
+    const apiKey = activeKey?.key ?? null;
     if (!apiKey) {
       setError('No API key found. Please add an API key in the Keystore.');
       setIsLoading(false);
@@ -357,9 +344,7 @@ export function useConfigs(): UseConfigsResult {
       setIsLoading(false);
       fetchInProgress.current = false;
     }
-  }, []);
-
-  // Store refetch in ref for background validation
+  }, [activeKey]);
   refetchRef.current = fetchConfigs;
 
   useEffect(() => {

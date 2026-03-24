@@ -10,11 +10,12 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { colors } from '@/app/lib/colors';
 import { useSearchParams } from 'next/navigation'
-import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
 import { Dataset } from '@/app/datasets/page';
 import Sidebar from '@/app/components/Sidebar';
 import TabNavigation from '@/app/components/TabNavigation';
 import { useToast } from '@/app/components/Toast';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
 import Loader from '@/app/components/Loader';
 import DatasetsTab from '@/app/components/evaluations/DatasetsTab';
 import EvaluationsTab from '@/app/components/evaluations/EvaluationsTab';
@@ -32,8 +33,8 @@ function SimplifiedEvalContent() {
     return (tabParam === 'evaluations' || tabParam === 'datasets') ? tabParam as Tab : 'datasets';
   });
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { apiKeys } = useAuth();
   const [selectedKeyId, setSelectedKeyId] = useState<string>('');
 
   // Dataset creation state
@@ -62,21 +63,12 @@ function SimplifiedEvalContent() {
   });
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  // Load API keys
+  // Set initial selected key from context
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const keys = JSON.parse(stored);
-        setApiKeys(keys);
-        if (keys.length > 0) {
-          setSelectedKeyId(keys[0].id);
-        }
-      } catch (e) {
-        console.error('Failed to load API keys:', e);
-      }
+    if (apiKeys.length > 0 && !selectedKeyId) {
+      setSelectedKeyId(apiKeys[0].id);
     }
-  }, []);
+  }, [apiKeys, selectedKeyId]);
 
   // Fetch datasets from backend
   const loadStoredDatasets = useCallback(async () => {

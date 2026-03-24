@@ -1,6 +1,5 @@
 /**
  * TypeScript types for Config Management API
- * Based on CONFIG_MGMT.md specification
  */
 
 // Config Blob Structure

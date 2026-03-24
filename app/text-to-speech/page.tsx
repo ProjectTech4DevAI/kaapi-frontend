@@ -13,7 +13,9 @@ import TabNavigation from '@/app/components/TabNavigation';
 import Loader, { LoaderBox } from '@/app/components/Loader';
 import { getStatusColor } from '@/app/components/utils';
 import { useToast } from '@/app/components/Toast';
-import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
+import type { APIKey } from '@/app/keystore/page';
 import ErrorModal from '@/app/components/ErrorModal';
 
 type Tab = 'datasets' | 'evaluations';
@@ -231,11 +233,11 @@ export default function TextToSpeechPage() {
   const [activeTab, setActiveTab] = useState<Tab>('datasets');
 
   // UI State
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const leftPanelWidth = 450;
 
   // API Keys
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const { apiKeys } = useAuth();
 
   // Languages
   const [languages, setLanguages] = useState<Language[]>([]);
@@ -269,18 +271,6 @@ export default function TextToSpeechPage() {
   // Error modal state
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMessage, setErrorModalMessage] = useState('');
-
-  // Load API keys
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setApiKeys(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to load API keys:', e);
-      }
-    }
-  }, []);
 
   // Load languages
   const loadLanguages = async () => {

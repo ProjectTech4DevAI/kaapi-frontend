@@ -27,7 +27,14 @@ import DetailedResultsTable from "@/app/components/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
-import { WarningTriangleIcon } from "@/app/components/icons";
+import {
+  WarningTriangleIcon,
+  MenuIcon,
+  ChevronLeftIcon,
+  DatabaseIcon,
+  GroupIcon,
+  RefreshIcon,
+} from "@/app/components/icons";
 
 export default function EvaluationReport() {
   const router = useRouter();
@@ -447,38 +454,14 @@ export default function EvaluationReport() {
                 className="p-1.5 rounded-md flex-shrink-0"
                 style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                <MenuIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={() => router.push("/evaluations?tab=evaluations")}
                 className="p-1.5 rounded-md flex-shrink-0"
                 style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
+                <ChevronLeftIcon />
               </button>
               <div className="min-w-0 flex items-center gap-3">
                 <h1
@@ -494,19 +477,7 @@ export default function EvaluationReport() {
                   className="flex items-center gap-1 text-xs flex-shrink-0"
                   style={{ color: colors.text.secondary }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5 flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3"
-                    />
-                  </svg>
+                  <DatabaseIcon className="flex-shrink-0" />
                   {job.dataset_name}
                 </span>
               </div>
@@ -554,19 +525,7 @@ export default function EvaluationReport() {
                     }
                   }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
+                  <MenuIcon className="w-3.5 h-3.5" />
                   Individual Rows
                 </button>
                 <button
@@ -605,19 +564,7 @@ export default function EvaluationReport() {
                     }
                   }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                    />
-                  </svg>
+                  <GroupIcon />
                   Group by Questions
                 </button>
               </div>
@@ -661,14 +608,7 @@ export default function EvaluationReport() {
                   {summaryScores.some(
                     (s) => job.total_items && s.total_pairs < job.total_items,
                   ) && (
-                    <div
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs"
-                      style={{
-                        backgroundColor: "rgba(245, 158, 11, 0.08)",
-                        border: `1px solid rgba(245, 158, 11, 0.3)`,
-                        color: colors.status.warning,
-                      }}
-                    >
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs bg-[rgba(245, 158, 11, 0.08)] border border-[rgba(245,158,11,0.3)] text-status-warning">
                       <WarningTriangleIcon className="flex-shrink-0" />
                       Some traces are still being scored. Scores shown are
                       partial and may change — click{" "}
@@ -688,19 +628,9 @@ export default function EvaluationReport() {
                       disabled={isResyncing}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#171717] text-white disabled:opacity-50"
                     >
-                      <svg
-                        className={`w-3.5 h-3.5 ${isResyncing ? "animate-spin" : ""}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
+                      <RefreshIcon
+                        className={isResyncing ? "animate-spin" : ""}
+                      />
                       {isResyncing ? "Resyncing..." : "Resync"}
                     </button>
                   </div>
@@ -740,12 +670,11 @@ export default function EvaluationReport() {
                               {job.total_items &&
                               summary.total_pairs < job.total_items ? (
                                 <span
-                                  className="font-medium"
-                                  style={{ color: colors.status.warning }}
+                                  className="inline-flex items-center gap-1 font-medium text-status-warning"
                                   title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
                                 >
                                   {summary.total_pairs}/{job.total_items} pairs
-                                  ⚠
+                                  <WarningTriangleIcon className="w-3 h-3" />
                                 </span>
                               ) : (
                                 <span>{summary.total_pairs} pairs</span>
@@ -758,16 +687,12 @@ export default function EvaluationReport() {
                         .map((summary) => (
                           <div
                             key={summary.name}
-                            className="rounded-lg px-6 py-5 flex-1 min-w-[180px] relative"
+                            className="rounded-lg px-6 py-5 flex-1 min-w-[180px] relative bg-bg-primary"
                             style={{
-                              backgroundColor: colors.bg.primary,
                               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
                             }}
                           >
-                            <div
-                              className="text-xs font-medium mb-3 text-center"
-                              style={{ color: colors.text.secondary }}
-                            >
+                            <div className="text-xs font-medium mb-3 text-center text-text-secondary">
                               {summary.name}
                             </div>
                             <div className="space-y-1">
@@ -776,15 +701,9 @@ export default function EvaluationReport() {
                                   ([key, value]) => (
                                     <div
                                       key={key}
-                                      className="flex justify-between items-center px-3 py-1 rounded"
-                                      style={{
-                                        backgroundColor: colors.bg.secondary,
-                                      }}
+                                      className="flex justify-between items-center px-3 py-1 rounded bg-bg-secondary"
                                     >
-                                      <span
-                                        className="text-xs font-medium"
-                                        style={{ color: colors.text.primary }}
-                                      >
+                                      <span className="text-xs font-medium text-text-primary">
                                         {key}
                                       </span>
                                       <span
@@ -797,19 +716,15 @@ export default function EvaluationReport() {
                                   ),
                                 )}
                             </div>
-                            <div
-                              className="text-xs mt-2 text-center"
-                              style={{ color: colors.text.secondary }}
-                            >
+                            <div className="text-xs mt-2 text-center text-text-secondary">
                               {job.total_items &&
                               summary.total_pairs < job.total_items ? (
                                 <span
-                                  className="font-medium"
-                                  style={{ color: colors.status.warning }}
+                                  className="inline-flex items-center gap-1 font-medium text-status-warning"
                                   title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
                                 >
                                   {summary.total_pairs}/{job.total_items} pairs
-                                  ⚠
+                                  <WarningTriangleIcon className="w-3 h-3" />
                                 </span>
                               ) : (
                                 <span>{summary.total_pairs} pairs</span>

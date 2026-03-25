@@ -1,6 +1,9 @@
 import { useState, useMemo } from "react";
 import { colors } from "@/app/lib/colors";
-import { ConfigBlob, Tool } from "@/app/configurations/prompt-editor/types";
+import {
+  ConfigBlob,
+  Tool,
+} from "@/app/(routes)/configurations/prompt-editor/types";
 import { SavedConfig, formatRelativeTime } from "@/app/lib/useConfigs";
 
 interface ConfigEditorPaneProps {

@@ -27,6 +27,7 @@ import DetailedResultsTable from "@/app/components/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
+import { WarningTriangleIcon } from "@/app/components/icons";
 
 export default function EvaluationReport() {
   const router = useRouter();
@@ -657,6 +658,24 @@ export default function EvaluationReport() {
               {/* Metrics */}
               {hasScore && isNewFormat ? (
                 <div>
+                  {summaryScores.some(
+                    (s) => job.total_items && s.total_pairs < job.total_items,
+                  ) && (
+                    <div
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs"
+                      style={{
+                        backgroundColor: "rgba(245, 158, 11, 0.08)",
+                        border: `1px solid rgba(245, 158, 11, 0.3)`,
+                        color: colors.status.warning,
+                      }}
+                    >
+                      <WarningTriangleIcon className="flex-shrink-0" />
+                      Some traces are still being scored. Scores shown are
+                      partial and may change — click{" "}
+                      <strong className="font-semibold mx-1">Resync</strong> to
+                      get the latest.
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-3">
                     <h3
                       className="text-sm font-semibold"
@@ -692,7 +711,7 @@ export default function EvaluationReport() {
                         .map((summary) => (
                           <div
                             key={summary.name}
-                            className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px]"
+                            className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px] relative"
                             style={{
                               backgroundColor: colors.bg.primary,
                               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
@@ -718,7 +737,19 @@ export default function EvaluationReport() {
                             >
                               {summary.std !== undefined &&
                                 `±${summary.std.toFixed(3)} · `}
-                              {summary.total_pairs} pairs
+                              {job.total_items &&
+                              summary.total_pairs < job.total_items ? (
+                                <span
+                                  className="font-medium"
+                                  style={{ color: colors.status.warning }}
+                                  title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
+                                >
+                                  {summary.total_pairs}/{job.total_items} pairs
+                                  ⚠
+                                </span>
+                              ) : (
+                                <span>{summary.total_pairs} pairs</span>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -727,7 +758,7 @@ export default function EvaluationReport() {
                         .map((summary) => (
                           <div
                             key={summary.name}
-                            className="rounded-lg px-6 py-5 flex-1 min-w-[180px]"
+                            className="rounded-lg px-6 py-5 flex-1 min-w-[180px] relative"
                             style={{
                               backgroundColor: colors.bg.primary,
                               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
@@ -770,7 +801,19 @@ export default function EvaluationReport() {
                               className="text-xs mt-2 text-center"
                               style={{ color: colors.text.secondary }}
                             >
-                              {summary.total_pairs} pairs
+                              {job.total_items &&
+                              summary.total_pairs < job.total_items ? (
+                                <span
+                                  className="font-medium"
+                                  style={{ color: colors.status.warning }}
+                                  title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
+                                >
+                                  {summary.total_pairs}/{job.total_items} pairs
+                                  ⚠
+                                </span>
+                              ) : (
+                                <span>{summary.total_pairs} pairs</span>
+                              )}
                             </div>
                           </div>
                         ))}

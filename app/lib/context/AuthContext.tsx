@@ -1,9 +1,15 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useCallback } from 'react';
-import type { APIKey } from '@/app/keystore/page';
+import { APIKey } from "@/app/keystore/page";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 
-const STORAGE_KEY = 'kaapi_api_keys';
+const STORAGE_KEY = "kaapi_api_keys";
 
 interface AuthContextValue {
   apiKeys: APIKey[];
@@ -16,14 +22,19 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [apiKeys, setApiKeys] = useState<APIKey[]>(() => {
-    if (typeof window === 'undefined') return [];
+  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+
+  // Initialize from localStorage after hydration to avoid SSR mismatch.
+  // setState in effect is intentional here — this is a one-time external storage read.
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch { /* ignore malformed data */ }
-    return [];
-  });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (stored) setApiKeys(JSON.parse(stored));
+    } catch {
+      /* ignore malformed data */
+    }
+  }, []);
 
   const persist = useCallback((keys: APIKey[]) => {
     setApiKeys(keys);
@@ -34,12 +45,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const addKey = useCallback((key: APIKey) => persist([...apiKeys, key]), [apiKeys, persist]);
-  const removeKey = useCallback((id: string) => persist(apiKeys.filter(k => k.id !== id)), [apiKeys, persist]);
+  const addKey = useCallback(
+    (key: APIKey) => persist([...apiKeys, key]),
+    [apiKeys, persist],
+  );
+  const removeKey = useCallback(
+    (id: string) => persist(apiKeys.filter((k) => k.id !== id)),
+    [apiKeys, persist],
+  );
   const setKeys = useCallback((keys: APIKey[]) => persist(keys), [persist]);
 
   return (
-    <AuthContext.Provider value={{ apiKeys, activeKey: apiKeys[0] ?? null, addKey, removeKey, setKeys }}>
+    <AuthContext.Provider
+      value={{
+        apiKeys,
+        activeKey: apiKeys[0] ?? null,
+        addKey,
+        removeKey,
+        setKeys,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -47,6 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

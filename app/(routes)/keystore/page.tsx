@@ -7,17 +7,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "@/app/components/Sidebar";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-
-export interface APIKey {
-  id: string;
-  label: string;
-  key: string;
-  provider: string;
-  createdAt?: string;
-}
+import { APIKey } from "@/app/lib/types/credentials";
 
 export const STORAGE_KEY = "kaapi_api_keys";
 

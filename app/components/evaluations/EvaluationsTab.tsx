@@ -8,7 +8,7 @@ import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { APIKey } from "@/app/(routes)/keystore/page";
+import { APIKey } from "@/app/lib/types/credentials";
 
 type Tab = "datasets" | "evaluations";
 

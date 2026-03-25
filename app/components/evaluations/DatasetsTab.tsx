@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
-import { APIKey } from "@/app/keystore/page";
+import { APIKey } from "@/app/lib/types/credentials";
 import { Dataset } from "@/app/(routes)/datasets/page";
 import { useToast } from "@/app/components/Toast";
 import EvalDatasetDescription from "./EvalDatasetDescription";

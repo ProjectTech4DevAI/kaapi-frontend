@@ -17,7 +17,7 @@ import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import type { APIKey } from "@/app/keystore/page";
+import { APIKey } from "@/app/lib/types/credentials";
 import WaveformVisualizer from "@/app/components/speech-to-text/WaveformVisualizer";
 import { computeWordDiff } from "@/app/components/speech-to-text/TranscriptionDiffViewer";
 import ErrorModal from "@/app/components/ErrorModal";

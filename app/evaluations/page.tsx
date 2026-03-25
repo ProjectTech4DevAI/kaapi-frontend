@@ -258,11 +258,8 @@ function SimplifiedEvalContent() {
         throw new Error(errorData.error || errorData.message || `Evaluation failed with status ${response.status}`);
       }
 
-      const data = await response.json();
-      const evalId = data.id || data.data?.id || data.eval_id || 'unknown';
-
       setIsEvaluating(false);
-      toast.success(`Evaluation created! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
+      toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
       toast.error(`Failed to run evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`);

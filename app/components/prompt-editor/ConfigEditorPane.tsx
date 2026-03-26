@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { colors } from "@/app/lib/colors";
-import { ConfigBlob, Tool } from "@/app/configurations/prompt-editor/types";
+import {
+  ConfigBlob,
+  Tool,
+} from "@/app/(routes)/configurations/prompt-editor/types";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { ConfigPublic } from "@/app/lib/configTypes";
 import { formatRelativeTime } from "@/app/lib/utils";

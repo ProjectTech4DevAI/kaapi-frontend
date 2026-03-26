@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import type { APIKey } from "@/app/keystore/page";
+import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
 import { useToast } from "@/app/components/Toast";
 

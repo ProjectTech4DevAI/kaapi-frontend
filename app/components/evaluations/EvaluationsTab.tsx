@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { colors } from "@/app/lib/colors";
-import { APIKey } from "@/app/keystore/page";
-import { Dataset } from "@/app/datasets/page";
+import { Dataset } from "@/app/(routes)/datasets/page";
 import { EvalJob, AssistantConfig } from "@/app/components/types";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
+import { APIKey } from "@/app/lib/types/credentials";
 
 type Tab = "datasets" | "evaluations";
 

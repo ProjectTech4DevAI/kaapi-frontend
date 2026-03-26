@@ -1,6 +1,5 @@
 "use client";
 
-import { APIKey } from "@/app/keystore/page";
 import {
   createContext,
   useContext,
@@ -8,6 +7,7 @@ import {
   useCallback,
   useEffect,
 } from "react";
+import { APIKey } from "@/app/lib/types/credentials";
 
 const STORAGE_KEY = "kaapi_api_keys";
 

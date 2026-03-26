@@ -1,9 +1,9 @@
 import { colors } from "@/app/lib/colors";
-import { UnifiedCommit } from "@/app/configurations/prompt-editor/types";
+import { UnifiedCommit } from "@/app/(routes)/configurations/prompt-editor/types";
 import {
   getUnifiedBranchColor,
   formatTime,
-} from "@/app/configurations/prompt-editor/utils";
+} from "@/app/(routes)/configurations/prompt-editor/utils";
 
 interface CommitNodeProps {
   commit: UnifiedCommit;

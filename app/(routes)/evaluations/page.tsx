@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
-import { Dataset } from "@/app/datasets/page";
+import { Dataset } from "@/app/(routes)/datasets/page";
 import Sidebar from "@/app/components/Sidebar";
 import TabNavigation from "@/app/components/TabNavigation";
 import { useToast } from "@/app/components/Toast";
@@ -38,6 +38,11 @@ function SimplifiedEvalContent() {
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { apiKeys } = useAuth();
   const [selectedKeyId, setSelectedKeyId] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Dataset creation state
   const [datasetName, setDatasetName] = useState("");
@@ -355,7 +360,7 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          {apiKeys.length === 0 ? (
+          {!mounted || apiKeys.length === 0 ? (
             <div
               className="flex-1 flex items-center justify-center"
               style={{ backgroundColor: colors.bg.secondary }}

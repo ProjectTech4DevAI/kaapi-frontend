@@ -1,33 +1,40 @@
-"use client"
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { colors } from '@/app/lib/colors';
-import { EvalJob, AssistantConfig, getScoreObject } from '@/app/components/types';
-import { getStatusColor } from '@/app/components/utils';
-import { timeAgo } from '@/app/lib/utils';
-import ConfigModal from '@/app/components/ConfigModal';
-import ScoreDisplay from '@/app/components/ScoreDisplay';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { colors } from "@/app/lib/colors";
+import {
+  EvalJob,
+  AssistantConfig,
+  getScoreObject,
+} from "@/app/components/types";
+import { getStatusColor } from "@/app/components/utils";
+import { timeAgo } from "@/app/lib/utils";
+import ConfigModal from "@/app/components/ConfigModal";
+import ScoreDisplay from "@/app/components/ScoreDisplay";
 
 export interface EvalRunCardProps {
   job: EvalJob;
   assistantConfig?: AssistantConfig;
 }
 
-export default function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) {
+export default function EvalRunCard({
+  job,
+  assistantConfig,
+}: EvalRunCardProps) {
   const router = useRouter();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  const isCompleted = job.status?.toLowerCase() === 'completed';
+  const isCompleted = job.status?.toLowerCase() === "completed";
   const scoreObj = getScoreObject(job);
-  const statusColor = getStatusColor(job.status || '');
+  const statusColor = getStatusColor(job.status || "");
 
   return (
     <div
       className="rounded-lg overflow-hidden"
       style={{
         backgroundColor: colors.bg.primary,
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
         borderLeft: `3px solid ${statusColor.border}`,
       }}
     >
@@ -35,17 +42,26 @@ export default function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) 
         {/* Row 1: Run Name (left) | Status (right) */}
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold truncate" style={{ color: colors.text.primary }}>
+            <div
+              className="text-sm font-semibold truncate"
+              style={{ color: colors.text.primary }}
+            >
               {job.run_name}
             </div>
             {job.inserted_at && (
-              <div className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+              <div
+                className="text-xs mt-0.5"
+                style={{ color: colors.text.secondary }}
+              >
                 {timeAgo(job.inserted_at)}
               </div>
             )}
             {/* Error message (if failed) */}
             {job.error_message && (
-              <div className="mt-2 text-xs break-words overflow-hidden" style={{ color: 'hsl(8, 86%, 40%)' }}>
+              <div
+                className="mt-2 text-xs break-words overflow-hidden"
+                style={{ color: "hsl(8, 86%, 40%)" }}
+              >
                 {job.error_message}
               </div>
             )}
@@ -67,17 +83,33 @@ export default function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) 
 
         {/* Row 3: Dataset + Config (left) | Actions (right) */}
         <div className="flex items-center justify-between gap-4 mt-3">
-          <div className="flex items-center gap-3 text-xs" style={{ color: colors.text.secondary }}>
+          <div
+            className="flex items-center gap-3 text-xs"
+            style={{ color: colors.text.secondary }}
+          >
             {job.dataset_name && (
               <span className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3" />
+                <svg
+                  className="w-3.5 h-3.5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3"
+                  />
                 </svg>
                 {job.dataset_name}
               </span>
             )}
             {job.assistant_id && assistantConfig?.name && (
-              <span className="px-1.5 py-0.5 rounded" style={{ backgroundColor: colors.bg.secondary }}>
+              <span
+                className="px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: colors.bg.secondary }}
+              >
                 {assistantConfig.name}
               </span>
             )}
@@ -87,7 +119,7 @@ export default function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) 
               onClick={() => setIsConfigModalOpen(true)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium border"
               style={{
-                backgroundColor: 'transparent',
+                backgroundColor: "transparent",
                 borderColor: colors.border,
                 color: colors.text.primary,
               }}
@@ -99,9 +131,11 @@ export default function EvalRunCard({ job, assistantConfig }: EvalRunCardProps) 
               disabled={!isCompleted}
               className="px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer disabled:cursor-not-allowed"
               style={{
-                backgroundColor: 'transparent',
+                backgroundColor: "transparent",
                 borderColor: colors.border,
-                color: isCompleted ? colors.text.primary : colors.text.secondary,
+                color: isCompleted
+                  ? colors.text.primary
+                  : colors.text.secondary,
                 opacity: isCompleted ? 1 : 0.5,
               }}
             >

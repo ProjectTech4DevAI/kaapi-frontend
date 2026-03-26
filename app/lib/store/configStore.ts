@@ -6,9 +6,9 @@
  * which works correctly with ES module semantics, unlike reassigning named exports.
  */
 
-import { ConfigPublic, ConfigVersionItems } from '@/app/lib/configTypes';
-import { ConfigCache, SavedConfig } from '@/app/lib/types/configs';
-import { CACHE_KEY } from '@/app/lib/constants';
+import { ConfigPublic, ConfigVersionItems } from "@/app/lib/configTypes";
+import { ConfigCache, SavedConfig } from "@/app/lib/types/configs";
+import { CACHE_KEY } from "@/app/lib/constants";
 
 /**
  * All module-level mutable singletons in one object.
@@ -53,7 +53,10 @@ export const configState = {
  * Key is `${config_id}:${version}`. Prevents duplicate fetches when the user
  * rapidly clicks the same history entry.
  */
-export const pendingSingleVersionLoads = new Map<string, Promise<SavedConfig | null>>();
+export const pendingSingleVersionLoads = new Map<
+  string,
+  Promise<SavedConfig | null>
+>();
 
 /**
  * Per-config in-flight version-load promises.
@@ -62,32 +65,32 @@ export const pendingSingleVersionLoads = new Map<string, Promise<SavedConfig | n
 export const pendingVersionLoads = new Map<string, Promise<void>>();
 
 export const loadCache = (): ConfigCache | null => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) return JSON.parse(cached);
   } catch (e) {
-    console.error('Failed to load config cache:', e);
+    console.error("Failed to load config cache:", e);
   }
   return null;
 };
 
 export const saveCache = (cache: ConfigCache): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch (e) {
-    console.error('Failed to save config cache:', e);
+    console.error("Failed to save config cache:", e);
   }
 };
 
 export const clearConfigCache = (): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     localStorage.removeItem(CACHE_KEY);
     configState.inMemoryCache = null;
     configState.versionItemsCache = {};
   } catch (e) {
-    console.error('Failed to clear config cache:', e);
+    console.error("Failed to clear config cache:", e);
   }
 };

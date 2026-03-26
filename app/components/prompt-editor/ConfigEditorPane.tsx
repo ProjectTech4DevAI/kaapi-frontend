@@ -4,7 +4,11 @@ import { ConfigBlob, Tool } from "@/app/configurations/prompt-editor/types";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { ConfigPublic } from "@/app/lib/configTypes";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { MODEL_OPTIONS, PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
+import {
+  MODEL_OPTIONS,
+  PROVIDER_TYPES,
+  PROVIDES_OPTIONS,
+} from "@/app/lib/constants";
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -191,7 +195,11 @@ export default function ConfigEditorPane({
     });
   };
 
-  const handleUpdateTool = (index: number, field: keyof Tool, value: unknown) => {
+  const handleUpdateTool = (
+    index: number,
+    field: keyof Tool,
+    value: unknown,
+  ) => {
     const newTools = [...tools];
     if (field === "knowledge_base_ids") {
       newTools[index][field] = [value as string];

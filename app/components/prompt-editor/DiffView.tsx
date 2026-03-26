@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
-import { colors } from '@/app/lib/colors';
-import PromptDiffPane from './PromptDiffPane';
-import ConfigDiffPane from './ConfigDiffPane';
-import { SavedConfig, ConfigVersionItems } from '@/app/lib/types/configs';
-import { formatRelativeTime } from '@/app/lib/utils';
+import { useMemo, useState } from "react";
+import { colors } from "@/app/lib/colors";
+import PromptDiffPane from "./PromptDiffPane";
+import ConfigDiffPane from "./ConfigDiffPane";
+import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
+import { formatRelativeTime } from "@/app/lib/utils";
 
 interface DiffViewProps {
   selectedCommit: SavedConfig;
@@ -13,7 +13,10 @@ interface DiffViewProps {
   onLoadVersion: (config: SavedConfig) => void;
   loadVersionsForConfig?: (config_id: string) => Promise<void>; // lightweight version list for a given config_id
   versionItemsMap?: Record<string, ConfigVersionItems[]>; // Lightweight version items per config_id. When provided, the compare dropdown shows ALL version
-  onFetchVersionDetail?: (config_id: string, version: number) => Promise<SavedConfig | null>; // Fetches a single version's full details
+  onFetchVersionDetail?: (
+    config_id: string,
+    version: number,
+  ) => Promise<SavedConfig | null>; // Fetches a single version's full details
 }
 
 // Group configs by name for the dropdown
@@ -39,7 +42,8 @@ export default function DiffView({
   const configGroups = useMemo((): ConfigGroupForCompare[] => {
     if (versionItemsMap && Object.keys(versionItemsMap).length > 0) {
       return Object.entries(versionItemsMap).map(([config_id, items]) => {
-        const nameFallback = commits.find(c => c.config_id === config_id)?.name ?? config_id;
+        const nameFallback =
+          commits.find((c) => c.config_id === config_id)?.name ?? config_id;
         const sorted = [...items].sort((a, b) => b.version - a.version);
         return { config_id, name: nameFallback, items: sorted };
       });
@@ -55,7 +59,7 @@ export default function DiffView({
       return {
         config_id,
         name: sorted[0].name,
-        items: sorted.map(v => ({
+        items: sorted.map((v) => ({
           id: v.id,
           config_id: v.config_id,
           version: v.version,
@@ -68,23 +72,39 @@ export default function DiffView({
   }, [commits, versionItemsMap]);
 
   // Encode option value as "config_id:version" so we can look up or fetch on select
-  const encodeValue = (config_id: string, version: number) => `${config_id}:${version}`;
-  const decodeValue = (val: string): { config_id: string; version: number } | null => {
-    const idx = val.lastIndexOf(':');
+  const encodeValue = (config_id: string, version: number) =>
+    `${config_id}:${version}`;
+  const decodeValue = (
+    val: string,
+  ): { config_id: string; version: number } | null => {
+    const idx = val.lastIndexOf(":");
     if (idx === -1) return null;
-    return { config_id: val.slice(0, idx), version: parseInt(val.slice(idx + 1), 10) };
+    return {
+      config_id: val.slice(0, idx),
+      version: parseInt(val.slice(idx + 1), 10),
+    };
   };
-  const currentValue = compareWith ? encodeValue(compareWith.config_id, compareWith.version) : '';
+  const currentValue = compareWith
+    ? encodeValue(compareWith.config_id, compareWith.version)
+    : "";
 
   const handleCompareSelect = async (rawValue: string) => {
-    if (!rawValue) { onCompareChange(null); return; }
+    if (!rawValue) {
+      onCompareChange(null);
+      return;
+    }
     const decoded = decodeValue(rawValue);
     if (!decoded) return;
     const { config_id, version } = decoded;
 
     // Fast path: already loaded
-    let detail = commits.find(c => c.config_id === config_id && c.version === version);
-    if (detail) { onCompareChange(detail); return; }
+    let detail = commits.find(
+      (c) => c.config_id === config_id && c.version === version,
+    );
+    if (detail) {
+      onCompareChange(detail);
+      return;
+    }
 
     if (onFetchVersionDetail) {
       setIsLoadingCompare(true);
@@ -96,17 +116,25 @@ export default function DiffView({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="px-6 py-4 border-b" style={{
-        backgroundColor: colors.bg.primary,
-        borderColor: colors.border
-      }}>
+      <div
+        className="px-6 py-4 border-b"
+        style={{
+          backgroundColor: colors.bg.primary,
+          borderColor: colors.border,
+        }}
+      >
         <div className="mb-3">
-          <div className="text-lg font-semibold mb-1" style={{ color: colors.text.primary }}>
+          <div
+            className="text-lg font-semibold mb-1"
+            style={{ color: colors.text.primary }}
+          >
             {selectedCommit.name} v{selectedCommit.version}
           </div>
           <div className="text-xs" style={{ color: colors.text.secondary }}>
-            {formatRelativeTime(selectedCommit.timestamp)} • {selectedCommit.provider}/{selectedCommit.modelName}
-            {selectedCommit.commit_message && ` • ${selectedCommit.commit_message}`}
+            {formatRelativeTime(selectedCommit.timestamp)} •{" "}
+            {selectedCommit.provider}/{selectedCommit.modelName}
+            {selectedCommit.commit_message &&
+              ` • ${selectedCommit.commit_message}`}
           </div>
         </div>
         <div className="space-y-2">
@@ -114,10 +142,14 @@ export default function DiffView({
             <select
               onFocus={() => {
                 if (loadVersionsForConfig) {
-                  configGroups.forEach(g => loadVersionsForConfig(g.config_id));
+                  configGroups.forEach((g) =>
+                    loadVersionsForConfig(g.config_id),
+                  );
                 }
               }}
-              onChange={(e) => { handleCompareSelect(e.target.value); }}
+              onChange={(e) => {
+                handleCompareSelect(e.target.value);
+              }}
               value={currentValue}
               disabled={isLoadingCompare}
               className="px-3 py-2 rounded-md text-sm min-w-[300px]"
@@ -125,18 +157,33 @@ export default function DiffView({
                 border: `1px solid ${colors.border}`,
                 backgroundColor: colors.bg.primary,
                 color: colors.text.primary,
-                outline: 'none',
+                outline: "none",
                 opacity: isLoadingCompare ? 0.6 : 1,
               }}
             >
-              <option value="">{isLoadingCompare ? 'Loading…' : 'Select version to compare...'}</option>
-              {configGroups.map(group => (
-                <optgroup key={group.config_id} label={`${group.name} (${group.items.length} versions)`}>
+              <option value="">
+                {isLoadingCompare ? "Loading…" : "Select version to compare..."}
+              </option>
+              {configGroups.map((group) => (
+                <optgroup
+                  key={group.config_id}
+                  label={`${group.name} (${group.items.length} versions)`}
+                >
                   {group.items
-                    .filter(v => !(v.config_id === selectedCommit.config_id && v.version === selectedCommit.version))
-                    .map(item => (
-                      <option key={item.id} value={encodeValue(item.config_id, item.version)}>
-                        v{item.version} - {item.commit_message || 'No message'} ({formatRelativeTime(item.inserted_at)})
+                    .filter(
+                      (v) =>
+                        !(
+                          v.config_id === selectedCommit.config_id &&
+                          v.version === selectedCommit.version
+                        ),
+                    )
+                    .map((item) => (
+                      <option
+                        key={item.id}
+                        value={encodeValue(item.config_id, item.version)}
+                      >
+                        v{item.version} - {item.commit_message || "No message"}{" "}
+                        ({formatRelativeTime(item.inserted_at)})
                       </option>
                     ))}
                 </optgroup>
@@ -151,12 +198,13 @@ export default function DiffView({
                     backgroundColor: colors.bg.secondary,
                     color: colors.text.primary,
                     border: `1px solid ${colors.border}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.accent.primary;
-                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.backgroundColor =
+                      colors.accent.primary;
+                    e.currentTarget.style.color = "#ffffff";
                     e.currentTarget.style.borderColor = colors.accent.primary;
                   }}
                   onMouseLeave={(e) => {
@@ -167,30 +215,28 @@ export default function DiffView({
                 >
                   {compareWith.name === selectedCommit.name
                     ? `← Load v${compareWith.version}`
-                    : `← Load ${compareWith.name} v${compareWith.version}`
-                  }
+                    : `← Load ${compareWith.name} v${compareWith.version}`}
                 </button>
                 <button
                   onClick={() => onLoadVersion(selectedCommit)}
                   className="px-3 py-1.5 rounded text-xs font-medium"
                   style={{
                     backgroundColor: colors.accent.primary,
-                    color: '#ffffff',
+                    color: "#ffffff",
                     border: `1px solid ${colors.accent.primary}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '0.85';
+                    e.currentTarget.style.opacity = "0.85";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.style.opacity = "1";
                   }}
                 >
                   {compareWith.name === selectedCommit.name
                     ? `Load v${selectedCommit.version} →`
-                    : `Load ${selectedCommit.name} v${selectedCommit.version} →`
-                  }
+                    : `Load ${selectedCommit.name} v${selectedCommit.version} →`}
                 </button>
               </div>
             )}
@@ -199,8 +245,7 @@ export default function DiffView({
             <div className="text-xs" style={{ color: colors.text.secondary }}>
               {compareWith.name === selectedCommit.name
                 ? `Comparing v${compareWith.version} → v${selectedCommit.version}`
-                : `Comparing ${compareWith.name} v${compareWith.version} → ${selectedCommit.name} v${selectedCommit.version}`
-              }
+                : `Comparing ${compareWith.name} v${compareWith.version} → ${selectedCommit.name} v${selectedCommit.version}`}
             </div>
           )}
         </div>
@@ -208,7 +253,10 @@ export default function DiffView({
 
       {compareWith ? (
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 flex border-r" style={{ borderColor: colors.border }}>
+          <div
+            className="flex-1 flex border-r"
+            style={{ borderColor: colors.border }}
+          >
             <PromptDiffPane
               selectedCommit={selectedCommit}
               compareWith={compareWith}
@@ -224,13 +272,27 @@ export default function DiffView({
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex flex-1 overflow-hidden">
-            <div className="flex-1 flex border-r" style={{ borderColor: colors.border }}>
+            <div
+              className="flex-1 flex border-r"
+              style={{ borderColor: colors.border }}
+            >
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-                  <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>Prompt</h3>
+                <div
+                  className="px-4 py-3 border-b"
+                  style={{ borderColor: colors.border }}
+                >
+                  <h3
+                    className="text-sm font-semibold"
+                    style={{ color: colors.text.primary }}
+                  >
+                    Prompt
+                  </h3>
                 </div>
                 <div className="flex-1 p-4 overflow-auto">
-                  <pre className="text-sm whitespace-pre-wrap font-mono" style={{ color: colors.text.primary }}>
+                  <pre
+                    className="text-sm whitespace-pre-wrap font-mono"
+                    style={{ color: colors.text.primary }}
+                  >
                     {selectedCommit.promptContent}
                   </pre>
                 </div>
@@ -238,40 +300,96 @@ export default function DiffView({
             </div>
             <div className="flex-1 flex">
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-                  <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>Configuration</h3>
+                <div
+                  className="px-4 py-3 border-b"
+                  style={{ borderColor: colors.border }}
+                >
+                  <h3
+                    className="text-sm font-semibold"
+                    style={{ color: colors.text.primary }}
+                  >
+                    Configuration
+                  </h3>
                 </div>
                 <div className="flex-1 p-4 overflow-auto">
                   <div className="space-y-3">
                     <div>
-                      <div className="text-xs font-semibold mb-1" style={{ color: colors.text.secondary }}>Provider</div>
-                      <div className="text-sm" style={{ color: colors.text.primary }}>{selectedCommit.provider}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold mb-1" style={{ color: colors.text.secondary }}>Model</div>
-                      <div className="text-sm" style={{ color: colors.text.primary }}>{selectedCommit.modelName}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold mb-1" style={{ color: colors.text.secondary }}>Temperature</div>
-                      <div className="text-sm" style={{ color: colors.text.primary }}>{selectedCommit.temperature}</div>
-                    </div>
-                    {selectedCommit.tools && selectedCommit.tools.length > 0 && (
-                      <div>
-                        <div className="text-xs font-semibold mb-1" style={{ color: colors.text.secondary }}>Tools</div>
-                        <div className="text-sm space-y-2">
-                          {selectedCommit.tools.map((tool, idx) => (
-                            <div key={idx} className="p-2 rounded" style={{ backgroundColor: colors.bg.secondary }}>
-                              <div className="text-xs font-semibold" style={{ color: colors.text.secondary }}>{tool.type}</div>
-                              {tool.knowledge_base_ids && (
-                                <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                                  Knowledge Base: {tool.knowledge_base_ids[0]}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                      <div
+                        className="text-xs font-semibold mb-1"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        Provider
                       </div>
-                    )}
+                      <div
+                        className="text-sm"
+                        style={{ color: colors.text.primary }}
+                      >
+                        {selectedCommit.provider}
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        className="text-xs font-semibold mb-1"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        Model
+                      </div>
+                      <div
+                        className="text-sm"
+                        style={{ color: colors.text.primary }}
+                      >
+                        {selectedCommit.modelName}
+                      </div>
+                    </div>
+                    <div>
+                      <div
+                        className="text-xs font-semibold mb-1"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        Temperature
+                      </div>
+                      <div
+                        className="text-sm"
+                        style={{ color: colors.text.primary }}
+                      >
+                        {selectedCommit.temperature}
+                      </div>
+                    </div>
+                    {selectedCommit.tools &&
+                      selectedCommit.tools.length > 0 && (
+                        <div>
+                          <div
+                            className="text-xs font-semibold mb-1"
+                            style={{ color: colors.text.secondary }}
+                          >
+                            Tools
+                          </div>
+                          <div className="text-sm space-y-2">
+                            {selectedCommit.tools.map((tool, idx) => (
+                              <div
+                                key={idx}
+                                className="p-2 rounded"
+                                style={{ backgroundColor: colors.bg.secondary }}
+                              >
+                                <div
+                                  className="text-xs font-semibold"
+                                  style={{ color: colors.text.secondary }}
+                                >
+                                  {tool.type}
+                                </div>
+                                {tool.knowledge_base_ids && (
+                                  <div
+                                    className="text-xs mt-1"
+                                    style={{ color: colors.text.secondary }}
+                                  >
+                                    Knowledge Base: {tool.knowledge_base_ids[0]}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>

@@ -3,10 +3,11 @@
  * Provides hierarchical navigation with expandable submenus
  */
 
-"use client"
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { colors } from '@/app/lib/colors';
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { colors } from "@/app/lib/colors";
 
 interface SubMenuItem {
   name: string;
@@ -27,22 +28,25 @@ interface SidebarProps {
   activeRoute?: string;
 }
 
-export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: SidebarProps) {
+export default function Sidebar({
+  collapsed,
+  activeRoute = "/evaluations",
+}: SidebarProps) {
   const router = useRouter();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-    'Evaluations': true,
-    'Configurations': false,
+    Evaluations: true,
+    Configurations: false,
   });
 
   // Load expanded state from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('sidebar-expanded-menus');
+    const saved = localStorage.getItem("sidebar-expanded-menus");
     if (saved) {
       try {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setExpandedMenus(JSON.parse(saved));
       } catch (e) {
-        console.error('Failed to load sidebar state:', e);
+        console.error("Failed to load sidebar state:", e);
       }
     }
   }, []);
@@ -51,103 +55,185 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
   const toggleMenu = (menuName: string) => {
     const newState = { ...expandedMenus, [menuName]: !expandedMenus[menuName] };
     setExpandedMenus(newState);
-    localStorage.setItem('sidebar-expanded-menus', JSON.stringify(newState));
+    localStorage.setItem("sidebar-expanded-menus", JSON.stringify(newState));
   };
 
   const navItems: MenuItem[] = [
     {
-      name: 'Evaluations',
+      name: "Evaluations",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h6" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 7h6m-6 4h6"
+          />
         </svg>
       ),
       submenu: [
-        { name: 'Text', route: '/evaluations' },
-        { name: 'Speech-to-Text', route: '/speech-to-text' },
-        { name: 'Text-to-Speech', route: '/text-to-speech' },
-      ]
+        { name: "Text", route: "/evaluations" },
+        { name: "Speech-to-Text", route: "/speech-to-text" },
+        { name: "Text-to-Speech", route: "/text-to-speech" },
+      ],
     },
     {
-      name: 'Documents',
-      route: '/document',
+      name: "Documents",
+      route: "/document",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
         </svg>
       ),
     },
     {
-      name: 'Knowledge Base',
-      route: '/knowledge-base',
+      name: "Knowledge Base",
+      route: "/knowledge-base",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+          />
         </svg>
       ),
     },
     {
-      name: 'Configurations',
+      name: "Configurations",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
         </svg>
       ),
       submenu: [
-        { name: 'Library', route: '/configurations' },
-        { name: 'Prompt Editor', route: '/configurations/prompt-editor' },
-      ]
+        { name: "Library", route: "/configurations" },
+        { name: "Prompt Editor", route: "/configurations/prompt-editor" },
+      ],
     },
     {
-      name: 'Settings',
-      route: '/settings/credentials',
+      name: "Settings",
+      route: "/settings/credentials",
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+          />
         </svg>
       ),
-    }
+    },
   ];
 
   const bottomItem: MenuItem = {
-    name: 'Keystore',
-    route: '/keystore',
+    name: "Keystore",
+    route: "/keystore",
     icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+        />
       </svg>
-    )
+    ),
   };
 
   return (
     <aside
       className="border-r transition-all duration-300 ease-in-out h-full flex-shrink-0 flex flex-col"
       style={{
-        width: collapsed ? '0px' : '240px',
+        width: collapsed ? "0px" : "240px",
         backgroundColor: colors.bg.secondary,
         borderColor: colors.border,
-        overflow: 'hidden',
+        overflow: "hidden",
       }}
     >
       {/* Header */}
-      <div className="px-5 py-6" style={{ borderBottom: `1px solid ${colors.border}` }}>
-        <h2 className="text-sm font-semibold" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>Kaapi Konsole</h2>
-        <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>Tech4Dev</p>
+      <div
+        className="px-5 py-6"
+        style={{ borderBottom: `1px solid ${colors.border}` }}
+      >
+        <h2
+          className="text-sm font-semibold"
+          style={{ color: colors.text.primary, letterSpacing: "-0.01em" }}
+        >
+          Kaapi Konsole
+        </h2>
+        <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+          Tech4Dev
+        </p>
       </div>
 
       {/* Main Navigation */}
-      <nav className="p-3 space-y-1 flex-1 overflow-y-auto" style={{ width: '240px' }}>
+      <nav
+        className="p-3 space-y-1 flex-1 overflow-y-auto"
+        style={{ width: "240px" }}
+      >
         {navItems.map((item) => {
           const hasSubmenu = item.submenu && item.submenu.length > 0;
           const isExpanded = expandedMenus[item.name];
           const isActive = activeRoute === item.route;
 
           // Check if any child or nested child is active
-          const hasActiveChild = hasSubmenu && item.submenu?.some(sub =>
-            activeRoute === sub.route ||
-            (sub.submenu && sub.submenu.some(nested => activeRoute === nested.route))
-          );
+          const hasActiveChild =
+            hasSubmenu &&
+            item.submenu?.some(
+              (sub) =>
+                activeRoute === sub.route ||
+                (sub.submenu &&
+                  sub.submenu.some((nested) => activeRoute === nested.route)),
+            );
 
           return (
             <div key={item.name}>
@@ -162,11 +248,16 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                 }}
                 className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-2.5"
                 style={{
-                  backgroundColor: isActive ? colors.bg.primary : 'transparent',
-                  color: (isActive || hasActiveChild) ? colors.text.primary : colors.text.secondary,
-                  fontWeight: (isActive || hasActiveChild) ? 600 : 500,
-                  transition: 'all 0.15s ease',
-                  border: isActive ? `1px solid ${colors.border}` : '1px solid transparent'
+                  backgroundColor: isActive ? colors.bg.primary : "transparent",
+                  color:
+                    isActive || hasActiveChild
+                      ? colors.text.primary
+                      : colors.text.secondary,
+                  fontWeight: isActive || hasActiveChild ? 600 : 500,
+                  transition: "all 0.15s ease",
+                  border: isActive
+                    ? `1px solid ${colors.border}`
+                    : "1px solid transparent",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
@@ -176,25 +267,34 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = (hasActiveChild) ? colors.text.primary : colors.text.secondary;
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = hasActiveChild
+                      ? colors.text.primary
+                      : colors.text.secondary;
                   }
                 }}
               >
-                <span style={{ opacity: (isActive || hasActiveChild) ? 1 : 0.7 }}>{item.icon}</span>
+                <span style={{ opacity: isActive || hasActiveChild ? 1 : 0.7 }}>
+                  {item.icon}
+                </span>
                 <span className="flex-1">{item.name}</span>
                 {hasSubmenu && (
                   <svg
                     className="w-4 h-4"
                     style={{
-                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.15s ease'
+                      transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                      transition: "transform 0.15s ease",
                     }}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 )}
               </button>
@@ -205,15 +305,20 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                   className="ml-3 mt-1 space-y-0.5 overflow-hidden"
                   style={{
                     borderLeft: `2px solid ${colors.border}`,
-                    paddingLeft: '12px',
-                    animation: 'slideDown 0.15s ease-out'
+                    paddingLeft: "12px",
+                    animation: "slideDown 0.15s ease-out",
                   }}
                 >
                   {item.submenu?.map((subItem) => {
-                    const hasNestedSubmenu = subItem.submenu && subItem.submenu.length > 0;
+                    const hasNestedSubmenu =
+                      subItem.submenu && subItem.submenu.length > 0;
                     const isNestedExpanded = expandedMenus[subItem.name];
                     const isSubActive = activeRoute === subItem.route;
-                    const hasActiveNestedChild = hasNestedSubmenu && subItem.submenu?.some(nested => activeRoute === nested.route);
+                    const hasActiveNestedChild =
+                      hasNestedSubmenu &&
+                      subItem.submenu?.some(
+                        (nested) => activeRoute === nested.route,
+                      );
 
                     return (
                       <div key={subItem.name}>
@@ -227,22 +332,34 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                           }}
                           className="w-full text-left px-3 py-1.5 rounded-md text-xs flex items-center justify-between gap-2"
                           style={{
-                            backgroundColor: isSubActive ? colors.bg.primary : 'transparent',
-                            color: (isSubActive || hasActiveNestedChild) ? colors.text.primary : colors.text.secondary,
-                            fontWeight: (isSubActive || hasActiveNestedChild) ? 500 : 400,
-                            transition: 'all 0.15s ease',
-                            border: isSubActive ? `1px solid ${colors.border}` : '1px solid transparent'
+                            backgroundColor: isSubActive
+                              ? colors.bg.primary
+                              : "transparent",
+                            color:
+                              isSubActive || hasActiveNestedChild
+                                ? colors.text.primary
+                                : colors.text.secondary,
+                            fontWeight:
+                              isSubActive || hasActiveNestedChild ? 500 : 400,
+                            transition: "all 0.15s ease",
+                            border: isSubActive
+                              ? `1px solid ${colors.border}`
+                              : "1px solid transparent",
                           }}
                           onMouseEnter={(e) => {
                             if (!isSubActive) {
-                              e.currentTarget.style.backgroundColor = colors.bg.primary;
+                              e.currentTarget.style.backgroundColor =
+                                colors.bg.primary;
                               e.currentTarget.style.color = colors.text.primary;
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!isSubActive) {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                              e.currentTarget.style.color = (hasActiveNestedChild) ? colors.text.primary : colors.text.secondary;
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                              e.currentTarget.style.color = hasActiveNestedChild
+                                ? colors.text.primary
+                                : colors.text.secondary;
                             }
                           }}
                         >
@@ -251,9 +368,9 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                             <span
                               className="text-[10px] px-1.5 py-0.5 rounded"
                               style={{
-                                backgroundColor: '#fef3c7',
-                                color: '#92400e',
-                                fontWeight: 600
+                                backgroundColor: "#fef3c7",
+                                color: "#92400e",
+                                fontWeight: 600,
                               }}
                             >
                               ☕
@@ -263,14 +380,21 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                             <svg
                               className="w-3 h-3"
                               style={{
-                                transform: isNestedExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                                transition: 'transform 0.15s ease'
+                                transform: isNestedExpanded
+                                  ? "rotate(90deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.15s ease",
                               }}
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
                             </svg>
                           )}
                         </button>
@@ -281,34 +405,48 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                             className="ml-2 mt-0.5 space-y-0.5 overflow-hidden"
                             style={{
                               borderLeft: `1px solid ${colors.border}`,
-                              paddingLeft: '10px',
-                              animation: 'slideDown 0.15s ease-out'
+                              paddingLeft: "10px",
+                              animation: "slideDown 0.15s ease-out",
                             }}
                           >
                             {subItem.submenu?.map((nestedItem) => {
-                              const isNestedActive = activeRoute === nestedItem.route;
+                              const isNestedActive =
+                                activeRoute === nestedItem.route;
                               return (
                                 <button
                                   key={nestedItem.route}
-                                  onClick={() => nestedItem.route && router.push(nestedItem.route)}
+                                  onClick={() =>
+                                    nestedItem.route &&
+                                    router.push(nestedItem.route)
+                                  }
                                   className="w-full text-left px-2.5 py-1 rounded-md text-xs flex items-center justify-between gap-2"
                                   style={{
-                                    backgroundColor: isNestedActive ? colors.bg.primary : 'transparent',
-                                    color: isNestedActive ? colors.text.primary : colors.text.secondary,
+                                    backgroundColor: isNestedActive
+                                      ? colors.bg.primary
+                                      : "transparent",
+                                    color: isNestedActive
+                                      ? colors.text.primary
+                                      : colors.text.secondary,
                                     fontWeight: isNestedActive ? 500 : 400,
-                                    transition: 'all 0.15s ease',
-                                    border: isNestedActive ? `1px solid ${colors.border}` : '1px solid transparent'
+                                    transition: "all 0.15s ease",
+                                    border: isNestedActive
+                                      ? `1px solid ${colors.border}`
+                                      : "1px solid transparent",
                                   }}
                                   onMouseEnter={(e) => {
                                     if (!isNestedActive) {
-                                      e.currentTarget.style.backgroundColor = colors.bg.primary;
-                                      e.currentTarget.style.color = colors.text.primary;
+                                      e.currentTarget.style.backgroundColor =
+                                        colors.bg.primary;
+                                      e.currentTarget.style.color =
+                                        colors.text.primary;
                                     }
                                   }}
                                   onMouseLeave={(e) => {
                                     if (!isNestedActive) {
-                                      e.currentTarget.style.backgroundColor = 'transparent';
-                                      e.currentTarget.style.color = colors.text.secondary;
+                                      e.currentTarget.style.backgroundColor =
+                                        "transparent";
+                                      e.currentTarget.style.color =
+                                        colors.text.secondary;
                                     }
                                   }}
                                 >
@@ -317,9 +455,9 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
                                     <span
                                       className="text-[10px] px-1.5 py-0.5 rounded"
                                       style={{
-                                        backgroundColor: '#fef3c7',
-                                        color: '#92400e',
-                                        fontWeight: 600
+                                        backgroundColor: "#fef3c7",
+                                        color: "#92400e",
+                                        fontWeight: 600,
                                       }}
                                     >
                                       ☕
@@ -341,16 +479,28 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
       </nav>
 
       {/* Bottom Section - Keystore */}
-      <div className="p-3 border-t" style={{ borderColor: colors.border, width: '240px' }}>
+      <div
+        className="p-3 border-t"
+        style={{ borderColor: colors.border, width: "240px" }}
+      >
         <button
           onClick={() => router.push(bottomItem.route!)}
           className="w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-2.5"
           style={{
-            backgroundColor: activeRoute === bottomItem.route ? colors.bg.primary : 'transparent',
-            color: activeRoute === bottomItem.route ? colors.text.primary : colors.text.secondary,
+            backgroundColor:
+              activeRoute === bottomItem.route
+                ? colors.bg.primary
+                : "transparent",
+            color:
+              activeRoute === bottomItem.route
+                ? colors.text.primary
+                : colors.text.secondary,
             fontWeight: activeRoute === bottomItem.route ? 500 : 400,
-            transition: 'all 0.15s ease',
-            border: activeRoute === bottomItem.route ? `1px solid ${colors.border}` : '1px solid transparent'
+            transition: "all 0.15s ease",
+            border:
+              activeRoute === bottomItem.route
+                ? `1px solid ${colors.border}`
+                : "1px solid transparent",
           }}
           onMouseEnter={(e) => {
             if (activeRoute !== bottomItem.route) {
@@ -360,12 +510,14 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
           }}
           onMouseLeave={(e) => {
             if (activeRoute !== bottomItem.route) {
-              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.backgroundColor = "transparent";
               e.currentTarget.style.color = colors.text.secondary;
             }
           }}
         >
-          <span style={{ opacity: activeRoute === bottomItem.route ? 1 : 0.7 }}>{bottomItem.icon}</span>
+          <span style={{ opacity: activeRoute === bottomItem.route ? 1 : 0.7 }}>
+            {bottomItem.icon}
+          </span>
           {bottomItem.name}
         </button>
       </div>

@@ -6,8 +6,8 @@ import {
   ConfigVersionPublic,
   ConfigVersionItems,
   Tool,
-} from './configTypes';
-import { SavedConfig, ConfigGroup } from './types/configs';
+} from "./configTypes";
+import { SavedConfig, ConfigGroup } from "./types/configs";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -29,12 +29,15 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   const now = Date.now();
 
   let date: number;
-  if (typeof timestamp === 'string') {
+  if (typeof timestamp === "string") {
     // If timestamp doesn't include timezone info, assume it's UTC
     // and append 'Z' to ensure it's interpreted as UTC
-    const utcTimestamp = timestamp.endsWith('Z') || timestamp.includes('+') || timestamp.includes('T') && timestamp.split('T')[1].includes('-')
-      ? timestamp
-      : timestamp + 'Z';
+    const utcTimestamp =
+      timestamp.endsWith("Z") ||
+      timestamp.includes("+") ||
+      (timestamp.includes("T") && timestamp.split("T")[1].includes("-"))
+        ? timestamp
+        : timestamp + "Z";
     date = new Date(utcTimestamp).getTime();
   } else {
     date = timestamp;
@@ -45,7 +48,7 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return 'just now';
+  if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days < 30) return `${days}d ago`;
@@ -59,15 +62,15 @@ export const invalidateConfigCache = (): void => {
 
 /** Reads the first stored API key from localStorage. */
 export const getApiKey = (): string | null => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem('kaapi_api_keys');
+    const stored = localStorage.getItem("kaapi_api_keys");
     if (stored) {
       const keys = JSON.parse(stored);
       return keys.length > 0 ? keys[0].key : null;
     }
   } catch (e) {
-    console.error('Failed to get API key:', e);
+    console.error("Failed to get API key:", e);
   }
   return null;
 };
@@ -94,7 +97,7 @@ export const flattenConfigVersion = (
     kbIds.forEach((kbId: string) => {
       if (kbId) {
         tools.push({
-          type: 'file_search',
+          type: "file_search",
           knowledge_base_ids: [kbId],
           max_num_results: params.max_num_results || 20,
         });
@@ -109,13 +112,13 @@ export const flattenConfigVersion = (
     description: config.description,
     version: version.version,
     timestamp: version.inserted_at,
-    instructions: params.instructions || '',
-    promptContent: params.instructions || '',
-    modelName: params.model || '',
+    instructions: params.instructions || "",
+    promptContent: params.instructions || "",
+    modelName: params.model || "",
     provider: blob.completion.provider,
-    type: blob.completion.type || 'text',
+    type: blob.completion.type || "text",
     temperature: params.temperature ?? 0.7,
-    vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || '',
+    vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,
   };

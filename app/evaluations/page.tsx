@@ -5,22 +5,22 @@
  * Tab 2 - Evaluations: Configure and run evaluations, view results
  */
 
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
-import { colors } from '@/app/lib/colors';
-import { useSearchParams } from 'next/navigation'
-import { Dataset } from '@/app/datasets/page';
-import Sidebar from '@/app/components/Sidebar';
-import TabNavigation from '@/app/components/TabNavigation';
-import { useToast } from '@/app/components/Toast';
-import { useAuth } from '@/app/lib/context/AuthContext';
-import { useApp } from '@/app/lib/context/AppContext';
-import Loader from '@/app/components/Loader';
-import DatasetsTab from '@/app/components/evaluations/DatasetsTab';
-import EvaluationsTab from '@/app/components/evaluations/EvaluationsTab';
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { colors } from "@/app/lib/colors";
+import { useSearchParams } from "next/navigation";
+import { Dataset } from "@/app/datasets/page";
+import Sidebar from "@/app/components/Sidebar";
+import TabNavigation from "@/app/components/TabNavigation";
+import { useToast } from "@/app/components/Toast";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useApp } from "@/app/lib/context/AppContext";
+import Loader from "@/app/components/Loader";
+import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
+import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
 
-type Tab = 'datasets' | 'evaluations';
+type Tab = "datasets" | "evaluations";
 
 const leftPanelWidth = 450;
 
@@ -29,18 +29,20 @@ function SimplifiedEvalContent() {
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>(() => {
-    const tabParam = searchParams.get('tab');
-    return (tabParam === 'evaluations' || tabParam === 'datasets') ? tabParam as Tab : 'datasets';
+    const tabParam = searchParams.get("tab");
+    return tabParam === "evaluations" || tabParam === "datasets"
+      ? (tabParam as Tab)
+      : "datasets";
   });
 
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { apiKeys } = useAuth();
-  const [selectedKeyId, setSelectedKeyId] = useState<string>('');
+  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
 
   // Dataset creation state
-  const [datasetName, setDatasetName] = useState('');
-  const [datasetDescription, setDatasetDescription] = useState('');
-  const [duplicationFactor, setDuplicationFactor] = useState('1');
+  const [datasetName, setDatasetName] = useState("");
+  const [datasetDescription, setDatasetDescription] = useState("");
+  const [duplicationFactor, setDuplicationFactor] = useState("1");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -49,18 +51,20 @@ function SimplifiedEvalContent() {
 
   // Evaluation config state
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
-    return searchParams.get('dataset') || '';
+    return searchParams.get("dataset") || "";
   });
   const [experimentName, setExperimentName] = useState<string>(() => {
-    return searchParams.get('experiment') || '';
+    return searchParams.get("experiment") || "";
   });
   const [selectedConfigId, setSelectedConfigId] = useState<string>(() => {
-    return searchParams.get('config') || '';
+    return searchParams.get("config") || "";
   });
-  const [selectedConfigVersion, setSelectedConfigVersion] = useState<number>(() => {
-    const version = searchParams.get('version');
-    return version ? parseInt(version) : 0;
-  });
+  const [selectedConfigVersion, setSelectedConfigVersion] = useState<number>(
+    () => {
+      const version = searchParams.get("version");
+      return version ? parseInt(version) : 0;
+    },
+  );
   const [isEvaluating, setIsEvaluating] = useState(false);
 
   // Set initial selected key from context
@@ -72,21 +76,21 @@ function SimplifiedEvalContent() {
 
   // Fetch datasets from backend
   const loadStoredDatasets = useCallback(async () => {
-    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
     if (!selectedKey) {
-      console.error('No selected API key found for loading datasets');
+      console.error("No selected API key found for loading datasets");
       return;
     }
     try {
-      const response = await fetch('/api/evaluations/datasets', {
-        method: 'GET',
-        headers: { 'X-API-KEY': selectedKey.key },
+      const response = await fetch("/api/evaluations/datasets", {
+        method: "GET",
+        headers: { "X-API-KEY": selectedKey.key },
       });
       if (!response.ok) return;
       const data = await response.json();
-      setStoredDatasets(Array.isArray(data) ? data : (data.data || []));
+      setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
-      console.error('Failed to load datasets:', e);
+      console.error("Failed to load datasets:", e);
     }
   }, [apiKeys, selectedKeyId]);
 
@@ -98,9 +102,9 @@ function SimplifiedEvalContent() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.name.endsWith('.csv')) {
-      toast.error('Please select a CSV file');
-      event.target.value = '';
+    if (!file.name.endsWith(".csv")) {
+      toast.error("Please select a CSV file");
+      event.target.value = "";
       return;
     }
 
@@ -109,35 +113,42 @@ function SimplifiedEvalContent() {
     reader.onload = (e) => {
       const text = e.target?.result as string;
       if (!text) {
-        toast.error('Failed to read CSV file');
-        event.target.value = '';
+        toast.error("Failed to read CSV file");
+        event.target.value = "";
         return;
       }
-      const firstLine = text.split('\n')[0]?.trim();
+      const firstLine = text.split("\n")[0]?.trim();
       if (!firstLine) {
-        toast.error('CSV file is empty');
-        event.target.value = '';
+        toast.error("CSV file is empty");
+        event.target.value = "";
         return;
       }
-      const headers = firstLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
-      const required = ['question', 'answer'];
-      const hasRequired = required.every(col => headers.includes(col));
-      const hasExtra = headers.some(col => !required.includes(col));
+      const headers = firstLine.split(",").map((h) =>
+        h
+          .trim()
+          .replace(/^["']|["']$/g, "")
+          .toLowerCase(),
+      );
+      const required = ["question", "answer"];
+      const hasRequired = required.every((col) => headers.includes(col));
+      const hasExtra = headers.some((col) => !required.includes(col));
 
       if (!hasRequired || hasExtra) {
-        toast.error('CSV must have exactly two columns: "question" and "answer"');
-        event.target.value = '';
+        toast.error(
+          'CSV must have exactly two columns: "question" and "answer"',
+        );
+        event.target.value = "";
         return;
       }
 
       setUploadedFile(file);
       if (!datasetName) {
-        setDatasetName(file.name.replace(/\.csv$/i, ''));
+        setDatasetName(file.name.replace(/\.csv$/i, ""));
       }
     };
     reader.onerror = () => {
-      toast.error('Failed to read CSV file');
-      event.target.value = '';
+      toast.error("Failed to read CSV file");
+      event.target.value = "";
     };
     reader.readAsText(file);
   };
@@ -145,40 +156,44 @@ function SimplifiedEvalContent() {
   // Create dataset
   const handleCreateDataset = async () => {
     if (!uploadedFile) {
-      toast.error('Please select a CSV file');
+      toast.error("Please select a CSV file");
       return;
     }
     if (!datasetName.trim()) {
-      toast.error('Please enter a dataset name');
+      toast.error("Please enter a dataset name");
       return;
     }
-    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
     if (!selectedKey) {
-      toast.error('No API key selected. Please select one in the Keystore.');
+      toast.error("No API key selected. Please select one in the Keystore.");
       return;
     }
 
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append('file', uploadedFile);
-      formData.append('dataset_name', datasetName.trim());
+      formData.append("file", uploadedFile);
+      formData.append("dataset_name", datasetName.trim());
       if (datasetDescription.trim()) {
-        formData.append('description', datasetDescription.trim());
+        formData.append("description", datasetDescription.trim());
       }
       if (duplicationFactor && parseInt(duplicationFactor) > 1) {
-        formData.append('duplication_factor', duplicationFactor);
+        formData.append("duplication_factor", duplicationFactor);
       }
 
-      const response = await fetch('/api/evaluations/datasets', {
-        method: 'POST',
+      const response = await fetch("/api/evaluations/datasets", {
+        method: "POST",
         body: formData,
-        headers: { 'X-API-KEY': selectedKey.key },
+        headers: { "X-API-KEY": selectedKey.key },
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Upload failed with status ${response.status}`);
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            `Upload failed with status ${response.status}`,
+        );
       }
 
       const data = await response.json();
@@ -190,13 +205,15 @@ function SimplifiedEvalContent() {
 
       // Reset form
       setUploadedFile(null);
-      setDatasetName('');
-      setDatasetDescription('');
-      setDuplicationFactor('1');
+      setDatasetName("");
+      setDatasetDescription("");
+      setDuplicationFactor("1");
 
-      toast.success('Dataset created successfully!');
+      toast.success("Dataset created successfully!");
     } catch (error) {
-      toast.error(`Failed to create dataset: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     } finally {
       setIsUploading(false);
     }
@@ -205,25 +222,25 @@ function SimplifiedEvalContent() {
   // Run evaluation
   const handleRunEvaluation = async () => {
     if (!selectedKeyId) {
-      toast.error('Please select an API key first');
+      toast.error("Please select an API key first");
       return;
     }
     if (!selectedDatasetId) {
-      toast.error('Please select a dataset first');
+      toast.error("Please select a dataset first");
       return;
     }
     if (!experimentName.trim()) {
-      toast.error('Please enter an evaluation name');
+      toast.error("Please enter an evaluation name");
       return;
     }
     if (!selectedConfigId || !selectedConfigVersion) {
-      toast.error('Please select a configuration before running evaluation');
+      toast.error("Please select a configuration before running evaluation");
       return;
     }
 
-    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
+    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
     if (!selectedKey) {
-      toast.error('Selected API key not found');
+      toast.error("Selected API key not found");
       return;
     }
 
@@ -236,41 +253,58 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
       };
 
-      const response = await fetch('/api/evaluations', {
-        method: 'POST',
+      const response = await fetch("/api/evaluations", {
+        method: "POST",
         headers: {
-          'X-API-KEY': selectedKey.key,
-          'Content-Type': 'application/json',
+          "X-API-KEY": selectedKey.key,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Evaluation failed with status ${response.status}`);
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            `Evaluation failed with status ${response.status}`,
+        );
       }
 
       const data = await response.json();
-      const evalId = data.id || data.data?.id || data.eval_id || 'unknown';
+      const evalId = data.id || data.data?.id || data.eval_id || "unknown";
 
       setIsEvaluating(false);
-      toast.success(`Evaluation created! ${evalId !== 'unknown' ? `Job ID: ${evalId}` : ''}`);
+      toast.success(
+        `Evaluation created! ${evalId !== "unknown" ? `Job ID: ${evalId}` : ""}`,
+      );
       return true;
     } catch (error: unknown) {
-      toast.error(`Failed to run evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to run evaluation: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       setIsEvaluating(false);
       return false;
     }
   };
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
+    <div
+      className="w-full h-screen flex flex-col"
+      style={{ backgroundColor: colors.bg.secondary }}
+    >
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Title Section */}
-          <div className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
+          <div
+            className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0"
+            style={{
+              backgroundColor: colors.bg.primary,
+              borderColor: colors.border,
+            }}
+          >
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -278,13 +312,34 @@ function SimplifiedEvalContent() {
                 style={{ color: colors.text.secondary }}
                 aria-label="Toggle sidebar"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               </button>
               <div>
-                <h1 className="text-base font-semibold" style={{ color: colors.text.primary, letterSpacing: '-0.01em' }}>Text Evaluation</h1>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>Compare model response quality on your datasets across different configs</p>
+                <h1
+                  className="text-base font-semibold"
+                  style={{
+                    color: colors.text.primary,
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Text Evaluation
+                </h1>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  Compare model response quality on your datasets across
+                  different configs
+                </p>
               </div>
             </div>
           </div>
@@ -292,8 +347,8 @@ function SimplifiedEvalContent() {
           {/* Tab Navigation */}
           <TabNavigation
             tabs={[
-              { id: 'datasets', label: 'Datasets' },
-              { id: 'evaluations', label: 'Evaluations' }
+              { id: "datasets", label: "Datasets" },
+              { id: "evaluations", label: "Evaluations" },
             ]}
             activeTab={activeTab}
             onTabChange={(tabId) => setActiveTab(tabId as Tab)}
@@ -301,19 +356,51 @@ function SimplifiedEvalContent() {
 
           {/* Tab Content */}
           {apiKeys.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: colors.bg.secondary }}>
+            <div
+              className="flex-1 flex items-center justify-center"
+              style={{ backgroundColor: colors.bg.secondary }}
+            >
               <div className="text-center">
-                <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                <svg
+                  className="mx-auto h-12 w-12 mb-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{ color: colors.border }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+                  />
                 </svg>
-                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>API key required</p>
-                <p className="text-xs mb-4" style={{ color: colors.text.secondary }}>Add an API key in the Keystore to start creating datasets and running evaluations</p>
-                <a href="/keystore" className="inline-block px-4 py-2 rounded-md text-sm font-medium" style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}>
+                <p
+                  className="text-sm font-medium mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  API key required
+                </p>
+                <p
+                  className="text-xs mb-4"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Add an API key in the Keystore to start creating datasets and
+                  running evaluations
+                </p>
+                <a
+                  href="/keystore"
+                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
+                  style={{
+                    backgroundColor: colors.accent.primary,
+                    color: "#ffffff",
+                  }}
+                >
                   Go to Keystore
                 </a>
               </div>
             </div>
-          ) : activeTab === 'datasets' ? (
+          ) : activeTab === "datasets" ? (
             <DatasetsTab
               leftPanelWidth={leftPanelWidth}
               datasetName={datasetName}
@@ -328,9 +415,9 @@ function SimplifiedEvalContent() {
               isUploading={isUploading}
               handleCreateDataset={handleCreateDataset}
               resetForm={() => {
-                setDatasetName('');
-                setDatasetDescription('');
-                setDuplicationFactor('1');
+                setDatasetName("");
+                setDatasetDescription("");
+                setDuplicationFactor("1");
                 setUploadedFile(null);
               }}
               storedDatasets={storedDatasets}

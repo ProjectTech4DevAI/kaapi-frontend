@@ -3,20 +3,27 @@
  * Features a coffee brewing theme to match Kaapi branding
  */
 
-"use client"
-import { useRouter } from 'next/navigation';
-import { colors } from '@/app/lib/colors';
+"use client";
+
+import { useRouter } from "next/navigation";
+import { colors } from "@/app/lib/colors";
 
 interface ComingSoonProps {
   featureName: string;
   description?: string;
 }
 
-export default function ComingSoon({ featureName, description }: ComingSoonProps) {
+export default function ComingSoon({
+  featureName,
+  description,
+}: ComingSoonProps) {
   const router = useRouter();
 
   return (
-    <div className="w-full h-screen flex flex-col" style={{ backgroundColor: colors.bg.secondary }}>
+    <div
+      className="w-full h-screen flex flex-col"
+      style={{ backgroundColor: colors.bg.secondary }}
+    >
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center">
           {/* Coffee Cup Animation */}
@@ -24,8 +31,8 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
             <div
               className="text-8xl animate-bounce"
               style={{
-                animationDuration: '2s',
-                animationIterationCount: 'infinite'
+                animationDuration: "2s",
+                animationIterationCount: "infinite",
               }}
             >
               ☕
@@ -35,7 +42,7 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
               <div
                 className="text-3xl opacity-60"
                 style={{
-                  animation: 'steam 3s ease-in-out infinite'
+                  animation: "steam 3s ease-in-out infinite",
                 }}
               >
                 ～
@@ -48,27 +55,21 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
             className="text-3xl font-bold mb-4"
             style={{
               color: colors.text.primary,
-              letterSpacing: '-0.02em'
+              letterSpacing: "-0.02em",
             }}
           >
             {featureName}
           </h1>
 
-          <div
-            className="inline-block px-4 py-2 rounded-full mb-6 bg-[#fef3c7] border border-[#fde68a]"
-          >
-            <p
-              className="text-sm font-semibold text-[#92400e]"
-            >
+          <div className="inline-block px-4 py-2 rounded-full mb-6 bg-[#fef3c7] border border-[#fde68a]">
+            <p className="text-sm font-semibold text-[#92400e]">
               🚧 Being Brewed
             </p>
           </div>
 
-          <p
-            className="text-lg mb-8"
-            style={{ color: colors.text.secondary }}
-          >
-            {description || "This feature is currently being crafted with care. Check back soon for something amazing!"}
+          <p className="text-lg mb-8" style={{ color: colors.text.secondary }}>
+            {description ||
+              "This feature is currently being crafted with care. Check back soon for something amazing!"}
           </p>
 
           {/* Fun fact */}
@@ -76,7 +77,7 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
             className="border rounded-lg p-4 mb-8"
             style={{
               backgroundColor: colors.bg.primary,
-              borderColor: colors.border
+              borderColor: colors.border,
             }}
           >
             <p
@@ -85,10 +86,7 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
             >
               ☕ Kaapi Fact
             </p>
-            <p
-              className="text-sm"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="text-sm" style={{ color: colors.text.secondary }}>
               Great features, like great coffee, take time to brew.
             </p>
           </div>
@@ -100,8 +98,8 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
             style={{
               backgroundColor: colors.accent.primary,
               color: colors.bg.primary,
-              border: 'none',
-              transition: 'all 0.15s ease'
+              border: "none",
+              transition: "all 0.15s ease",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = colors.accent.hover;
@@ -117,7 +115,8 @@ export default function ComingSoon({ featureName, description }: ComingSoonProps
 
       <style jsx global>{`
         @keyframes steam {
-          0%, 100% {
+          0%,
+          100% {
             transform: translateY(0) translateX(-50%) scale(1);
             opacity: 0.6;
           }

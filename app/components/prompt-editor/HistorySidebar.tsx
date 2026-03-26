@@ -456,14 +456,17 @@ export default function HistorySidebar({
     new Set(),
   );
 
-  const toggleExpand = useCallback((configKey: string) => {
-    setExpandedConfigs((prev: Set<string>) => {
-      const next = new Set<string>(prev);
-      if (next.has(configKey)) next.delete(configKey);
-      else next.add(configKey);
-      return next;
-    });
-  }, [setExpandedConfigs]);
+  const toggleExpand = useCallback(
+    (configKey: string) => {
+      setExpandedConfigs((prev: Set<string>) => {
+        const next = new Set<string>(prev);
+        if (next.has(configKey)) next.delete(configKey);
+        else next.add(configKey);
+        return next;
+      });
+    },
+    [setExpandedConfigs],
+  );
 
   const handleExpandAllConfig = useCallback(
     (meta: ConfigPublic) => {

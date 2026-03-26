@@ -2,7 +2,7 @@
  * Text-to-Speech - Coming Soon Page
  */
 
-import ComingSoon from '@/app/components/ComingSoon';
+import ComingSoon from "@/app/components/ComingSoon";
 
 export default function TextToSpeechPage() {
   return (

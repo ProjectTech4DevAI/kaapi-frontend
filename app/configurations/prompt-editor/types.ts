@@ -100,8 +100,8 @@ export interface UnifiedCommit {
 // Config diff for structured comparison
 export interface ConfigDiff {
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   path: string;
   changed: boolean;
 }

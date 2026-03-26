@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 
 export async function GET(request: Request,
@@ -32,9 +32,9 @@ export async function GET(request: Request,
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error.message, data: null },
+      { success: false, error: error instanceof Error ? error.message : String(error), data: null },
       { status: 500 }
     );
   }
@@ -71,10 +71,10 @@ export async function DELETE(request: Request,
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Delete error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete document', details: error.message },
+      { error: 'Failed to delete document', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

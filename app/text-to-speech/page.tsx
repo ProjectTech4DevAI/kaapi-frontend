@@ -10,7 +10,6 @@ import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import Sidebar from '@/app/components/Sidebar';
 import TabNavigation from '@/app/components/TabNavigation';
-import StatusBadge from '@/app/components/StatusBadge';
 import Loader, { LoaderBox } from '@/app/components/Loader';
 import { getStatusColor } from '@/app/components/utils';
 import { useToast } from '@/app/components/Toast';
@@ -44,6 +43,7 @@ interface TTSDataset {
   object_store_url: string | null;
   dataset_metadata: {
     sample_count?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   };
   organization_id: number;
@@ -62,12 +62,14 @@ interface TTSRun {
   status: string;
   total_items: number;
   score: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   } | null;
   error_message: string | null;
   run_metadata: {
     voice_name?: string;
     style_prompt?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   } | null;
   organization_id: number;
@@ -85,6 +87,7 @@ interface TTSResult {
   provider: string;
   status: string;
   score: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   } | null;
   is_correct: boolean | null;
@@ -292,6 +295,7 @@ export default function TextToSpeechPage() {
 
       const data = await response.json();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawList: any[] = [];
       if (Array.isArray(data)) {
         rawList = data;
@@ -304,7 +308,9 @@ export default function TextToSpeechPage() {
       }
 
       const languagesList: Language[] = rawList
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((l: any) => l.is_active !== false)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((l: any) => ({
           id: l.id,
           code: l.locale || l.code || '',
@@ -397,6 +403,7 @@ export default function TextToSpeechPage() {
     if (activeTab === 'evaluations') {
       loadRuns();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Add a new text sample
@@ -562,6 +569,7 @@ export default function TextToSpeechPage() {
       }
 
       // Enrich results with signed URL for audio playback
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       resultsList = resultsList.map((result: any) => {
         const signedUrl = result.signed_url || result.sample?.signed_url || '';
         return {
@@ -662,7 +670,6 @@ export default function TextToSpeechPage() {
               }}
               apiKeys={apiKeys}
               datasets={datasets}
-              loadDatasets={loadDatasets}
               toast={toast}
             />
           ) : (
@@ -753,7 +760,6 @@ interface DatasetsTabProps {
   resetForm: () => void;
   apiKeys: APIKey[];
   datasets: TTSDataset[];
-  loadDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
 
@@ -775,7 +781,6 @@ function DatasetsTab({
   resetForm,
   apiKeys,
   datasets,
-  loadDatasets,
   toast,
 }: DatasetsTabProps) {
   const [viewingId, setViewingId] = useState<number | null>(null);
@@ -856,8 +861,8 @@ function DatasetsTab({
       const rows = lines.slice(1).map(parseRow);
 
       setViewModalData({ name: datasetName, headers, rows });
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to view dataset');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to view dataset');
     } finally {
       setViewingId(null);
     }
@@ -1199,6 +1204,7 @@ interface EvaluationsTabProps {
   isLoadingResults: boolean;
   loadResults: (runId: number) => void;
   apiKeys: APIKey[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toast: any;
   setActiveTab: (tab: Tab) => void;
 }
@@ -1227,6 +1233,7 @@ function EvaluationsTab({
   loadResults,
   apiKeys,
   toast,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setActiveTab,
 }: EvaluationsTabProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -1246,11 +1253,17 @@ function EvaluationsTab({
     };
   }, [openScoreInfo]);
 
-  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string, score?: { [key: string]: any }) => {
+  const updateFeedback = async (resultId: number, isCorrect: boolean | null, comment?: string, score?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any
+  }) => {
     if (apiKeys.length === 0) return;
 
     try {
-      const payload: { is_correct?: boolean | null; comment?: string; score?: { [key: string]: any } } = {};
+      const payload: { is_correct?: boolean | null; comment?: string; score?: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [key: string]: any
+      } } = {};
       if (isCorrect !== undefined) payload.is_correct = isCorrect;
       if (comment !== undefined) payload.comment = comment;
       if (score !== undefined) payload.score = score;
@@ -1921,7 +1934,7 @@ function EvaluationsTab({
                 ) : (
                   <div className="p-16 text-center">
                     <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
-                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status "{statusFilter}"</p>
+                    <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status &quot;{statusFilter}&quot;</p>
                   </div>
                 );
               })()

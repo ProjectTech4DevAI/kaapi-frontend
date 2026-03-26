@@ -119,7 +119,7 @@ export interface EvalJob {
   config?: {
     model?: string;
     instructions?: string;
-    tools?: any[];
+    tools?: unknown[];
     include?: string[];
     temperature?: number;
   };

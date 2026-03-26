@@ -4,10 +4,12 @@
  */
 
 "use client"
-import { useState } from 'react';
+
+import { useState, useRef, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
 import { useConfigs, SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { ChevronUpIcon, ChevronDownIcon, EditIcon, GearIcon, CheckIcon } from '@/app/components/icons';
 
 interface ConfigSelectorProps {
   selectedConfigId: string;
@@ -34,6 +36,20 @@ export default function ConfigSelector({
   const { configs, configGroups, isLoading, error } = useConfigs();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [promptExpanded, setPromptExpanded] = useState(false);
+  const [isPromptOverflowing, setIsPromptOverflowing] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+
+  // Reset expanded state and recheck overflow whenever selected config changes.
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPromptExpanded(false);
+    const el = promptRef.current;
+    if (!el) return;
+    // clientHeight is capped by max-h-12; scrollHeight is the full content height.
+    // Only show the icon when content actually overflows the collapsed box.
+    setIsPromptOverflowing(el.scrollHeight > el.clientHeight);
+  }, [selectedConfigId, selectedVersion, configs]);
 
   // Find currently selected config
   const selectedConfig = configs.find(
@@ -173,9 +189,7 @@ export default function ConfigSelector({
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.bg.secondary}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.bg.primary}
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+            <EditIcon className="w-3.5 h-3.5" />
             {selectedConfig ? 'Edit Config' : 'Create Config'}
           </button>
         </div>
@@ -187,16 +201,10 @@ export default function ConfigSelector({
           className="rounded-lg p-6 text-center"
           style={{ backgroundColor: colors.bg.secondary, border: `2px dashed ${colors.border}` }}
         >
-          <svg
+          <GearIcon
             className="w-10 h-10 mx-auto mb-2"
             style={{ color: colors.text.secondary }}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          />
           <p className="text-sm font-medium" style={{ color: colors.text.primary }}>
             No configurations found
           </p>
@@ -238,12 +246,11 @@ export default function ConfigSelector({
                 <button
                   onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
                   disabled={disabled}
-                  className="w-full px-3 py-2 pr-8 rounded-md border text-sm text-left transition-colors"
+                  className="w-full px-3 py-2 pr-8 rounded-md border text-sm text-left transition-colors cursor-pointer disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: disabled ? colors.bg.secondary : colors.bg.primary,
                     borderColor: selectedConfig ? colors.accent.primary : colors.border,
                     color: selectedConfig ? colors.text.primary : colors.text.secondary,
-                    cursor: disabled ? 'not-allowed' : 'pointer',
                   }}
                 >
                   {selectedConfig
@@ -251,15 +258,10 @@ export default function ConfigSelector({
                     : '-- Select a configuration --'
                   }
                 </button>
-                <svg
+                <ChevronDownIcon
                   className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                   style={{ color: colors.text.secondary }}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                />
               </div>
             )}
 
@@ -323,9 +325,7 @@ export default function ConfigSelector({
                           </div>
                         </div>
                         {selectedConfig?.id === version.id && (
-                          <svg className="w-4 h-4 flex-shrink-0" style={{ color: colors.status.success }} fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+                          <CheckIcon className="w-4 h-4 flex-shrink-0" style={{ color: colors.status.success }} />
                         )}
                       </button>
                     ))}
@@ -361,11 +361,11 @@ export default function ConfigSelector({
                 </div>
                 {selectedConfig.tools && selectedConfig.tools.length > 0 && (
                   <>
-                    <div>
+                    <div className="col-span-2">
                       <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
                         Knowledge Base IDs
                       </div>
-                      <div className="text-xs font-mono" style={{ color: colors.text.primary }}>
+                      <div className="text-xs font-mono break-all" style={{ color: colors.text.primary }}>
                         {selectedConfig.tools.map(tool => tool.knowledge_base_ids).flat().join(', ') || 'None'}
                       </div>
                     </div>
@@ -383,11 +383,28 @@ export default function ConfigSelector({
 
               {/* Prompt Preview */}
               <div className="border-t pt-3" style={{ borderColor: colors.border }}>
-                <div className="text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
-                  Prompt Preview
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-medium" style={{ color: colors.text.secondary }}>
+                    Prompt Preview
+                  </div>
+                  {selectedConfig.instructions && isPromptOverflowing && (
+                    <button
+                      onClick={() => setPromptExpanded(p => !p)}
+                      className="rounded p-0.5 transition-colors"
+                      style={{ color: colors.text.secondary }}
+                      title={promptExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      {promptExpanded ? (
+                        <ChevronUpIcon />
+                      ) : (
+                        <ChevronDownIcon />
+                      )}
+                    </button>
+                  )}
                 </div>
                 <div
-                  className="text-xs font-mono line-clamp-3"
+                  ref={promptRef}
+                  className={`text-xs font-mono overflow-y-auto transition-all ${promptExpanded ? 'max-h-48' : 'max-h-12 line-clamp-3'}`}
                   style={{ color: colors.text.primary }}
                 >
                   {selectedConfig.instructions || 'No instructions set'}

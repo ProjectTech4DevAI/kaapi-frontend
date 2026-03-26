@@ -39,6 +39,7 @@ export default function Sidebar({ collapsed, activeRoute = '/evaluations' }: Sid
     const saved = localStorage.getItem('sidebar-expanded-menus');
     if (saved) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setExpandedMenus(JSON.parse(saved));
       } catch (e) {
         console.error('Failed to load sidebar state:', e);

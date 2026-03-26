@@ -37,10 +37,10 @@ export async function PATCH(
       data = { success: response.ok };
     }
     return NextResponse.json(data, { status: response.status });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Sample update error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update sample', details: error.message },
+      { success: false, error: 'Failed to update sample', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
-"use client"
+"use client";
+
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'
 import { APIKey, STORAGE_KEY } from '../keystore/page';
 import Sidebar from '../components/Sidebar';
 import { useToast } from '../components/Toast';
@@ -18,7 +18,6 @@ export interface Document {
 }
 
 export default function DocumentPage() {
-  const router = useRouter();
   const toast = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,6 +54,7 @@ export default function DocumentPage() {
     if (apiKey) {
       fetchDocuments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   const fetchDocuments = async () => {
@@ -95,9 +95,9 @@ export default function DocumentPage() {
       );
 
       setDocuments(sortedDocuments);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch documents:', err);
-      setError(err.message || 'Failed to fetch documents');
+      setError(err instanceof Error ? err.message : 'Failed to fetch documents');
     } finally {
       setIsLoading(false);
     }
@@ -577,6 +577,7 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
 
   // Reset error state when document changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadError(false);
   }, [document?.id]);
 

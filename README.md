@@ -19,6 +19,7 @@ This is a thin frontend UI for [Kaapi backend](https://github.com/ProjectTech4De
 - [Installation](#installation)
   - [Start frontend server](#start-frontend-server)
 - [Available Scripts](#available-scripts)
+- [Pre-commit Hooks](#pre-commit-hooks)
 - [Deploying Release on EC2 with CD](#deploying-release-on-ec2-with-cd)
 - [Learn More](#learn-more)
 
@@ -91,11 +92,41 @@ Visit `http://localhost:3000` to open the app.
 ## Available Scripts
 
 ```bash
-npm install      # Install dependencies
+npm install      # Install dependencies (also sets up pre-commit hooks via husky)
 npm run dev      # Run app in development mode
 npm run build    # Create optimized production build
 npm run start    # Start the production server
-npm run lint     # Run ESLint
+npm run lint     # Run ESLint on the entire project
+npm test         # Run tests
+npm run test:coverage  # Run tests with coverage report
+```
+
+---
+
+## Pre-commit Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged) to enforce code quality before every commit.
+
+### What runs on commit
+
+- **ESLint** is executed on all staged `*.ts`, `*.tsx`, `*.js`, and `*.jsx` files. Any lint errors must be fixed before the commit is accepted.
+
+### Setup
+
+Hooks are installed automatically when you run:
+
+```bash
+npm install
+```
+
+This works because the `prepare` script in `package.json` runs `husky` after every install.
+
+### Skipping the hook (not recommended)
+
+If you need to bypass the hook in exceptional cases:
+
+```bash
+git commit --no-verify -m "your message"
 ```
 
 ---

@@ -4,7 +4,8 @@
  * Updated to work with backend API config structure
  */
 
-"use client"
+"use client";
+
 import React, { useState } from 'react';
 import { colors } from '@/app/lib/colors';
 import { SavedConfig } from './SimplifiedConfigEditor';
@@ -31,13 +32,13 @@ interface ConfigDrawerProps {
     commitMessage?: string;
   };
   selectedConfigId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onConfigChange: (field: string, value: any) => void;
   onSaveConfig: () => void;
   onLoadConfig: (config: SavedConfig) => void;
   onApplyConfig: (configId: string) => void;
 }
 
-// Provider-specific models
 const MODEL_OPTIONS = {
   openai: [
     { value: 'gpt-4o', label: 'GPT-4o' },
@@ -59,7 +60,6 @@ const MODEL_OPTIONS = {
   // ],
 };
 
-// Simple diff utility
 function generateDiff(text1: string, text2: string): { left: DiffLine[], right: DiffLine[] } {
   const lines1 = text1.split('\n');
   const lines2 = text2.split('\n');
@@ -140,6 +140,7 @@ export default function ConfigDrawer({
 
   // Format timestamp - calculate relative time from UTC timestamps
   const formatTimestamp = (timestamp: number | string) => {
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now(); // Current time in UTC milliseconds
     const date = typeof timestamp === 'string'
       ? new Date(timestamp).getTime() // Parse UTC timestamp to milliseconds
@@ -214,11 +215,12 @@ export default function ConfigDrawer({
     onConfigChange('tools', newTools);
   };
 
-  const updateTool = (index: number, field: keyof Tool, value: any) => {
+  const updateTool = (index: number, field: keyof Tool, value: unknown) => {
     const newTools = [...tools];
     if (field === 'knowledge_base_ids') {
-      newTools[index][field] = [value];
+      newTools[index][field] = [value as string];
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (newTools[index] as any)[field] = value;
     }
     onConfigChange('tools', newTools);

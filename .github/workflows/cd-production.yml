@@ -1,0 +1,47 @@
+name: Deploy Kaapi to EC2 Production
+
+on:
+  push:
+    tags:
+      - "v*" # Deploy only when tags like v1.0.0, v2.1.0, etc., are created
+
+jobs:
+  deploy:
+    name: Deploy Kaapi Frontend to EC2 Production
+    runs-on: ubuntu-latest
+    environment: AWS_PRODUCTION_ENV
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PM2_APP_NAME: ${{ secrets.PM2_APP_NAME }}
+          BUILD_DIRECTORY: ${{ secrets.BUILD_DIRECTORY }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "=== Navigating to Project Directory ==="
+            cd $BUILD_DIRECTORY
+
+            echo "=== Fetch Latest Code ==="
+            git pull origin release
+
+            echo "=== Stop Running Application ==="
+            pm2 stop "$PM2_APP_NAME" || true
+
+            echo "=== Install Dependencies ==="
+            npm ci
+
+            echo "=== Build Application ==="
+            npm run build
+
+            echo "=== Start Application ==="
+            pm2 start "$PM2_APP_NAME"

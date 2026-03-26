@@ -19,26 +19,26 @@ import {
   ConfigPublic,
   ConfigVersionItems,
   ConfigVersionResponse,
-} from "../lib/configTypes";
-import { SavedConfig, ConfigGroup, ConfigCache } from "../lib/types/configs";
+} from "@/app/lib/configTypes";
+import { SavedConfig, ConfigGroup, ConfigCache } from "@/app/lib/types/configs";
 import {
   CACHE_MAX_AGE_MS,
   CACHE_INVALIDATED_EVENT,
   PAGE_SIZE,
-} from "../lib/constants";
+} from "@/app/lib/constants";
 import {
   configState,
   pendingVersionLoads,
   pendingSingleVersionLoads,
   loadCache,
   saveCache,
-} from "../lib/store/configStore";
+} from "@/app/lib/store/configStore";
 import {
   fetchAllConfigs,
   fetchNextConfigBatch,
   scheduleBackgroundValidation,
-} from "../lib/configFetchers";
-import { flattenConfigVersion, groupConfigs } from "../lib/utils";
+} from "@/app/lib/configFetchers";
+import { flattenConfigVersion, groupConfigs } from "@/app/lib/utils";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 

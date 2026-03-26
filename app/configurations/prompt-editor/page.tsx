@@ -23,16 +23,19 @@ import ConfigEditorPane from "@/app/components/prompt-editor/ConfigEditorPane";
 import DiffView from "@/app/components/prompt-editor/DiffView";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
+import { useApp } from "@/app/lib/context/AppContext";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import { useConfigs } from "@/app/hooks/useConfigs";
 import { SavedConfig } from "@/app/lib/types/configs";
-import { getApiKey, invalidateConfigCache } from "@/app/lib/utils";
+import { invalidateConfigCache } from "@/app/lib/utils";
 import { configState } from "@/app/lib/store/configStore";
 import { apiFetch } from "@/app/lib/apiClient";
 
 function PromptEditorContent() {
   const toast = useToast();
   const searchParams = useSearchParams();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { activeKey } = useAuth();
 
   // URL query params for cross-navigation
   const urlConfigId = searchParams.get("config");
@@ -116,6 +119,8 @@ function PromptEditorContent() {
   );
   const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
 
+  const getApiKey = (): string | null => activeKey?.key ?? null;
+
   // Populate the editor from a fully-loaded SavedConfig
   const applyConfig = React.useCallback(
     (config: SavedConfig, selectInHistory?: boolean) => {
@@ -141,7 +146,9 @@ function PromptEditorContent() {
       setCurrentConfigVersion(config.version);
       setTools(config.tools || []);
       setExpandedConfigs((prev) =>
-        prev.has(currentConfigParentId) ? prev : new Set([...prev, currentConfigParentId]),
+        prev.has(currentConfigParentId)
+          ? prev
+          : new Set([...prev, currentConfigParentId]),
       );
       if (selectInHistory) setSelectedVersion(config);
     },
@@ -273,7 +280,6 @@ function PromptEditorContent() {
     tools,
     savedConfigs,
   ]);
-
 
   // Save current configuration
   const handleSaveConfig = async () => {

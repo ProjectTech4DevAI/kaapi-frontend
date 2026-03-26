@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { colors } from '@/app/lib/colors';
 import { formatDate } from '@/app/components/utils';
 import Sidebar from '@/app/components/Sidebar';
-import { APIKey, STORAGE_KEY } from '../keystore/page';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
 
 export interface Document {
   id: string;
@@ -29,7 +30,7 @@ export interface Collection {
 }
 
 export default function KnowledgeBasePage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [availableDocuments, setAvailableDocuments] = useState<Document[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
@@ -41,11 +42,11 @@ export default function KnowledgeBasePage() {
   const [collectionToDelete, setCollectionToDelete] = useState<string | null>(null);
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
-  const [apiKey, setApiKey] = useState<APIKey | null>(null);
+  const { activeKey: apiKey } = useAuth();
   const [showAllDocs, setShowAllDocs] = useState(false);
 
   // Polling refs — persist across renders, no stale closures
-  const apiKeyRef = useRef<APIKey | null>(null);
+  const apiKeyRef = useRef<typeof apiKey>(null);
   const activeJobsRef = useRef<Map<string, string>>(new Map()); // collectionId → jobId
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchCollectionsRef = useRef<(() => Promise<void>) | null>(null);
@@ -729,21 +730,6 @@ export default function KnowledgeBasePage() {
     }
     setSelectedDocuments(newSelection);
   };
-
-  // Load API key from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const keys = JSON.parse(stored);
-        if (keys.length > 0) {
-          setApiKey(keys[0]);
-        }
-      } catch (e) {
-        console.error('Failed to load API key:', e);
-      }
-    }
-  }, []);
 
   useEffect(() => {
     if (apiKey) {

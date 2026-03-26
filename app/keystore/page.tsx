@@ -8,6 +8,8 @@
 
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
 
 export interface APIKey {
   id: string;
@@ -20,35 +22,14 @@ export interface APIKey {
 export const STORAGE_KEY = 'kaapi_api_keys';
 
 export default function KaapiKeystore() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const { apiKeys, addKey, removeKey: removeApiKey } = useAuth();
   const [newKeyLabel, setNewKeyLabel] = useState('');
   const [newKeyValue, setNewKeyValue] = useState('');
   const [newKeyProvider, setNewKeyProvider] = useState('Kaapi');
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
 
-  // Load API keys from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setApiKeys(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to load API keys:', e);
-      }
-    }
-  }, []);
-
-  // Save API keys to localStorage whenever they change
-  useEffect(() => {
-    if (apiKeys.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(apiKeys));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [apiKeys]);
 
   const providers = ['Kaapi'];
 
@@ -66,7 +47,7 @@ export default function KaapiKeystore() {
       createdAt: new Date().toISOString(),
     };
 
-    setApiKeys([...apiKeys, newKey]);
+    addKey(newKey);
     setNewKeyLabel('');
     setNewKeyValue('');
     setNewKeyProvider('Kaapi');
@@ -76,7 +57,7 @@ export default function KaapiKeystore() {
   };
 
   const handleDeleteKey = (id: string) => {
-    setApiKeys(apiKeys.filter(key => key.id !== id));
+    removeApiKey(id);
     setVisibleKeys(prev => {
       const next = new Set(prev);
       next.delete(id);

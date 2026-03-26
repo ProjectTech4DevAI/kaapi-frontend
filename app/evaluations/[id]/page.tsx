@@ -8,7 +8,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { APIKey, STORAGE_KEY } from "@/app/keystore/page";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useApp } from "@/app/lib/context/AppContext";
 import {
   EvalJob,
   AssistantConfig,
@@ -39,9 +40,9 @@ export default function EvaluationReport() {
   >(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const { apiKeys } = useAuth();
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [selectedKeyId, setSelectedKeyId] = useState<string>("");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
@@ -64,21 +65,12 @@ export default function EvaluationReport() {
     return `"${sanitized}"`;
   };
 
-  // Load API keys from localStorage
+  // Set initial selected key from context
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const keys = JSON.parse(stored);
-        setApiKeys(keys);
-        if (keys.length > 0) {
-          setSelectedKeyId(keys[0].id);
-        }
-      } catch (e) {
-        console.error("Failed to load API keys:", e);
-      }
+    if (apiKeys.length > 0 && !selectedKeyId) {
+      setSelectedKeyId(apiKeys[0].id);
     }
-  }, []);
+  }, [apiKeys, selectedKeyId]);
 
   // Fetch job details
   const fetchJobDetails = useCallback(async () => {

@@ -7,9 +7,11 @@
 "use client"
 import { useState, useEffect } from 'react';
 
-import { APIKey, STORAGE_KEY } from '../keystore/page';
-import Sidebar from '../components/Sidebar';
-import { useToast } from '../components/Toast';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
+import type { APIKey } from '@/app/keystore/page';
+import Sidebar from '@/app/components/Sidebar';
+import { useToast } from '@/app/components/Toast';
 
 // Backend response interface
 export interface Dataset {
@@ -28,7 +30,7 @@ export const DATASETS_STORAGE_KEY = 'kaapi_datasets';
 
 export default function Datasets() {
   const toast = useToast();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -37,26 +39,11 @@ export default function Datasets() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<APIKey | null>(null);
+  const { activeKey: apiKey } = useAuth();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Load API key from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const keys = JSON.parse(stored);
-        if (keys.length > 0) {
-          setApiKey(keys[0]);
-        }
-      } catch (e) {
-        console.error('Failed to load API key:', e);
-      }
-    }
-  }, []);
 
   // Fetch datasets from backend when API key is available
   useEffect(() => {

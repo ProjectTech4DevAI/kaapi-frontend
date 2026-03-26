@@ -13,7 +13,9 @@ import TabNavigation from '@/app/components/TabNavigation';
 import StatusBadge from '@/app/components/StatusBadge';
 import Loader, { LoaderBox } from '@/app/components/Loader';
 import { useToast } from '@/app/components/Toast';
-import { APIKey, STORAGE_KEY } from '@/app/keystore/page';
+import { useAuth } from '@/app/lib/context/AuthContext';
+import { useApp } from '@/app/lib/context/AppContext';
+import type { APIKey } from '@/app/keystore/page';
 import WaveformVisualizer from '@/app/components/speech-to-text/WaveformVisualizer';
 import { computeWordDiff } from '@/app/components/speech-to-text/TranscriptionDiffViewer';
 import ErrorModal from '@/app/components/ErrorModal';
@@ -317,9 +319,9 @@ export default function SpeechToTextPage() {
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>('datasets');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [leftPanelWidth] = useState(450);
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const { apiKeys } = useAuth();
   const [languages, setLanguages] = useState<Language[]>([]);
   const [datasetName, setDatasetName] = useState('');
   const [datasetDescription, setDatasetDescription] = useState('');
@@ -350,18 +352,6 @@ export default function SpeechToTextPage() {
   // Error modal state
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMessage, setErrorModalMessage] = useState('');
-
-  // Load API keys
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setApiKeys(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to load API keys:', e);
-      }
-    }
-  }, []);
 
   // Load languages
   const loadLanguages = async () => {

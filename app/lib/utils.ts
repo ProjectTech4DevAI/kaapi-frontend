@@ -10,7 +10,12 @@ import {
 import { SavedConfig, ConfigGroup } from './types/configs';
 
 export function timeAgo(dateStr: string): string {
-  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+  const date =
+    dateStr.includes("Z") || dateStr.includes("+")
+      ? new Date(dateStr)
+      : new Date(dateStr + "Z");
+
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 export function getExistingForProvider(

@@ -1,5 +1,5 @@
 import { colors } from "@/app/lib/colors";
-import { SavedConfig } from "@/app/lib/useConfigs";
+import { SavedConfig } from "@/app/lib/types/configs";
 
 interface ConfigDiffPaneProps {
   selectedCommit: SavedConfig;
@@ -149,7 +149,7 @@ export default function ConfigDiffPane({
                       Before (v{compareWith.version})
                     </div>
                     <div
-                      className="p-2 rounded text-sm font-mono"
+                      className="p-2 rounded text-sm font-mono break-all"
                       style={{
                         backgroundColor: "#fee2e2",
                         color: colors.status.error,
@@ -166,7 +166,7 @@ export default function ConfigDiffPane({
                       After (v{selectedCommit.version})
                     </div>
                     <div
-                      className="p-2 rounded text-sm font-mono"
+                      className="p-2 rounded text-sm font-mono break-all"
                       style={{
                         backgroundColor: "#dcfce7",
                         color: "#15803d",

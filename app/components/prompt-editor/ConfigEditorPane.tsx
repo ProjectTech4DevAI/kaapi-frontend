@@ -1,10 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { colors } from "@/app/lib/colors";
 import {
   ConfigBlob,
   Tool,
 } from "@/app/(routes)/configurations/prompt-editor/types";
-import { SavedConfig, formatRelativeTime } from "@/app/lib/useConfigs";
+import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
+import { ConfigPublic } from "@/app/lib/configTypes";
+import { formatRelativeTime } from "@/app/lib/utils";
+import {
+  MODEL_OPTIONS,
+  PROVIDER_TYPES,
+  PROVIDES_OPTIONS,
+} from "@/app/lib/constants";
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -14,7 +21,7 @@ interface ConfigEditorPaneProps {
   // Additional props for full functionality
   savedConfigs: SavedConfig[];
   selectedConfigId: string;
-  onLoadConfig: (configId: string) => void;
+  onLoadConfig: (config: SavedConfig | null) => void;
   commitMessage: string;
   onCommitMessageChange: (message: string) => void;
   onSave: () => void;
@@ -22,36 +29,14 @@ interface ConfigEditorPaneProps {
   // Collapse functionality
   collapsed?: boolean;
   onToggle?: () => void;
+  allConfigMeta?: ConfigPublic[]; // Lightweight list of all configs
+  versionItemsMap?: Record<string, ConfigVersionItems[]>; // Lightweight version items
+  loadVersionsForConfig?: (config_id: string) => Promise<void>;
+  loadSingleVersion?: (
+    config_id: string,
+    version: number,
+  ) => Promise<SavedConfig | null>;
 }
-
-// Group configs by name for nested dropdown
-interface ConfigGroupForDropdown {
-  config_id: string;
-  name: string;
-  versions: SavedConfig[];
-}
-
-// Provider-specific models
-const MODEL_OPTIONS = {
-  openai: [
-    { value: "gpt-4o", label: "GPT-4o" },
-    { value: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-    { value: "gpt-4", label: "GPT-4" },
-    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-  ],
-  // anthropic: [
-  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  // ],
-  // google: [
-  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  //   { value: 'gemini-pro', label: 'Gemini Pro' },
-  // ],
-};
 
 export default function ConfigEditorPane({
   configBlob,
@@ -67,34 +52,76 @@ export default function ConfigEditorPane({
   isSaving = false,
   collapsed = false,
   onToggle,
+  allConfigMeta = [],
+  versionItemsMap = {},
+  loadVersionsForConfig,
+  loadSingleVersion,
 }: ConfigEditorPaneProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null); // config group is expanded in the Load dropdown
+  const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
+    new Set(),
+  ); // groups are currently loading their version list
+
+  const handleOpenLoadDropdown = () => {
+    if (!isDropdownOpen) {
+      // Auto-expand the currently selected config group, load its version list if needed
+      if (selectedConfigId) {
+        const selected = savedConfigs.find((c) => c.id === selectedConfigId);
+        if (selected) {
+          setExpandedConfigId(selected.config_id);
+          if (!versionItemsMap[selected.config_id] && loadVersionsForConfig) {
+            setLoadingVersionsFor((prev) =>
+              new Set(prev).add(selected.config_id),
+            );
+            loadVersionsForConfig(selected.config_id).finally(() => {
+              setLoadingVersionsFor((prev) => {
+                const s = new Set(prev);
+                s.delete(selected.config_id);
+                return s;
+              });
+            });
+          }
+        }
+      }
+    }
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleToggleGroup = (config_id: string) => {
+    if (expandedConfigId === config_id) {
+      setExpandedConfigId(null);
+      return;
+    }
+    setExpandedConfigId(config_id);
+    if (
+      !versionItemsMap[config_id] &&
+      !loadingVersionsFor.has(config_id) &&
+      loadVersionsForConfig
+    ) {
+      setLoadingVersionsFor((prev) => new Set(prev).add(config_id));
+      loadVersionsForConfig(config_id).finally(() => {
+        setLoadingVersionsFor((prev) => {
+          const s = new Set(prev);
+          s.delete(config_id);
+          return s;
+        });
+      });
+    }
+  };
   const [showTooltip, setShowTooltip] = useState<number | null>(null);
 
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
   const tools = (params.tools || []) as Tool[];
 
-  // Group configs by config_id for nested dropdown
-  const configGroups = useMemo(() => {
-    const grouped = new Map<string, SavedConfig[]>();
-    savedConfigs.forEach((config) => {
-      const existing = grouped.get(config.config_id) || [];
-      existing.push(config);
-      grouped.set(config.config_id, existing);
-    });
-    return Array.from(grouped.entries()).map(([config_id, versions]) => {
-      const sortedVersions = versions.sort((a, b) => b.version - a.version);
-      return {
-        config_id,
-        name: sortedVersions[0].name,
-        versions: sortedVersions,
-      } as ConfigGroupForDropdown;
-    });
-  }, [savedConfigs]);
-
-  // Find currently selected config
+  // Find currently selected config from loaded set
   const selectedConfig = savedConfigs.find((c) => c.id === selectedConfigId);
+
+  // Config name hint text: use allConfigMeta for accurate new-vs-existing detection
+  const existingConfigForHint = configName.trim()
+    ? allConfigMeta.find((m) => m.name === configName.trim())
+    : undefined;
 
   const handleProviderChange = (newProvider: string) => {
     onConfigChange({
@@ -302,7 +329,7 @@ export default function ConfigEditorPane({
                 Load Configuration
               </label>
               <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onClick={handleOpenLoadDropdown}
                 className="w-full px-3 py-2.5 rounded-md text-left flex items-center justify-between transition-colors"
                 style={{
                   backgroundColor: colors.bg.primary,
@@ -375,7 +402,7 @@ export default function ConfigEditorPane({
                   {/* New Config Option */}
                   <button
                     onClick={() => {
-                      onLoadConfig("");
+                      onLoadConfig(null);
                       setIsDropdownOpen(false);
                     }}
                     className="w-full px-3 py-2.5 text-left flex items-center gap-2 transition-colors"
@@ -417,90 +444,172 @@ export default function ConfigEditorPane({
                     </span>
                   </button>
 
-                  {/* Grouped Configs */}
-                  {configGroups.map((group) => (
-                    <div key={group.config_id}>
-                      {/* Config group header */}
-                      <div
-                        className="px-3 py-2 text-xs font-medium sticky top-0"
-                        style={{
-                          backgroundColor: colors.bg.secondary,
-                          color: colors.text.secondary,
-                        }}
-                      >
-                        {group.name} ({group.versions.length} version
-                        {group.versions.length !== 1 ? "s" : ""})
-                      </div>
-                      {/* Versions */}
-                      {group.versions.map((version) => (
+                  {/* Grouped Configs — built from lightweight allConfigMeta */}
+                  {allConfigMeta.map((meta) => {
+                    const isExpanded = expandedConfigId === meta.id;
+                    const isLoadingGroup = loadingVersionsFor.has(meta.id);
+                    const items = versionItemsMap[meta.id] ?? [];
+                    return (
+                      <div key={meta.id}>
+                        {/* Config group header */}
                         <button
-                          key={version.id}
-                          onClick={() => {
-                            onLoadConfig(version.id);
-                            setIsDropdownOpen(false);
-                          }}
-                          className="w-full px-4 py-2 text-left flex items-center justify-between transition-colors"
+                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors"
                           style={{
-                            backgroundColor:
-                              selectedConfig?.id === version.id
-                                ? colors.bg.secondary
-                                : colors.bg.primary,
+                            backgroundColor: colors.bg.secondary,
+                            color: colors.text.secondary,
                           }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor =
-                              colors.bg.secondary)
-                          }
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              selectedConfig?.id === version.id
-                                ? colors.bg.secondary
-                                : colors.bg.primary;
-                          }}
+                          onClick={() => handleToggleGroup(meta.id)}
                         >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-xs px-1.5 py-0.5 rounded"
-                                style={{
-                                  backgroundColor: colors.bg.secondary,
-                                  color: colors.text.secondary,
-                                }}
-                              >
-                                v{version.version}
+                          <span className="text-xs font-medium">
+                            {meta.name}
+                            {items.length > 0 && (
+                              <span className="ml-1 font-normal">
+                                ({items.length})
                               </span>
-                              <span
-                                className="text-sm truncate"
-                                style={{ color: colors.text.primary }}
+                            )}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            {isLoadingGroup && (
+                              <svg
+                                className="w-3 h-3 animate-spin"
+                                viewBox="0 0 24 24"
+                                fill="none"
                               >
-                                {version.commit_message || "No message"}
-                              </span>
-                            </div>
-                            <div
-                              className="text-xs mt-0.5"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              {version.provider}/{version.modelName} •{" "}
-                              {formatRelativeTime(version.timestamp)}
-                            </div>
-                          </div>
-                          {selectedConfig?.id === version.id && (
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                />
+                              </svg>
+                            )}
                             <svg
-                              className="w-4 h-4 flex-shrink-0"
-                              style={{ color: colors.status.success }}
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
+                              className="w-3.5 h-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              style={{
+                                transform: isExpanded
+                                  ? "rotate(180deg)"
+                                  : "rotate(0deg)",
+                                transition: "transform 0.15s",
+                              }}
                             >
                               <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
                               />
                             </svg>
-                          )}
+                          </span>
                         </button>
-                      ))}
-                    </div>
-                  ))}
+                        {/* Version items — only when expanded */}
+                        {isExpanded &&
+                          !isLoadingGroup &&
+                          items.map((item) => {
+                            const isSelected =
+                              selectedConfig?.config_id === meta.id &&
+                              selectedConfig?.version === item.version;
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={async () => {
+                                  const full = savedConfigs.find(
+                                    (c) =>
+                                      c.config_id === item.config_id &&
+                                      c.version === item.version,
+                                  );
+                                  const config =
+                                    full ??
+                                    (loadSingleVersion
+                                      ? await loadSingleVersion(
+                                          item.config_id,
+                                          item.version,
+                                        )
+                                      : null);
+                                  if (config) {
+                                    onLoadConfig(config);
+                                    setIsDropdownOpen(false);
+                                  }
+                                }}
+                                className="w-full px-4 py-2 text-left flex items-center justify-between transition-colors"
+                                style={{
+                                  backgroundColor: isSelected
+                                    ? colors.bg.secondary
+                                    : colors.bg.primary,
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.backgroundColor =
+                                    colors.bg.secondary)
+                                }
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    isSelected
+                                      ? colors.bg.secondary
+                                      : colors.bg.primary;
+                                }}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className="text-xs px-1.5 py-0.5 rounded"
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        color: colors.text.secondary,
+                                      }}
+                                    >
+                                      v{item.version}
+                                    </span>
+                                    <span
+                                      className="text-sm truncate"
+                                      style={{ color: colors.text.primary }}
+                                    >
+                                      {item.commit_message || "No message"}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className="text-xs mt-0.5"
+                                    style={{ color: colors.text.secondary }}
+                                  >
+                                    {formatRelativeTime(item.inserted_at)}
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <svg
+                                    className="w-4 h-4 flex-shrink-0"
+                                    style={{ color: colors.status.success }}
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                        {isExpanded && isLoadingGroup && (
+                          <div
+                            className="px-4 py-3 text-xs"
+                            style={{ color: colors.text.secondary }}
+                          >
+                            Loading versions…
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -533,22 +642,16 @@ export default function ConfigEditorPane({
                   color: colors.text.primary,
                 }}
               />
-              {configName.trim() &&
-                (() => {
-                  const existingConfig = savedConfigs.find(
-                    (c) => c.name === configName.trim(),
-                  );
-                  return (
-                    <p
-                      className="text-xs mt-1.5"
-                      style={{ color: colors.text.secondary }}
-                    >
-                      {existingConfig
-                        ? `💡 Will create a new version for "${configName}"`
-                        : `✨ Will create a new config "${configName}"`}
-                    </p>
-                  );
-                })()}
+              {configName.trim() && (
+                <p
+                  className="text-xs mt-1.5"
+                  style={{ color: colors.text.secondary }}
+                >
+                  {existingConfigForHint
+                    ? `💡 Will create a new version for "${configName}"`
+                    : `✨ Will create a new config "${configName}"`}
+                </p>
+              )}
             </div>
 
             {/* Provider */}
@@ -569,9 +672,11 @@ export default function ConfigEditorPane({
                   color: colors.text.primary,
                 }}
               >
-                <option value="openai">OpenAI</option>
-                {/* <option value="anthropic">Anthropic</option> */}
-                {/* <option value="google">Google</option> */}
+                {PROVIDES_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -595,13 +700,11 @@ export default function ConfigEditorPane({
                   color: colors.text.primary,
                 }}
               >
-                <option value="text">Text Completion</option>
-                <option value="stt" disabled>
-                  Speech-to-Text (Coming Soon)
-                </option>
-                <option value="tts" disabled>
-                  Text-to-Speech (Coming Soon)
-                </option>
+                {PROVIDER_TYPES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
               <p
                 className="text-xs mt-1.5"
@@ -629,13 +732,14 @@ export default function ConfigEditorPane({
                   color: colors.text.primary,
                 }}
               >
-                {MODEL_OPTIONS[provider as keyof typeof MODEL_OPTIONS].map(
-                  (model) => (
-                    <option key={model.value} value={model.value}>
-                      {model.label}
-                    </option>
-                  ),
-                )}
+                {(
+                  MODEL_OPTIONS[provider as keyof typeof MODEL_OPTIONS] ??
+                  MODEL_OPTIONS.openai
+                ).map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -682,7 +786,7 @@ export default function ConfigEditorPane({
                   className="px-2 py-1 rounded text-xs font-medium"
                   style={{
                     backgroundColor: colors.accent.primary,
-                    color: "#ffffff",
+                    color: colors.bg.primary,
                     border: "none",
                     cursor: "pointer",
                   }}
@@ -778,7 +882,7 @@ export default function ConfigEditorPane({
                             className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50"
                             style={{
                               backgroundColor: "#1f2937",
-                              color: "#ffffff",
+                              color: colors.bg.primary,
                               top: "50%",
                               transform: "translateY(-50%)",
                               boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
@@ -863,7 +967,7 @@ export default function ConfigEditorPane({
                 color:
                   !configName.trim() || isSaving
                     ? colors.text.secondary
-                    : "#ffffff",
+                    : colors.bg.primary,
                 border: "none",
                 cursor:
                   !configName.trim() || isSaving ? "not-allowed" : "pointer",

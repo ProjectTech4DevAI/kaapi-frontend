@@ -3,8 +3,6 @@
  * Matches the design system with smooth animations
  */
 
-import React from "react";
-
 interface LoaderProps {
   size?: "sm" | "md" | "lg";
   message?: string;

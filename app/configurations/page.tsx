@@ -9,11 +9,13 @@
  */
 
 "use client"
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
 import { colors } from '@/app/lib/colors';
-import { useConfigs, SavedConfig } from '@/app/lib/useConfigs';
+import { useConfigs } from '@/app/hooks/useConfigs';
+import { SavedConfig } from '@/app/lib/types/configs';
 import ConfigCard from '@/app/components/ConfigCard';
 import { LoaderBox } from '@/app/components/Loader';
 import { EvalJob } from '@/app/components/types';
@@ -25,7 +27,7 @@ export default function ConfigLibraryPage() {
   const router = useRouter();
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { activeKey } = useAuth();
-  const { configGroups, isLoading, error, refetch, isCached } = useConfigs();
+  const { configGroups, isLoading, error, refetch, isCached, loadMoreConfigs, hasMoreConfigs, isLoadingMore } = useConfigs({ pageSize: 10 });
   const [searchQuery, setSearchQuery] = useState('');
   const [evaluationCounts, setEvaluationCounts] = useState<Record<string, number>>({});
 
@@ -309,16 +311,53 @@ export default function ConfigLibraryPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredConfigs.map((configGroup) => (
-                  <ConfigCard
-                    key={configGroup.config_id}
-                    configGroup={configGroup}
-                    evaluationCount={evaluationCounts[configGroup.config_id] || 0}
-                    onUseInEvaluation={handleUseInEvaluation}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {filteredConfigs.map((configGroup) => (
+                    <ConfigCard
+                      key={configGroup.config_id}
+                      configGroup={configGroup}
+                      evaluationCount={evaluationCounts[configGroup.config_id] || 0}
+                      onUseInEvaluation={handleUseInEvaluation}
+                    />
+                  ))}
+                </div>
+                {hasMoreConfigs && !searchQuery && (
+                  <div className="flex justify-center mt-6">
+                    <button
+                      onClick={loadMoreConfigs}
+                      disabled={isLoadingMore}
+                      className="px-6 py-2.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
+                      style={{
+                        backgroundColor: colors.bg.primary,
+                        border: `1px solid ${colors.border}`,
+                        color: colors.text.secondary,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isLoadingMore) {
+                          e.currentTarget.style.backgroundColor = colors.bg.secondary;
+                          e.currentTarget.style.color = colors.text.primary;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = colors.bg.primary;
+                        e.currentTarget.style.color = colors.text.secondary;
+                      }}
+                    >
+                      {isLoadingMore ? (
+                        <>
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Loading...
+                        </>
+                      ) : (
+                        'Load More'
+                      )}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

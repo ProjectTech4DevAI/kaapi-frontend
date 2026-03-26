@@ -53,6 +53,7 @@ function SimplifiedEvalContent() {
 
   // Stored datasets
   const [storedDatasets, setStoredDatasets] = useState<Dataset[]>([]);
+  const [isDatasetsLoading, setIsDatasetsLoading] = useState(false);
 
   // Evaluation config state
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
@@ -86,6 +87,7 @@ function SimplifiedEvalContent() {
       console.error("No selected API key found for loading datasets");
       return;
     }
+    setIsDatasetsLoading(true);
     try {
       const response = await fetch("/api/evaluations/datasets", {
         method: "GET",
@@ -96,6 +98,8 @@ function SimplifiedEvalContent() {
       setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
       console.error("Failed to load datasets:", e);
+    } finally {
+      setIsDatasetsLoading(false);
     }
   }, [apiKeys, selectedKeyId]);
 
@@ -426,6 +430,7 @@ function SimplifiedEvalContent() {
                 setUploadedFile(null);
               }}
               storedDatasets={storedDatasets}
+              isDatasetsLoading={isDatasetsLoading}
               apiKeys={apiKeys}
               selectedKeyId={selectedKeyId}
               loadStoredDatasets={loadStoredDatasets}

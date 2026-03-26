@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { apiClient } from "@/app/lib/apiClient";
 
 /**
  * GET /api/assistant/:assistant_id
@@ -7,46 +8,25 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ assistant_id: string }> }
+  { params }: { params: Promise<{ assistant_id: string }> },
 ) {
   try {
-    // Get the API key from request headers
-    const apiKey = request.headers.get('X-API-KEY');
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Missing X-API-KEY header' },
-        { status: 401 }
-      );
-    }
-
     const { assistant_id } = await params;
 
-    // Get backend URL from environment variable
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/assistant/${assistant_id}`,
+    );
 
-    // Forward the request to the actual backend
-    const response = await fetch(`${backendUrl}/api/v1/assistant/${assistant_id}`, {
-      method: 'GET',
-      headers: {
-        'X-API-KEY': apiKey,
-      },
-    });
-
-    // Get the response data
-    const data = await response.json();
-
-    // Return the response with the same status code
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json(data, { status });
   } catch (error: unknown) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: "Failed to forward request to backend",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

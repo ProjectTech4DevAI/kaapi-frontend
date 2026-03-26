@@ -60,9 +60,20 @@ export default function ConfigSelector({
   ); // State for use which config groups are currently loading their version list
   const [isLoadingPreview, setIsLoadingPreview] = useState(false); // True while full config details are being fetched for the preview pane
 
+  // When a config group is expanded, eagerly load full version details (provider,
+  // modelName, temperature).
+  useEffect(() => {
+    if (!expandedConfigId) return;
+    const items = versionItemsMap[expandedConfigId];
+    if (!items || items.length === 0) return;
+    items.forEach((item) => {
+      loadSingleVersion(item.config_id, item.version);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedConfigId, versionItemsMap]);
+
   // Reset expanded state and recheck overflow whenever selected config changes.
   useLayoutEffect(() => {
-     
     setPromptExpanded(false);
     const el = promptRef.current;
     if (!el) return;
@@ -301,6 +312,26 @@ export default function ConfigSelector({
         >
           Create Configuration
         </button>
+      </div>
+    );
+  };
+
+  const getModelVersionAndTime = (item: {
+    config_id: string;
+    version: number;
+    inserted_at: string;
+  }) => {
+    const full = configs.find(
+      (c) => c.config_id === item.config_id && c.version === item.version,
+    );
+    return (
+      <div
+        className="text-xs mt-0.5 font-mono"
+        style={{ color: colors.text.secondary }}
+      >
+        {full
+          ? `${full.provider}/${full.modelName} • T:${full.temperature.toFixed(2)} • ${formatRelativeTime(item.inserted_at)}`
+          : formatRelativeTime(item.inserted_at)}
       </div>
     );
   };
@@ -551,12 +582,7 @@ export default function ConfigSelector({
                                       {item.commit_message || "No message"}
                                     </span>
                                   </div>
-                                  <div
-                                    className="text-xs mt-0.5"
-                                    style={{ color: colors.text.secondary }}
-                                  >
-                                    {formatRelativeTime(item.inserted_at)}
-                                  </div>
+                                  {getModelVersionAndTime(item)}
                                 </div>
                                 {isSelected && (
                                   <CheckIcon

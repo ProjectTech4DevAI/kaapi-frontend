@@ -1,5 +1,5 @@
 import { colors } from "@/app/lib/colors";
-import { SavedConfig } from "@/app/lib/useConfigs";
+import { SavedConfig } from "@/app/lib/types/configs";
 
 interface PromptDiffPaneProps {
   selectedCommit: SavedConfig;

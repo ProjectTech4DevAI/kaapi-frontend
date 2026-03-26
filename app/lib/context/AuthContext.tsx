@@ -14,6 +14,7 @@ const STORAGE_KEY = "kaapi_api_keys";
 interface AuthContextValue {
   apiKeys: APIKey[];
   activeKey: APIKey | null;
+  isHydrated: boolean;
   addKey: (key: APIKey) => void;
   removeKey: (id: string) => void;
   setKeys: (keys: APIKey[]) => void;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Initialize from localStorage after hydration to avoid SSR mismatch.
   // setState in effect is intentional here — this is a one-time external storage read.
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore malformed data */
     }
+    setIsHydrated(true);
   }, []);
 
   const persist = useCallback((keys: APIKey[]) => {
@@ -60,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         apiKeys,
         activeKey: apiKeys[0] ?? null,
+        isHydrated,
         addKey,
         removeKey,
         setKeys,

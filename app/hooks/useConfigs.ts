@@ -89,11 +89,14 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState<boolean>(false);
   const [totalKnownCount, setTotalKnownCount] = useState<number>(0);
-  const { activeKey } = useAuth();
+  const { activeKey, isHydrated } = useAuth();
   const apiKey = activeKey?.key;
 
   const fetchConfigs = useCallback(
     async (force: boolean = false) => {
+      // Wait for AuthContext to load apiKey from localStorage to avoid premature "No API key" error on refresh.
+      if (!isHydrated) return;
+
       if (!apiKey) {
         setError("No API key found. Please add an API key in the Keystore.");
         setIsLoading(false);
@@ -106,8 +109,12 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         if (configState.inMemoryCache) {
           const cacheAge = Date.now() - configState.inMemoryCache.cachedAt;
           if (cacheAge < CACHE_MAX_AGE_MS) {
+            // A cache saved with pageSize:0 (ConfigSelector) has configs:[] — don't let it
+            // satisfy a caller that needs actual config data (e.g. Library with pageSize:10).
+            const cachedCount = configState.inMemoryCache.configs.length;
             const cacheUsable =
-              !configState.inMemoryCache.partialFetch || pageSize !== undefined;
+              !configState.inMemoryCache.partialFetch ||
+              (pageSize !== undefined && cachedCount >= pageSize);
             const resolvedMeta =
               configState.allConfigMeta ??
               configState.inMemoryCache.allConfigMeta ??
@@ -139,7 +146,11 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         if (lsCache) {
           const cacheAge = Date.now() - lsCache.cachedAt;
           if (cacheAge < CACHE_MAX_AGE_MS) {
-            const cacheUsable = !lsCache.partialFetch || pageSize !== undefined;
+            // Ignore cache with empty configs (pageSize:0) when actual data (e.g. pageSize:10) is required.
+            const cachedCount = lsCache.configs.length;
+            const cacheUsable =
+              !lsCache.partialFetch ||
+              (pageSize !== undefined && cachedCount >= pageSize);
             const resolvedMeta =
               configState.allConfigMeta ?? lsCache.allConfigMeta ?? null;
             const totalCount = lsCache.totalConfigCount ?? 0;
@@ -222,7 +233,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         setIsLoading(false);
       }
     },
-    [pageSize],
+    [pageSize, apiKey, isHydrated],
   );
 
   /**
@@ -232,51 +243,57 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
    * Cost: 0 network calls when already cached, otherwise exactly 1 GET /versions.
    * Does NOT fetch full version details — use loadSingleVersion for that.
    */
-  const loadVersionsForConfig = useCallback(async (config_id: string) => {
-    if (configState.versionItemsCache[config_id]) {
-      setVersionItemsMap((prev) =>
-        prev[config_id]
-          ? prev
-          : { ...prev, [config_id]: configState.versionItemsCache[config_id] },
-      );
-      return;
-    }
+  const loadVersionsForConfig = useCallback(
+    async (config_id: string) => {
+      if (configState.versionItemsCache[config_id]) {
+        setVersionItemsMap((prev) =>
+          prev[config_id]
+            ? prev
+            : {
+                ...prev,
+                [config_id]: configState.versionItemsCache[config_id],
+              },
+        );
+        return;
+      }
 
-    const existing = pendingVersionLoads.get(config_id);
-    if (existing) {
-      await existing;
-      return;
-    }
+      const existing = pendingVersionLoads.get(config_id);
+      if (existing) {
+        await existing;
+        return;
+      }
 
-    if (!apiKey) return;
+      if (!apiKey) return;
 
-    const loadPromise = (async () => {
-      const versionsData = await apiFetch<{
-        success: boolean;
-        data: ConfigVersionItems[];
-      }>(`/api/configs/${config_id}/versions`, apiKey);
-      if (!versionsData.success || !versionsData.data) return;
+      const loadPromise = (async () => {
+        const versionsData = await apiFetch<{
+          success: boolean;
+          data: ConfigVersionItems[];
+        }>(`/api/configs/${config_id}/versions`, apiKey);
+        if (!versionsData.success || !versionsData.data) return;
 
-      configState.versionItemsCache[config_id] = versionsData.data;
-      setVersionItemsMap((prev) => ({
-        ...prev,
-        [config_id]: versionsData.data,
-      }));
-      setVersionCounts((prev) => ({
-        ...prev,
-        [config_id]: versionsData.data.length,
-      }));
-    })().finally(() => {
-      pendingVersionLoads.delete(config_id);
-    });
+        configState.versionItemsCache[config_id] = versionsData.data;
+        setVersionItemsMap((prev) => ({
+          ...prev,
+          [config_id]: versionsData.data,
+        }));
+        setVersionCounts((prev) => ({
+          ...prev,
+          [config_id]: versionsData.data.length,
+        }));
+      })().finally(() => {
+        pendingVersionLoads.delete(config_id);
+      });
 
-    pendingVersionLoads.set(config_id, loadPromise);
-    try {
-      await loadPromise;
-    } catch {
-      console.error(`Failed to load version list for config ${config_id}`);
-    }
-  }, []);
+      pendingVersionLoads.set(config_id, loadPromise);
+      try {
+        await loadPromise;
+      } catch {
+        console.error(`Failed to load version list for config ${config_id}`);
+      }
+    },
+    [apiKey],
+  );
 
   /**
    * Fetches the full details (config_blob) for a single version on demand.

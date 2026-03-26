@@ -8,7 +8,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/app/lib/colors';
-import { ConfigGroup, SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
+import { ConfigGroup, SavedConfig } from '@/app/lib/types/configs';
+import { formatRelativeTime } from '@/app/lib/utils';
 
 interface ConfigCardProps {
   configGroup: ConfigGroup;

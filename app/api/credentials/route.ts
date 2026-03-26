@@ -6,7 +6,10 @@ export async function GET(request: NextRequest) {
     const { status, data } = await apiClient(request, "/api/v1/credentials/");
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : String(e) },
+      { status: 500 },
+    );
   }
 }
 
@@ -19,7 +22,10 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : String(e) },
+      { status: 500 },
+    );
   }
 }
 
@@ -32,6 +38,9 @@ export async function PATCH(request: NextRequest) {
     });
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : String(e) },
+      { status: 500 },
+    );
   }
 }

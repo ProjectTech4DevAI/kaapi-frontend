@@ -42,25 +42,16 @@ export interface UseConfigsResult {
   error: string | null;
   refetch: (force?: boolean) => Promise<void>;
   isCached: boolean;
-  /**
-   * Ensures the lightweight version list (no config_blob) is cached for a config.
-   * O(1) – either a no-op (already cached) or a single GET /versions call.
-   * Does NOT fetch full version details; use loadSingleVersion for that.
-   */
   loadVersionsForConfig: (config_id: string) => Promise<void>;
-  /** Load the next batch of configs (only relevant when pageSize option is used) */
   loadMoreConfigs: () => Promise<void>;
-  /** True when there are more configs available that haven't been loaded yet */
   hasMoreConfigs: boolean;
-  /** True while loadMoreConfigs is in progress */
   isLoadingMore: boolean;
-  /** Fetches the full details (config_blob) for a single version on demand. */
   loadSingleVersion: (
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
   versionItemsMap: Record<string, ConfigVersionItems[]>;
-  allConfigMeta: ConfigPublic[]; // Full lightweight config list from GET /api/configs.
+  allConfigMeta: ConfigPublic[];
 }
 
 export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
@@ -92,7 +83,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       }
 
       if (!force) {
-        // In-memory cache (fastest — no I/O)
         if (configState.inMemoryCache) {
           const cacheAge = Date.now() - configState.inMemoryCache.cachedAt;
           if (cacheAge < CACHE_MAX_AGE_MS) {
@@ -107,7 +97,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
               configState.inMemoryCache.allConfigMeta ??
               null;
             const totalCount = configState.inMemoryCache.totalConfigCount ?? 0;
-            // Skip cache if allConfigMeta is missing but configs exist (stale/old cache schema).
             const cacheHasUsableMeta =
               resolvedMeta !== null || totalCount === 0;
             if (cacheUsable && cacheHasUsableMeta) {

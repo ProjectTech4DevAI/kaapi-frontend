@@ -1,10 +1,6 @@
 /**
  * ConfigCard - Expandable card for displaying config information
  * Used in Config Library.
- *
- * Collapsed: shows lightweight metadata (name, description, updated_at).
- * Expanded: lazily fetches version list + latest version details and shows
- *           model, provider, temperature, tools, instructions preview, etc.
  */
 
 "use client";

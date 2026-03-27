@@ -249,7 +249,6 @@ export default function ConfigLibraryPage() {
               backgroundColor: colors.bg.primary,
             }}
           >
-            {/* Search */}
             <div className="flex-1 relative">
               <SearchIcon
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
@@ -317,20 +316,9 @@ export default function ConfigLibraryPage() {
             {isLoading ? (
               <LoaderBox message="Loading configurations..." size="md" />
             ) : error ? (
-              <div
-                className="rounded-lg p-6 text-center"
-                style={{
-                  backgroundColor: "#fef2f2",
-                  border: "1px solid #fecaca",
-                }}
-              >
-                <WarningTriangleIcon
-                  className="w-12 h-12 mx-auto mb-3"
-                  style={{ color: "#dc2626" }}
-                />
-                <p className="text-sm font-medium" style={{ color: "#dc2626" }}>
-                  {error}
-                </p>
+              <div className="rounded-lg p-6 text-center bg-[#fef2f2] border border-[#fecaca]">
+                <WarningTriangleIcon className="w-12 h-12 mx-auto mb-3 text-[#dc2626]" />
+                <p className="text-sm font-medium text-[#dc2626]">{error}</p>
                 <button
                   onClick={() => router.push("/keystore")}
                   className="mt-4 px-4 py-2 rounded-md text-sm font-medium transition-colors"

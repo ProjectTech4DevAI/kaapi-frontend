@@ -9,12 +9,12 @@ export interface SavedConfig {
   name: string;
   description?: string | null;
   version: number;
-  timestamp: string; // ISO datetime from backend
+  timestamp: string;
   instructions: string;
-  promptContent: string; // Same as instructions for compatibility
+  promptContent: string;
   modelName: string;
   provider: string;
-  type: "text" | "stt" | "tts"; // Config type - always present in UI (defaults to 'text')
+  type: "text" | "stt" | "tts";
   temperature: number;
   vectorStoreIds: string;
   tools?: Tool[];
@@ -40,14 +40,14 @@ export interface ConfigCache {
   configs: SavedConfig[];
   // Map of config_id -> { updated_at, version_count }
   configMeta: Record<string, { updated_at: string; version_count: number }>;
-  cachedAt: number; // timestamp when cache was created
+  cachedAt: number;
   // Actual total version count per config (populated on first fetch)
   versionCounts: Record<string, number>;
   /** Total number of configs available on the server (from GET /api/configs) */
   totalConfigCount?: number;
   /** True when only a subset of configs have had their version details fetched */
   partialFetch?: boolean;
-  allConfigMeta?: ConfigPublic[]; // Full lightweight config list.
+  allConfigMeta?: ConfigPublic[];
 }
 
 // Result shape returned by fetchAllConfigs
@@ -76,7 +76,7 @@ export interface CompletionParams {
   knowledge_base_ids?: string[];
   max_num_results?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any; // Allow additional provider-specific params
+  [key: string]: any;
 }
 
 export interface CompletionConfig {
@@ -91,25 +91,25 @@ export interface ConfigBlob {
 
 // Request Types
 export interface ConfigCreate {
-  name: string; // 1-128 chars, unique per project
-  description?: string | null; // max 512 chars
+  name: string;
+  description?: string | null;
   config_blob: ConfigBlob;
-  commit_message?: string | null; // max 512 chars
+  commit_message?: string | null;
 }
 
 export interface ConfigUpdate {
   name?: string | null; // 1-128 chars
-  description?: string | null; // max 512 chars
+  description?: string | null;
 }
 
 export interface ConfigVersionCreate {
   config_blob: ConfigBlob;
-  commit_message?: string | null; // max 512 chars
+  commit_message?: string | null;
 }
 
 // Response Types
 export interface ConfigPublic {
-  id: string; // UUID
+  id: string;
   name: string;
   description: string | null;
   project_id: number;
@@ -118,8 +118,8 @@ export interface ConfigPublic {
 }
 
 export interface ConfigVersionPublic {
-  id: string; // UUID
-  config_id: string; // UUID
+  id: string;
+  config_id: string;
   version: number; // starts at 1, auto-increments
   config_blob: ConfigBlob;
   commit_message: string | null;
@@ -132,16 +132,14 @@ export interface ConfigWithVersion extends ConfigPublic {
 }
 
 export interface ConfigVersionItems {
-  id: string; // UUID
-  config_id: string; // UUID
+  id: string;
+  config_id: string;
   version: number;
   commit_message: string | null;
   inserted_at: string;
   updated_at: string;
-  // Note: config_blob excluded for list performance
 }
 
-// API Response Wrapper
 export interface APIResponse<T> {
   success: boolean;
   data: T | null;
@@ -149,7 +147,6 @@ export interface APIResponse<T> {
   metadata?: Record<string, unknown> | null;
 }
 
-// Helper type for list responses
 export type ConfigListResponse = APIResponse<ConfigPublic[]>;
 export type ConfigResponse = APIResponse<ConfigPublic>;
 export type ConfigWithVersionResponse = APIResponse<ConfigWithVersion>;

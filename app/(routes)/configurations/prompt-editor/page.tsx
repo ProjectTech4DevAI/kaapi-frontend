@@ -161,7 +161,7 @@ function PromptEditorContent() {
       loadVersionsForConfig(config.config_id);
       applyConfig(config);
     },
-    [applyConfig, loadVersionsForConfig],
+    [applyConfig, loadVersionsForConfig, defaultConfig],
   );
 
   // Initialize editor from URL params — runs once, on first load completion
@@ -218,6 +218,7 @@ function PromptEditorContent() {
     loadVersionsForConfig,
     loadSingleVersion,
     applyConfig,
+    defaultConfig,
   ]);
 
   // Re-populate version items when missing (e.g. after background cache revalidation wipes versionItemsCache)

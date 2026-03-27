@@ -63,6 +63,64 @@ export default function ConfigLibraryPage() {
     endpoint: "/api/configs",
     query: debouncedQuery,
   });
+  const scrollRef = useInfiniteScroll({
+    onLoadMore: loadMore,
+    hasMore,
+    isLoading: isLoading || isLoadingMore,
+  });
+
+  // Responsive column count (matches Tailwind lg/xl breakpoints)
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth >= 1280) setColumnCount(3);
+      else if (window.innerWidth >= 1024) setColumnCount(2);
+      else setColumnCount(1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Distribute configs into fixed columns so items never shift between columns
+  const columns = useMemo(() => {
+    const cols: ConfigPublic[][] = Array.from(
+      { length: columnCount },
+      () => [],
+    );
+    configs.forEach((config, i) => cols[i % columnCount].push(config));
+    return cols;
+  }, [configs, columnCount]);
+
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedQuery(searchInput.trim()),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const fetchEvaluationCounts = async () => {
+      if (!activeKey) return;
+      try {
+        const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
+          "/api/evaluations",
+          activeKey.key,
+        );
+        const jobs: EvalJob[] = Array.isArray(data) ? data : data.data || [];
+        const counts: Record<string, number> = {};
+        jobs.forEach((job) => {
+          if (job.config_id) {
+            counts[job.config_id] = (counts[job.config_id] || 0) + 1;
+          }
+        });
+        setEvaluationCounts(counts);
+      } catch (e) {
+        console.error("Failed to fetch evaluation counts:", e);
+      }
+    };
+    fetchEvaluationCounts();
+  }, [activeKey]);
 
   const loadVersionsForConfig = useCallback(
     async (configId: string) => {
@@ -124,65 +182,6 @@ export default function ConfigLibraryPage() {
     },
     [apiKey, configs],
   );
-
-  const scrollRef = useInfiniteScroll({
-    onLoadMore: loadMore,
-    hasMore,
-    isLoading: isLoading || isLoadingMore,
-  });
-
-  // Responsive column count (matches Tailwind lg/xl breakpoints)
-  useEffect(() => {
-    const update = () => {
-      if (window.innerWidth >= 1280) setColumnCount(3);
-      else if (window.innerWidth >= 1024) setColumnCount(2);
-      else setColumnCount(1);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  // Distribute configs into fixed columns so items never shift between columns
-  const columns = useMemo(() => {
-    const cols: ConfigPublic[][] = Array.from(
-      { length: columnCount },
-      () => [],
-    );
-    configs.forEach((config, i) => cols[i % columnCount].push(config));
-    return cols;
-  }, [configs, columnCount]);
-
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setDebouncedQuery(searchInput.trim()),
-      SEARCH_DEBOUNCE_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  useEffect(() => {
-    const fetchEvaluationCounts = async () => {
-      if (!activeKey) return;
-      try {
-        const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
-          "/api/evaluations",
-          activeKey.key,
-        );
-        const jobs: EvalJob[] = Array.isArray(data) ? data : data.data || [];
-        const counts: Record<string, number> = {};
-        jobs.forEach((job) => {
-          if (job.config_id) {
-            counts[job.config_id] = (counts[job.config_id] || 0) + 1;
-          }
-        });
-        setEvaluationCounts(counts);
-      } catch (e) {
-        console.error("Failed to fetch evaluation counts:", e);
-      }
-    };
-    fetchEvaluationCounts();
-  }, [activeKey]);
 
   const handleCreateNew = () => {
     router.push("/configurations/prompt-editor?new=true");

@@ -1,5 +1,5 @@
 import { colors } from "@/app/lib/colors";
-import { UnifiedCommit } from "@/app/(routes)/configurations/prompt-editor/types";
+import { UnifiedCommit } from "@/app/(main)/configurations/prompt-editor/types";
 
 interface BranchModalProps {
   isOpen: boolean;

@@ -3,7 +3,7 @@ import { colors } from "@/app/lib/colors";
 import {
   ConfigBlob,
   Tool,
-} from "@/app/(routes)/configurations/prompt-editor/types";
+} from "@/app/(main)/configurations/prompt-editor/types";
 import {
   ConfigPublic,
   SavedConfig,

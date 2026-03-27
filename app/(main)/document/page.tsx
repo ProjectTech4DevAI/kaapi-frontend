@@ -743,7 +743,6 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
 
   // Reset error state when document changes
   useEffect(() => {
-     
     setImageLoadError(false);
   }, [document?.id]);
 

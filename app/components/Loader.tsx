@@ -71,9 +71,5 @@ export function LoaderBox({
   message?: string;
   size?: "sm" | "md" | "lg";
 }) {
-  return (
-    <div className="border rounded-lg p-8 text-center bg-[#ffffff] border-[#e5e5e5]">
-      <Loader size={size} message={message} />
-    </div>
-  );
+  return <Loader size={size} message={message} />;
 }

@@ -1,6 +1,5 @@
 /**
- * EvaluationReport.tsx - Detailed evaluation report page
- *
+ * Detailed evaluation report page
  * Shows metrics overview and per-item scores for a specific evaluation job
  */
 
@@ -8,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import {
@@ -27,6 +27,14 @@ import DetailedResultsTable from "@/app/components/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
+import {
+  WarningTriangleIcon,
+  MenuIcon,
+  ChevronLeftIcon,
+  DatabaseIcon,
+  GroupIcon,
+  RefreshIcon,
+} from "@/app/components/icons";
 
 export default function EvaluationReport() {
   const router = useRouter();
@@ -65,7 +73,6 @@ export default function EvaluationReport() {
     return `"${sanitized}"`;
   };
 
-  // Set initial selected key from context
   useEffect(() => {
     if (apiKeys.length > 0 && !selectedKeyId) {
       setSelectedKeyId(apiKeys[0].id);
@@ -83,24 +90,11 @@ export default function EvaluationReport() {
     setError(null);
 
     try {
-      const response = await fetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?export_format=${exportFormat}`,
-        {
-          method: "GET",
-          headers: { "X-API-KEY": selectedKey.key },
-        },
+        selectedKey.key,
       );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed to fetch evaluation: ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
 
       if (data.success === false && data.error) {
         toast.error(data.error);
@@ -135,12 +129,10 @@ export default function EvaluationReport() {
 
   const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
     try {
-      const response = await fetch(`/api/assistant/${assistantId}`, {
-        method: "GET",
-        headers: { "X-API-KEY": apiKey },
-      });
-      if (!response.ok) return;
-      const result = await response.json();
+      const result = await apiFetch<{
+        success: boolean;
+        data?: AssistantConfig;
+      }>(`/api/assistant/${assistantId}`, apiKey);
       if (result.success && result.data) setAssistantConfig(result.data);
     } catch (err) {
       console.error(
@@ -156,15 +148,11 @@ export default function EvaluationReport() {
     apiKey: string,
   ) => {
     try {
-      const configResponse = await fetch(`/api/configs/${configId}`, {
-        headers: { "X-API-KEY": apiKey },
-      });
-      if (!configResponse.ok) return;
-      const versionResponse = await fetch(
+      await apiFetch(`/api/configs/${configId}`, apiKey);
+      await apiFetch(
         `/api/configs/${configId}/versions/${configVersion}`,
-        { headers: { "X-API-KEY": apiKey } },
+        apiKey,
       );
-      if (!versionResponse.ok) return;
     } catch (error) {
       console.error("Error fetching config version info:", error);
     }
@@ -321,22 +309,11 @@ export default function EvaluationReport() {
 
     setIsResyncing(true);
     try {
-      const response = await fetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`,
-        {
-          method: "GET",
-          headers: { "X-API-KEY": selectedKey.key },
-        },
+        selectedKey.key,
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed to resync: ${response.status}`,
-        );
-      }
-      const data = await response.json();
       const foundJob = data.data || data;
       if (!foundJob) throw new Error("Evaluation job not found");
 
@@ -446,38 +423,14 @@ export default function EvaluationReport() {
                 className="p-1.5 rounded-md flex-shrink-0"
                 style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                <MenuIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={() => router.push("/evaluations?tab=evaluations")}
                 className="p-1.5 rounded-md flex-shrink-0"
                 style={{ color: colors.text.secondary }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
+                <ChevronLeftIcon />
               </button>
               <div className="min-w-0 flex items-center gap-3">
                 <h1
@@ -493,19 +446,7 @@ export default function EvaluationReport() {
                   className="flex items-center gap-1 text-xs flex-shrink-0"
                   style={{ color: colors.text.secondary }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5 flex-shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3"
-                    />
-                  </svg>
+                  <DatabaseIcon className="flex-shrink-0" />
                   {job.dataset_name}
                 </span>
               </div>
@@ -553,19 +494,7 @@ export default function EvaluationReport() {
                     }
                   }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
+                  <MenuIcon className="w-3.5 h-3.5" />
                   Individual Rows
                 </button>
                 <button
@@ -604,19 +533,7 @@ export default function EvaluationReport() {
                     }
                   }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                    />
-                  </svg>
+                  <GroupIcon />
                   Group by Questions
                 </button>
               </div>
@@ -657,6 +574,17 @@ export default function EvaluationReport() {
               {/* Metrics */}
               {hasScore && isNewFormat ? (
                 <div>
+                  {summaryScores.some(
+                    (s) => job.total_items && s.total_pairs < job.total_items,
+                  ) && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs bg-amber-500/10 border border-amber-500/30 text-status-warning">
+                      <WarningTriangleIcon className="flex-shrink-0" />
+                      Some traces are still being scored. Scores shown are
+                      partial and may change — click{" "}
+                      <strong className="font-semibold mx-1">Resync</strong> to
+                      get the latest.
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-3">
                     <h3
                       className="text-sm font-semibold"
@@ -669,19 +597,9 @@ export default function EvaluationReport() {
                       disabled={isResyncing}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-[#171717] text-white disabled:opacity-50"
                     >
-                      <svg
-                        className={`w-3.5 h-3.5 ${isResyncing ? "animate-spin" : ""}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
+                      <RefreshIcon
+                        className={isResyncing ? "animate-spin" : ""}
+                      />
                       {isResyncing ? "Resyncing..." : "Resync"}
                     </button>
                   </div>
@@ -692,7 +610,7 @@ export default function EvaluationReport() {
                         .map((summary) => (
                           <div
                             key={summary.name}
-                            className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px]"
+                            className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px] relative"
                             style={{
                               backgroundColor: colors.bg.primary,
                               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
@@ -718,7 +636,18 @@ export default function EvaluationReport() {
                             >
                               {summary.std !== undefined &&
                                 `±${summary.std.toFixed(3)} · `}
-                              {summary.total_pairs} pairs
+                              {job.total_items &&
+                              summary.total_pairs < job.total_items ? (
+                                <span
+                                  className="inline-flex items-center gap-1 font-medium text-status-warning"
+                                  title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
+                                >
+                                  {summary.total_pairs}/{job.total_items} pairs
+                                  <WarningTriangleIcon className="w-3 h-3" />
+                                </span>
+                              ) : (
+                                <span>{summary.total_pairs} pairs</span>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -727,16 +656,12 @@ export default function EvaluationReport() {
                         .map((summary) => (
                           <div
                             key={summary.name}
-                            className="rounded-lg px-6 py-5 flex-1 min-w-[180px]"
+                            className="rounded-lg px-6 py-5 flex-1 min-w-[180px] relative bg-bg-primary"
                             style={{
-                              backgroundColor: colors.bg.primary,
                               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
                             }}
                           >
-                            <div
-                              className="text-xs font-medium mb-3 text-center"
-                              style={{ color: colors.text.secondary }}
-                            >
+                            <div className="text-xs font-medium mb-3 text-center text-text-secondary">
                               {summary.name}
                             </div>
                             <div className="space-y-1">
@@ -745,15 +670,9 @@ export default function EvaluationReport() {
                                   ([key, value]) => (
                                     <div
                                       key={key}
-                                      className="flex justify-between items-center px-3 py-1 rounded"
-                                      style={{
-                                        backgroundColor: colors.bg.secondary,
-                                      }}
+                                      className="flex justify-between items-center px-3 py-1 rounded bg-bg-secondary"
                                     >
-                                      <span
-                                        className="text-xs font-medium"
-                                        style={{ color: colors.text.primary }}
-                                      >
+                                      <span className="text-xs font-medium text-text-primary">
                                         {key}
                                       </span>
                                       <span
@@ -766,11 +685,19 @@ export default function EvaluationReport() {
                                   ),
                                 )}
                             </div>
-                            <div
-                              className="text-xs mt-2 text-center"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              {summary.total_pairs} pairs
+                            <div className="text-xs mt-2 text-center text-text-secondary">
+                              {job.total_items &&
+                              summary.total_pairs < job.total_items ? (
+                                <span
+                                  className="inline-flex items-center gap-1 font-medium text-status-warning"
+                                  title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
+                                >
+                                  {summary.total_pairs}/{job.total_items} pairs
+                                  <WarningTriangleIcon className="w-3 h-3" />
+                                </span>
+                              ) : (
+                                <span>{summary.total_pairs} pairs</span>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -876,10 +803,9 @@ export default function EvaluationReport() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowNoTracesModal(false)}
-                className="px-4 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-md text-sm font-medium text-white"
                 style={{
                   backgroundColor: colors.accent.primary,
-                  color: "#ffffff",
                 }}
               >
                 OK

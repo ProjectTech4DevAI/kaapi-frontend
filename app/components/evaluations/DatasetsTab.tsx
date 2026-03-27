@@ -6,6 +6,7 @@ import { APIKey } from "@/app/lib/types/credentials";
 import { Dataset } from "@/app/(routes)/datasets/page";
 import { useToast } from "@/app/components/Toast";
 import EvalDatasetDescription from "./EvalDatasetDescription";
+import Loader from "@/app/components/Loader";
 
 export interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -22,6 +23,7 @@ export interface DatasetsTabProps {
   handleCreateDataset: () => void;
   resetForm: () => void;
   storedDatasets: Dataset[];
+  isDatasetsLoading: boolean;
   apiKeys: APIKey[];
   selectedKeyId: string;
   loadStoredDatasets: () => void;
@@ -43,6 +45,7 @@ export default function DatasetsTab({
   handleCreateDataset,
   resetForm,
   storedDatasets,
+  isDatasetsLoading,
   apiKeys,
   selectedKeyId,
   loadStoredDatasets,
@@ -559,7 +562,11 @@ export default function DatasetsTab({
             </h3>
           </div>
 
-          {storedDatasets.length === 0 ? (
+          {isDatasetsLoading ? (
+            <div className="p-16 flex justify-center">
+              <Loader size="md" message="Loading datasets..." />
+            </div>
+          ) : storedDatasets.length === 0 ? (
             <div className="p-16 text-center">
               <svg
                 className="w-12 h-12 mx-auto mb-3"

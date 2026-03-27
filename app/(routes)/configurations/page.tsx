@@ -12,7 +12,7 @@ import { colors } from "@/app/lib/colors";
 import { usePaginatedList } from "@/app/hooks/usePaginatedList";
 import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
 import ConfigCard from "@/app/components/ConfigCard";
-import { LoaderBox } from "@/app/components/Loader";
+import Loader, { LoaderBox } from "@/app/components/Loader";
 import { EvalJob } from "@/app/components/types";
 import {
   ConfigPublic,
@@ -411,7 +411,7 @@ export default function ConfigLibraryPage() {
 
                 {isLoadingMore && (
                   <div className="flex justify-center mt-6">
-                    <LoaderBox message="Loading more..." size="sm" />
+                    <Loader message="Loading more..." size="sm" />
                   </div>
                 )}
               </>

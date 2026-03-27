@@ -129,7 +129,6 @@ export default function EvaluationReport() {
 
   const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
     try {
-       
       const result = await apiFetch<{
         success: boolean;
         data?: AssistantConfig;

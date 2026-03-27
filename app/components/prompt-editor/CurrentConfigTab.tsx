@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { colors } from "@/app/lib/colors";
-import {
-  Config,
-  Tool,
-} from "@/app/(routes)/configurations/prompt-editor/types";
+import { Config, Tool } from "@/app/(main)/configurations/prompt-editor/types";
 
 interface CurrentConfigTabProps {
   configs: Config[];

@@ -4,7 +4,7 @@ import {
   Commit,
   LegacyVariant,
   TestResult,
-} from "@/app/(routes)/configurations/prompt-editor/types";
+} from "@/app/(main)/configurations/prompt-editor/types";
 
 interface ABTestTabProps {
   variants: LegacyVariant[];

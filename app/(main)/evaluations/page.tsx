@@ -10,7 +10,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
-import { Dataset } from "@/app/(routes)/datasets/page";
+import { Dataset } from "@/app/(main)/datasets/page";
 import Sidebar from "@/app/components/Sidebar";
 import TabNavigation from "@/app/components/TabNavigation";
 import { useToast } from "@/app/components/Toast";

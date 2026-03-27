@@ -743,7 +743,6 @@ function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
 
   // Reset error state when document changes
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setImageLoadError(false);
   }, [document?.id]);
 

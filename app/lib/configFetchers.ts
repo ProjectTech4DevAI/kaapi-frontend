@@ -9,8 +9,10 @@ import {
   ConfigListResponse,
   ConfigVersionListResponse,
   ConfigVersionResponse,
-} from "@/app/lib/configTypes";
-import { SavedConfig, ConfigCache, FetchResult } from "@/app/lib/types/configs";
+  SavedConfig,
+  ConfigCache,
+  FetchResult,
+} from "@/app/lib/types/configs";
 import { CACHE_INVALIDATED_EVENT } from "@/app/lib/constants";
 import { configState } from "@/app/lib/store/configStore";
 import { flattenConfigVersion } from "@/app/lib/utils";

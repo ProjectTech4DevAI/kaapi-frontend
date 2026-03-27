@@ -10,3 +10,9 @@ export { default as MenuIcon } from "./evaluations/MenuIcon";
 export { default as DatabaseIcon } from "./evaluations/DatabaseIcon";
 export { default as GroupIcon } from "./evaluations/GroupIcon";
 export { default as RefreshIcon } from "./evaluations/RefreshIcon";
+
+// Prompt Editor Icons
+export { default as ChevronRightIcon } from "./prompt-editor/ChevronRightIcon";
+export { default as PlusIcon } from "./prompt-editor/PlusIcon";
+export { default as SpinnerIcon } from "./prompt-editor/SpinnerIcon";
+export { default as InfoIcon } from "./prompt-editor/InfoIcon";

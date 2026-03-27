@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
 import { EvalJob, AssistantConfig } from "./types";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Tool } from "@/app/lib/configTypes";
+import { Tool } from "@/app/lib/types/configs";
 
 interface ConfigModalProps {
   isOpen: boolean;

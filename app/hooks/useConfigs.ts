@@ -3,15 +3,6 @@
 /**
  * useConfigs — shared React hook for fetching and managing configurations.
  * Used by Config Library, Prompt Editor, and Evaluations pages.
- *
- * Responsibilities (hook-only layer):
- * - Manages React state (configs, loading flags, error)
- * - Reads from / writes to the shared in-memory + localStorage cache
- * - Exposes stable callbacks for lazy-loading version lists and individual versions
- * - Schedules background cache validation after serving cached data
- *
- * Heavy lifting (API calls, cache I/O, pure transforms) lives in:
- *   lib/configFetchers.ts, lib/store.ts, lib/utils.ts
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -19,8 +10,10 @@ import {
   ConfigPublic,
   ConfigVersionItems,
   ConfigVersionResponse,
-} from "@/app/lib/configTypes";
-import { SavedConfig, ConfigGroup, ConfigCache } from "@/app/lib/types/configs";
+  SavedConfig,
+  ConfigGroup,
+  ConfigCache,
+} from "@/app/lib/types/configs";
 import {
   CACHE_MAX_AGE_MS,
   CACHE_INVALIDATED_EVENT,
@@ -61,15 +54,11 @@ export interface UseConfigsResult {
   hasMoreConfigs: boolean;
   /** True while loadMoreConfigs is in progress */
   isLoadingMore: boolean;
-  /** Fetches the full details (config_blob) for a single version on demand.
-   * Returns the SavedConfig immediately if already loaded; makes 1 GET call otherwise.
-   * Safe to call concurrently – duplicate in-flight requests are coalesced.
-   */
+  /** Fetches the full details (config_blob) for a single version on demand. */
   loadSingleVersion: (
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
-  /** Lightweight version items per config, indexed by config_id. */
   versionItemsMap: Record<string, ConfigVersionItems[]>;
   allConfigMeta: ConfigPublic[]; // Full lightweight config list from GET /api/configs.
 }
@@ -94,7 +83,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
 
   const fetchConfigs = useCallback(
     async (force: boolean = false) => {
-      // Wait for AuthContext to load apiKey from localStorage to avoid premature "No API key" error on refresh.
       if (!isHydrated) return;
 
       if (!apiKey) {
@@ -103,7 +91,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         return;
       }
 
-      // ── Fast paths (skipped when force=true) ──
       if (!force) {
         // In-memory cache (fastest — no I/O)
         if (configState.inMemoryCache) {

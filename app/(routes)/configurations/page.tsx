@@ -1,24 +1,19 @@
 /**
- * Config Library - Central hub for managing configurations
- *
- * Features:
- * - View all configs with their versions
- * - Quick actions: Edit, Use in Evaluation, View History
- * - Shows evaluation usage count per config
- * - Create new config navigation
+ * Config Library: View and manage configs with quick actions (edit/use),
+ * showing usage count, and lazily loading version details on selection.
  */
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import { colors } from "@/app/lib/colors";
 import { useConfigs } from "@/app/hooks/useConfigs";
-import { SavedConfig } from "@/app/lib/types/configs";
 import ConfigCard from "@/app/components/ConfigCard";
 import { LoaderBox } from "@/app/components/Loader";
 import { EvalJob } from "@/app/components/types";
+import { ConfigPublic } from "@/app/lib/types/configs";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
@@ -28,19 +23,31 @@ export default function ConfigLibraryPage() {
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { activeKey } = useAuth();
   const {
-    configGroups,
     isLoading,
     error,
     refetch,
     isCached,
-    loadMoreConfigs,
-    hasMoreConfigs,
-    isLoadingMore,
-  } = useConfigs({ pageSize: 10 });
+    allConfigMeta,
+    loadVersionsForConfig,
+    loadSingleVersion,
+  } = useConfigs({ pageSize: 0 });
   const [searchQuery, setSearchQuery] = useState("");
+  const [columnCount, setColumnCount] = useState(3);
   const [evaluationCounts, setEvaluationCounts] = useState<
     Record<string, number>
   >({});
+
+  // Responsive column count matching breakpoints (lg:2, xl:3)
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth >= 1280) setColumnCount(3);
+      else if (window.innerWidth >= 1024) setColumnCount(2);
+      else setColumnCount(1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   // Fetch evaluation counts for each config
   useEffect(() => {
@@ -72,25 +79,26 @@ export default function ConfigLibraryPage() {
   }, [activeKey]);
 
   // Filter configs based on search query
-  const filteredConfigs = configGroups.filter(
-    (group) =>
-      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.latestVersion.modelName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      group.latestVersion.instructions
+  const filteredConfigs = allConfigMeta.filter(
+    (config) =>
+      config.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (config.description ?? "")
         .toLowerCase()
         .includes(searchQuery.toLowerCase()),
   );
 
+  // Distribute configs into fixed columns (round-robin) so items never shift
+  const columns = useMemo(() => {
+    const cols: ConfigPublic[][] = Array.from(
+      { length: columnCount },
+      () => [],
+    );
+    filteredConfigs.forEach((config, i) => cols[i % columnCount].push(config));
+    return cols;
+  }, [filteredConfigs, columnCount]);
+
   const handleCreateNew = () => {
     router.push("/configurations/prompt-editor?new=true");
-  };
-
-  const handleUseInEvaluation = (config: SavedConfig) => {
-    router.push(
-      `/evaluations?config=${config.config_id}&version=${config.version}`,
-    );
   };
 
   return (
@@ -427,67 +435,24 @@ export default function ConfigLibraryPage() {
                 )}
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredConfigs.map((configGroup) => (
-                    <ConfigCard
-                      key={configGroup.config_id}
-                      configGroup={configGroup}
-                      evaluationCount={
-                        evaluationCounts[configGroup.config_id] || 0
-                      }
-                      onUseInEvaluation={handleUseInEvaluation}
-                    />
-                  ))}
-                </div>
-                {hasMoreConfigs && !searchQuery && (
-                  <div className="flex justify-center mt-6">
-                    <button
-                      onClick={loadMoreConfigs}
-                      disabled={isLoadingMore}
-                      className="px-6 py-2.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
-                      style={{
-                        backgroundColor: colors.bg.primary,
-                        border: `1px solid ${colors.border}`,
-                        color: colors.text.secondary,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isLoadingMore) {
-                          e.currentTarget.style.backgroundColor =
-                            colors.bg.secondary;
-                          e.currentTarget.style.color = colors.text.primary;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          colors.bg.primary;
-                        e.currentTarget.style.color = colors.text.secondary;
-                      }}
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <svg
-                            className="w-4 h-4 animate-spin"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                          </svg>
-                          Loading...
-                        </>
-                      ) : (
-                        "Load More"
-                      )}
-                    </button>
+              <div
+                className="grid gap-4 items-start"
+                style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+              >
+                {columns.map((col, colIdx) => (
+                  <div key={colIdx} className="flex flex-col gap-4">
+                    {col.map((config) => (
+                      <ConfigCard
+                        key={config.id}
+                        config={config}
+                        evaluationCount={evaluationCounts[config.id] || 0}
+                        onLoadVersions={loadVersionsForConfig}
+                        onLoadSingleVersion={loadSingleVersion}
+                      />
+                    ))}
                   </div>
-                )}
-              </>
+                ))}
+              </div>
             )}
           </div>
         </div>

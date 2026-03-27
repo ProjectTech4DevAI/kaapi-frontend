@@ -4,9 +4,20 @@ import {
   ConfigBlob,
   Tool,
 } from "@/app/(routes)/configurations/prompt-editor/types";
-import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
-import { ConfigPublic } from "@/app/lib/configTypes";
+import {
+  ConfigPublic,
+  SavedConfig,
+  ConfigVersionItems,
+} from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  CheckIcon,
+  PlusIcon,
+  SpinnerIcon,
+  InfoIcon,
+} from "@/app/components/icons";
 import {
   MODEL_OPTIONS,
   PROVIDER_TYPES,
@@ -18,7 +29,6 @@ interface ConfigEditorPaneProps {
   onConfigChange: (blob: ConfigBlob) => void;
   configName: string;
   onConfigNameChange: (name: string) => void;
-  // Additional props for full functionality
   savedConfigs: SavedConfig[];
   selectedConfigId: string;
   onLoadConfig: (config: SavedConfig | null) => void;
@@ -26,11 +36,10 @@ interface ConfigEditorPaneProps {
   onCommitMessageChange: (message: string) => void;
   onSave: () => void;
   isSaving?: boolean;
-  // Collapse functionality
   collapsed?: boolean;
   onToggle?: () => void;
-  allConfigMeta?: ConfigPublic[]; // Lightweight list of all configs
-  versionItemsMap?: Record<string, ConfigVersionItems[]>; // Lightweight version items
+  allConfigMeta?: ConfigPublic[];
+  versionItemsMap?: Record<string, ConfigVersionItems[]>;
   loadVersionsForConfig?: (config_id: string) => Promise<void>;
   loadSingleVersion?: (
     config_id: string,
@@ -61,7 +70,7 @@ export default function ConfigEditorPane({
   const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null); // config group is expanded in the Load dropdown
   const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
     new Set(),
-  ); // groups are currently loading their version list
+  );
 
   const handleOpenLoadDropdown = () => {
     if (!isDropdownOpen) {
@@ -254,11 +263,8 @@ export default function ConfigEditorPane({
         {onToggle && (
           <button
             onClick={onToggle}
-            className="rounded flex-shrink-0 flex items-center justify-center"
+            className="rounded flex-shrink-0 flex items-center justify-center w-[28px] h-[28px] border"
             style={{
-              width: "28px",
-              height: "28px",
-              borderWidth: "1px",
               borderColor: colors.border,
               backgroundColor: colors.bg.primary,
               color: colors.text.secondary,
@@ -274,24 +280,13 @@ export default function ConfigEditorPane({
             }}
             title={collapsed ? "Show configuration" : "Hide configuration"}
           >
-            <svg
+            <ChevronRightIcon
               className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
               style={{
-                // When collapsed, chevron points left (to expand); when expanded, points right (to collapse)
                 transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
                 transition: "transform 0.2s ease-in-out",
               }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 5l7 7-7 7"
-              />
-            </svg>
+            />
           </button>
         )}
       </div>
@@ -320,7 +315,6 @@ export default function ConfigEditorPane({
       {!collapsed && (
         <div className="flex-1 overflow-auto p-4">
           <div className="space-y-4">
-            {/* Load Saved Config - Nested dropdown matching Evaluations page pattern */}
             <div className="relative">
               <label
                 className="block text-xs font-semibold mb-2"
@@ -369,7 +363,7 @@ export default function ConfigEditorPane({
                     + New Configuration
                   </span>
                 )}
-                <svg
+                <ChevronDownIcon
                   className="w-4 h-4 flex-shrink-0 ml-2 transition-transform"
                   style={{
                     color: colors.text.secondary,
@@ -377,17 +371,7 @@ export default function ConfigEditorPane({
                       ? "rotate(180deg)"
                       : "rotate(0deg)",
                   }}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
 
               {/* Dropdown Menu */}
@@ -399,7 +383,6 @@ export default function ConfigEditorPane({
                     border: `1px solid ${colors.border}`,
                   }}
                 >
-                  {/* New Config Option */}
                   <button
                     onClick={() => {
                       onLoadConfig(null);
@@ -422,20 +405,10 @@ export default function ConfigEditorPane({
                         : colors.bg.primary)
                     }
                   >
-                    <svg
+                    <PlusIcon
                       className="w-4 h-4"
                       style={{ color: colors.accent.primary }}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
+                    />
                     <span
                       className="text-sm font-medium"
                       style={{ color: colors.text.primary }}
@@ -451,7 +424,6 @@ export default function ConfigEditorPane({
                     const items = versionItemsMap[meta.id] ?? [];
                     return (
                       <div key={meta.id}>
-                        {/* Config group header */}
                         <button
                           className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors"
                           style={{
@@ -470,45 +442,17 @@ export default function ConfigEditorPane({
                           </span>
                           <span className="flex items-center gap-1">
                             {isLoadingGroup && (
-                              <svg
-                                className="w-3 h-3 animate-spin"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                />
-                              </svg>
+                              <SpinnerIcon className="w-3 h-3" />
                             )}
-                            <svg
+                            <ChevronDownIcon
                               className="w-3.5 h-3.5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
                               style={{
                                 transform: isExpanded
                                   ? "rotate(180deg)"
                                   : "rotate(0deg)",
                                 transition: "transform 0.15s",
                               }}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
+                            />
                           </span>
                         </button>
                         {/* Version items — only when expanded */}
@@ -583,18 +527,10 @@ export default function ConfigEditorPane({
                                   </div>
                                 </div>
                                 {isSelected && (
-                                  <svg
+                                  <CheckIcon
                                     className="w-4 h-4 flex-shrink-0"
                                     style={{ color: colors.status.success }}
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
+                                  />
                                 )}
                               </button>
                             );
@@ -841,9 +777,8 @@ export default function ConfigEditorPane({
                         )
                       }
                       placeholder="vs_abc123"
-                      className="w-full px-2 py-1 rounded text-xs focus:outline-none"
+                      className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-gray-300"
                       style={{
-                        border: `1px solid ${colors.border}`,
                         backgroundColor: colors.bg.primary,
                         color: colors.text.primary,
                       }}
@@ -858,54 +793,20 @@ export default function ConfigEditorPane({
                         Max Results
                       </label>
                       <div
-                        className="relative inline-flex items-center justify-center cursor-help"
-                        style={{ width: "14px", height: "14px" }}
+                        className="relative inline-flex items-center justify-center cursor-help w-[14px] h-[14px]"
                         onMouseEnter={() => setShowTooltip(index)}
                         onMouseLeave={() => setShowTooltip(null)}
                       >
-                        <svg
+                        <InfoIcon
                           className="w-3.5 h-3.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
                           style={{ color: colors.text.secondary }}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
+                        />
                         {showTooltip === index && (
-                          <div
-                            className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50"
-                            style={{
-                              backgroundColor: "#1f2937",
-                              color: colors.bg.primary,
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-                              whiteSpace: "nowrap",
-                              lineHeight: "1.4",
-                            }}
-                          >
+                          <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-[#1f2937] text-white top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
                             Controls how many matching results are returned
                             <br />
                             from the search
-                            <div
-                              style={{
-                                position: "absolute",
-                                right: "100%",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                width: 0,
-                                height: 0,
-                                borderTop: "4px solid transparent",
-                                borderBottom: "4px solid transparent",
-                                borderRight: "4px solid #1f2937",
-                              }}
-                            />
+                            <div className="absolute right-[100%] top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#1f2937]" />
                           </div>
                         )}
                       </div>
@@ -920,9 +821,8 @@ export default function ConfigEditorPane({
                           parseInt(e.target.value) || 20,
                         )
                       }
-                      className="w-full px-2 py-1 rounded text-xs focus:outline-none"
+                      className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-gray-300"
                       style={{
-                        border: `1px solid ${colors.border}`,
                         backgroundColor: colors.bg.primary,
                         color: colors.text.primary,
                       }}

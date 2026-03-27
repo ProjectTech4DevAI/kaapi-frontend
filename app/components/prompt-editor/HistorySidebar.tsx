@@ -1,7 +1,10 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
 import { colors } from "@/app/lib/colors";
-import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
-import { ConfigPublic } from "@/app/lib/configTypes";
+import {
+  ConfigPublic,
+  SavedConfig,
+  ConfigVersionItems,
+} from "@/app/lib/types/configs";
 import { timeAgo } from "@/app/lib/utils";
 
 interface VersionRowProps {

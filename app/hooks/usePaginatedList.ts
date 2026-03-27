@@ -18,8 +18,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-
-const DEFAULT_LIMIT = 10;
+import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 
 interface PaginatedResponse<T> {
   success: boolean;
@@ -44,7 +43,12 @@ export function usePaginatedList<T>(options: {
   limit?: number;
   extraParams?: Record<string, string>;
 }): UsePaginatedListResult<T> {
-  const { endpoint, query = "", limit = DEFAULT_LIMIT, extraParams } = options;
+  const {
+    endpoint,
+    query = "",
+    limit = DEFAULT_PAGE_LIMIT,
+    extraParams,
+  } = options;
   const { activeKey, isHydrated } = useAuth();
   const apiKey = activeKey?.key;
 

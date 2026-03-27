@@ -1,6 +1,5 @@
 /**
- * EvaluationReport.tsx - Detailed evaluation report page
- *
+ * Detailed evaluation report page
  * Shows metrics overview and per-item scores for a specific evaluation job
  */
 
@@ -8,6 +7,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import {
@@ -73,7 +73,6 @@ export default function EvaluationReport() {
     return `"${sanitized}"`;
   };
 
-  // Set initial selected key from context
   useEffect(() => {
     if (apiKeys.length > 0 && !selectedKeyId) {
       setSelectedKeyId(apiKeys[0].id);
@@ -91,24 +90,11 @@ export default function EvaluationReport() {
     setError(null);
 
     try {
-      const response = await fetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?export_format=${exportFormat}`,
-        {
-          method: "GET",
-          headers: { "X-API-KEY": selectedKey.key },
-        },
+        selectedKey.key,
       );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed to fetch evaluation: ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
 
       if (data.success === false && data.error) {
         toast.error(data.error);
@@ -143,12 +129,11 @@ export default function EvaluationReport() {
 
   const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
     try {
-      const response = await fetch(`/api/assistant/${assistantId}`, {
-        method: "GET",
-        headers: { "X-API-KEY": apiKey },
-      });
-      if (!response.ok) return;
-      const result = await response.json();
+       
+      const result = await apiFetch<{
+        success: boolean;
+        data?: AssistantConfig;
+      }>(`/api/assistant/${assistantId}`, apiKey);
       if (result.success && result.data) setAssistantConfig(result.data);
     } catch (err) {
       console.error(
@@ -164,15 +149,11 @@ export default function EvaluationReport() {
     apiKey: string,
   ) => {
     try {
-      const configResponse = await fetch(`/api/configs/${configId}`, {
-        headers: { "X-API-KEY": apiKey },
-      });
-      if (!configResponse.ok) return;
-      const versionResponse = await fetch(
+      await apiFetch(`/api/configs/${configId}`, apiKey);
+      await apiFetch(
         `/api/configs/${configId}/versions/${configVersion}`,
-        { headers: { "X-API-KEY": apiKey } },
+        apiKey,
       );
-      if (!versionResponse.ok) return;
     } catch (error) {
       console.error("Error fetching config version info:", error);
     }
@@ -329,22 +310,11 @@ export default function EvaluationReport() {
 
     setIsResyncing(true);
     try {
-      const response = await fetch(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`,
-        {
-          method: "GET",
-          headers: { "X-API-KEY": selectedKey.key },
-        },
+        selectedKey.key,
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed to resync: ${response.status}`,
-        );
-      }
-      const data = await response.json();
       const foundJob = data.data || data;
       if (!foundJob) throw new Error("Evaluation job not found");
 
@@ -608,7 +578,7 @@ export default function EvaluationReport() {
                   {summaryScores.some(
                     (s) => job.total_items && s.total_pairs < job.total_items,
                   ) && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs bg-[rgba(245, 158, 11, 0.08)] border border-[rgba(245,158,11,0.3)] text-status-warning">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs bg-amber-500/10 border border-amber-500/30 text-status-warning">
                       <WarningTriangleIcon className="flex-shrink-0" />
                       Some traces are still being scored. Scores shown are
                       partial and may change — click{" "}
@@ -834,10 +804,9 @@ export default function EvaluationReport() {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowNoTracesModal(false)}
-                className="px-4 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-md text-sm font-medium text-white"
                 style={{
                   backgroundColor: colors.accent.primary,
-                  color: "#ffffff",
                 }}
               >
                 OK

@@ -1,10 +1,5 @@
 /**
- * Prompt Editor - Version Controlled Prompt + Config Editor
- *
- * A WYSIWYG editor for managing prompts and configs with linear versioning.
- * Features: save, load, compare configs with backend persistence.
- * Uses shared useConfigs hook for caching.
- * Supports URL query params for cross-navigation from Config Library/Evaluations.
+ * Prompt WYSIWYG Editor: Manage prompts and configs with versioning, caching, and URL-based navigation support.
  */
 
 "use client";
@@ -15,7 +10,6 @@ import Sidebar from "@/app/components/Sidebar";
 import { colors } from "@/app/lib/colors";
 import { ConfigBlob, Tool } from "./types";
 import { hasConfigChanges } from "./utils";
-import { ConfigCreate, ConfigVersionCreate } from "@/app/lib/configTypes";
 import Header from "@/app/components/prompt-editor/Header";
 import HistorySidebar from "@/app/components/prompt-editor/HistorySidebar";
 import PromptEditorPane from "@/app/components/prompt-editor/PromptEditorPane";
@@ -26,7 +20,12 @@ import Loader from "@/app/components/Loader";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useConfigs } from "@/app/hooks/useConfigs";
-import { SavedConfig } from "@/app/lib/types/configs";
+import {
+  SavedConfig,
+  ConfigCreate,
+  ConfigVersionCreate,
+  ConfigVersionItems,
+} from "@/app/lib/types/configs";
 import { invalidateConfigCache } from "@/app/lib/utils";
 import { configState } from "@/app/lib/store/configStore";
 import { apiFetch } from "@/app/lib/apiClient";
@@ -36,14 +35,10 @@ function PromptEditorContent() {
   const searchParams = useSearchParams();
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { activeKey } = useAuth();
-
-  // URL query params for cross-navigation
   const urlConfigId = searchParams.get("config");
   const urlVersion = searchParams.get("version");
   const showHistory = searchParams.get("history") === "true";
   const isNewConfig = searchParams.get("new") === "true";
-
-  // Evaluation context to preserve (when coming from evaluations page)
   const urlDatasetId = searchParams.get("dataset");
   const urlExperimentName = searchParams.get("experiment");
   const fromEvaluations = searchParams.get("from") === "evaluations";
@@ -76,20 +71,9 @@ function PromptEditorContent() {
   const initialLoadComplete = !isLoading;
   const editorInitialized = React.useRef(false);
   const [editorReady, setEditorReady] = useState<boolean>(!urlConfigId);
-
   const [stableVersionItemsMap, setStableVersionItemsMap] = useState<
-    Record<string, import("@/app/lib/types/configs").ConfigVersionItems[]>
+    Record<string, ConfigVersionItems[]>
   >({});
-
-  useEffect(() => {
-    if (Object.keys(hookVersionItemsMap).length > 0) {
-      setStableVersionItemsMap((prev) => ({ ...prev, ...hookVersionItemsMap }));
-    }
-  }, [hookVersionItemsMap]);
-
-  const versionItemsMap = stableVersionItemsMap;
-
-  // Current working state
   const [currentContent, setCurrentContent] = useState<string>(
     "You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.",
   );
@@ -106,20 +90,22 @@ function PromptEditorContent() {
   const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
     new Set(),
   );
-
-  // UI state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>("");
-  const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true); // Default open, or from URL param
-  const [showConfigPane, setShowConfigPane] = useState<boolean>(true); // Config pane collapse state
-
-  // History viewing state
+  const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true);
+  const [showConfigPane, setShowConfigPane] = useState<boolean>(true);
   const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(
     null,
   );
   const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
 
-  const getApiKey = (): string | null => activeKey?.key ?? null;
+  useEffect(() => {
+    if (Object.keys(hookVersionItemsMap).length > 0) {
+      setStableVersionItemsMap((prev) => ({ ...prev, ...hookVersionItemsMap }));
+    }
+  }, [hookVersionItemsMap]);
+
+  const versionItemsMap = stableVersionItemsMap;
 
   // Populate the editor from a fully-loaded SavedConfig
   const applyConfig = React.useCallback(
@@ -175,7 +161,7 @@ function PromptEditorContent() {
       loadVersionsForConfig(config.config_id);
       applyConfig(config);
     },
-    [applyConfig, loadVersionsForConfig],
+    [applyConfig, loadVersionsForConfig, defaultConfig],
   );
 
   // Initialize editor from URL params — runs once, on first load completion
@@ -232,6 +218,7 @@ function PromptEditorContent() {
     loadVersionsForConfig,
     loadSingleVersion,
     applyConfig,
+    defaultConfig,
   ]);
 
   // Re-populate version items when missing (e.g. after background cache revalidation wipes versionItemsCache)
@@ -288,7 +275,7 @@ function PromptEditorContent() {
       return;
     }
 
-    const apiKey = getApiKey();
+    const apiKey = activeKey?.key;
     if (!apiKey) {
       toast.error("No API key found. Please add an API key in the Keystore.");
       return;
@@ -494,7 +481,6 @@ function PromptEditorContent() {
                   loadSingleVersionForConfig={loadSingleVersion}
                 />
 
-                {/* Show DiffView only when comparing versions (sidebar open + version selected) */}
                 {showHistorySidebar && selectedVersion ? (
                   <DiffView
                     selectedCommit={selectedVersion}

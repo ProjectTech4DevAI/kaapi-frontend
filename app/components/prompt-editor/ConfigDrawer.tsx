@@ -1,6 +1,6 @@
 import React from "react";
 import { colors } from "@/app/lib/colors";
-import { Tool } from "@/app/lib/configTypes";
+import { Tool } from "@/app/lib/types/configs";
 import {
   Config,
   Commit,

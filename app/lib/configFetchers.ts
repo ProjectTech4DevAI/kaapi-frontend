@@ -9,22 +9,18 @@ import {
   ConfigListResponse,
   ConfigVersionListResponse,
   ConfigVersionResponse,
-} from "@/app/lib/configTypes";
-import { SavedConfig, ConfigCache, FetchResult } from "@/app/lib/types/configs";
+  SavedConfig,
+  ConfigCache,
+  FetchResult,
+} from "@/app/lib/types/configs";
 import { CACHE_INVALIDATED_EVENT } from "@/app/lib/constants";
 import { configState } from "@/app/lib/store/configStore";
 import { flattenConfigVersion } from "@/app/lib/utils";
 import { apiFetch } from "@/app/lib/apiClient";
 
 /**
- * Schedules a single background validation pass.
- * Only one validation runs at a time; subsequent calls while one is in progress
- * are silently dropped.
- *
- * Uses a single GET /api/configs call and compares only updated_at timestamps —
- * NO per-config GET /api/configs/{id}/versions calls.
- * When a new version is created the backend bumps the parent config's updated_at,
- * so the updated_at check is sufficient to detect all changes.
+ * Runs a single background cache validation, skipping if one is already in progress.
+ * Uses /api/configs and updated_at to detect changes without per-config API calls.
  */
 export function scheduleBackgroundValidation(
   cache: ConfigCache,
@@ -77,12 +73,8 @@ export function scheduleBackgroundValidation(
 }
 
 /**
- * Fetches configs and their LATEST version detail.
- * Reduces API calls from 1 + N + N*M  →  1 + 2N
- * (configs list) + (versions list per config) + (one latest-version detail per config)
- *
- * When pageSize is provided, only the first N configs get version details fetched.
- * The full lightweight config list is always stored in configState.allConfigMeta.
+ * Fetches configs with their latest version details, reducing API calls significantly.
+ * When pageSize is set, only first N configs include details; full metadata is still cached.
  */
 export async function fetchAllConfigs(
   apiKey: string,

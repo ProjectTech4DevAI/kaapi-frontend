@@ -1,96 +1,190 @@
 /**
- * Config Library - Central hub for managing configurations
- *
- * Features:
- * - View all configs with their versions
- * - Quick actions: Edit, Use in Evaluation, View History
- * - Shows evaluation usage count per config
- * - Create new config navigation
+ * Config Library: View and manage configs with quick actions (edit/use),
+ * showing usage count, and lazily loading version details on selection.
  */
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import { colors } from "@/app/lib/colors";
-import { useConfigs } from "@/app/hooks/useConfigs";
-import { SavedConfig } from "@/app/lib/types/configs";
+import { usePaginatedList } from "@/app/hooks/usePaginatedList";
+import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
 import ConfigCard from "@/app/components/ConfigCard";
-import { LoaderBox } from "@/app/components/Loader";
+import Loader, { LoaderBox } from "@/app/components/Loader";
 import { EvalJob } from "@/app/components/types";
+import {
+  ConfigPublic,
+  ConfigVersionItems,
+  ConfigVersionResponse,
+  SavedConfig,
+} from "@/app/lib/types/configs";
+import {
+  configState,
+  pendingVersionLoads,
+  pendingSingleVersionLoads,
+} from "@/app/lib/store/configStore";
+import { flattenConfigVersion } from "@/app/lib/utils";
+import {
+  SidebarToggleIcon,
+  SearchIcon,
+  RefreshIcon,
+  PlusIcon,
+  WarningTriangleIcon,
+  GearIcon,
+} from "@/app/components/icons";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
 
+const SEARCH_DEBOUNCE_MS = 350;
+
 export default function ConfigLibraryPage() {
   const router = useRouter();
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
-  const { activeKey } = useAuth();
-  const {
-    configGroups,
-    isLoading,
-    error,
-    refetch,
-    isCached,
-    loadMoreConfigs,
-    hasMoreConfigs,
-    isLoadingMore,
-  } = useConfigs({ pageSize: 10 });
-  const [searchQuery, setSearchQuery] = useState("");
   const [evaluationCounts, setEvaluationCounts] = useState<
     Record<string, number>
   >({});
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { activeKey } = useAuth();
+  const apiKey = activeKey?.key;
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [columnCount, setColumnCount] = useState(3);
+  const {
+    items: configs,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refetch,
+  } = usePaginatedList<ConfigPublic>({
+    endpoint: "/api/configs",
+    query: debouncedQuery,
+  });
+  const scrollRef = useInfiniteScroll({
+    onLoadMore: loadMore,
+    hasMore,
+    isLoading: isLoading || isLoadingMore,
+  });
 
-  // Fetch evaluation counts for each config
+  // Responsive column count (matches Tailwind lg/xl breakpoints)
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth >= 1280) setColumnCount(3);
+      else if (window.innerWidth >= 1024) setColumnCount(2);
+      else setColumnCount(1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Distribute configs into fixed columns so items never shift between columns
+  const columns = useMemo(() => {
+    const cols: ConfigPublic[][] = Array.from(
+      { length: columnCount },
+      () => [],
+    );
+    configs.forEach((config, i) => cols[i % columnCount].push(config));
+    return cols;
+  }, [configs, columnCount]);
+
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedQuery(searchInput.trim()),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   useEffect(() => {
     const fetchEvaluationCounts = async () => {
       if (!activeKey) return;
-
       try {
         const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
           "/api/evaluations",
           activeKey.key,
         );
         const jobs: EvalJob[] = Array.isArray(data) ? data : data.data || [];
-
-        // Count evaluations per config_id
         const counts: Record<string, number> = {};
         jobs.forEach((job) => {
           if (job.config_id) {
             counts[job.config_id] = (counts[job.config_id] || 0) + 1;
           }
         });
-
         setEvaluationCounts(counts);
       } catch (e) {
         console.error("Failed to fetch evaluation counts:", e);
       }
     };
-
     fetchEvaluationCounts();
   }, [activeKey]);
 
-  // Filter configs based on search query
-  const filteredConfigs = configGroups.filter(
-    (group) =>
-      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.latestVersion.modelName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      group.latestVersion.instructions
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()),
+  const loadVersionsForConfig = useCallback(
+    async (configId: string) => {
+      if (configState.versionItemsCache[configId]) return;
+      const existing = pendingVersionLoads.get(configId);
+      if (existing) {
+        await existing;
+        return;
+      }
+      if (!apiKey) return;
+
+      const loadPromise = (async () => {
+        const res = await apiFetch<{
+          success: boolean;
+          data: ConfigVersionItems[];
+        }>(`/api/configs/${configId}/versions`, apiKey);
+        if (res.success && res.data) {
+          configState.versionItemsCache[configId] = res.data;
+        }
+      })().finally(() => pendingVersionLoads.delete(configId));
+
+      pendingVersionLoads.set(configId, loadPromise);
+      await loadPromise;
+    },
+    [apiKey],
+  );
+
+  const loadSingleVersion = useCallback(
+    async (configId: string, version: number): Promise<SavedConfig | null> => {
+      const key = `${configId}:${version}`;
+      const existing = pendingSingleVersionLoads.get(key);
+      if (existing) return existing;
+      if (!apiKey) return null;
+
+      const configPublic =
+        configs.find((c) => c.id === configId) ??
+        configState.allConfigMeta?.find((m) => m.id === configId);
+      if (!configPublic) return null;
+
+      const loadPromise: Promise<SavedConfig | null> = (async () => {
+        try {
+          const res = await apiFetch<ConfigVersionResponse>(
+            `/api/configs/${configId}/versions/${version}`,
+            apiKey,
+          );
+          if (!res.success || !res.data) return null;
+          return flattenConfigVersion(configPublic, res.data);
+        } catch (e) {
+          console.error(
+            `Failed to fetch version ${version} for config ${configId}:`,
+            e,
+          );
+          return null;
+        }
+      })().finally(() => pendingSingleVersionLoads.delete(key));
+
+      pendingSingleVersionLoads.set(key, loadPromise);
+      return loadPromise;
+    },
+    [apiKey, configs],
   );
 
   const handleCreateNew = () => {
     router.push("/configurations/prompt-editor?new=true");
-  };
-
-  const handleUseInEvaluation = (config: SavedConfig) => {
-    router.push(
-      `/evaluations?config=${config.config_id}&version=${config.version}`,
-    );
   };
 
   return (
@@ -127,28 +221,7 @@ export default function ConfigLibraryPage() {
                   e.currentTarget.style.color = colors.text.secondary;
                 }}
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  {sidebarCollapsed ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
-                  )}
-                </svg>
+                <SidebarToggleIcon collapsed={sidebarCollapsed} />
               </button>
               <div className="flex-1">
                 <h1
@@ -175,26 +248,15 @@ export default function ConfigLibraryPage() {
               backgroundColor: colors.bg.primary,
             }}
           >
-            {/* Search */}
             <div className="flex-1 relative">
-              <svg
+              <SearchIcon
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
                 style={{ color: colors.text.secondary }}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              />
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search configs..."
                 className="w-full pl-10 pr-4 py-2 rounded-md text-sm focus:outline-none transition-colors"
                 style={{
@@ -205,37 +267,8 @@ export default function ConfigLibraryPage() {
               />
             </div>
 
-            {/* Cache Indicator */}
-            {isCached && !isLoading && (
-              <span
-                className="text-xs px-2 py-1 rounded-full flex items-center gap-1"
-                style={{
-                  backgroundColor: "#f0fdf4",
-                  color: "#16a34a",
-                  border: "1px solid #86efac",
-                }}
-                title="Showing cached data. Click refresh to get latest."
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                Cached
-              </span>
-            )}
-
-            {/* Refresh */}
             <button
-              onClick={() => refetch(true)}
+              onClick={refetch}
               disabled={isLoading}
               className="p-2 rounded-md transition-colors flex items-center gap-1"
               style={{
@@ -253,22 +286,11 @@ export default function ConfigLibraryPage() {
               }}
               title="Force refresh from server"
             >
-              <svg
+              <RefreshIcon
                 className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              />
             </button>
 
-            {/* Create New */}
             <button
               onClick={handleCreateNew}
               className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
@@ -284,52 +306,18 @@ export default function ConfigLibraryPage() {
                 (e.currentTarget.style.backgroundColor = colors.accent.primary)
               }
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
+              <PlusIcon className="w-4 h-4" />
               New Config
             </button>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-auto p-6">
+          <div ref={scrollRef} className="flex-1 overflow-auto p-6">
             {isLoading ? (
               <LoaderBox message="Loading configurations..." size="md" />
             ) : error ? (
-              <div
-                className="rounded-lg p-6 text-center"
-                style={{
-                  backgroundColor: "#fef2f2",
-                  border: "1px solid #fecaca",
-                }}
-              >
-                <svg
-                  className="w-12 h-12 mx-auto mb-3"
-                  style={{ color: "#dc2626" }}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <p className="text-sm font-medium" style={{ color: "#dc2626" }}>
-                  {error}
-                </p>
+              <div className="rounded-lg p-6 text-center bg-[#fef2f2] border border-[#fecaca]">
+                <WarningTriangleIcon className="w-12 h-12 mx-auto mb-3 text-[#dc2626]" />
+                <p className="text-sm font-medium text-[#dc2626]">{error}</p>
                 <button
                   onClick={() => router.push("/keystore")}
                   className="mt-4 px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -341,7 +329,7 @@ export default function ConfigLibraryPage() {
                   Go to Keystore
                 </button>
               </div>
-            ) : filteredConfigs.length === 0 ? (
+            ) : configs.length === 0 ? (
               <div
                 className="rounded-lg p-8 text-center"
                 style={{
@@ -349,30 +337,20 @@ export default function ConfigLibraryPage() {
                   border: `2px dashed ${colors.border}`,
                 }}
               >
-                {searchQuery ? (
+                {debouncedQuery ? (
                   <>
-                    <svg
+                    <SearchIcon
                       className="w-12 h-12 mx-auto mb-3"
                       style={{ color: colors.text.secondary }}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+                    />
                     <p
                       className="text-sm font-medium"
                       style={{ color: colors.text.primary }}
                     >
-                      No configs match &quot;{searchQuery}&quot;
+                      No configs match &quot;{debouncedQuery}&quot;
                     </p>
                     <button
-                      onClick={() => setSearchQuery("")}
+                      onClick={() => setSearchInput("")}
                       className="mt-2 text-sm underline"
                       style={{ color: colors.text.secondary }}
                     >
@@ -381,26 +359,10 @@ export default function ConfigLibraryPage() {
                   </>
                 ) : (
                   <>
-                    <svg
+                    <GearIcon
                       className="w-12 h-12 mx-auto mb-3"
                       style={{ color: colors.text.secondary }}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
+                    />
                     <p
                       className="text-sm font-medium"
                       style={{ color: colors.text.primary }}
@@ -428,63 +390,28 @@ export default function ConfigLibraryPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredConfigs.map((configGroup) => (
-                    <ConfigCard
-                      key={configGroup.config_id}
-                      configGroup={configGroup}
-                      evaluationCount={
-                        evaluationCounts[configGroup.config_id] || 0
-                      }
-                      onUseInEvaluation={handleUseInEvaluation}
-                    />
+                <div
+                  className="grid gap-4 items-start"
+                  style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+                >
+                  {columns.map((col, colIdx) => (
+                    <div key={colIdx} className="flex flex-col gap-4">
+                      {col.map((config) => (
+                        <ConfigCard
+                          key={config.id}
+                          config={config}
+                          evaluationCount={evaluationCounts[config.id] || 0}
+                          onLoadVersions={loadVersionsForConfig}
+                          onLoadSingleVersion={loadSingleVersion}
+                        />
+                      ))}
+                    </div>
                   ))}
                 </div>
-                {hasMoreConfigs && !searchQuery && (
+
+                {isLoadingMore && (
                   <div className="flex justify-center mt-6">
-                    <button
-                      onClick={loadMoreConfigs}
-                      disabled={isLoadingMore}
-                      className="px-6 py-2.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2"
-                      style={{
-                        backgroundColor: colors.bg.primary,
-                        border: `1px solid ${colors.border}`,
-                        color: colors.text.secondary,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isLoadingMore) {
-                          e.currentTarget.style.backgroundColor =
-                            colors.bg.secondary;
-                          e.currentTarget.style.color = colors.text.primary;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          colors.bg.primary;
-                        e.currentTarget.style.color = colors.text.secondary;
-                      }}
-                    >
-                      {isLoadingMore ? (
-                        <>
-                          <svg
-                            className="w-4 h-4 animate-spin"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                            />
-                          </svg>
-                          Loading...
-                        </>
-                      ) : (
-                        "Load More"
-                      )}
-                    </button>
+                    <Loader message="Loading more..." size="sm" />
                   </div>
                 )}
               </>

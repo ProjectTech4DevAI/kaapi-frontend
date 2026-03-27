@@ -17,7 +17,7 @@ import {
 import {
   CACHE_MAX_AGE_MS,
   CACHE_INVALIDATED_EVENT,
-  PAGE_SIZE,
+  DEFAULT_PAGE_LIMIT as PAGE_SIZE,
 } from "@/app/lib/constants";
 import {
   configState,

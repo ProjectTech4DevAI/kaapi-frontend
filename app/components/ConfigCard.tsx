@@ -121,12 +121,11 @@ export default function ConfigCard({
           >
             <span style={{ color: colors.text.secondary }}>Temp: </span>
             <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-              {latestVersion.temperature.toFixed(2)}
+              {latestVersion.temperature?.toFixed(2) ?? "N/A"}
             </span>
           </div>
         </div>
 
-        {/* Tools Dropdown */}
         {latestVersion.tools && latestVersion.tools.length > 0 && (
           <div className="mb-4">
             <button

@@ -56,7 +56,6 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   return new Date(date).toLocaleDateString();
 };
 
-// Call this when a config is saved/updated to invalidate cache
 export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
@@ -160,4 +159,19 @@ export const groupConfigs = (
       versionItems: vItemsMap?.[config_id] ?? [],
     };
   });
+};
+
+export const escapeCSVValue = (value: string): string => {
+  return value.replace(/"/g, '""').replace(/\n/g, " ");
+};
+
+export const sanitizeCSVCell = (
+  value: string,
+  preventFormulaInjection = false,
+): string => {
+  let sanitized = escapeCSVValue(value);
+  if (preventFormulaInjection && /^[=+\-@]/.test(sanitized)) {
+    sanitized = " " + sanitized;
+  }
+  return `"${sanitized}"`;
 };

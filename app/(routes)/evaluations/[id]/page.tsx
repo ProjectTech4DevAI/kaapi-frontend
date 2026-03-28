@@ -20,7 +20,6 @@ import {
   GroupedTraceItem,
   isGroupedFormat,
 } from "@/app/components/types";
-import { getStatusColor } from "@/app/components/utils";
 import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/DetailedResultsTable";
@@ -35,6 +34,7 @@ import {
   GroupIcon,
   RefreshIcon,
 } from "@/app/components/icons";
+import { sanitizeCSVCell } from "@/app/lib/utils";
 
 export default function EvaluationReport() {
   const router = useRouter();
@@ -55,23 +55,6 @@ export default function EvaluationReport() {
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
-
-  // CSV helper functions
-  const escapeCSVValue = (value: string): string => {
-    return value.replace(/"/g, '""').replace(/\n/g, " ");
-  };
-
-  const sanitizeCSVCell = (
-    value: string,
-    preventFormulaInjection = false,
-  ): string => {
-    let sanitized = escapeCSVValue(value);
-    // Prevent CSV formula injection by prepending space to values starting with =, +, -, @
-    if (preventFormulaInjection && /^[=+\-@]/.test(sanitized)) {
-      sanitized = " " + sanitized;
-    }
-    return `"${sanitized}"`;
-  };
 
   useEffect(() => {
     if (apiKeys.length > 0 && !selectedKeyId) {
@@ -394,8 +377,6 @@ export default function EvaluationReport() {
 
   const scoreObject = getScoreObject(job);
   const hasScore = !!scoreObject;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const statusColor = getStatusColor(job.status);
   const isNewFormat = hasSummaryScores(scoreObject);
   const summaryScores =
     isNewFormat && scoreObject ? scoreObject.summary_scores || [] : [];

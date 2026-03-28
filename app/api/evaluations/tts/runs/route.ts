@@ -1,53 +1,38 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { apiClient } from "@/app/lib/apiClient";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-
   try {
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/tts/runs`, {
-      headers: {
-        'X-API-KEY': apiKey || '',
-      },
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const { status, data } = await apiClient(
+      request,
+      "/api/v1/evaluations/tts/runs",
+    );
+    return NextResponse.json(data, { status });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error, data: null },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = request.headers.get('X-API-KEY');
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Missing X-API-KEY. Either generate an API Key. Contact Kaapi team for more details' },
-        { status: 401 }
-      );
-    }
     const body = await request.json();
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/tts/runs`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: {
-        'X-API-KEY': apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const { status, data } = await apiClient(
+      request,
+      "/api/v1/evaluations/tts/runs",
+      { method: "POST", body: JSON.stringify(body) },
+    );
+    return NextResponse.json(data, { status });
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: "Failed to forward request to backend",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

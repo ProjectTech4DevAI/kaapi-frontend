@@ -7,6 +7,7 @@ This guide explains how to test the new evaluation report UI with mock data.
 ### Option 1: Using the Test Page (Easiest)
 
 1. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -18,6 +19,7 @@ This guide explains how to test the new evaluation report UI with mock data.
 ### Option 2: Direct URL Access
 
 Navigate directly to the evaluation detail pages:
+
 - **Evaluation #43 (Hindi)**: http://localhost:3000/evaluations/43
 - **Evaluation #44 (English)**: http://localhost:3000/evaluations/44
 
@@ -26,6 +28,7 @@ Navigate directly to the evaluation detail pages:
 Located in `/public/mock-data/`:
 
 ### `evaluation-sample-1.json` (ID: 43)
+
 - **Language**: Hindi
 - **Items**: 4 Q&A pairs
 - **Scores**:
@@ -36,6 +39,7 @@ Located in `/public/mock-data/`:
 - **Features**: Mix of CORRECT, PARTIAL, and INCORRECT responses
 
 ### `evaluation-sample-2.json` (ID: 44)
+
 - **Language**: English
 - **Items**: 3 Q&A pairs
 - **Scores**: Same as above
@@ -45,6 +49,7 @@ Located in `/public/mock-data/`:
 ## What to Test
 
 ### 1. Table View
+
 - ✅ Question, Answer, Ground Truth columns display properly
 - ✅ All score columns appear dynamically
 - ✅ Long text truncates with expand/collapse (details/summary)
@@ -54,35 +59,42 @@ Located in `/public/mock-data/`:
 - ✅ Row hover effects work
 
 ### 2. Metrics Overview
+
 - ✅ All NUMERIC metrics show avg ± std
 - ✅ CATEGORICAL metrics show distribution
 - ✅ Responsive grid layout
 - ✅ Proper formatting (3 decimal places for scores)
 
 ### 3. CSV Export
+
 - ✅ Click "Export CSV" button
 - ✅ File downloads with all columns
 - ✅ Q&A pairs and scores included
 - ✅ Proper CSV escaping
 
 ### 4. Navigation
+
 - ✅ Back button returns to /evaluations?tab=results
 - ✅ View Config button opens modal
 - ✅ Sidebar navigation works
 
 ### 5. Assistant Info
+
 - ✅ Evaluation #44 shows assistant badge
 - ✅ Evaluation #43 shows no assistant
 
 ## Switching Between Mock and Real Data
 
 ### Enable Mock Data (Default)
+
 In `/app/api/evaluations/[id]/route.ts`:
+
 ```typescript
 const USE_MOCK_DATA = true;
 ```
 
 ### Disable Mock Data (Use Real Backend)
+
 ```typescript
 const USE_MOCK_DATA = false;
 ```
@@ -92,6 +104,7 @@ const USE_MOCK_DATA = false;
 ## ID Mapping
 
 The mock API maps IDs to files:
+
 - **ID 43, 1, or any other number** → `evaluation-sample-1.json`
 - **ID 44 or 2** → `evaluation-sample-2.json`
 
@@ -104,11 +117,11 @@ You can modify this mapping in `/app/api/evaluations/[id]/route.ts`
 3. Update the ID mapping in the API route:
 
 ```typescript
-let mockFileName = 'evaluation-sample-1.json';
-if (id === '44' || id === '2') {
-  mockFileName = 'evaluation-sample-2.json';
-} else if (id === '45') {
-  mockFileName = 'your-new-file.json'; // Add your mapping
+let mockFileName = "evaluation-sample-1.json";
+if (id === "44" || id === "2") {
+  mockFileName = "evaluation-sample-2.json";
+} else if (id === "45") {
+  mockFileName = "your-new-file.json"; // Add your mapping
 }
 ```
 
@@ -128,7 +141,7 @@ The mock data follows this structure:
       {
         "name": "cosine_similarity",
         "avg": 0.453,
-        "std": 0.060,
+        "std": 0.06,
         "total_pairs": 4,
         "data_type": "NUMERIC"
       },
@@ -166,16 +179,19 @@ The mock data follows this structure:
 ## Troubleshooting
 
 ### Mock data not loading
+
 - Check console for `[MOCK MODE]` logs
 - Verify files exist in `/public/mock-data/`
 - Ensure `USE_MOCK_DATA = true`
 
 ### Table not showing
+
 - Check browser console for errors
 - Verify `scores.individual_scores` exists in JSON
 - Check that all required fields are present
 
 ### Scores not color-coded
+
 - Verify `data_type` is set correctly
 - Check that NUMERIC values are numbers, not strings
 - Ensure CATEGORICAL values match expected values
@@ -200,6 +216,7 @@ After testing with mock data and confirming the UI works:
 ---
 
 **Need Help?** Check the implementation files:
+
 - Type definitions: `/app/components/types.ts`
 - Table component: `/app/components/DetailedResultsTable.tsx`
 - Detail page: `/app/evaluations/[id]/page.tsx`

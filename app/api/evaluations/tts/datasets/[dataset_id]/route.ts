@@ -1,19 +1,11 @@
-import { NextResponse } from 'next/server';
+import { apiClient } from "@/app/lib/apiClient";
+import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ dataset_id: string }> }
+  { params }: { params: Promise<{ dataset_id: string }> },
 ) {
   const { dataset_id } = await params;
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized: Missing API key', data: null },
-      { status: 401 }
-    );
-  }
 
   try {
     // Forward query parameters to the backend
@@ -22,64 +14,69 @@ export async function GET(
     for (const [key, value] of searchParams.entries()) {
       backendParams.append(key, value);
     }
-    const queryString = backendParams.toString() ? `?${backendParams.toString()}` : '';
+    const queryString = backendParams.toString()
+      ? `?${backendParams.toString()}`
+      : "";
 
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/tts/datasets/${dataset_id}${queryString}`, {
-      headers: {
-        'X-API-KEY': apiKey,
-      },
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
+    const { data, status } = await apiClient(
+      request,
+      `/api/v1/evaluations/tts/datasets/${dataset_id}${queryString}`,
+    );
 
     // If fetch_content=true, download the CSV from the signed URL and return it
-    const fetchContent = new URL(request.url).searchParams.get('fetch_content');
-    if (fetchContent === 'true') {
+    const fetchContent = new URL(request.url).searchParams.get("fetch_content");
+    if (fetchContent === "true") {
       const signedUrl = data?.data?.signed_url || data?.signed_url;
       if (!signedUrl) {
-        return NextResponse.json({ error: 'No signed URL available' }, { status: 404 });
+        return NextResponse.json(
+          { error: "No signed URL available" },
+          { status: 404 },
+        );
       }
       const csvResponse = await fetch(signedUrl);
       if (!csvResponse.ok) {
-        return NextResponse.json({ error: 'Failed to fetch CSV file' }, { status: 502 });
+        return NextResponse.json(
+          { error: "Failed to fetch CSV file" },
+          { status: 502 },
+        );
       }
       const csvText = await csvResponse.text();
-      return NextResponse.json({ ...data, csv_content: csvText }, { status: 200 });
+      return NextResponse.json(
+        { ...data, csv_content: csvText },
+        { status: 200 },
+      );
     }
 
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data, { status });
   } catch (_error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch dataset', data: null },
-      { status: 500 }
+      { success: false, error: "Failed to fetch dataset", data: null },
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ dataset_id: string }> }
+  { params }: { params: Promise<{ dataset_id: string }> },
 ) {
   const { dataset_id } = await params;
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-
-  if (!apiKey) {
-    return NextResponse.json({ success: false, error: 'Unauthorized: Missing API key' }, { status: 401 });
-  }
 
   try {
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/tts/datasets/${dataset_id}`, {
-      method: 'DELETE',
-      headers: { 'X-API-KEY': apiKey },
-    });
-    let data;
-    try { data = await response.json(); } catch { data = { success: true }; }
-    return NextResponse.json(data, { status: response.ok ? 200 : response.status });
+    const { data, status } = await apiClient(
+      request,
+      `/api/v1/evaluations/tts/datasets/${dataset_id}`,
+      { method: "DELETE" },
+    );
+    return NextResponse.json(data, { status });
   } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: 'Failed to delete dataset', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete dataset",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

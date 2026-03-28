@@ -10,6 +10,7 @@
  */
 
 "use client";
+
 import { useState, useEffect } from "react";
 import ConfigDrawer from "./ConfigDrawer";
 import { useToast } from "./Toast";
@@ -26,7 +27,6 @@ import {
 } from "@/app/lib/configTypes";
 import { colors } from "../lib/colors";
 
-// UI representation of a config version (flattened for easier display)
 export interface SavedConfig {
   id: string; // version id
   config_id: string; // parent config id
@@ -521,7 +521,9 @@ export default function SimplifiedConfigEditor({
               onClick={() => setIsDrawerOpen(true)}
               className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 relative"
               style={{
-                backgroundColor: hasUnsavedChanges ? "#fffbeb" : colors.bg.primary,
+                backgroundColor: hasUnsavedChanges
+                  ? "#fffbeb"
+                  : colors.bg.primary,
                 borderWidth: "1px",
                 borderColor: hasUnsavedChanges ? "#fcd34d" : "#e5e5e5",
                 color: hasUnsavedChanges ? "#b45309" : "#171717",

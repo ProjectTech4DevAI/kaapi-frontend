@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { apiClient } from "@/app/lib/apiClient";
 
 /**
  * GET /api/evaluations
@@ -6,28 +7,17 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    const apiKey = request.headers.get('X-API-KEY');
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Missing X-API-KEY' }, { status: 401 });
-    }
+    const { status, data } = await apiClient(request, "/api/v1/evaluations");
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-
-    const response = await fetch(`${backendUrl}/api/v1/evaluations`, {
-      method: 'GET',
-      headers: {
-        'X-API-KEY': apiKey,
-      },
-    });
-
-    const data = await response.json();
-
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data, { status });
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch evaluations', details: error.message },
-      { status: 500 }
+      {
+        error: "Failed to fetch evaluations",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
@@ -38,30 +28,22 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = request.headers.get('X-API-KEY');
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Missing X-API-KEY' }, { status: 401 });
-    }
-
     const body = await request.json();
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
 
-    const response = await fetch(`${backendUrl}/api/v1/evaluations`, {
-      method: 'POST',
+    const { status, data } = await apiClient(request, "/api/v1/evaluations", {
+      method: "POST",
       body: JSON.stringify(body),
-      headers: {
-        'X-API-KEY': apiKey,
-        'Content-Type': 'application/json',
-      },
     });
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data, { status });
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to forward request', details: error.message },
-      { status: 500 }
+      {
+        error: "Failed to forward request",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

@@ -1,6 +1,5 @@
-import React from 'react';
-import { colors } from '@/app/lib/colors';
-import { SavedConfig } from '@/app/lib/useConfigs';
+import { colors } from "@/app/lib/colors";
+import { SavedConfig } from "@/app/lib/types/configs";
 
 interface PromptDiffPaneProps {
   selectedCommit: SavedConfig;
@@ -8,15 +7,18 @@ interface PromptDiffPaneProps {
 }
 
 interface DiffLine {
-  type: 'same' | 'added' | 'removed';
+  type: "same" | "added" | "removed";
   content: string;
   lineNumber: number;
 }
 
 // Simple diff utility - matches SimplifiedConfigEditor implementation
-function generateDiff(text1: string, text2: string): { left: DiffLine[], right: DiffLine[] } {
-  const lines1 = text1.split('\n');
-  const lines2 = text2.split('\n');
+function generateDiff(
+  text1: string,
+  text2: string,
+): { left: DiffLine[]; right: DiffLine[] } {
+  const lines1 = text1.split("\n");
+  const lines2 = text2.split("\n");
   const left: DiffLine[] = [];
   const right: DiffLine[] = [];
   const maxLen = Math.max(lines1.length, lines2.length);
@@ -27,20 +29,20 @@ function generateDiff(text1: string, text2: string): { left: DiffLine[], right: 
 
     if (line1 === null && line2 !== null) {
       // Line only exists in text2 (added)
-      left.push({ type: 'same', content: '', lineNumber: i + 1 });
-      right.push({ type: 'added', content: line2, lineNumber: i + 1 });
+      left.push({ type: "same", content: "", lineNumber: i + 1 });
+      right.push({ type: "added", content: line2, lineNumber: i + 1 });
     } else if (line1 !== null && line2 === null) {
       // Line only exists in text1 (removed)
-      left.push({ type: 'removed', content: line1, lineNumber: i + 1 });
-      right.push({ type: 'same', content: '', lineNumber: i + 1 });
+      left.push({ type: "removed", content: line1, lineNumber: i + 1 });
+      right.push({ type: "same", content: "", lineNumber: i + 1 });
     } else if (line1 !== line2) {
       // Lines are different
-      left.push({ type: 'removed', content: line1 || '', lineNumber: i + 1 });
-      right.push({ type: 'added', content: line2 || '', lineNumber: i + 1 });
+      left.push({ type: "removed", content: line1 || "", lineNumber: i + 1 });
+      right.push({ type: "added", content: line2 || "", lineNumber: i + 1 });
     } else {
       // Lines are the same
-      left.push({ type: 'same', content: line1 || '', lineNumber: i + 1 });
-      right.push({ type: 'same', content: line2 || '', lineNumber: i + 1 });
+      left.push({ type: "same", content: line1 || "", lineNumber: i + 1 });
+      right.push({ type: "same", content: line2 || "", lineNumber: i + 1 });
     }
   }
 
@@ -51,8 +53,13 @@ export default function PromptDiffPane({
   selectedCommit,
   compareWith,
 }: PromptDiffPaneProps) {
-  const { left, right } = generateDiff(compareWith.promptContent, selectedCommit.promptContent);
-  const hasChanges = left.some(line => line.type !== 'same') || right.some(line => line.type !== 'same');
+  const { left, right } = generateDiff(
+    compareWith.promptContent,
+    selectedCommit.promptContent,
+  );
+  const hasChanges =
+    left.some((line) => line.type !== "same") ||
+    right.some((line) => line.type !== "same");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -63,17 +70,23 @@ export default function PromptDiffPane({
           borderColor: colors.border,
         }}
       >
-        <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: colors.text.primary }}
+        >
           Prompt Changes
         </h3>
         <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-          Side-by-side comparison: v{compareWith.version} ↔ v{selectedCommit.version}
+          Side-by-side comparison: v{compareWith.version} ↔ v
+          {selectedCommit.version}
         </div>
       </div>
 
       {!hasChanges ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm" style={{ color: colors.text.secondary }}>No prompt changes</p>
+          <p className="text-sm" style={{ color: colors.text.secondary }}>
+            No prompt changes
+          </p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -85,7 +98,10 @@ export default function PromptDiffPane({
               backgroundColor: colors.bg.secondary,
             }}
           >
-            <div className="px-3 py-2 text-xs font-semibold" style={{ color: colors.text.primary }}>
+            <div
+              className="px-3 py-2 text-xs font-semibold"
+              style={{ color: colors.text.primary }}
+            >
               v{compareWith.version} (Before)
             </div>
             <div
@@ -98,7 +114,14 @@ export default function PromptDiffPane({
 
           {/* Side-by-Side Diff */}
           <div className="flex-1 overflow-auto">
-            <div className="grid grid-cols-2" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '12px' }}>
+            <div
+              className="grid grid-cols-2"
+              style={{
+                fontFamily:
+                  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontSize: "12px",
+              }}
+            >
               {/* Left Panel */}
               <div style={{ backgroundColor: colors.bg.primary }}>
                 {left.map((line, idx) => (
@@ -107,18 +130,23 @@ export default function PromptDiffPane({
                     className="px-3 py-1"
                     style={{
                       backgroundColor:
-                        line.type === 'removed' ? '#fee2e2' :
-                        line.type === 'added' ? 'transparent' :
-                        colors.bg.primary,
-                      color: line.type === 'removed' ? colors.status.error : colors.text.primary,
-                      minHeight: '24px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
+                        line.type === "removed"
+                          ? "#fee2e2"
+                          : line.type === "added"
+                            ? "transparent"
+                            : colors.bg.primary,
+                      color:
+                        line.type === "removed"
+                          ? colors.status.error
+                          : colors.text.primary,
+                      minHeight: "24px",
+                      lineHeight: "1.5",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {line.type === 'removed' && '- '}
-                    {line.content || '\u00A0'}
+                    {line.type === "removed" && "- "}
+                    {line.content || "\u00A0"}
                   </div>
                 ))}
               </div>
@@ -126,7 +154,10 @@ export default function PromptDiffPane({
               {/* Right Panel */}
               <div
                 className="border-l"
-                style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+                style={{
+                  borderColor: colors.border,
+                  backgroundColor: colors.bg.primary,
+                }}
               >
                 {right.map((line, idx) => (
                   <div
@@ -134,18 +165,21 @@ export default function PromptDiffPane({
                     className="px-3 py-1"
                     style={{
                       backgroundColor:
-                        line.type === 'added' ? '#dcfce7' :
-                        line.type === 'removed' ? 'transparent' :
-                        colors.bg.primary,
-                      color: line.type === 'added' ? '#15803d' : colors.text.primary,
-                      minHeight: '24px',
-                      lineHeight: '1.5',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
+                        line.type === "added"
+                          ? "#dcfce7"
+                          : line.type === "removed"
+                            ? "transparent"
+                            : colors.bg.primary,
+                      color:
+                        line.type === "added" ? "#15803d" : colors.text.primary,
+                      minHeight: "24px",
+                      lineHeight: "1.5",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {line.type === 'added' && '+ '}
-                    {line.content || '\u00A0'}
+                    {line.type === "added" && "+ "}
+                    {line.content || "\u00A0"}
                   </div>
                 ))}
               </div>

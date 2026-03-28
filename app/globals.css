@@ -19,6 +19,36 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Background colors */
+@theme inline {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #fafafa;
+}
+
+/* Text colors */
+@theme inline {
+  --color-text-primary: #171717;
+  --color-text-secondary: #737373;
+}
+
+/* Border colors */
+@theme inline {
+  --color-border: #e5e5e5;
+}
+
+/* Accent colors */
+@theme inline {
+  --color-accent-primary: #171717;
+  --color-accent-hover: #404040;
+}
+
+/* Status colors */
+@theme inline {
+  --color-status-success: #16a34a;
+  --color-status-error: #dc2626;
+  --color-status-warning: #f59e0b;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #000000;
@@ -79,7 +109,8 @@ body {
 }
 
 /* Smooth transitions for all interactive elements */
-button, a {
+button,
+a {
   transition: all 0.2s ease-in-out;
 }
 

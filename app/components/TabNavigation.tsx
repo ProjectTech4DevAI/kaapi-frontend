@@ -3,9 +3,9 @@
  * Provides a tab interface with active state highlighting
  */
 
-"use client"
-import React from 'react';
-import { colors } from '@/app/lib/colors';
+"use client";
+
+import { colors } from "@/app/lib/colors";
 
 export interface Tab {
   id: string;
@@ -18,9 +18,16 @@ interface TabNavigationProps {
   onTabChange: (tabId: string) => void;
 }
 
-export default function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationProps) {
+export default function TabNavigation({
+  tabs,
+  activeTab,
+  onTabChange,
+}: TabNavigationProps) {
   return (
-    <div className="border-b flex gap-1 px-4" style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}>
+    <div
+      className="border-b flex gap-1 px-4"
+      style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+    >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -29,7 +36,7 @@ export default function TabNavigation({ tabs, activeTab, onTabChange }: TabNavig
             onClick={() => onTabChange(tab.id)}
             className="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors"
             style={{
-              borderColor: isActive ? colors.accent.primary : 'transparent',
+              borderColor: isActive ? colors.accent.primary : "transparent",
               color: isActive ? colors.accent.primary : colors.text.secondary,
             }}
           >

@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { colors } from '@/app/lib/colors';
-import { APIKey } from '@/app/keystore/page';
-import { Dataset } from '@/app/datasets/page';
-import { EvalJob, AssistantConfig } from '@/app/components/types';
-import ConfigSelector from '@/app/components/ConfigSelector';
-import Loader from '@/app/components/Loader';
-import EvalRunCard from './EvalRunCard';
-import EvalDatasetDescription from './EvalDatasetDescription';
+import { useState, useEffect, useCallback } from "react";
+import { colors } from "@/app/lib/colors";
+import { Dataset } from "@/app/(routes)/datasets/page";
+import { EvalJob, AssistantConfig } from "@/app/components/types";
+import ConfigSelector from "@/app/components/ConfigSelector";
+import Loader from "@/app/components/Loader";
+import EvalRunCard from "./EvalRunCard";
+import EvalDatasetDescription from "./EvalDatasetDescription";
+import { APIKey } from "@/app/lib/types/credentials";
+import { apiFetch } from "@/app/lib/apiClient";
 
-type Tab = 'datasets' | 'evaluations';
+type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
-  apiKeys: APIKey[];
-  selectedKeyId: string;
+  activeKey: APIKey;
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   setSelectedDatasetId: (id: string) => void;
@@ -31,8 +31,7 @@ export interface EvaluationsTabProps {
 
 export default function EvaluationsTab({
   leftPanelWidth,
-  apiKeys,
-  selectedKeyId,
+  activeKey,
   storedDatasets,
   selectedDatasetId,
   setSelectedDatasetId,
@@ -48,21 +47,25 @@ export default function EvaluationsTab({
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [assistantConfigs, setAssistantConfigs] = useState<Map<string, AssistantConfig>>(new Map());
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [assistantConfigs, setAssistantConfigs] = useState<
+    Map<string, AssistantConfig>
+  >(new Map());
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const selectedDataset = storedDatasets.find(d => d.dataset_id.toString() === selectedDatasetId);
-  const canRun = experimentName.trim() && selectedDatasetId && selectedConfigId && selectedConfigVersion && !isEvaluating;
+  const selectedDataset = storedDatasets.find(
+    (d) => d.dataset_id.toString() === selectedDatasetId,
+  );
+  const canRun =
+    experimentName.trim() &&
+    selectedDatasetId &&
+    selectedConfigId &&
+    selectedConfigVersion &&
+    !isEvaluating;
 
   // Fetch evaluation jobs
   const fetchEvaluations = useCallback(async () => {
-    if (!selectedKeyId) {
-      setError('Please select an API key first');
-      return;
-    }
-    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
-    if (!selectedKey) {
-      setError('Selected API key not found');
+    if (!activeKey?.key) {
+      setError("Please select an API key first");
       return;
     }
 
@@ -70,46 +73,47 @@ export default function EvaluationsTab({
     setError(null);
 
     try {
-      const response = await fetch('/api/evaluations', {
-        method: 'GET',
-        headers: { 'X-API-KEY': selectedKey.key },
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || errorData.message || `Failed to fetch evaluations: ${response.status}`);
-      }
-      const data = await response.json();
-      setEvalJobs(Array.isArray(data) ? data : (data.data || []));
+      const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
+        "/api/evaluations",
+        activeKey.key,
+      );
+      setEvalJobs(Array.isArray(data) ? data : data.data || []);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch evaluation jobs');
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch evaluation jobs",
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [apiKeys, selectedKeyId]);
+  }, [activeKey]);
 
   // Fetch assistant config
-  const fetchAssistantConfig = useCallback(async (assistantId: string) => {
-    if (!selectedKeyId) return;
-    const selectedKey = apiKeys.find(k => k.id === selectedKeyId);
-    if (!selectedKey) return;
+  const fetchAssistantConfig = useCallback(
+    async (assistantId: string) => {
+      if (!activeKey?.key) return;
 
-    try {
-      const response = await fetch(`/api/assistant/${assistantId}`, {
-        method: 'GET',
-        headers: { 'X-API-KEY': selectedKey.key },
-      });
-      if (!response.ok) return;
-      const result = await response.json();
-      if (result.success && result.data) {
-        setAssistantConfigs(prev => new Map(prev).set(assistantId, result.data));
+      try {
+        const result = await apiFetch<{
+          success: boolean;
+          data?: AssistantConfig;
+        }>(`/api/assistant/${assistantId}`, activeKey.key);
+        if (result.success && result.data) {
+          setAssistantConfigs((prev) =>
+            new Map(prev).set(assistantId, result.data!),
+          );
+        }
+      } catch (err) {
+        console.error(
+          `Failed to fetch assistant config for ${assistantId}:`,
+          err,
+        );
       }
-    } catch (err) {
-      console.error(`Failed to fetch assistant config for ${assistantId}:`, err);
-    }
-  }, [apiKeys, selectedKeyId]);
+    },
+    [activeKey],
+  );
 
   useEffect(() => {
-    evalJobs.forEach(job => {
+    evalJobs.forEach((job) => {
       if (job.assistant_id && !assistantConfigs.has(job.assistant_id)) {
         fetchAssistantConfig(job.assistant_id);
       }
@@ -117,41 +121,56 @@ export default function EvaluationsTab({
   }, [evalJobs, assistantConfigs, fetchAssistantConfig]);
 
   useEffect(() => {
-    if (selectedKeyId) fetchEvaluations();
-  }, [selectedKeyId, fetchEvaluations]);
+    if (activeKey?.key) fetchEvaluations();
+  }, [activeKey, fetchEvaluations]);
 
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left Panel - Configuration */}
       <div
         className="flex-shrink-0 border-r flex flex-col overflow-hidden"
-        style={{ width: `${leftPanelWidth}px`, backgroundColor: colors.bg.primary, borderColor: colors.border }}
+        style={{
+          width: `${leftPanelWidth}px`,
+          backgroundColor: colors.bg.primary,
+          borderColor: colors.border,
+        }}
       >
         <div className="flex-1 overflow-auto p-4 space-y-4">
           {/* Page Title */}
           <div>
-            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+            <h2
+              className="text-base font-semibold"
+              style={{ color: colors.text.primary }}
+            >
               Run New Evaluation
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+            <p
+              className="text-xs mt-0.5"
+              style={{ color: colors.text.secondary }}
+            >
               Test model responses against your golden datasets
             </p>
           </div>
 
           {/* Evaluation Name */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ color: colors.text.secondary }}
+            >
               Name *
             </label>
             <input
               type="text"
               value={experimentName}
-              onChange={e => setExperimentName(e.target.value)}
+              onChange={(e) => setExperimentName(e.target.value)}
               placeholder="e.g., test_run_1"
               disabled={isEvaluating}
               className="w-full px-3 py-2 border rounded-md text-sm"
               style={{
-                backgroundColor: isEvaluating ? colors.bg.secondary : colors.bg.primary,
+                backgroundColor: isEvaluating
+                  ? colors.bg.secondary
+                  : colors.bg.primary,
                 borderColor: colors.border,
                 color: colors.text.primary,
               }}
@@ -171,16 +190,27 @@ export default function EvaluationsTab({
 
           {/* Dataset Selection */}
           <div className="pt-2">
-            <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+            <label
+              className="block text-xs font-medium mb-1.5"
+              style={{ color: colors.text.secondary }}
+            >
               Select Dataset *
             </label>
             {storedDatasets.length === 0 ? (
-              <div className="border rounded-md p-8 text-center" style={{ borderColor: colors.border }}>
-                <p className="text-sm" style={{ color: colors.text.secondary }}>No datasets available</p>
-                <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                  Create a dataset first in the{' '}
+              <div
+                className="border rounded-md p-8 text-center"
+                style={{ borderColor: colors.border }}
+              >
+                <p className="text-sm" style={{ color: colors.text.secondary }}>
+                  No datasets available
+                </p>
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Create a dataset first in the{" "}
                   <button
-                    onClick={() => setActiveTab('datasets')}
+                    onClick={() => setActiveTab("datasets")}
                     className="underline"
                     style={{ color: colors.accent.primary }}
                   >
@@ -192,16 +222,18 @@ export default function EvaluationsTab({
               <div className="relative">
                 <select
                   value={selectedDatasetId}
-                  onChange={e => setSelectedDatasetId(e.target.value)}
+                  onChange={(e) => setSelectedDatasetId(e.target.value)}
                   className="w-full px-3 py-2 border rounded-md text-sm appearance-none pr-8"
                   style={{
                     backgroundColor: colors.bg.primary,
                     borderColor: colors.border,
-                    color: selectedDatasetId ? colors.text.primary : colors.text.secondary,
+                    color: selectedDatasetId
+                      ? colors.text.primary
+                      : colors.text.secondary,
                   }}
                 >
                   <option value="">-- Select a dataset --</option>
-                  {storedDatasets.map(dataset => (
+                  {storedDatasets.map((dataset) => (
                     <option key={dataset.dataset_id} value={dataset.dataset_id}>
                       {dataset.dataset_name} ({dataset.total_items} items)
                     </option>
@@ -214,7 +246,12 @@ export default function EvaluationsTab({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             )}
@@ -222,20 +259,46 @@ export default function EvaluationsTab({
 
           {/* Selected Dataset Info */}
           {selectedDataset && (
-            <div className="border rounded-lg p-3" style={{ borderColor: colors.status.success, backgroundColor: 'rgba(22, 163, 74, 0.02)' }}>
+            <div
+              className="border rounded-lg p-3"
+              style={{
+                borderColor: colors.status.success,
+                backgroundColor: "rgba(22, 163, 74, 0.02)",
+              }}
+            >
               <div className="flex items-start gap-2">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.status.success }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 flex-shrink-0 mt-0.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{ color: colors.status.success }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <div className="flex-1">
-                  <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                  <div
+                    className="text-sm font-medium"
+                    style={{ color: colors.text.primary }}
+                  >
                     {selectedDataset.dataset_name}
                   </div>
                   {selectedDataset.description && (
-                    <EvalDatasetDescription description={selectedDataset.description} />
+                    <EvalDatasetDescription
+                      description={selectedDataset.description}
+                    />
                   )}
-                  <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-                    {selectedDataset.total_items} items · x{selectedDataset.duplication_factor} duplication
+                  <div
+                    className="text-xs mt-1"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    {selectedDataset.total_items} items · x
+                    {selectedDataset.duplication_factor} duplication
                   </div>
                 </div>
               </div>
@@ -244,7 +307,13 @@ export default function EvaluationsTab({
         </div>
 
         {/* Run Evaluation Button */}
-        <div className="flex-shrink-0 border-t px-4 py-3" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+        <div
+          className="flex-shrink-0 border-t px-4 py-3"
+          style={{
+            borderColor: colors.border,
+            backgroundColor: colors.bg.primary,
+          }}
+        >
           <button
             onClick={async () => {
               const success = await handleRunEvaluation();
@@ -253,19 +322,31 @@ export default function EvaluationsTab({
             disabled={!canRun}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium"
             style={{
-              backgroundColor: canRun ? colors.accent.primary : colors.bg.secondary,
-              color: canRun ? '#fff' : colors.text.secondary,
-              cursor: canRun ? 'pointer' : 'not-allowed',
+              backgroundColor: canRun
+                ? colors.accent.primary
+                : colors.bg.secondary,
+              color: canRun ? "#fff" : colors.text.secondary,
+              cursor: canRun ? "pointer" : "not-allowed",
             }}
           >
             {isEvaluating ? (
               <>
-                <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }} />
+                <div
+                  className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                  style={{
+                    borderColor: colors.text.secondary,
+                    borderTopColor: "transparent",
+                  }}
+                />
                 Running Evaluation...
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M8 5v14l11-7z" />
                 </svg>
                 Run Evaluation
@@ -276,11 +357,17 @@ export default function EvaluationsTab({
       </div>
 
       {/* Right Panel - Evaluation Runs */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: colors.bg.secondary }}>
+      <div
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{ backgroundColor: colors.bg.secondary }}
+      >
         <div className="flex-1 overflow-auto p-4">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold" style={{ color: colors.text.primary }}>
+            <h2
+              className="text-base font-semibold"
+              style={{ color: colors.text.primary }}
+            >
               Evaluation Runs
             </h2>
             <div className="flex items-center gap-2">
@@ -293,8 +380,8 @@ export default function EvaluationsTab({
                   borderColor: colors.border,
                   color: colors.text.primary,
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 6px center',
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 6px center",
                 }}
               >
                 <option value="all">All Status</option>
@@ -311,18 +398,29 @@ export default function EvaluationsTab({
                 aria-label="Refresh evaluations"
               >
                 <svg
-                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
               </button>
             </div>
           </div>
 
-          <div className="rounded-lg overflow-visible" style={{ backgroundColor: colors.bg.primary, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}>
+          <div
+            className="rounded-lg overflow-visible"
+            style={{
+              backgroundColor: colors.bg.primary,
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+            }}
+          >
             {/* Loading */}
             {isLoading && evalJobs.length === 0 && (
               <div className="p-16">
@@ -333,8 +431,13 @@ export default function EvaluationsTab({
             {/* Error */}
             {error && (
               <div className="p-4">
-                <div className="rounded-lg p-3" style={{ backgroundColor: 'hsl(8, 86%, 95%)' }}>
-                  <p className="text-sm" style={{ color: 'hsl(8, 86%, 40%)' }}>Error: {error}</p>
+                <div
+                  className="rounded-lg p-3"
+                  style={{ backgroundColor: "hsl(8, 86%, 95%)" }}
+                >
+                  <p className="text-sm" style={{ color: "hsl(8, 86%, 40%)" }}>
+                    Error: {error}
+                  </p>
                 </div>
               </div>
             )}
@@ -342,36 +445,73 @@ export default function EvaluationsTab({
             {/* Empty State */}
             {!isLoading && evalJobs.length === 0 && !error && (
               <div className="p-16 text-center">
-                <svg className="w-12 h-12 mx-auto mb-3" style={{ color: colors.border }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <svg
+                  className="w-12 h-12 mx-auto mb-3"
+                  style={{ color: colors.border }}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
                 </svg>
-                <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No evaluation runs yet</p>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>Select a dataset and configuration, then run your first evaluation</p>
+                <p
+                  className="text-sm font-medium mb-1"
+                  style={{ color: colors.text.primary }}
+                >
+                  No evaluation runs yet
+                </p>
+                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                  Select a dataset and configuration, then run your first
+                  evaluation
+                </p>
               </div>
             )}
 
             {/* Runs List */}
-            {evalJobs.length > 0 && (() => {
-              const filteredJobs = statusFilter === 'all'
-                ? evalJobs
-                : evalJobs.filter(job => job.status.toLowerCase() === statusFilter);
-              return filteredJobs.length > 0 ? (
-                <div className="p-4 space-y-3">
-                  {filteredJobs.map((job) => (
-                    <EvalRunCard
-                      key={job.id}
-                      job={job}
-                      assistantConfig={job.assistant_id ? assistantConfigs.get(job.assistant_id) : undefined}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-16 text-center">
-                  <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No {statusFilter} runs</p>
-                  <p className="text-xs" style={{ color: colors.text.secondary }}>No evaluation runs with status &quot;{statusFilter}&quot;</p>
-                </div>
-              );
-            })()}
+            {evalJobs.length > 0 &&
+              (() => {
+                const filteredJobs =
+                  statusFilter === "all"
+                    ? evalJobs
+                    : evalJobs.filter(
+                        (job) => job.status.toLowerCase() === statusFilter,
+                      );
+                return filteredJobs.length > 0 ? (
+                  <div className="p-4 space-y-3">
+                    {filteredJobs.map((job) => (
+                      <EvalRunCard
+                        key={job.id}
+                        job={job}
+                        assistantConfig={
+                          job.assistant_id
+                            ? assistantConfigs.get(job.assistant_id)
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-16 text-center">
+                    <p
+                      className="text-sm font-medium mb-1"
+                      style={{ color: colors.text.primary }}
+                    >
+                      No {statusFilter} runs
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: colors.text.secondary }}
+                    >
+                      No evaluation runs with status &quot;{statusFilter}&quot;
+                    </p>
+                  </div>
+                );
+              })()}
           </div>
         </div>
       </div>

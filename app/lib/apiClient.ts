@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 
-const BACKEND_URL =
-  process.env.BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 
 /**
  * Passthrough proxy helper for Next.js route handlers.
@@ -15,7 +14,10 @@ export async function apiClient(
 ) {
   const apiKey = request.headers.get("X-API-KEY") || "";
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+  // Don't set Content-Type for FormData — the browser sets it with the boundary
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   headers.set("X-API-KEY", apiKey);
 
   const response = await fetch(`${BACKEND_URL}${endpoint}`, {
@@ -24,7 +26,8 @@ export async function apiClient(
   });
 
   // 204 No Content has no body
-  const data = response.status === 204 ? null : await response.json();
+  const text = response.status === 204 ? "" : await response.text();
+  const data = text ? JSON.parse(text) : null;
 
   return { status: response.status, data };
 }
@@ -40,7 +43,9 @@ export async function apiFetch<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   headers.set("X-API-KEY", apiKey);
   const res = await fetch(url, {
     ...options,

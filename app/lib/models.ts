@@ -6,20 +6,20 @@ export interface ModelOption {
 export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
   openai: [
     // GPT-5 family
-    { value: 'gpt-5.4', label: 'GPT-5.4' },
-    { value: 'gpt-5.4-pro', label: 'GPT-5.4 Pro' },
-    { value: 'gpt-5.4-mini', label: 'GPT-5.4 Mini' },
-    { value: 'gpt-5.4-nano', label: 'GPT-5.4 Nano' },
-    { value: 'gpt-5', label: 'GPT-5' },
-    { value: 'gpt-5-mini', label: 'GPT-5 Mini' },
-    { value: 'gpt-5-nano', label: 'GPT-5 Nano' },
+    { value: "gpt-5.4", label: "GPT-5.4" },
+    { value: "gpt-5.4-pro", label: "GPT-5.4 Pro" },
+    { value: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
+    { value: "gpt-5.4-nano", label: "GPT-5.4 Nano" },
+    { value: "gpt-5", label: "GPT-5" },
+    { value: "gpt-5-mini", label: "GPT-5 Mini" },
+    { value: "gpt-5-nano", label: "GPT-5 Nano" },
     // GPT-4 family
-    { value: 'gpt-4.1', label: 'GPT-4.1' },
-    { value: 'gpt-4o', label: 'GPT-4o' },
-    { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-    { value: 'gpt-4', label: 'GPT-4' },
-    { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+    { value: "gpt-4.1", label: "GPT-4.1" },
+    { value: "gpt-4o", label: "GPT-4o" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+    { value: "gpt-4", label: "GPT-4" },
+    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
   ],
   // anthropic: [
   //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
@@ -39,5 +39,5 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
  * GPT-5 models do not support temperature or max_num_results parameters.
  */
 export function isGpt5Model(model: string): boolean {
-  return model.startsWith('gpt-5');
+  return model.startsWith("gpt-5");
 }

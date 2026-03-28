@@ -1,20 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { apiClient } from "@/app/lib/apiClient";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ dataset_id: string }> }
+  { params }: { params: Promise<{ dataset_id: string }> },
 ) {
   const { dataset_id } = await params;
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized: Missing API key', data: null },
-      { status: 401 }
-    );
-  }
-
   try {
     // Forward all query parameters to the backend
     const { searchParams } = new URL(request.url);
@@ -22,47 +13,47 @@ export async function GET(
     for (const [key, value] of searchParams.entries()) {
       backendParams.append(key, value);
     }
-    const queryString = backendParams.toString() ? `?${backendParams.toString()}` : '';
+    const queryString = backendParams.toString()
+      ? `?${backendParams.toString()}`
+      : "";
 
-    const backendUrlWithParams = `${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}${queryString}`;
-
-    const response = await fetch(backendUrlWithParams, {
-      headers: {
-        'X-API-KEY': apiKey,
-      },
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/evaluations/stt/datasets/${dataset_id}${queryString}`,
+    );
+    return NextResponse.json(data, { status });
   } catch (_error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch dataset', data: null },
-      { status: 500 }
+      { success: false, error: "Failed to fetch dataset", data: null },
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ dataset_id: string }> }
+  { params }: { params: Promise<{ dataset_id: string }> },
 ) {
   const { dataset_id } = await params;
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-
-  if (!apiKey) {
-    return NextResponse.json({ success: false, error: 'Unauthorized: Missing API key' }, { status: 401 });
-  }
-
   try {
-    const response = await fetch(`${backendUrl}/api/v1/evaluations/stt/datasets/${dataset_id}`, {
-      method: 'DELETE',
-      headers: { 'X-API-KEY': apiKey },
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/evaluations/stt/datasets/${dataset_id}`,
+      {
+        method: "DELETE",
+      },
+    );
+    return NextResponse.json(data, {
+      status: status >= 200 && status < 300 ? 200 : status,
     });
-    let data;
-    try { data = await response.json(); } catch { data = { success: true }; }
-    return NextResponse.json(data, { status: response.ok ? 200 : response.status });
   } catch (error: unknown) {
-    return NextResponse.json({ success: false, error: 'Failed to delete dataset', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete dataset",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

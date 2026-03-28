@@ -1,44 +1,27 @@
-import { NextResponse } from 'next/server';
-
-const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+import { NextResponse } from "next/server";
+import { apiClient } from "@/app/lib/apiClient";
 
 // GET /api/collections/[collection_id] - Get a specific collection
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ collection_id: string }> }
+  { params }: { params: Promise<{ collection_id: string }> },
 ) {
   const { collection_id } = await params;
-  const apiKey = request.headers.get('X-API-KEY');
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'Missing X-API-KEY header' },
-      { status: 401 }
-    );
-  }
-
   try {
-    const response = await fetch(
-      `${backendUrl}/api/v1/collections/${collection_id}?include_docs=true&include_url=true`,
-      {
-        headers: {
-          'X-API-KEY': apiKey,
-        },
-      }
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/collections/${collection_id}?include_docs=true&include_url=true`,
     );
 
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data, { status });
   } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : String(error), data: null },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        data: null,
+      },
+      { status: 500 },
     );
   }
 }
@@ -46,41 +29,28 @@ export async function GET(
 // DELETE /api/collection/[collection_id] - Delete a collection
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ collection_id: string }> }
+  { params }: { params: Promise<{ collection_id: string }> },
 ) {
   const { collection_id } = await params;
-  const apiKey = request.headers.get('X-API-KEY');
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'Missing X-API-KEY header' },
-      { status: 401 }
-    );
-  }
 
   try {
-    const response = await fetch(
-      `${backendUrl}/api/v1/collections/${collection_id}`,
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/collections/${collection_id}`,
       {
-        method: 'DELETE',
-        headers: {
-          'X-API-KEY': apiKey,
-        },
-      }
+        method: "DELETE",
+      },
     );
 
-    const text = await response.text();
-    const data = text ? JSON.parse(text) : { success: true };
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data ?? { success: true }, { status });
   } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : String(error), data: null },
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        data: null,
+      },
+      { status: 500 },
     );
   }
 }

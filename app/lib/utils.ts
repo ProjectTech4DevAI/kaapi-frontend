@@ -8,6 +8,7 @@ import {
   Tool,
 } from "./configTypes";
 import { SavedConfig, ConfigGroup } from "./types/configs";
+import { isGpt5Model } from "./models";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -55,7 +56,6 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   return new Date(date).toLocaleDateString();
 };
 
-// Call this when a config is saved/updated to invalidate cache
 export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
@@ -117,7 +117,9 @@ export const flattenConfigVersion = (
     modelName: params.model || "",
     provider: blob.completion.provider,
     type: blob.completion.type || "text",
-    temperature: params.temperature ?? 0.7,
+    temperature: isGpt5Model(params.model)
+      ? params.temperature
+      : (params.temperature ?? 0.7),
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,
@@ -157,4 +159,19 @@ export const groupConfigs = (
       versionItems: vItemsMap?.[config_id] ?? [],
     };
   });
+};
+
+export const escapeCSVValue = (value: string): string => {
+  return value.replace(/"/g, '""').replace(/\n/g, " ");
+};
+
+export const sanitizeCSVCell = (
+  value: string,
+  preventFormulaInjection = false,
+): string => {
+  let sanitized = escapeCSVValue(value);
+  if (preventFormulaInjection && /^[=+\-@]/.test(sanitized)) {
+    sanitized = " " + sanitized;
+  }
+  return `"${sanitized}"`;
 };

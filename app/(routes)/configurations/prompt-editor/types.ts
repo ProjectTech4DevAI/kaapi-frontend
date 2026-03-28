@@ -36,7 +36,7 @@ export interface ConfigBlob {
     params: {
       model: string;
       instructions: string;
-      temperature: number;
+      temperature?: number;
       // Frontend uses tools array for UI
       tools?: Tool[];
       // Backend expects these as direct fields (flattened from tools array)

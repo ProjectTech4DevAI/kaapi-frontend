@@ -49,29 +49,16 @@ export interface UseConfigsResult {
   error: string | null;
   refetch: (force?: boolean) => Promise<void>;
   isCached: boolean;
-  /**
-   * Ensures the lightweight version list (no config_blob) is cached for a config.
-   * O(1) – either a no-op (already cached) or a single GET /versions call.
-   * Does NOT fetch full version details; use loadSingleVersion for that.
-   */
   loadVersionsForConfig: (config_id: string) => Promise<void>;
-  /** Load the next batch of configs (only relevant when pageSize option is used) */
   loadMoreConfigs: () => Promise<void>;
-  /** True when there are more configs available that haven't been loaded yet */
   hasMoreConfigs: boolean;
-  /** True while loadMoreConfigs is in progress */
   isLoadingMore: boolean;
-  /** Fetches the full details (config_blob) for a single version on demand.
-   * Returns the SavedConfig immediately if already loaded; makes 1 GET call otherwise.
-   * Safe to call concurrently – duplicate in-flight requests are coalesced.
-   */
   loadSingleVersion: (
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
-  /** Lightweight version items per config, indexed by config_id. */
   versionItemsMap: Record<string, ConfigVersionItems[]>;
-  allConfigMeta: ConfigPublic[]; // Full lightweight config list from GET /api/configs.
+  allConfigMeta: ConfigPublic[];
 }
 
 export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {

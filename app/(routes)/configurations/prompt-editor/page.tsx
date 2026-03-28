@@ -30,39 +30,21 @@ import { SavedConfig } from "@/app/lib/types/configs";
 import { invalidateConfigCache } from "@/app/lib/utils";
 import { configState } from "@/app/lib/store/configStore";
 import { apiFetch } from "@/app/lib/apiClient";
+import { isGpt5Model } from "@/app/lib/models";
+import { DEFAULT_CONFIG } from "@/app/lib/constants";
 
 function PromptEditorContent() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { activeKey } = useAuth();
-
-  // URL query params for cross-navigation
   const urlConfigId = searchParams.get("config");
   const urlVersion = searchParams.get("version");
   const showHistory = searchParams.get("history") === "true";
   const isNewConfig = searchParams.get("new") === "true";
-
-  // Evaluation context to preserve (when coming from evaluations page)
   const urlDatasetId = searchParams.get("dataset");
   const urlExperimentName = searchParams.get("experiment");
   const fromEvaluations = searchParams.get("from") === "evaluations";
-
-  // Default config for new versions
-  const defaultConfig: ConfigBlob = {
-    completion: {
-      provider: "openai",
-      type: "text",
-      params: {
-        model: "gpt-4o-mini",
-        instructions: "",
-        temperature: 0.7,
-        tools: [],
-      },
-    },
-  };
-
-  // Use shared configs hook with caching — pageSize:0 means only 1 API call on mount
   const {
     configs: savedConfigs,
     isLoading,
@@ -76,10 +58,33 @@ function PromptEditorContent() {
   const initialLoadComplete = !isLoading;
   const editorInitialized = React.useRef(false);
   const [editorReady, setEditorReady] = useState<boolean>(!urlConfigId);
-
   const [stableVersionItemsMap, setStableVersionItemsMap] = useState<
     Record<string, import("@/app/lib/types/configs").ConfigVersionItems[]>
   >({});
+  const [currentContent, setCurrentContent] = useState<string>(
+    "You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.",
+  );
+  const [currentConfigBlob, setCurrentConfigBlob] =
+    useState<ConfigBlob>(DEFAULT_CONFIG);
+  const [currentConfigName, setCurrentConfigName] = useState<string>("");
+  const [selectedConfigId, setSelectedConfigId] = useState<string>("");
+  const [currentConfigParentId, setCurrentConfigParentId] =
+    useState<string>("");
+  const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0);
+  const [provider, setProvider] = useState<string>("openai");
+  const [temperature, setTemperature] = useState<number>(0.7);
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
+    new Set(),
+  );
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [commitMessage, setCommitMessage] = useState<string>("");
+  const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true);
+  const [showConfigPane, setShowConfigPane] = useState<boolean>(true);
+  const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(
+    null,
+  );
+  const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
 
   useEffect(() => {
     if (Object.keys(hookVersionItemsMap).length > 0) {
@@ -88,38 +93,6 @@ function PromptEditorContent() {
   }, [hookVersionItemsMap]);
 
   const versionItemsMap = stableVersionItemsMap;
-
-  // Current working state
-  const [currentContent, setCurrentContent] = useState<string>(
-    "You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.",
-  );
-  const [currentConfigBlob, setCurrentConfigBlob] =
-    useState<ConfigBlob>(defaultConfig);
-  const [currentConfigName, setCurrentConfigName] = useState<string>("");
-  const [selectedConfigId, setSelectedConfigId] = useState<string>(""); // Selected version ID
-  const [currentConfigParentId, setCurrentConfigParentId] =
-    useState<string>(""); // Parent config ID for evaluation
-  const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0); // Version number for evaluation
-  const [provider, setProvider] = useState<string>("openai");
-  const [temperature, setTemperature] = useState<number>(0.7);
-  const [tools, setTools] = useState<Tool[]>([]);
-  const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
-    new Set(),
-  );
-
-  // UI state
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
-  const [commitMessage, setCommitMessage] = useState<string>("");
-  const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true); // Default open, or from URL param
-  const [showConfigPane, setShowConfigPane] = useState<boolean>(true); // Config pane collapse state
-
-  // History viewing state
-  const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(
-    null,
-  );
-  const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
-
-  const getApiKey = (): string | null => activeKey?.key ?? null;
 
   // Populate the editor from a fully-loaded SavedConfig
   const applyConfig = React.useCallback(
@@ -161,7 +134,7 @@ function PromptEditorContent() {
       if (!config) {
         // Reset to new config
         setCurrentContent("");
-        setCurrentConfigBlob(defaultConfig);
+        setCurrentConfigBlob(DEFAULT_CONFIG);
         setProvider("openai");
         setTemperature(0.7);
         setSelectedConfigId("");
@@ -187,7 +160,7 @@ function PromptEditorContent() {
     // If new config is requested, reset to defaults
     if (isNewConfig) {
       setCurrentContent("");
-      setCurrentConfigBlob(defaultConfig);
+      setCurrentConfigBlob(DEFAULT_CONFIG);
       setProvider("openai");
       setTemperature(0.7);
       setSelectedConfigId("");
@@ -288,7 +261,7 @@ function PromptEditorContent() {
       return;
     }
 
-    const apiKey = getApiKey();
+    const apiKey = activeKey?.key;
     if (!apiKey) {
       toast.error("No API key found. Please add an API key in the Keystore.");
       return;
@@ -314,18 +287,22 @@ function PromptEditorContent() {
         }
       });
 
+      const model = currentConfigBlob.completion.params.model;
+      const gpt5 = isGpt5Model(model);
+
       const configBlob: ConfigBlob = {
         completion: {
           provider: currentConfigBlob.completion.provider,
-          type: currentConfigBlob.completion.type || "text", // Default to 'text'
+          type: currentConfigBlob.completion.type || "text",
           params: {
-            model: currentConfigBlob.completion.params.model,
-            instructions: currentContent, // Store prompt as instructions
-            temperature: currentConfigBlob.completion.params.temperature,
-            // Flatten tools array to direct fields for backend - support multiple knowledge bases
+            model,
+            instructions: currentContent,
+            ...(!gpt5 && {
+              temperature: currentConfigBlob.completion.params.temperature,
+            }),
             ...(allKnowledgeBaseIds.length > 0 && {
               knowledge_base_ids: allKnowledgeBaseIds,
-              max_num_results: maxNumResults,
+              ...(!gpt5 && { max_num_results: maxNumResults }),
             }),
           },
         },

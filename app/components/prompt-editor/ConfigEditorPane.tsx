@@ -7,18 +7,14 @@ import {
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { ConfigPublic } from "@/app/lib/configTypes";
 import { formatRelativeTime } from "@/app/lib/utils";
-import {
-  MODEL_OPTIONS,
-  PROVIDER_TYPES,
-  PROVIDES_OPTIONS,
-} from "@/app/lib/constants";
+import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
+import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
   onConfigChange: (blob: ConfigBlob) => void;
   configName: string;
   onConfigNameChange: (name: string) => void;
-  // Additional props for full functionality
   savedConfigs: SavedConfig[];
   selectedConfigId: string;
   onLoadConfig: (config: SavedConfig | null) => void;
@@ -26,7 +22,6 @@ interface ConfigEditorPaneProps {
   onCommitMessageChange: (message: string) => void;
   onSave: () => void;
   isSaving?: boolean;
-  // Collapse functionality
   collapsed?: boolean;
   onToggle?: () => void;
   allConfigMeta?: ConfigPublic[]; // Lightweight list of all configs
@@ -113,6 +108,7 @@ export default function ConfigEditorPane({
 
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
+  const isGpt5 = isGpt5Model(params.model);
   const tools = (params.tools || []) as Tool[];
 
   // Find currently selected config from loaded set
@@ -743,34 +739,35 @@ export default function ConfigEditorPane({
               </select>
             </div>
 
-            {/* Temperature */}
-            <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
-                Temperature: {(params.temperature ?? 0.7).toFixed(2)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={params.temperature ?? 0.7}
-                onChange={(e) =>
-                  handleTemperatureChange(parseFloat(e.target.value))
-                }
-                className="w-full"
-                style={{ accentColor: colors.accent.primary }}
-              />
-              <div
-                className="flex justify-between text-xs mt-1"
-                style={{ color: colors.text.secondary }}
-              >
-                <span>0</span>
-                <span>2</span>
+            {!isGpt5 && (
+              <div>
+                <label
+                  className="block text-xs font-semibold mb-2"
+                  style={{ color: colors.text.primary }}
+                >
+                  Temperature: {(params.temperature ?? 0.7).toFixed(2)}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.01"
+                  value={params.temperature ?? 0.7}
+                  onChange={(e) =>
+                    handleTemperatureChange(parseFloat(e.target.value))
+                  }
+                  className="w-full"
+                  style={{ accentColor: colors.accent.primary }}
+                />
+                <div
+                  className="flex justify-between text-xs mt-1"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <span>0</span>
+                  <span>2</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tools */}
             <div>
@@ -787,8 +784,6 @@ export default function ConfigEditorPane({
                   style={{
                     backgroundColor: colors.accent.primary,
                     color: colors.bg.primary,
-                    border: "none",
-                    cursor: "pointer",
                   }}
                 >
                   + Add Tool
@@ -849,90 +844,92 @@ export default function ConfigEditorPane({
                       }}
                     />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <label
-                        className="text-xs"
-                        style={{ color: colors.text.primary }}
-                      >
-                        Max Results
-                      </label>
-                      <div
-                        className="relative inline-flex items-center justify-center cursor-help"
-                        style={{ width: "14px", height: "14px" }}
-                        onMouseEnter={() => setShowTooltip(index)}
-                        onMouseLeave={() => setShowTooltip(null)}
-                      >
-                        <svg
-                          className="w-3.5 h-3.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          style={{ color: colors.text.secondary }}
+
+                  {!isGpt5 && (
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <label
+                          className="text-xs"
+                          style={{ color: colors.text.primary }}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        {showTooltip === index && (
-                          <div
-                            className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50"
-                            style={{
-                              backgroundColor: "#1f2937",
-                              color: colors.bg.primary,
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
-                              whiteSpace: "nowrap",
-                              lineHeight: "1.4",
-                            }}
+                          Max Results
+                        </label>
+                        <div
+                          className="relative inline-flex items-center justify-center cursor-help"
+                          style={{ width: "14px", height: "14px" }}
+                          onMouseEnter={() => setShowTooltip(index)}
+                          onMouseLeave={() => setShowTooltip(null)}
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            style={{ color: colors.text.secondary }}
                           >
-                            Controls how many matching results are returned
-                            <br />
-                            from the search
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {showTooltip === index && (
                             <div
+                              className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50"
                               style={{
-                                position: "absolute",
-                                right: "100%",
+                                backgroundColor: "#1f2937",
+                                color: colors.bg.primary,
                                 top: "50%",
                                 transform: "translateY(-50%)",
-                                width: 0,
-                                height: 0,
-                                borderTop: "4px solid transparent",
-                                borderBottom: "4px solid transparent",
-                                borderRight: "4px solid #1f2937",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
+                                whiteSpace: "nowrap",
+                                lineHeight: "1.4",
                               }}
-                            />
-                          </div>
-                        )}
+                            >
+                              Controls how many matching results are returned
+                              <br />
+                              from the search
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  right: "100%",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  width: 0,
+                                  height: 0,
+                                  borderTop: "4px solid transparent",
+                                  borderBottom: "4px solid transparent",
+                                  borderRight: "4px solid #1f2937",
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      <input
+                        type="number"
+                        value={tool.max_num_results}
+                        onChange={(e) =>
+                          handleUpdateTool(
+                            index,
+                            "max_num_results",
+                            parseInt(e.target.value) || 20,
+                          )
+                        }
+                        className="w-full px-2 py-1 rounded text-xs focus:outline-none"
+                        style={{
+                          border: `1px solid ${colors.border}`,
+                          backgroundColor: colors.bg.primary,
+                          color: colors.text.primary,
+                        }}
+                      />
                     </div>
-                    <input
-                      type="number"
-                      value={tool.max_num_results}
-                      onChange={(e) =>
-                        handleUpdateTool(
-                          index,
-                          "max_num_results",
-                          parseInt(e.target.value) || 20,
-                        )
-                      }
-                      className="w-full px-2 py-1 rounded text-xs focus:outline-none"
-                      style={{
-                        border: `1px solid ${colors.border}`,
-                        backgroundColor: colors.bg.primary,
-                        color: colors.text.primary,
-                      }}
-                    />
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Commit Message */}
             <div>
               <label
                 className="block text-xs font-semibold mb-2"
@@ -954,7 +951,6 @@ export default function ConfigEditorPane({
               />
             </div>
 
-            {/* Save Button */}
             <button
               onClick={onSave}
               disabled={!configName.trim() || isSaving}

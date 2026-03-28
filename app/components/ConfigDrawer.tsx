@@ -6,7 +6,8 @@
 
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
 import { colors } from "@/app/lib/colors";
 import { SavedConfig } from "./SimplifiedConfigEditor";
 import { Tool } from "@/app/lib/configTypes";
@@ -38,27 +39,6 @@ interface ConfigDrawerProps {
   onLoadConfig: (config: SavedConfig) => void;
   onApplyConfig: (configId: string) => void;
 }
-
-const MODEL_OPTIONS = {
-  openai: [
-    { value: "gpt-4o", label: "GPT-4o" },
-    { value: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-    { value: "gpt-4", label: "GPT-4" },
-    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
-  ],
-  // anthropic: [
-  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  // ],
-  // google: [
-  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  //   { value: 'gemini-pro', label: 'Gemini Pro' },
-  // ],
-};
 
 function generateDiff(
   text1: string,
@@ -113,8 +93,10 @@ export default function ConfigDrawer({
   );
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
+  const isGpt5 = isGpt5Model(currentConfig.modelName);
+
   // Sync isCreatingNew with selectedConfigId
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedConfigId) {
       setIsCreatingNew(false);
     }
@@ -555,43 +537,48 @@ export default function ConfigDrawer({
               </div>
 
               {/* Temperature */}
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: colors.text.primary,
-                    marginBottom: "6px",
-                  }}
-                >
-                  Temperature: {currentConfig.temperature.toFixed(1)}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={currentConfig.temperature}
-                  onChange={(e) =>
-                    onConfigChange("temperature", parseFloat(e.target.value))
-                  }
-                  style={{ width: "100%", accentColor: colors.accent.primary }}
-                />
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    fontSize: "11px",
-                    color: colors.text.secondary,
-                    marginTop: "4px",
-                  }}
-                >
-                  <span>Focused (0)</span>
-                  <span>Balanced (0.5)</span>
-                  <span>Creative (1)</span>
+              {!isGpt5 && (
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: colors.text.primary,
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Temperature: {currentConfig.temperature.toFixed(1)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={currentConfig.temperature}
+                    onChange={(e) =>
+                      onConfigChange("temperature", parseFloat(e.target.value))
+                    }
+                    style={{
+                      width: "100%",
+                      accentColor: colors.accent.primary,
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "11px",
+                      color: colors.text.secondary,
+                      marginTop: "4px",
+                    }}
+                  >
+                    <span>Focused (0)</span>
+                    <span>Balanced (0.5)</span>
+                    <span>Creative (1)</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Tools Section */}
               <div>
@@ -693,36 +680,38 @@ export default function ConfigDrawer({
                         }}
                       />
                     </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "11px",
-                          color: colors.text.secondary,
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Max Results
-                      </label>
-                      <input
-                        type="number"
-                        value={tool.max_num_results}
-                        onChange={(e) =>
-                          updateTool(
-                            index,
-                            "max_num_results",
-                            parseInt(e.target.value) || 20,
-                          )
-                        }
-                        style={{
-                          width: "100%",
-                          padding: "6px",
-                          border: `1px solid ${colors.border}`,
-                          borderRadius: "4px",
-                          fontSize: "12px",
-                        }}
-                      />
-                    </div>
+                    {!isGpt5 && (
+                      <div>
+                        <label
+                          style={{
+                            display: "block",
+                            fontSize: "11px",
+                            color: colors.text.secondary,
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Max Results
+                        </label>
+                        <input
+                          type="number"
+                          value={tool.max_num_results}
+                          onChange={(e) =>
+                            updateTool(
+                              index,
+                              "max_num_results",
+                              parseInt(e.target.value) || 20,
+                            )
+                          }
+                          style={{
+                            width: "100%",
+                            padding: "6px",
+                            border: `1px solid ${colors.border}`,
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

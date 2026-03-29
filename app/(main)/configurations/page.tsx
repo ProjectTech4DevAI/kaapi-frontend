@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import { colors } from "@/app/lib/colors";
 import { usePaginatedList } from "@/app/hooks/usePaginatedList";
 import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
@@ -27,7 +28,6 @@ import {
 } from "@/app/lib/store/configStore";
 import { flattenConfigVersion } from "@/app/lib/utils";
 import {
-  SidebarToggleIcon,
   SearchIcon,
   RefreshIcon,
   PlusIcon,
@@ -45,7 +45,7 @@ export default function ConfigLibraryPage() {
   const [evaluationCounts, setEvaluationCounts] = useState<
     Record<string, number>
   >({});
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const { activeKey } = useAuth();
   const apiKey = activeKey?.key;
   const [searchInput, setSearchInput] = useState("");
@@ -196,49 +196,10 @@ export default function ConfigLibraryPage() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/configurations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div
-            className="border-b px-6 py-4"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded flex-shrink-0 transition-colors"
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.secondary,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.secondary;
-                  e.currentTarget.style.color = colors.text.primary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = colors.bg.primary;
-                  e.currentTarget.style.color = colors.text.secondary;
-                }}
-              >
-                <SidebarToggleIcon collapsed={sidebarCollapsed} />
-              </button>
-              <div className="flex-1">
-                <h1
-                  className="text-2xl font-semibold"
-                  style={{ color: colors.text.primary }}
-                >
-                  Configuration Library
-                </h1>
-                <p
-                  className="text-sm mt-0.5"
-                  style={{ color: colors.text.secondary }}
-                >
-                  Manage your prompts and model configurations
-                </p>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            title="Configuration Library"
+            subtitle="Manage your prompts and model configurations"
+          />
 
           {/* Toolbar */}
           <div

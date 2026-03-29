@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
 import { formatDate } from "@/app/components/utils";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 
@@ -30,7 +31,7 @@ export interface Collection {
 }
 
 export default function KnowledgeBasePage() {
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [availableDocuments, setAvailableDocuments] = useState<Document[]>([]);
   const [selectedCollection, setSelectedCollection] =
@@ -904,70 +905,10 @@ export default function KnowledgeBasePage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header with Collapse Button */}
-        <div
-          className="border-b px-6 py-4"
-          style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border,
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 rounded-md transition-colors flex-shrink-0"
-              style={{
-                borderWidth: "1px",
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-                color: colors.text.primary,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = colors.bg.primary)
-              }
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                {sidebarCollapsed ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                  />
-                )}
-              </svg>
-            </button>
-            <div>
-              <h1
-                className="text-2xl font-semibold"
-                style={{ color: colors.text.primary }}
-              >
-                Knowledge Base
-              </h1>
-              <p
-                className="text-sm mt-1"
-                style={{ color: colors.text.secondary }}
-              >
-                Manage your knowledge bases for RAG
-              </p>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Knowledge Base"
+          subtitle="Manage your knowledge bases for RAG"
+        />
 
         {/* Content Area - Split View */}
         <div className="flex-1 overflow-hidden flex">

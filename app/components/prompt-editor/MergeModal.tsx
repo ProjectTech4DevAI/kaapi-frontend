@@ -1,9 +1,9 @@
 import { colors } from "@/app/lib/colors";
-import { UnifiedCommit } from "@/app/(main)/configurations/prompt-editor/types";
+import { UnifiedCommit } from "@/app/lib/types/promptEditor";
 import {
   getAllUnifiedBranches,
   getUnifiedBranchColor,
-} from "@/app/(main)/configurations/prompt-editor/utils";
+} from "@/app/lib/promptEditorUtils";
 
 interface MergeModalProps {
   isOpen: boolean;

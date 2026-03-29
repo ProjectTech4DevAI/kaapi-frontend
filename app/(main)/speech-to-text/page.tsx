@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";
 import StatusBadge from "@/app/components/StatusBadge";
 import Loader, { LoaderBox } from "@/app/components/Loader";
@@ -337,7 +338,7 @@ export default function SpeechToTextPage() {
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>("datasets");
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const [leftPanelWidth] = useState(450);
   const { apiKeys } = useAuth();
   const [languages, setLanguages] = useState<Language[]>([]);
@@ -805,47 +806,10 @@ export default function SpeechToTextPage() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/speech-to-text" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div
-            className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-md"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-              <div>
-                <h1
-                  className="text-base font-semibold"
-                  style={{ color: colors.text.primary }}
-                >
-                  Speech-to-Text Evaluation
-                </h1>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  Compare transcription quality across STT models
-                </p>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            title="Speech-to-Text Evaluation"
+            subtitle="Compare transcription quality across STT models"
+          />
 
           {/* Tab Navigation */}
           <TabNavigation

@@ -16,7 +16,7 @@ export default function PromptEditorPane({
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div
-        className="px-4 py-3 border-b"
+        className="px-4 py-1.5 border-b"
         style={{
           backgroundColor: colors.bg.primary,
           borderColor: colors.border,

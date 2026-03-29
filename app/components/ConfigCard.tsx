@@ -105,10 +105,9 @@ export default function ConfigCard({
         borderColor: expanded ? colors.accent.primary : colors.border,
       }}
     >
-      {/* Clickable Header */}
       <button
         onClick={handleToggleExpand}
-        className="w-full text-left p-5 transition-colors"
+        className="w-full text-left px-5 py-3 transition-colors"
         style={{ backgroundColor: colors.bg.primary }}
         onMouseEnter={(e) =>
           (e.currentTarget.style.backgroundColor = colors.bg.secondary)

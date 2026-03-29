@@ -5,6 +5,7 @@ import { colors } from "@/app/lib/colors";
 import { formatDate } from "@/app/components/utils";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
+import Modal from "@/app/components/Modal";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 
@@ -1521,7 +1522,6 @@ export default function KnowledgeBasePage() {
         </div>
       </div>
 
-      {/* Confirm Delete Modal */}
       {showConfirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div
@@ -1572,278 +1572,206 @@ export default function KnowledgeBasePage() {
         </div>
       )}
 
-      {/* Document Picker Modal */}
-      {showDocumentPicker && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            className="rounded-lg p-6 w-full max-w-2xl max-h-[80vh] flex flex-col"
-            style={{ backgroundColor: colors.bg.primary }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2
-                className="text-xl font-semibold"
-                style={{ color: colors.text.primary }}
-              >
-                Select Documents
-              </h2>
-              <button
-                onClick={() => setShowDocumentPicker(false)}
-                className="p-2 rounded-md transition-colors"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Document List */}
-            <div className="flex-1 overflow-y-auto mb-4">
-              {availableDocuments.length === 0 ? (
-                <div
-                  className="p-8 text-center text-sm"
-                  style={{ color: colors.text.secondary }}
-                >
-                  No documents available. Please upload documents first.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {availableDocuments.map((doc) => (
-                    <label
-                      key={doc.id}
-                      className="flex items-center p-4 rounded-md border cursor-pointer transition-colors"
-                      style={{
-                        backgroundColor: selectedDocuments.has(doc.id)
-                          ? colors.bg.secondary
-                          : "transparent",
-                        borderColor: selectedDocuments.has(doc.id)
-                          ? colors.border
-                          : "transparent",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!selectedDocuments.has(doc.id)) {
-                          e.currentTarget.style.backgroundColor =
-                            colors.bg.secondary;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!selectedDocuments.has(doc.id)) {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedDocuments.has(doc.id)}
-                        onChange={() => toggleDocumentSelection(doc.id)}
-                        className="mr-3 w-4 h-4"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-sm font-medium truncate"
-                          style={{ color: colors.text.primary }}
-                        >
-                          {doc.fname}
-                        </p>
-                        <p
-                          className="text-xs mt-1"
-                          style={{ color: colors.text.secondary }}
-                        >
-                          ID: {doc.id.substring(0, 8)}...
-                        </p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Selected Count and Actions */}
-            <div
-              className="flex items-center justify-between pt-4 border-t"
-              style={{ borderColor: colors.border }}
-            >
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
-                {selectedDocuments.size} document
-                {selectedDocuments.size !== 1 ? "s" : ""} selected
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDocumentPicker(false)}
-                  className="px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: "transparent",
-                    color: colors.text.secondary,
-                    border: `1px solid ${colors.border}`,
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowDocumentPicker(false)}
-                  disabled={selectedDocuments.size === 0}
-                  className="px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.bg.secondary,
-                    color: colors.text.primary,
-                    border: `1px solid ${colors.border}`,
-                    opacity: selectedDocuments.size === 0 ? 0.5 : 1,
-                  }}
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Document Preview Modal */}
-      {showDocPreviewModal && selectedCollection?.documents && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            className="rounded-lg w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden"
-            style={{ backgroundColor: colors.bg.primary }}
-          >
-            {/* Modal Header */}
-            <div
-              className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-              style={{ borderBottom: `1px solid ${colors.border}` }}
-            >
-              <h2
-                className="text-lg font-semibold"
-                style={{ color: colors.text.primary }}
-              >
-                Document Preview
-              </h2>
-              <button
-                onClick={() => {
-                  setShowDocPreviewModal(false);
-                  setPreviewDoc(null);
-                }}
-                className="p-1.5 rounded-md transition-colors"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Two-pane body */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Left pane — doc list */}
+      <Modal
+        open={showDocumentPicker}
+        onClose={() => setShowDocumentPicker(false)}
+        title="Select Documents"
+      >
+        <div className="p-6">
+          <div className="mb-4">
+            {availableDocuments.length === 0 ? (
               <div
-                className="w-1/5 flex flex-col overflow-y-auto flex-shrink-0"
-                style={{ borderRight: `1px solid ${colors.border}` }}
+                className="p-8 text-center text-sm"
+                style={{ color: colors.text.secondary }}
               >
-                {selectedCollection.documents.map((doc) => (
-                  <button
+                No documents available. Please upload documents first.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {availableDocuments.map((doc) => (
+                  <label
                     key={doc.id}
-                    onClick={async () => {
-                      setPreviewDoc(doc);
-
-                      // Fetch the document with signed_url
-                      if (apiKey) {
-                        try {
-                          const response = await fetch(
-                            `/api/document/${doc.id}`,
-                            {
-                              method: "GET",
-                              headers: {
-                                "X-API-KEY": apiKey.key,
-                              },
-                            },
-                          );
-
-                          if (response.ok) {
-                            const data = await response.json();
-                            const documentDetails = data.data || data;
-                            setPreviewDoc(documentDetails);
-                          }
-                        } catch (err) {
-                          console.error(
-                            "Failed to fetch document details for preview:",
-                            err,
-                          );
-                        }
+                    className="flex items-center p-4 rounded-md border cursor-pointer transition-colors"
+                    style={{
+                      backgroundColor: selectedDocuments.has(doc.id)
+                        ? colors.bg.secondary
+                        : "transparent",
+                      borderColor: selectedDocuments.has(doc.id)
+                        ? colors.border
+                        : "transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selectedDocuments.has(doc.id)) {
+                        e.currentTarget.style.backgroundColor =
+                          colors.bg.secondary;
                       }
                     }}
-                    className="text-left px-4 py-3 flex-shrink-0 transition-colors"
-                    style={{
-                      backgroundColor:
-                        previewDoc?.id === doc.id
-                          ? colors.bg.secondary
-                          : "transparent",
-                      borderBottom: `1px solid ${colors.border}`,
+                    onMouseLeave={(e) => {
+                      if (!selectedDocuments.has(doc.id)) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }
                     }}
                   >
-                    <p
-                      className="text-sm truncate"
-                      style={{ color: colors.text.primary }}
-                    >
-                      {doc.fname}
-                    </p>
-                    {doc.inserted_at && (
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.has(doc.id)}
+                      onChange={() => toggleDocumentSelection(doc.id)}
+                      className="mr-3 w-4 h-4"
+                    />
+                    <div className="flex-1 min-w-0">
                       <p
-                        className="text-xs mt-0.5"
+                        className="text-sm font-medium truncate"
+                        style={{ color: colors.text.primary }}
+                      >
+                        {doc.fname}
+                      </p>
+                      <p
+                        className="text-xs mt-1"
                         style={{ color: colors.text.secondary }}
                       >
-                        {formatDate(doc.inserted_at)}
+                        ID: {doc.id.substring(0, 8)}...
                       </p>
-                    )}
-                  </button>
+                    </div>
+                  </label>
                 ))}
               </div>
+            )}
+          </div>
 
-              {/* Right pane — preview content */}
-              <div
-                className="flex-1 overflow-hidden flex items-center justify-center"
-                style={{ backgroundColor: colors.bg.secondary }}
+          {/* Selected Count and Actions */}
+          <div
+            className="flex items-center justify-between pt-4 border-t"
+            style={{ borderColor: colors.border }}
+          >
+            <p className="text-sm" style={{ color: colors.text.secondary }}>
+              {selectedDocuments.size} document
+              {selectedDocuments.size !== 1 ? "s" : ""} selected
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDocumentPicker(false)}
+                className="px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: "transparent",
+                  color: colors.text.secondary,
+                  border: `1px solid ${colors.border}`,
+                }}
               >
-                {previewDoc?.signed_url ? (
-                  <iframe
-                    key={previewDoc.id}
-                    src={previewDoc.signed_url}
-                    title={previewDoc.fname}
-                    className="w-full h-full"
-                    style={{ border: "none" }}
-                  />
-                ) : (
-                  <p
-                    className="text-sm"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    {previewDoc
-                      ? "No preview available for this document"
-                      : "Select a document to preview"}
-                  </p>
-                )}
-              </div>
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowDocumentPicker(false)}
+                disabled={selectedDocuments.size === 0}
+                className="px-4 py-2 rounded-md text-sm font-medium"
+                style={{
+                  backgroundColor: colors.bg.secondary,
+                  color: colors.text.primary,
+                  border: `1px solid ${colors.border}`,
+                  opacity: selectedDocuments.size === 0 ? 0.5 : 1,
+                }}
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
+
+      <Modal
+        open={showDocPreviewModal && !!selectedCollection?.documents}
+        onClose={() => {
+          setShowDocPreviewModal(false);
+          setPreviewDoc(null);
+        }}
+        title="Document Preview"
+        maxWidth="max-w-5xl"
+        maxHeight="h-[80vh]"
+      >
+        {/* Two-pane body */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left pane — doc list */}
+          <div
+            className="w-1/5 flex flex-col overflow-y-auto shrink-0"
+            style={{ borderRight: `1px solid ${colors.border}` }}
+          >
+            {selectedCollection?.documents?.map((doc: Document) => (
+              <button
+                key={doc.id}
+                onClick={async () => {
+                  setPreviewDoc(doc);
+
+                  if (apiKey) {
+                    try {
+                      const response = await fetch(`/api/document/${doc.id}`, {
+                        method: "GET",
+                        headers: {
+                          "X-API-KEY": apiKey.key,
+                        },
+                      });
+
+                      if (response.ok) {
+                        const data = await response.json();
+                        const documentDetails = data.data || data;
+                        setPreviewDoc(documentDetails);
+                      }
+                    } catch (err) {
+                      console.error(
+                        "Failed to fetch document details for preview:",
+                        err,
+                      );
+                    }
+                  }
+                }}
+                className="text-left px-4 py-3 shrink-0 transition-colors"
+                style={{
+                  backgroundColor:
+                    previewDoc?.id === doc.id
+                      ? colors.bg.secondary
+                      : "transparent",
+                  borderBottom: `1px solid ${colors.border}`,
+                }}
+              >
+                <p
+                  className="text-sm truncate"
+                  style={{ color: colors.text.primary }}
+                >
+                  {doc.fname}
+                </p>
+                {doc.inserted_at && (
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: colors.text.secondary }}
+                  >
+                    {formatDate(doc.inserted_at)}
+                  </p>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Right pane — preview content */}
+          <div
+            className="flex-1 overflow-hidden flex items-center justify-center"
+            style={{ backgroundColor: colors.bg.secondary }}
+          >
+            {previewDoc?.signed_url ? (
+              <iframe
+                key={previewDoc.id}
+                src={previewDoc.signed_url}
+                title={previewDoc.fname}
+                className="w-full h-full"
+                style={{ border: "none" }}
+              />
+            ) : (
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                {previewDoc
+                  ? "No preview available for this document"
+                  : "Select a document to preview"}
+              </p>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

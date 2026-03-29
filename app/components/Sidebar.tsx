@@ -145,7 +145,7 @@ export default function Sidebar({
                     ? "bg-neutral-100 text-text-primary font-semibold border-border"
                     : isActive || hasActiveChild
                       ? "bg-transparent text-text-primary font-semibold border-transparent"
-                      : "bg-transparent text-text-secondary font-medium border-transparent hover:bg-neutral-100 hover:text-text-primary"
+                      : "bg-transparent text-black font-medium border-transparent hover:bg-neutral-100"
                 }`}
               >
                 <span
@@ -193,7 +193,7 @@ export default function Sidebar({
                               ? "bg-neutral-100 text-text-primary font-medium border-border"
                               : isSubActive || hasActiveNestedChild
                                 ? "bg-transparent text-text-primary font-medium border-transparent"
-                                : "bg-transparent text-text-secondary font-normal border-transparent hover:bg-neutral-100 hover:text-text-primary"
+                                : "bg-transparent text-black font-normal border-transparent hover:bg-neutral-100"
                           }`}
                         >
                           <span className="flex-1">{subItem.name}</span>
@@ -226,7 +226,7 @@ export default function Sidebar({
                                   className={`w-full text-left px-2.5 py-1 rounded-md text-[13px] flex items-center justify-between gap-2 transition-all duration-150 border ${
                                     isNestedActive
                                       ? "bg-neutral-100 text-text-primary font-medium border-border"
-                                      : "bg-transparent text-text-secondary font-normal border-transparent hover:bg-neutral-100 hover:text-text-primary"
+                                      : "bg-transparent text-black font-normal border-transparent hover:bg-neutral-100"
                                   }`}
                                 >
                                   <span>{nestedItem.name}</span>

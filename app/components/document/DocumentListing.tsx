@@ -37,7 +37,7 @@ export function DocumentListing({
 }: DocumentListingProps) {
   return (
     <div className="h-full flex flex-col">
-      <div className="p-4 border-b bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
+      <div className="px-4 py-2.5 border-b bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold text-[hsl(330,3%,19%)]">
             Your Documents
@@ -128,7 +128,7 @@ export function DocumentListing({
                       e.stopPropagation();
                       onDelete(doc.id);
                     }}
-                    className="p-1.5 rounded-md transition-colors flex-shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)]"
+                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)]"
                     title="Delete Document"
                   >
                     <TrashIcon />
@@ -139,7 +139,6 @@ export function DocumentListing({
           </div>
         )}
 
-        {/* Loading more indicator */}
         {isLoadingMore && (
           <div className="text-center py-4 text-[hsl(330,3%,49%)]">
             <RefreshIcon className="w-6 h-6 mx-auto animate-spin" />

@@ -4,8 +4,8 @@
  */
 
 export interface SavedConfig {
-  id: string; // version id
-  config_id: string; // parent config id
+  id: string;
+  config_id: string;
   name: string;
   description?: string | null;
   version: number;
@@ -21,7 +21,6 @@ export interface SavedConfig {
   commit_message?: string | null;
 }
 
-// Config grouped by config_id with all its versions
 export interface ConfigGroup {
   config_id: string;
   name: string;
@@ -35,22 +34,18 @@ export interface ConfigGroup {
   versionItems: ConfigVersionItems[];
 }
 
-// Cache structure stored in localStorage
 export interface ConfigCache {
   configs: SavedConfig[];
   // Map of config_id -> { updated_at, version_count }
   configMeta: Record<string, { updated_at: string; version_count: number }>;
   cachedAt: number;
-  // Actual total version count per config (populated on first fetch)
   versionCounts: Record<string, number>;
-  /** Total number of configs available on the server (from GET /api/configs) */
   totalConfigCount?: number;
   /** True when only a subset of configs have had their version details fetched */
   partialFetch?: boolean;
   allConfigMeta?: ConfigPublic[];
 }
 
-// Result shape returned by fetchAllConfigs
 export interface FetchResult {
   configs: SavedConfig[];
   configMeta: Record<string, { updated_at: string; version_count: number }>;
@@ -80,8 +75,8 @@ export interface CompletionParams {
 }
 
 export interface CompletionConfig {
-  provider: "openai"; // | 'anthropic' | 'google'; // Only OpenAI supported for now
-  type?: "text" | "stt" | "tts"; // Config type - optional for backward compatibility
+  provider: "openai";
+  type?: "text" | "stt" | "tts";
   params: CompletionParams;
 }
 
@@ -107,20 +102,19 @@ export interface ConfigVersionCreate {
   commit_message?: string | null;
 }
 
-// Response Types
 export interface ConfigPublic {
   id: string;
   name: string;
   description: string | null;
   project_id: number;
-  inserted_at: string; // ISO datetime
-  updated_at: string; // ISO datetime
+  inserted_at: string;
+  updated_at: string;
 }
 
 export interface ConfigVersionPublic {
   id: string;
   config_id: string;
-  version: number; // starts at 1, auto-increments
+  version: number;
   config_blob: ConfigBlob;
   commit_message: string | null;
   inserted_at: string;

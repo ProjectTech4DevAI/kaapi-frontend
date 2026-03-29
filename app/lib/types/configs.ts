@@ -65,7 +65,7 @@ export interface CompletionParams {
   model: string;
   instructions: string;
   temperature?: number;
-  // Frontend uses tools array for UI, but backend expects flattened fields
+  // tools array for UI, but backend expects flattened fields
   tools?: Tool[];
   // Backend expects these as direct fields (flattened from tools array)
   knowledge_base_ids?: string[];

@@ -109,10 +109,6 @@ export default function OnboardingPage() {
     setView("success");
   };
 
-  const handleAddUsers = () => {
-    window.location.href = "/settings/credentials";
-  };
-
   const handleBackToOrgs = () => {
     setSelectedOrg(null);
     setProjects([]);
@@ -213,10 +209,7 @@ export default function OnboardingPage() {
                     />
                   </div>
 
-                  <OnboardingSuccess
-                    data={onboardData}
-                    onAddUsers={handleAddUsers}
-                  />
+                  <OnboardingSuccess data={onboardData} />
                 </>
               )}
             </div>

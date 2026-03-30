@@ -7,13 +7,9 @@ import { OnboardResponseData } from "@/app/lib/types/onboarding";
 
 interface OnboardingSuccessProps {
   data: OnboardResponseData;
-  onAddUsers: () => void;
 }
 
-export default function OnboardingSuccess({
-  data,
-  onAddUsers,
-}: OnboardingSuccessProps) {
+export default function OnboardingSuccess({ data }: OnboardingSuccessProps) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -68,10 +64,21 @@ export default function OnboardingSuccess({
         </div>
       </div>
 
-      {/* Next step */}
-      <Button variant="outline" size="lg" fullWidth onClick={onAddUsers}>
-        Add Users to Project
-      </Button>
+      <div className="rounded-lg border border-border bg-neutral-50 p-4">
+        <p className="text-sm font-medium text-text-primary mb-1">
+          What&apos;s next?
+        </p>
+        <p className="text-xs text-text-secondary leading-relaxed">
+          Add this API key in the{" "}
+          <a
+            href="/keystore"
+            className="text-accent-primary underline hover:text-accent-hover"
+          >
+            Keystore
+          </a>{" "}
+          to start using configurations, evaluations, and other features.
+        </p>
+      </div>
     </div>
   );
 }

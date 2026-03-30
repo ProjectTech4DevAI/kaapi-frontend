@@ -30,7 +30,7 @@ type View = "loading" | "list" | "projects" | "form" | "success";
 function OrganizationListSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <div className="h-5 w-36 bg-neutral-200 rounded mb-2" />
           <div className="h-3 w-24 bg-neutral-100 rounded" />

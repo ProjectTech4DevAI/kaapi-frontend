@@ -46,7 +46,7 @@ export default function ProjectList({
         <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to organizations
       </button>
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-semibold text-text-primary">
             {organization.name}
@@ -85,20 +85,15 @@ export default function ProjectList({
                   Created {formatRelativeTime(project.inserted_at)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    project.is_active
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-neutral-100 text-text-secondary border border-border"
-                  }`}
-                >
-                  {project.is_active ? "Active" : "Inactive"}
-                </span>
-                <span className="text-xs text-text-secondary px-2 py-1 rounded bg-neutral-100">
-                  ID: {project.id}
-                </span>
-              </div>
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                  project.is_active
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-neutral-100 text-text-secondary border border-border"
+                }`}
+              >
+                {project.is_active ? "Active" : "Inactive"}
+              </span>
             </div>
           ))}
         </div>

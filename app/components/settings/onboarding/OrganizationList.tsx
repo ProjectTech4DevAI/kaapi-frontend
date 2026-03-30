@@ -23,7 +23,7 @@ export default function OrganizationList({
   const { currentUser } = useAuth();
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-semibold text-text-primary">
             Organizations
@@ -53,12 +53,7 @@ export default function OrganizationList({
                 Created {formatRelativeTime(org.inserted_at)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary px-2 py-1 rounded bg-neutral-100">
-                ID: {org.id}
-              </span>
-              <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
-            </div>
+            <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
           </button>
         ))}
       </div>

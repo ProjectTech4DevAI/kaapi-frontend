@@ -9,34 +9,34 @@ interface ProjectListProps {
   onBack: () => void;
 }
 
+function ProjectListSkeleton() {
+  return (
+    <div className="space-y-2 animate-pulse">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+        >
+          <div className="flex-1">
+            <div className="h-4 w-36 bg-neutral-200 rounded mb-2" />
+            <div className="h-3 w-48 bg-neutral-100 rounded" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-16 bg-neutral-100 rounded-full" />
+            <div className="h-5 w-12 bg-neutral-100 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ProjectList({
   organization,
   projects,
   isLoading,
   onBack,
 }: ProjectListProps) {
-  const renderProjectLoader = () => {
-    return (
-      <div className="space-y-2">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between p-4 rounded-lg border border-border bg-white animate-pulse"
-          >
-            <div className="flex-1">
-              <div className="h-4 w-36 bg-neutral-200 rounded mb-2" />
-              <div className="h-3 w-48 bg-neutral-100 rounded" />
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-16 bg-neutral-100 rounded-full" />
-              <div className="h-5 w-12 bg-neutral-100 rounded" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div>
       <button
@@ -60,7 +60,7 @@ export default function ProjectList({
       </div>
 
       {isLoading ? (
-        renderProjectLoader()
+        <ProjectListSkeleton />
       ) : projects.length === 0 ? (
         <div className="text-center py-12 text-text-secondary text-sm">
           No projects found for this organization.

@@ -22,10 +22,41 @@ import {
 } from "@/app/lib/types/onboarding";
 import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
-import { ArrowLeftIcon, RefreshIcon } from "@/app/components/icons";
+import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 
 type View = "loading" | "list" | "projects" | "form" | "success";
+
+function OrganizationListSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <div className="h-5 w-36 bg-neutral-200 rounded mb-2" />
+          <div className="h-3 w-24 bg-neutral-100 rounded" />
+        </div>
+        <div className="h-9 w-40 bg-neutral-200 rounded-lg" />
+      </div>
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+          >
+            <div>
+              <div className="h-4 w-40 bg-neutral-200 rounded mb-2" />
+              <div className="h-3 w-28 bg-neutral-100 rounded" />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-14 bg-neutral-100 rounded" />
+              <div className="h-4 w-4 bg-neutral-100 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -133,11 +164,7 @@ export default function OnboardingPage() {
 
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-2xl py-5 px-8">
-              {view === "loading" && (
-                <div className="flex items-center justify-center py-20 text-text-secondary">
-                  <RefreshIcon className="w-6 h-6 animate-spin" />
-                </div>
-              )}
+              {view === "loading" && <OrganizationListSkeleton />}
 
               {view === "list" && (
                 <OrganizationList

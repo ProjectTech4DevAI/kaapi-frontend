@@ -12,6 +12,7 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
 
 // Backend response interface
@@ -31,7 +32,7 @@ export const DATASETS_STORAGE_KEY = "kaapi_datasets";
 
 export default function Datasets() {
   const toast = useToast();
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -232,70 +233,10 @@ export default function Datasets() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Title Section with Collapse Button */}
-          <div
-            className="border-b px-6 py-4"
-            style={{
-              backgroundColor: "hsl(0, 0%, 100%)",
-              borderColor: "hsl(0, 0%, 85%)",
-            }}
-          >
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-md transition-colors flex-shrink-0"
-                style={{
-                  borderWidth: "1px",
-                  borderColor: "hsl(0, 0%, 85%)",
-                  backgroundColor: "hsl(0, 0%, 100%)",
-                  color: "hsl(330, 3%, 19%)",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 95%)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 100%)")
-                }
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  {sidebarCollapsed ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
-                  )}
-                </svg>
-              </button>
-              <div>
-                <h1
-                  className="text-2xl font-semibold"
-                  style={{ color: "hsl(330, 3%, 19%)" }}
-                >
-                  Datasets
-                </h1>
-                <p
-                  className="text-sm mt-1"
-                  style={{ color: "hsl(330, 3%, 49%)" }}
-                >
-                  Manage your evaluation datasets
-                </p>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            title="Datasets"
+            subtitle="Manage your evaluation datasets"
+          />
 
           {/* Content Area */}
           <div

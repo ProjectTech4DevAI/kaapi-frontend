@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { colors } from "@/app/lib/colors";
-import {
-  ConfigBlob,
-  Tool,
-} from "@/app/(main)/configurations/prompt-editor/types";
+import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
 import {
   ConfigPublic,
   SavedConfig,
@@ -239,7 +236,6 @@ export default function ConfigEditorPane({
         transition: "width 0.2s ease-in-out, flex 0.2s ease-in-out",
       }}
     >
-      {/* Header */}
       <div
         className="border-b flex items-center flex-shrink-0"
         style={{
@@ -250,7 +246,6 @@ export default function ConfigEditorPane({
           transition: "padding 0.2s ease-in-out",
         }}
       >
-        {/* Title - hidden when collapsed, shown first when expanded */}
         {!collapsed && (
           <h3
             className="text-sm font-semibold flex-1"
@@ -259,11 +254,10 @@ export default function ConfigEditorPane({
             Configuration
           </h3>
         )}
-        {/* Toggle button - chevron (on right when expanded, centered when collapsed) */}
         {onToggle && (
           <button
             onClick={onToggle}
-            className="rounded flex-shrink-0 flex items-center justify-center w-[28px] h-[28px] border"
+            className="rounded shrink-0 flex items-center justify-center w-7 h-7 border"
             style={{
               borderColor: colors.border,
               backgroundColor: colors.bg.primary,

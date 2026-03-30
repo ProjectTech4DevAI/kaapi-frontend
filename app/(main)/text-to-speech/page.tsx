@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";
 import Loader, { LoaderBox } from "@/app/components/Loader";
 import { getStatusColor } from "@/app/components/utils";
@@ -252,7 +253,7 @@ export default function TextToSpeechPage() {
   const [activeTab, setActiveTab] = useState<Tab>("datasets");
 
   // UI State
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const leftPanelWidth = 450;
 
   // API Keys
@@ -592,47 +593,10 @@ export default function TextToSpeechPage() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/text-to-speech" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div
-            className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-md"
-                style={{ color: colors.text.secondary }}
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-              <div>
-                <h1
-                  className="text-base font-semibold"
-                  style={{ color: colors.text.primary }}
-                >
-                  Text-to-Speech Evaluation
-                </h1>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  Compare synthesized audio quality across TTS models
-                </p>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            title="Text-to-Speech Evaluation"
+            subtitle="Compare synthesized audio quality across TTS models"
+          />
 
           {/* Tab Navigation */}
           <TabNavigation

@@ -12,6 +12,7 @@ import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
 import { Dataset } from "@/app/(main)/datasets/page";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -35,7 +36,7 @@ function SimplifiedEvalContent() {
       : "datasets";
   });
 
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const { apiKeys } = useAuth();
   const [selectedKeyId, setSelectedKeyId] = useState<string>("");
   const [mounted, setMounted] = useState(false);
@@ -306,52 +307,10 @@ function SimplifiedEvalContent() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Title Section */}
-          <div
-            className="border-b px-4 py-3 flex items-center justify-between flex-shrink-0"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-md"
-                style={{ color: colors.text.secondary }}
-                aria-label="Toggle sidebar"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-              <div>
-                <h1
-                  className="text-base font-semibold"
-                  style={{
-                    color: colors.text.primary,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  Text Evaluation
-                </h1>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  Compare model response quality on your datasets across
-                  different configs
-                </p>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            title="Text Evaluation"
+            subtitle="Compare model response quality on your datasets across different configs"
+          />
 
           {/* Tab Navigation */}
           <TabNavigation

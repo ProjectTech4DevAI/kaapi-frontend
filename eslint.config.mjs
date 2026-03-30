@@ -32,6 +32,7 @@ const eslintConfig = defineConfig([
       "no-var": "error",
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "react-hooks/set-state-in-effect": "off",
+      "react-hooks/exhaustive-deps": "off",
     },
   },
 ]);

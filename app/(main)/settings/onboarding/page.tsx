@@ -23,6 +23,7 @@ import {
 import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { ArrowLeftIcon, RefreshIcon } from "@/app/components/icons";
+import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 
 type View = "loading" | "list" | "projects" | "form" | "success";
 
@@ -46,7 +47,7 @@ export default function OnboardingPage() {
     loadMore,
   } = usePaginatedList<Organization>({
     endpoint: "/api/organization",
-    limit: 10,
+    limit: DEFAULT_PAGE_LIMIT,
   });
 
   const scrollRef = useInfiniteScroll({
@@ -63,7 +64,6 @@ export default function OnboardingPage() {
     if (view === "loading") {
       setView(organizations.length > 0 ? "list" : "form");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoadingOrgs, organizations.length]);
 
   // Redirect if no API key or not a superuser

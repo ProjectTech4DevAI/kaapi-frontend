@@ -48,7 +48,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Fetch current user when an API key is available
   useEffect(() => {
     const apiKey = apiKeys[0]?.key;
     if (!apiKey || !isHydrated) return;

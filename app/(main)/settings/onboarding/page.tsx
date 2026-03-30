@@ -6,8 +6,7 @@ import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { usePaginatedList } from "@/app/hooks/usePaginatedList";
-import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
+import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
   OnboardingForm,
   OnboardingSuccess,

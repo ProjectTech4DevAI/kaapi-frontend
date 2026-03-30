@@ -8,7 +8,7 @@
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
-import { useConfigs } from "@/app/hooks/useConfigs";
+import { useConfigs } from "@/app/hooks";
 import {
   ChevronUpIcon,
   ChevronDownIcon,

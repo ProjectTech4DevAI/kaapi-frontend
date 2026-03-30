@@ -1,3 +1,6 @@
+import { ConfigBlob } from "@/app/lib/types/configs";
+export type { Tool, ConfigBlob } from "@/app/lib/types/configs";
+
 export interface Commit {
   id: string;
   content: string;
@@ -23,29 +26,6 @@ export interface DiffStats {
   deletions: number;
 }
 
-export interface Tool {
-  type: "file_search";
-  knowledge_base_ids: string[];
-  max_num_results: number;
-}
-
-export interface ConfigBlob {
-  completion: {
-    provider: "openai"; // | 'anthropic' | 'google'; // Only OpenAI supported for now
-    type?: "text" | "stt" | "tts"; // Config type - optional for backward compatibility
-    params: {
-      model: string;
-      instructions: string;
-      temperature: number;
-      // Frontend uses tools array for UI
-      tools?: Tool[];
-      // Backend expects these as direct fields (flattened from tools array)
-      knowledge_base_ids?: string[];
-      max_num_results?: number;
-    };
-  };
-}
-
 export interface Config {
   id: string;
   name: string;
@@ -55,7 +35,6 @@ export interface Config {
   commitMessage: string;
 }
 
-// Legacy Variant (for backward compatibility during migration)
 export interface LegacyVariant {
   id: string;
   configId: string;
@@ -63,7 +42,6 @@ export interface LegacyVariant {
   name: string;
 }
 
-// Unified Variant - references only commitId (which contains both prompt and config)
 export interface Variant {
   id: string;
   commitId: string;
@@ -76,18 +54,14 @@ export interface TestResult {
   latency: number;
 }
 
-// Unified Commit - combines prompt and config into single version-controlled entity
 export interface UnifiedCommit {
   id: string;
 
-  // Prompt data
   promptContent: string;
 
-  // Config data (embedded in commit)
   configBlob: ConfigBlob;
   configName: string;
 
-  // Version control metadata
   timestamp: number;
   author: string;
   message: string;
@@ -97,7 +71,6 @@ export interface UnifiedCommit {
   mergeFromCommitId?: string;
 }
 
-// Config diff for structured comparison
 export interface ConfigDiff {
   field: string;
   oldValue: unknown;
@@ -106,7 +79,6 @@ export interface ConfigDiff {
   changed: boolean;
 }
 
-// Unified diff combining prompt and config changes
 export interface UnifiedDiff {
   promptDiff: DiffLine[];
   configDiff: ConfigDiff[];

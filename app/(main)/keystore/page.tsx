@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/Sidebar";
+import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { APIKey } from "@/app/lib/types/credentials";
@@ -15,7 +16,7 @@ import { APIKey } from "@/app/lib/types/credentials";
 export const STORAGE_KEY = "kaapi_api_keys";
 
 export default function KaapiKeystore() {
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
+  const { sidebarCollapsed } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { apiKeys, addKey, removeKey: removeApiKey } = useAuth();
   const [newKeyLabel, setNewKeyLabel] = useState("");
@@ -82,52 +83,10 @@ export default function KaapiKeystore() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Title Section with Collapse Button */}
-          <div className="border-b px-6 py-4 bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-2 rounded-md transition-colors flex-shrink-0 border border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 95%)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 100%)")
-                }
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  {sidebarCollapsed ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                    />
-                  )}
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-2xl font-semibold text-[hsl(330,3%,19%)]">
-                  Keystore
-                </h1>
-                <p className="text-sm mt-1 text-[hsl(330,3%,49%)]">
-                  Manage your API keys securely
-                </p>
-              </div>
-            </div>
-          </div>
+          <PageHeader
+            title="Keystore"
+            subtitle="Manage your API keys securely"
+          />
 
           {/* Content Area */}
           <div className="flex-1 overflow-auto p-6 bg-[#fafafa]">

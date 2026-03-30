@@ -1,5 +1,6 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
 import { colors } from "@/app/lib/colors";
+import { ChevronRightIcon } from "@/app/components/icons";
 import {
   ConfigPublic,
   SavedConfig,
@@ -523,7 +524,7 @@ export default function HistorySidebar({
         className="border-b flex items-center flex-shrink-0"
         style={{
           borderColor: colors.border,
-          padding: collapsed ? "0" : "12px 16px",
+          padding: collapsed ? "0" : "7px 16px",
           justifyContent: collapsed ? "center" : "space-between",
           height: collapsed ? "40px" : "auto",
           transition: "padding 0.2s ease-in-out",
@@ -547,11 +548,8 @@ export default function HistorySidebar({
         )}
         <button
           onClick={onToggle}
-          className="rounded flex-shrink-0 flex items-center justify-center"
+          className="rounded shrink-0 flex items-center justify-center w-7 h-7 border"
           style={{
-            width: "28px",
-            height: "28px",
-            borderWidth: "1px",
             borderColor: colors.border,
             backgroundColor: colors.bg.primary,
             color: colors.text.secondary,
@@ -567,27 +565,16 @@ export default function HistorySidebar({
           }}
           title={collapsed ? "Show version history" : "Hide version history"}
         >
-          <svg
+          <ChevronRightIcon
             className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
             style={{
               transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
               transition: "transform 0.2s ease-in-out",
             }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M11 19l-7-7 7-7"
-            />
-          </svg>
+          />
         </button>
       </div>
 
-      {/* Vertical label when collapsed */}
       {collapsed && (
         <div
           className="flex items-start justify-center pt-4 cursor-pointer"
@@ -608,7 +595,6 @@ export default function HistorySidebar({
         </div>
       )}
 
-      {/* Content */}
       {!collapsed && (
         <div className="flex-1 overflow-auto p-3">
           {isLoading ? (
@@ -664,7 +650,6 @@ export default function HistorySidebar({
                 />
               )}
 
-              {/* All Configurations mode */}
               {!currentConfigId &&
                 allConfigMeta?.map((meta) => (
                   <AllConfigsGroup
@@ -696,12 +681,10 @@ export default function HistorySidebar({
         <div className="p-3 border-t" style={{ borderColor: colors.border }}>
           <button
             onClick={onBackToEditor}
-            className="w-full px-4 py-2 rounded-md text-sm font-medium"
+            className="w-full px-4 py-2 rounded-md text-sm font-medium text-white cursor-pointer"
             style={{
               backgroundColor: colors.accent.primary,
-              color: "#ffffff",
               border: "none",
-              cursor: "pointer",
               transition: "all 0.15s ease",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}

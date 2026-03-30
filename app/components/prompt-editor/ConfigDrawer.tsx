@@ -1,12 +1,12 @@
 import React from "react";
 import { colors } from "@/app/lib/colors";
-import { Tool } from "@/app/lib/types/configs";
 import {
+  Tool,
   Config,
   Commit,
   LegacyVariant,
   TestResult,
-} from "@/app/(routes)/configurations/prompt-editor/types";
+} from "@/app/lib/types/promptEditor";
 import CurrentConfigTab from "./CurrentConfigTab";
 import HistoryTab from "./HistoryTab";
 import ABTestTab from "./ABTestTab";

@@ -1,6 +1,6 @@
 import { colors } from "@/app/lib/colors";
-import { Commit } from "@/app/(routes)/configurations/prompt-editor/types";
-import { getBranchColor } from "@/app/(routes)/configurations/prompt-editor/utils";
+import { Commit } from "@/app/lib/types/promptEditor";
+import { getBranchColor } from "@/app/lib/promptEditorUtils";
 
 interface EditorViewProps {
   currentBranch: string;

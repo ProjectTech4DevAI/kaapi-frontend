@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
 import { colors } from "@/app/lib/colors";
 import { SavedConfig } from "./SimplifiedConfigEditor";
-import { Tool } from "@/app/lib/configTypes";
+import { Tool } from "@/app/lib/types/configs";
 
 interface DiffLine {
   type: "same" | "added" | "removed";

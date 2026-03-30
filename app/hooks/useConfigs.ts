@@ -3,15 +3,6 @@
 /**
  * useConfigs — shared React hook for fetching and managing configurations.
  * Used by Config Library, Prompt Editor, and Evaluations pages.
- *
- * Responsibilities (hook-only layer):
- * - Manages React state (configs, loading flags, error)
- * - Reads from / writes to the shared in-memory + localStorage cache
- * - Exposes stable callbacks for lazy-loading version lists and individual versions
- * - Schedules background cache validation after serving cached data
- *
- * Heavy lifting (API calls, cache I/O, pure transforms) lives in:
- *   lib/configFetchers.ts, lib/store.ts, lib/utils.ts
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -19,12 +10,14 @@ import {
   ConfigPublic,
   ConfigVersionItems,
   ConfigVersionResponse,
-} from "@/app/lib/configTypes";
-import { SavedConfig, ConfigGroup, ConfigCache } from "@/app/lib/types/configs";
+  SavedConfig,
+  ConfigGroup,
+  ConfigCache,
+} from "@/app/lib/types/configs";
 import {
   CACHE_MAX_AGE_MS,
   CACHE_INVALIDATED_EVENT,
-  PAGE_SIZE,
+  DEFAULT_PAGE_LIMIT as PAGE_SIZE,
 } from "@/app/lib/constants";
 import {
   configState,
@@ -81,7 +74,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
 
   const fetchConfigs = useCallback(
     async (force: boolean = false) => {
-      // Wait for AuthContext to load apiKey from localStorage to avoid premature "No API key" error on refresh.
       if (!isHydrated) return;
 
       if (!apiKey) {
@@ -90,9 +82,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         return;
       }
 
-      // ── Fast paths (skipped when force=true) ──
       if (!force) {
-        // In-memory cache (fastest — no I/O)
         if (configState.inMemoryCache) {
           const cacheAge = Date.now() - configState.inMemoryCache.cachedAt;
           if (cacheAge < CACHE_MAX_AGE_MS) {
@@ -107,7 +97,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
               configState.inMemoryCache.allConfigMeta ??
               null;
             const totalCount = configState.inMemoryCache.totalConfigCount ?? 0;
-            // Skip cache if allConfigMeta is missing but configs exist (stale/old cache schema).
             const cacheHasUsableMeta =
               resolvedMeta !== null || totalCount === 0;
             if (cacheUsable && cacheHasUsableMeta) {

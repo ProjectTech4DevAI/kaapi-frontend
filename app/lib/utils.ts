@@ -6,7 +6,7 @@ import {
   ConfigVersionPublic,
   ConfigVersionItems,
   Tool,
-} from "./configTypes";
+} from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import { isGpt5Model } from "./models";
 

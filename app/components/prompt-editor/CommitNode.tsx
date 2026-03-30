@@ -1,9 +1,7 @@
 import { colors } from "@/app/lib/colors";
-import { UnifiedCommit } from "@/app/(routes)/configurations/prompt-editor/types";
-import {
-  getUnifiedBranchColor,
-  formatTime,
-} from "@/app/(routes)/configurations/prompt-editor/utils";
+import { UnifiedCommit } from "@/app/lib/types/promptEditor";
+import { getUnifiedBranchColor } from "@/app/lib/promptEditorUtils";
+import { formatRelativeTime } from "@/app/lib/utils";
 
 interface CommitNodeProps {
   commit: UnifiedCommit;
@@ -164,7 +162,7 @@ export default function CommitNode({
           </span>
           <span>#{commit.id}</span>
           <span>•</span>
-          <span>{formatTime(commit.timestamp)}</span>
+          <span>{formatRelativeTime(commit.timestamp)}</span>
           {commit.mergeFrom && (
             <>
               <span>•</span>

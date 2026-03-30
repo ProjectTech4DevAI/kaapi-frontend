@@ -1,5 +1,5 @@
 import { colors } from "@/app/lib/colors";
-import { Config } from "@/app/(routes)/configurations/prompt-editor/types";
+import { Config } from "@/app/lib/types/promptEditor";
 
 interface HistoryTabProps {
   configs: Config[];

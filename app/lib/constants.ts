@@ -2,7 +2,7 @@
  * Constants for Management
  */
 
-import { ConfigBlob } from "./configTypes";
+import { ConfigBlob } from "@/app/lib/types/promptEditor";
 
 /** localStorage key for the config cache */
 export const CACHE_KEY = "kaapi_configs_cache";

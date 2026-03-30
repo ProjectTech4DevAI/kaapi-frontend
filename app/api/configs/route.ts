@@ -3,7 +3,10 @@ import { apiClient } from "@/app/lib/apiClient";
 
 export async function GET(request: Request) {
   try {
-    const { status, data } = await apiClient(request, "/api/v1/configs/");
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const endpoint = `/api/v1/configs/${queryString ? `?${queryString}` : ""}`;
+    const { status, data } = await apiClient(request, endpoint);
     return NextResponse.json(data, { status });
   } catch (error) {
     return NextResponse.json(

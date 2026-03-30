@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { colors } from "@/app/lib/colors";
-import { Dataset } from "@/app/(routes)/datasets/page";
+import { Dataset } from "@/app/(main)/datasets/page";
 import { EvalJob, AssistantConfig } from "@/app/components/types";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";

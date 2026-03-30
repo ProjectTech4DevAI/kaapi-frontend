@@ -3,15 +3,6 @@
 /**
  * useConfigs — shared React hook for fetching and managing configurations.
  * Used by Config Library, Prompt Editor, and Evaluations pages.
- *
- * Responsibilities (hook-only layer):
- * - Manages React state (configs, loading flags, error)
- * - Reads from / writes to the shared in-memory + localStorage cache
- * - Exposes stable callbacks for lazy-loading version lists and individual versions
- * - Schedules background cache validation after serving cached data
- *
- * Heavy lifting (API calls, cache I/O, pure transforms) lives in:
- *   lib/configFetchers.ts, lib/store.ts, lib/utils.ts
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -19,12 +10,14 @@ import {
   ConfigPublic,
   ConfigVersionItems,
   ConfigVersionResponse,
-} from "@/app/lib/configTypes";
-import { SavedConfig, ConfigGroup, ConfigCache } from "@/app/lib/types/configs";
+  SavedConfig,
+  ConfigGroup,
+  ConfigCache,
+} from "@/app/lib/types/configs";
 import {
   CACHE_MAX_AGE_MS,
   CACHE_INVALIDATED_EVENT,
-  PAGE_SIZE,
+  DEFAULT_PAGE_LIMIT as PAGE_SIZE,
 } from "@/app/lib/constants";
 import {
   configState,
@@ -49,29 +42,16 @@ export interface UseConfigsResult {
   error: string | null;
   refetch: (force?: boolean) => Promise<void>;
   isCached: boolean;
-  /**
-   * Ensures the lightweight version list (no config_blob) is cached for a config.
-   * O(1) – either a no-op (already cached) or a single GET /versions call.
-   * Does NOT fetch full version details; use loadSingleVersion for that.
-   */
   loadVersionsForConfig: (config_id: string) => Promise<void>;
-  /** Load the next batch of configs (only relevant when pageSize option is used) */
   loadMoreConfigs: () => Promise<void>;
-  /** True when there are more configs available that haven't been loaded yet */
   hasMoreConfigs: boolean;
-  /** True while loadMoreConfigs is in progress */
   isLoadingMore: boolean;
-  /** Fetches the full details (config_blob) for a single version on demand.
-   * Returns the SavedConfig immediately if already loaded; makes 1 GET call otherwise.
-   * Safe to call concurrently – duplicate in-flight requests are coalesced.
-   */
   loadSingleVersion: (
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
-  /** Lightweight version items per config, indexed by config_id. */
   versionItemsMap: Record<string, ConfigVersionItems[]>;
-  allConfigMeta: ConfigPublic[]; // Full lightweight config list from GET /api/configs.
+  allConfigMeta: ConfigPublic[];
 }
 
 export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
@@ -94,7 +74,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
 
   const fetchConfigs = useCallback(
     async (force: boolean = false) => {
-      // Wait for AuthContext to load apiKey from localStorage to avoid premature "No API key" error on refresh.
       if (!isHydrated) return;
 
       if (!apiKey) {
@@ -103,9 +82,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         return;
       }
 
-      // ── Fast paths (skipped when force=true) ──
       if (!force) {
-        // In-memory cache (fastest — no I/O)
         if (configState.inMemoryCache) {
           const cacheAge = Date.now() - configState.inMemoryCache.cachedAt;
           if (cacheAge < CACHE_MAX_AGE_MS) {
@@ -120,7 +97,6 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
               configState.inMemoryCache.allConfigMeta ??
               null;
             const totalCount = configState.inMemoryCache.totalConfigCount ?? 0;
-            // Skip cache if allConfigMeta is missing but configs exist (stale/old cache schema).
             const cacheHasUsableMeta =
               resolvedMeta !== null || totalCount === 0;
             if (cacheUsable && cacheHasUsableMeta) {

@@ -24,7 +24,7 @@ import {
   ConfigListResponse,
   ConfigWithVersionResponse,
   ConfigVersionListResponse,
-} from "@/app/lib/configTypes";
+} from "@/app/lib/types/configs";
 import { colors } from "../lib/colors";
 
 export interface SavedConfig {

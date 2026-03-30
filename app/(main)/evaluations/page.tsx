@@ -367,7 +367,7 @@ function SimplifiedEvalContent() {
     </div>
   );
 }
-// Wrapper component with Suspense
+
 export default function SimplifiedEval() {
   return (
     <Suspense fallback={<Loader size="lg" message="Loading..." fullScreen />}>

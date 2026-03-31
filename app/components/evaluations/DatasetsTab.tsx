@@ -481,7 +481,7 @@ export default function DatasetsTab({
 
         {/* Bottom Action Bar */}
         <div
-          className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3"
+          className="flex-shrink-0 border-t px-4 py-4 flex items-center justify-end gap-3"
           style={{
             borderColor: colors.border,
             backgroundColor: colors.bg.primary,

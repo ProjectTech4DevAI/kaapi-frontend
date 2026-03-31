@@ -1,15 +1,17 @@
 import { NextResponse, NextRequest } from 'next/server';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ config_id: string }> }
 ) {
   const { config_id } = await params;
   const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
   const apiKey = request.headers.get('X-API-KEY');
+  const search = request.nextUrl.searchParams.toString();
+  const url = `${backendUrl}/api/v1/configs/${config_id}/versions${search ? `?${search}` : ''}`;
 
   try {
-    const response = await fetch(`${backendUrl}/api/v1/configs/${config_id}/versions`, {
+    const response = await fetch(url, {
       headers: {
         'X-API-KEY': apiKey || '',
       },

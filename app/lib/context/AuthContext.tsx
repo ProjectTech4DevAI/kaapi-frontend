@@ -118,7 +118,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Clear local state even if the backend call fails
+    }
     setSession(null);
     setCurrentUser(null);
     localStorage.removeItem(SESSION_KEY);

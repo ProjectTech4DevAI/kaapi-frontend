@@ -38,5 +38,5 @@ export interface AuthContextValue {
     user?: User,
     googleProfile?: GoogleProfile,
   ) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }

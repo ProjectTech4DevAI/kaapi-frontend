@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
-import { APIKey } from "@/app/lib/types/credentials";
 import { Dataset } from "@/app/(main)/datasets/page";
 import { useToast } from "@/app/components/Toast";
+import { apiFetch } from "@/app/lib/apiClient";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 import Loader from "@/app/components/Loader";
 
@@ -24,8 +24,7 @@ export interface DatasetsTabProps {
   resetForm: () => void;
   storedDatasets: Dataset[];
   isDatasetsLoading: boolean;
-  apiKeys: APIKey[];
-  selectedKeyId: string;
+  apiKey: string;
   loadStoredDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
@@ -46,8 +45,7 @@ export default function DatasetsTab({
   resetForm,
   storedDatasets,
   isDatasetsLoading,
-  apiKeys,
-  selectedKeyId,
+  apiKey,
   loadStoredDatasets,
   toast,
 }: DatasetsTabProps) {
@@ -73,24 +71,17 @@ export default function DatasetsTab({
   }, [showDuplicationInfo]);
 
   const handleDeleteDataset = async (datasetId: number) => {
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) return;
-
     setDeletingId(datasetId);
     try {
-      const response = await fetch(`/api/evaluations/datasets/${datasetId}`, {
+      await apiFetch(`/api/evaluations/datasets/${datasetId}`, apiKey, {
         method: "DELETE",
-        headers: { "X-API-KEY": selectedKey.key },
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to delete dataset");
-      }
       toast.success("Dataset deleted");
       loadStoredDatasets();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete dataset");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete dataset",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -106,23 +97,16 @@ export default function DatasetsTab({
   } | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) return;
-
     setViewingId(datasetId);
     try {
-      const response = await fetch(
+      const data = await apiFetch<{
+        data?: { signed_url?: string };
+        signed_url?: string;
+        csv_content?: string;
+      }>(
         `/api/evaluations/datasets/${datasetId}?include_signed_url=true&fetch_content=true`,
-        {
-          method: "GET",
-          headers: { "X-API-KEY": selectedKey.key },
-        },
+        apiKey,
       );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to get dataset");
-      }
-      const data = await response.json();
       const signedUrl = data?.data?.signed_url || data?.signed_url;
       const csvText = data?.csv_content;
       if (!csvText) {

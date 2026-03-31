@@ -61,7 +61,7 @@ function OrganizationListSkeleton() {
 export default function OnboardingPage() {
   const router = useRouter();
   const { sidebarCollapsed } = useApp();
-  const { activeKey, currentUser, isHydrated } = useAuth();
+  const { activeKey, currentUser, isHydrated, isAuthenticated } = useAuth();
   const [view, setView] = useState<View>("loading");
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -100,7 +100,7 @@ export default function OnboardingPage() {
   // Redirect if no API key or not a superuser
   useEffect(() => {
     if (!isHydrated) return;
-    if (!activeKey) {
+    if (!isAuthenticated) {
       router.replace("/");
       return;
     }

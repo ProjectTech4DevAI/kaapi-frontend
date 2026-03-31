@@ -340,7 +340,7 @@ export default function SpeechToTextPage() {
   const [activeTab, setActiveTab] = useState<Tab>("datasets");
   const { sidebarCollapsed } = useApp();
   const [leftPanelWidth] = useState(450);
-  const { apiKeys } = useAuth();
+  const { apiKeys, isAuthenticated } = useAuth();
   const [languages, setLanguages] = useState<Language[]>([]);
   const [datasetName, setDatasetName] = useState("");
   const [datasetDescription, setDatasetDescription] = useState("");
@@ -376,11 +376,11 @@ export default function SpeechToTextPage() {
 
   // Load languages
   const loadLanguages = async () => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await apiFetch<any>("/api/languages", apiKeys[0].key);
+      const data = await apiFetch<any>("/api/languages", apiKeys[0]?.key ?? "");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawList: any[] = [];
@@ -421,14 +421,14 @@ export default function SpeechToTextPage() {
 
   // Load datasets
   const loadDatasets = async () => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingDatasets(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         "/api/evaluations/stt/datasets",
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
 
       let datasetsList = [];
@@ -452,14 +452,14 @@ export default function SpeechToTextPage() {
 
   // Load evaluation runs
   const loadRuns = async () => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingRuns(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         "/api/evaluations/stt/runs",
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
 
       let runsList = [];
@@ -487,7 +487,6 @@ export default function SpeechToTextPage() {
     if (activeTab === "evaluations") {
       loadRuns();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Handle audio file selection and upload
@@ -498,7 +497,7 @@ export default function SpeechToTextPage() {
 
     if (!files || files.length === 0) return;
 
-    if (apiKeys.length === 0) {
+    if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
@@ -548,7 +547,7 @@ export default function SpeechToTextPage() {
           file_id?: string;
           id?: string;
           data?: { file_id?: string; id?: string };
-        }>("/api/evaluations/stt/files", apiKeys[0].key, {
+        }>("/api/evaluations/stt/files", apiKeys[0]?.key ?? "", {
           method: "POST",
           body: formData,
         });
@@ -619,7 +618,7 @@ export default function SpeechToTextPage() {
       return;
     }
 
-    if (apiKeys.length === 0) {
+    if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
@@ -648,10 +647,14 @@ export default function SpeechToTextPage() {
         samples: samples,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await apiFetch<any>("/api/evaluations/stt/datasets", apiKeys[0].key, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      await apiFetch<any>(
+        "/api/evaluations/stt/datasets",
+        apiKeys[0]?.key ?? "",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
 
       toast.success(`Dataset "${datasetName}" created successfully!`);
 
@@ -672,7 +675,7 @@ export default function SpeechToTextPage() {
   };
 
   const handleRunEvaluation = async () => {
-    if (apiKeys.length === 0) {
+    if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
@@ -691,7 +694,7 @@ export default function SpeechToTextPage() {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await apiFetch<any>("/api/evaluations/stt/runs", apiKeys[0].key, {
+      await apiFetch<any>("/api/evaluations/stt/runs", apiKeys[0]?.key ?? "", {
         method: "POST",
         body: JSON.stringify({
           run_name: evaluationName.trim(),
@@ -728,7 +731,7 @@ export default function SpeechToTextPage() {
 
   // Load results for a specific run
   const loadResults = async (runId: number) => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingResults(true);
     try {
@@ -736,7 +739,7 @@ export default function SpeechToTextPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const runData = await apiFetch<any>(
         `/api/evaluations/stt/runs/${runId}?include_results=true&include_signed_url=true`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
 
       // Extract results
@@ -822,49 +825,25 @@ export default function SpeechToTextPage() {
           />
 
           {/* Tab Content */}
-          {apiKeys.length === 0 ? (
+          {!isAuthenticated ? (
             <div
               className="flex-1 flex items-center justify-center"
               style={{ backgroundColor: colors.bg.secondary }}
             >
               <div className="text-center">
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  style={{ color: colors.border }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
                 <p
                   className="text-sm font-medium mb-1"
                   style={{ color: colors.text.primary }}
                 >
-                  API key required
+                  Authentication required
                 </p>
                 <p
                   className="text-xs mb-4"
                   style={{ color: colors.text.secondary }}
                 >
-                  Add an API key in the Keystore to start creating datasets and
-                  running evaluations
+                  Please sign in to start creating datasets and running
+                  evaluations
                 </p>
-                <a
-                  href="/keystore"
-                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#ffffff",
-                  }}
-                >
-                  Go to Keystore
-                </a>
               </div>
             </div>
           ) : activeTab === "datasets" ? (
@@ -1024,6 +1003,7 @@ function DatasetsTab({
   languages,
   toast,
 }: DatasetsTabProps) {
+  const { isAuthenticated } = useAuth();
   const [showLanguageInfo, setShowLanguageInfo] = useState(false);
   const [languageInfoPos, setLanguageInfoPos] = useState({ top: 0, left: 0 });
   const [viewingId, setViewingId] = useState<number | null>(null);
@@ -1044,7 +1024,7 @@ function DatasetsTab({
   const [savingSampleId, setSavingSampleId] = useState<number | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
     setViewingId(datasetId);
     try {
       const data = await apiFetch<{
@@ -1073,7 +1053,7 @@ function DatasetsTab({
         }[];
       }>(
         `/api/evaluations/stt/datasets/${datasetId}?include_samples=true&include_signed_url=true&sample_limit=100&sample_offset=0`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
       const samples = data?.data?.samples || data?.samples || [];
       if (samples.length === 0) {
@@ -1095,13 +1075,13 @@ function DatasetsTab({
     field: "ground_truth" | "language_id",
     value: string | number,
   ) => {
-    if (!viewModalData || apiKeys.length === 0) return;
+    if (!viewModalData || !isAuthenticated) return;
     setSavingSampleId(sampleId);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await apiFetch<any>(
         `/api/evaluations/stt/samples/${sampleId}`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
         {
           method: "PATCH",
           body: JSON.stringify({ [field]: value }),
@@ -1320,20 +1300,20 @@ function DatasetsTab({
 
             {audioFiles.length === 0 ? (
               <div
-                onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                onClick={isAuthenticated ? triggerAudioUpload : undefined}
                 className="border-2 border-dashed rounded-lg p-6 text-center transition-colors"
                 style={{
                   borderColor: colors.border,
                   backgroundColor: colors.bg.primary,
-                  cursor: apiKeys.length > 0 ? "pointer" : "not-allowed",
-                  opacity: apiKeys.length > 0 ? 1 : 0.5,
+                  cursor: isAuthenticated ? "pointer" : "not-allowed",
+                  opacity: isAuthenticated ? 1 : 0.5,
                 }}
                 onMouseEnter={(e) =>
-                  apiKeys.length > 0 &&
+                  isAuthenticated &&
                   (e.currentTarget.style.backgroundColor = colors.bg.secondary)
                 }
                 onMouseLeave={(e) =>
-                  apiKeys.length > 0 &&
+                  isAuthenticated &&
                   (e.currentTarget.style.backgroundColor = colors.bg.primary)
                 }
               >
@@ -1355,7 +1335,7 @@ function DatasetsTab({
                   className="text-xs font-medium mb-1"
                   style={{ color: colors.text.primary }}
                 >
-                  {apiKeys.length > 0
+                  {isAuthenticated
                     ? "Click to upload audio samples"
                     : "Add an API key to upload"}
                 </p>
@@ -1541,14 +1521,13 @@ function DatasetsTab({
 
                 {/* Upload more - below scrollable area */}
                 <button
-                  onClick={apiKeys.length > 0 ? triggerAudioUpload : undefined}
+                  onClick={isAuthenticated ? triggerAudioUpload : undefined}
                   className="flex items-center gap-1 text-xs font-medium mt-2"
                   style={{
-                    color:
-                      apiKeys.length > 0
-                        ? colors.accent.primary
-                        : colors.text.secondary,
-                    cursor: apiKeys.length > 0 ? "pointer" : "not-allowed",
+                    color: isAuthenticated
+                      ? colors.accent.primary
+                      : colors.text.secondary,
+                    cursor: isAuthenticated ? "pointer" : "not-allowed",
                   }}
                 >
                   <svg
@@ -2029,6 +2008,7 @@ function EvaluationsTab({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setActiveTab,
 }: EvaluationsTabProps) {
+  const { isAuthenticated } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedTranscriptions, setExpandedTranscriptions] = useState<
     Set<number>
@@ -2066,7 +2046,7 @@ function EvaluationsTab({
     isCorrect: boolean | null,
     comment?: string,
   ) => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     try {
       const payload: { is_correct?: boolean | null; comment?: string } = {};
@@ -2076,7 +2056,7 @@ function EvaluationsTab({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await apiFetch<any>(
         `/api/evaluations/stt/results/${resultId}`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
         {
           method: "PATCH",
           body: JSON.stringify(payload),

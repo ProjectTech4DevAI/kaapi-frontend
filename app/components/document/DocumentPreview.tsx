@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { formatDate } from "@/app/components/utils";
 import { Document } from "@/app/(main)/document/page";
 import {
@@ -135,10 +136,13 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                     </p>
                   </div>
                 ) : (
-                  <img
+                  <Image
                     src={document.signed_url}
                     alt={document.fname}
+                    width={800}
+                    height={600}
                     className="max-w-full h-auto rounded"
+                    unoptimized
                     onError={() => {
                       setImageLoadError(true);
                     }}

@@ -8,6 +8,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
+import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
 import { Dataset } from "@/app/(main)/datasets/page";
@@ -17,6 +18,7 @@ import TabNavigation from "@/app/components/TabNavigation";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
+import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import Loader from "@/app/components/Loader";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
@@ -37,8 +39,9 @@ function SimplifiedEvalContent() {
   });
 
   const { sidebarCollapsed } = useApp();
-  const { apiKeys } = useAuth();
-  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
+  const { apiKeys, isAuthenticated } = useAuth();
+  const apiKey = apiKeys[0]?.key ?? "";
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -74,39 +77,26 @@ function SimplifiedEvalContent() {
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  // Set initial selected key from context
-  useEffect(() => {
-    if (apiKeys.length > 0 && !selectedKeyId) {
-      setSelectedKeyId(apiKeys[0].id);
-    }
-  }, [apiKeys, selectedKeyId]);
-
   // Fetch datasets from backend
   const loadStoredDatasets = useCallback(async () => {
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
-      console.error("No selected API key found for loading datasets");
-      return;
-    }
+    if (!isAuthenticated) return;
     setIsDatasetsLoading(true);
     try {
-      const response = await fetch("/api/evaluations/datasets", {
-        method: "GET",
-        headers: { "X-API-KEY": selectedKey.key },
-      });
-      if (!response.ok) return;
-      const data = await response.json();
+      const data = await apiFetch<Dataset[] | { data: Dataset[] }>(
+        "/api/evaluations/datasets",
+        apiKey,
+      );
       setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
       console.error("Failed to load datasets:", e);
     } finally {
       setIsDatasetsLoading(false);
     }
-  }, [apiKeys, selectedKeyId]);
+  }, [apiKey, isAuthenticated]);
 
   useEffect(() => {
-    if (apiKeys.length > 0 && selectedKeyId) loadStoredDatasets();
-  }, [apiKeys, selectedKeyId, loadStoredDatasets]);
+    if (isAuthenticated) loadStoredDatasets();
+  }, [isAuthenticated, loadStoredDatasets]);
 
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,9 +163,8 @@ function SimplifiedEvalContent() {
       toast.error("Please enter a dataset name");
       return;
     }
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
-      toast.error("No API key selected. Please select one in the Keystore.");
+    if (!isAuthenticated) {
+      toast.error("Please log in to create datasets.");
       return;
     }
 
@@ -191,22 +180,14 @@ function SimplifiedEvalContent() {
         formData.append("duplication_factor", duplicationFactor);
       }
 
-      const response = await fetch("/api/evaluations/datasets", {
-        method: "POST",
-        body: formData,
-        headers: { "X-API-KEY": selectedKey.key },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Upload failed with status ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<{ dataset_id?: number }>(
+        "/api/evaluations/datasets",
+        apiKey,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       await loadStoredDatasets();
 
       if (data.dataset_id) {
@@ -220,7 +201,7 @@ function SimplifiedEvalContent() {
       setDuplicationFactor("1");
 
       toast.success("Dataset created successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -231,8 +212,8 @@ function SimplifiedEvalContent() {
 
   // Run evaluation
   const handleRunEvaluation = async () => {
-    if (!selectedKeyId) {
-      toast.error("Please select an API key first");
+    if (!isAuthenticated) {
+      toast.error("Please log in to run evaluations.");
       return;
     }
     if (!selectedDatasetId) {
@@ -248,12 +229,6 @@ function SimplifiedEvalContent() {
       return;
     }
 
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
-      toast.error("Selected API key not found");
-      return;
-    }
-
     setIsEvaluating(true);
     try {
       const payload = {
@@ -263,25 +238,14 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
       };
 
-      const response = await fetch("/api/evaluations", {
+      const data = await apiFetch<{
+        id?: string;
+        data?: { id?: string };
+        eval_id?: string;
+      }>("/api/evaluations", apiKey, {
         method: "POST",
-        headers: {
-          "X-API-KEY": selectedKey.key,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Evaluation failed with status ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
       const evalId = data.id || data.data?.id || data.eval_id || "unknown";
 
       setIsEvaluating(false);
@@ -323,51 +287,18 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          {!mounted || apiKeys.length === 0 ? (
-            <div
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
-              <div className="text-center">
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  style={{ color: colors.border }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: colors.text.primary }}
-                >
-                  API key required
-                </p>
-                <p
-                  className="text-xs mb-4"
-                  style={{ color: colors.text.secondary }}
-                >
-                  Add an API key in the Keystore to start creating datasets and
-                  running evaluations
-                </p>
-                <a
-                  href="/keystore"
-                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#ffffff",
-                  }}
-                >
-                  Go to Keystore
-                </a>
-              </div>
-            </div>
+          {!mounted || !isAuthenticated ? (
+            <>
+              <FeatureGateModal
+                feature="Text Evaluation"
+                description="Log in to compare model response quality on your datasets across different configs."
+                onLogin={() => setShowLoginModal(true)}
+              />
+              <LoginModal
+                open={showLoginModal}
+                onClose={() => setShowLoginModal(false)}
+              />
+            </>
           ) : activeTab === "datasets" ? (
             <DatasetsTab
               leftPanelWidth={leftPanelWidth}
@@ -390,16 +321,14 @@ function SimplifiedEvalContent() {
               }}
               storedDatasets={storedDatasets}
               isDatasetsLoading={isDatasetsLoading}
-              apiKeys={apiKeys}
-              selectedKeyId={selectedKeyId}
+              apiKey={apiKey}
               loadStoredDatasets={loadStoredDatasets}
               toast={toast}
             />
           ) : (
             <EvaluationsTab
               leftPanelWidth={leftPanelWidth}
-              apiKeys={apiKeys}
-              selectedKeyId={selectedKeyId}
+              apiKey={apiKey}
               storedDatasets={storedDatasets}
               selectedDatasetId={selectedDatasetId}
               setSelectedDatasetId={setSelectedDatasetId}

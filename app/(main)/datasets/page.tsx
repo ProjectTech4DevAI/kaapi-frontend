@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
+import { apiFetch } from "@/app/lib/apiClient";
 import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
@@ -41,7 +42,7 @@ export default function Datasets() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { activeKey: apiKey } = useAuth();
+  const { activeKey: apiKey, isAuthenticated } = useAuth();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,12 +53,11 @@ export default function Datasets() {
     if (apiKey) {
       fetchDatasets();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   const fetchDatasets = async () => {
-    if (!apiKey) {
-      setError("No API key found. Please add an API key in the Keystore.");
+    if (!isAuthenticated) {
+      setError("Please log in to continue.");
       return;
     }
 
@@ -65,23 +65,10 @@ export default function Datasets() {
     setError(null);
 
     try {
-      const response = await fetch("/api/evaluations/datasets", {
-        method: "GET",
-        headers: {
-          "X-API-KEY": apiKey.key,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed to fetch datasets: ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<Dataset[] | { data: Dataset[] }>(
+        "/api/evaluations/datasets",
+        apiKey?.key ?? "",
+      );
       const datasetList = Array.isArray(data) ? data : data.data || [];
       setDatasets(datasetList);
     } catch (err: unknown) {
@@ -119,49 +106,29 @@ export default function Datasets() {
       return;
     }
 
-    if (!apiKey) {
-      toast.error("No API key found. Please add an API key in the Keystore.");
+    if (!isAuthenticated) {
+      toast.error("Please log in to continue.");
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Prepare FormData for upload
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("dataset_name", datasetName.trim());
 
       formData.append("duplication_factor", duplicationFactor || "1");
 
-      // Upload to backend
-      const response = await fetch("/api/evaluations/datasets", {
+      await apiFetch<Dataset>("/api/evaluations/datasets", apiKey?.key ?? "", {
         method: "POST",
         body: formData,
-        headers: {
-          "X-API-KEY": apiKey.key,
-        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Upload failed with status ${response.status}`,
-        );
-      }
-
-      await response.json();
-      // Refresh datasets list
       await fetchDatasets();
 
-      // Reset form
       setSelectedFile(null);
       setDatasetName("");
       setDuplicationFactor("1");
-
-      // Close modal
       setIsModalOpen(false);
 
       toast.success("Dataset uploaded successfully!");
@@ -176,8 +143,8 @@ export default function Datasets() {
   };
 
   const handleDeleteDataset = async (datasetId: number) => {
-    if (!apiKey) {
-      toast.error("No API key found");
+    if (!isAuthenticated) {
+      toast.error("Please log in to continue");
       return;
     }
 
@@ -187,23 +154,14 @@ export default function Datasets() {
     }
 
     try {
-      const response = await fetch(`/api/evaluations/datasets/${datasetId}`, {
-        method: "DELETE",
-        headers: {
-          "X-API-KEY": apiKey.key,
+      await apiFetch(
+        `/api/evaluations/datasets/${datasetId}`,
+        apiKey?.key ?? "",
+        {
+          method: "DELETE",
         },
-      });
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Delete failed with status ${response.status}`,
-        );
-      }
-
-      // Refresh datasets list
       await fetchDatasets();
       toast.success("Dataset deleted successfully");
     } catch (error) {
@@ -214,7 +172,6 @@ export default function Datasets() {
     }
   };
 
-  // Pagination calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentDatasets = datasets.slice(indexOfFirstItem, indexOfLastItem);
@@ -223,26 +180,17 @@ export default function Datasets() {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: "#fafafa" }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/datasets" />
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
             title="Datasets"
             subtitle="Manage your evaluation datasets"
           />
 
-          {/* Content Area */}
-          <div
-            className="flex-1 overflow-auto p-6"
-            style={{ backgroundColor: "#fafafa" }}
-          >
+          <div className="flex-1 overflow-auto p-6 bg-bg-secondary">
             <div className="max-w-6xl mx-auto space-y-6">
               <DatasetListing
                 datasets={currentDatasets}
@@ -260,7 +208,6 @@ export default function Datasets() {
         </div>
       </div>
 
-      {/* Upload Dataset Modal */}
       {isModalOpen && (
         <UploadDatasetModal
           selectedFile={selectedFile}
@@ -365,42 +312,9 @@ function DatasetListing({
             <p className="text-sm">Loading datasets...</p>
           </div>
         ) : !apiKey ? (
-          <div
-            className="text-center py-12"
-            style={{ color: "hsl(330, 3%, 49%)" }}
-          >
-            <svg
-              className="mx-auto h-12 w-12 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-              />
-            </svg>
-            <p
-              className="font-medium mb-2"
-              style={{ color: "hsl(330, 3%, 19%)" }}
-            >
-              No API key found
-            </p>
-            <p className="text-sm mb-4">
-              Please add an API key in the Keystore to manage datasets
-            </p>
-            <a
-              href="/keystore"
-              className="inline-block px-6 py-2 rounded-md text-sm font-medium transition-colors"
-              style={{
-                backgroundColor: "#171717",
-                color: "hsl(0, 0%, 100%)",
-              }}
-            >
-              Go to Keystore
-            </a>
+          <div className="text-center py-12 text-text-secondary">
+            <p className="font-medium mb-2 text-text-primary">Login required</p>
+            <p className="text-sm">Please log in to manage datasets</p>
           </div>
         ) : error ? (
           <div

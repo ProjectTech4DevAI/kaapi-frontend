@@ -48,9 +48,9 @@ export default function EvaluationReport() {
   >(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { apiKeys } = useAuth();
+  const { apiKeys, isAuthenticated } = useAuth();
+  const apiKey = apiKeys[0]?.key ?? "";
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
-  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
@@ -73,18 +73,9 @@ export default function EvaluationReport() {
     return `"${sanitized}"`;
   };
 
-  useEffect(() => {
-    if (apiKeys.length > 0 && !selectedKeyId) {
-      setSelectedKeyId(apiKeys[0].id);
-    }
-  }, [apiKeys, selectedKeyId]);
-
   // Fetch job details
   const fetchJobDetails = useCallback(async () => {
-    if (!selectedKeyId || !jobId) return;
-
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) return;
+    if (!isAuthenticated || !jobId) return;
 
     setIsLoading(true);
     setError(null);
@@ -93,7 +84,7 @@ export default function EvaluationReport() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?export_format=${exportFormat}`,
-        selectedKey.key,
+        apiKey,
       );
 
       if (data.success === false && data.error) {
@@ -108,14 +99,10 @@ export default function EvaluationReport() {
       setJob(foundJob);
 
       if (foundJob.assistant_id) {
-        fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
+        fetchAssistantConfig(foundJob.assistant_id);
       }
       if (foundJob.config_id && foundJob.config_version) {
-        fetchConfigInfo(
-          foundJob.config_id,
-          foundJob.config_version,
-          selectedKey.key,
-        );
+        fetchConfigInfo(foundJob.config_id, foundJob.config_version);
       }
     } catch (err: unknown) {
       setError(
@@ -124,10 +111,9 @@ export default function EvaluationReport() {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKeys, selectedKeyId, jobId, exportFormat]);
+  }, [apiKey, isAuthenticated, jobId, exportFormat]);
 
-  const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
+  const fetchAssistantConfig = async (assistantId: string) => {
     try {
       const result = await apiFetch<{
         success: boolean;
@@ -142,11 +128,7 @@ export default function EvaluationReport() {
     }
   };
 
-  const fetchConfigInfo = async (
-    configId: string,
-    configVersion: number,
-    apiKey: string,
-  ) => {
+  const fetchConfigInfo = async (configId: string, configVersion: number) => {
     try {
       await apiFetch(`/api/configs/${configId}`, apiKey);
       await apiFetch(
@@ -159,8 +141,8 @@ export default function EvaluationReport() {
   };
 
   useEffect(() => {
-    if (selectedKeyId && jobId) fetchJobDetails();
-  }, [selectedKeyId, jobId, fetchJobDetails]);
+    if (isAuthenticated && jobId) fetchJobDetails();
+  }, [isAuthenticated, jobId, fetchJobDetails]);
 
   // Export grouped format CSV
   const exportGroupedCSV = (traces: GroupedTraceItem[]) => {
@@ -303,16 +285,14 @@ export default function EvaluationReport() {
   };
 
   const handleResync = async () => {
-    if (!selectedKeyId || !jobId) return;
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) return;
+    if (!isAuthenticated || !jobId) return;
 
     setIsResyncing(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`,
-        selectedKey.key,
+        apiKey,
       );
       const foundJob = data.data || data;
       if (!foundJob) throw new Error("Evaluation job not found");
@@ -325,14 +305,9 @@ export default function EvaluationReport() {
       }
 
       setJob(foundJob);
-      if (foundJob.assistant_id)
-        fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
+      if (foundJob.assistant_id) fetchAssistantConfig(foundJob.assistant_id);
       if (foundJob.config_id && foundJob.config_version)
-        fetchConfigInfo(
-          foundJob.config_id,
-          foundJob.config_version,
-          selectedKey.key,
-        );
+        fetchConfigInfo(foundJob.config_id, foundJob.config_version);
       toast.success("Metrics resynced successfully");
     } catch (error: unknown) {
       toast.error(

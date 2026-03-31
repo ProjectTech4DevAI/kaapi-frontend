@@ -257,7 +257,7 @@ export default function TextToSpeechPage() {
   const leftPanelWidth = 450;
 
   // API Keys
-  const { apiKeys } = useAuth();
+  const { apiKeys, isAuthenticated } = useAuth();
 
   // Languages
   const [languages, setLanguages] = useState<Language[]>([]);
@@ -298,11 +298,11 @@ export default function TextToSpeechPage() {
 
   // Load languages
   const loadLanguages = async () => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = await apiFetch<any>("/api/languages", apiKeys[0].key);
+      const data = await apiFetch<any>("/api/languages", apiKeys[0]?.key ?? "");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let rawList: any[] = [];
@@ -342,14 +342,14 @@ export default function TextToSpeechPage() {
 
   // Load datasets
   const loadDatasets = async () => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingDatasets(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         "/api/evaluations/tts/datasets",
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
 
       let datasetsList = [];
@@ -373,14 +373,14 @@ export default function TextToSpeechPage() {
 
   // Load evaluation runs
   const loadRuns = async () => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingRuns(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         "/api/evaluations/tts/runs",
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
 
       let runsList = [];
@@ -408,7 +408,6 @@ export default function TextToSpeechPage() {
     if (activeTab === "evaluations") {
       loadRuns();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Add a new text sample
@@ -447,7 +446,7 @@ export default function TextToSpeechPage() {
       return;
     }
 
-    if (apiKeys.length === 0) {
+    if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
@@ -460,15 +459,19 @@ export default function TextToSpeechPage() {
       }));
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await apiFetch<any>("/api/evaluations/tts/datasets", apiKeys[0].key, {
-        method: "POST",
-        body: JSON.stringify({
-          name: datasetName.trim(),
-          description: datasetDescription.trim() || undefined,
-          language_id: datasetLanguageId,
-          samples,
-        }),
-      });
+      await apiFetch<any>(
+        "/api/evaluations/tts/datasets",
+        apiKeys[0]?.key ?? "",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: datasetName.trim(),
+            description: datasetDescription.trim() || undefined,
+            language_id: datasetLanguageId,
+            samples,
+          }),
+        },
+      );
 
       toast.success(`Dataset "${datasetName}" created successfully!`);
 
@@ -489,7 +492,7 @@ export default function TextToSpeechPage() {
 
   // Run evaluation
   const handleRunEvaluation = async () => {
-    if (apiKeys.length === 0) {
+    if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
@@ -508,7 +511,7 @@ export default function TextToSpeechPage() {
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await apiFetch<any>("/api/evaluations/tts/runs", apiKeys[0].key, {
+      await apiFetch<any>("/api/evaluations/tts/runs", apiKeys[0]?.key ?? "", {
         method: "POST",
         body: JSON.stringify({
           run_name: evaluationName.trim(),
@@ -536,14 +539,14 @@ export default function TextToSpeechPage() {
 
   // Load results for a specific run
   const loadResults = async (runId: number) => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingResults(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const runData = await apiFetch<any>(
         `/api/evaluations/tts/runs/${runId}?include_results=true&include_signed_url=true`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
 
       let resultsList = [];
@@ -609,50 +612,15 @@ export default function TextToSpeechPage() {
           />
 
           {/* Tab Content */}
-          {apiKeys.length === 0 ? (
+          {!isAuthenticated ? (
             <div
               className="flex-1 flex items-center justify-center"
               style={{ backgroundColor: colors.bg.secondary }}
             >
-              <div className="text-center">
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  style={{ color: colors.border }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: colors.text.primary }}
-                >
-                  API key required
-                </p>
-                <p
-                  className="text-xs mb-4"
-                  style={{ color: colors.text.secondary }}
-                >
-                  Add an API key in the Keystore to start creating datasets and
-                  running evaluations
-                </p>
-                <a
-                  href="/keystore"
-                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#ffffff",
-                  }}
-                >
-                  Go to Keystore
-                </a>
-              </div>
+              <p className="text-sm" style={{ color: colors.text.secondary }}>
+                Please sign in to start creating datasets and running
+                evaluations.
+              </p>
             </div>
           ) : activeTab === "datasets" ? (
             <DatasetsTab
@@ -796,6 +764,7 @@ function DatasetsTab({
   datasets,
   toast,
 }: DatasetsTabProps) {
+  const { isAuthenticated } = useAuth();
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [viewModalData, setViewModalData] = useState<{
     name: string;
@@ -818,13 +787,13 @@ function DatasetsTab({
   }, [textSamples.length]);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
     setViewingId(datasetId);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         `/api/evaluations/tts/datasets/${datasetId}?include_signed_url=true&fetch_content=true`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
       const csvText = data?.csv_content;
       if (!csvText) {
@@ -1085,14 +1054,13 @@ function DatasetsTab({
             )}
 
             <button
-              onClick={apiKeys.length > 0 ? addTextSample : undefined}
+              onClick={isAuthenticated ? addTextSample : undefined}
               className="flex items-center gap-1 text-xs font-medium mt-2"
               style={{
-                color:
-                  apiKeys.length > 0
-                    ? colors.accent.primary
-                    : colors.text.secondary,
-                cursor: apiKeys.length > 0 ? "pointer" : "not-allowed",
+                color: isAuthenticated
+                  ? colors.accent.primary
+                  : colors.text.secondary,
+                cursor: isAuthenticated ? "pointer" : "not-allowed",
               }}
             >
               <svg
@@ -1482,6 +1450,7 @@ function EvaluationsTab({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setActiveTab,
 }: EvaluationsTabProps) {
+  const { isAuthenticated } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [playingResultId, setPlayingResultId] = useState<number | null>(null);
   const [openScoreInfo, setOpenScoreInfo] = useState<string | null>(null);
@@ -1511,7 +1480,7 @@ function EvaluationsTab({
       [key: string]: any;
     },
   ) => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
 
     try {
       const payload: {
@@ -1529,7 +1498,7 @@ function EvaluationsTab({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await apiFetch<any>(
         `/api/evaluations/tts/results/${resultId}`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
         {
           method: "PATCH",
           body: JSON.stringify(payload),

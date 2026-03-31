@@ -8,7 +8,7 @@ import {
   useEffect,
 } from "react";
 import { APIKey } from "@/app/lib/types/credentials";
-import { apiFetch } from "../apiClient";
+import { apiFetch } from "@/app/lib/apiClient";
 
 const STORAGE_KEY = "kaapi_api_keys";
 

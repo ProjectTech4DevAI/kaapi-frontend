@@ -9,6 +9,15 @@ interface OnboardingSuccessProps {
   data: OnboardResponseData;
 }
 
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
+      <span className="text-xs text-text-secondary">{label}</span>
+      <span className="text-sm font-medium text-text-primary">{value}</span>
+    </div>
+  );
+}
+
 export default function OnboardingSuccess({ data }: OnboardingSuccessProps) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
@@ -79,15 +88,6 @@ export default function OnboardingSuccess({ data }: OnboardingSuccessProps) {
           to start using configurations, evaluations, and other features.
         </p>
       </div>
-    </div>
-  );
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
-      <span className="text-xs text-text-secondary">{label}</span>
-      <span className="text-sm font-medium text-text-primary">{value}</span>
     </div>
   );
 }

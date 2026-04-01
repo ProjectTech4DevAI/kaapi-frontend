@@ -2,6 +2,8 @@
  * Constants for Management
  */
 
+import { ConfigBlob } from "@/app/lib/types/promptEditor";
+
 /** localStorage key for the config cache */
 export const CACHE_KEY = "kaapi_configs_cache";
 
@@ -44,4 +46,17 @@ export const MODEL_OPTIONS = {
   //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
   //   { value: 'gemini-pro', label: 'Gemini Pro' },
   // ],
+};
+
+export const DEFAULT_CONFIG: ConfigBlob = {
+  completion: {
+    provider: "openai",
+    type: "text",
+    params: {
+      model: "gpt-4o-mini",
+      instructions: "",
+      temperature: 0.7,
+      tools: [],
+    },
+  },
 };

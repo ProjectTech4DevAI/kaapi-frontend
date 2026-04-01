@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/app/components/Sidebar";
+import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
@@ -13,6 +12,7 @@ import {
   OrganizationList,
   ProjectList,
   StepIndicator,
+  UserList,
 } from "@/app/components/settings/onboarding";
 import {
   Organization,
@@ -25,7 +25,7 @@ import { colors } from "@/app/lib/colors";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 
-type View = "loading" | "list" | "projects" | "form" | "success";
+type View = "loading" | "list" | "projects" | "users" | "form" | "success";
 
 function OrganizationListSkeleton() {
   return (
@@ -60,10 +60,10 @@ function OrganizationListSkeleton() {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { sidebarCollapsed } = useApp();
   const { activeKey, currentUser, isHydrated, isAuthenticated } = useAuth();
   const [view, setView] = useState<View>("loading");
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [onboardData, setOnboardData] = useState<OnboardResponseData | null>(
@@ -139,10 +139,21 @@ export default function OnboardingPage() {
     setView("success");
   };
 
+  const handleSelectProject = (project: Project) => {
+    setSelectedProject(project);
+    setView("users");
+  };
+
   const handleBackToOrgs = () => {
     setSelectedOrg(null);
+    setSelectedProject(null);
     setProjects([]);
     setView("list");
+  };
+
+  const handleBackToProjects = () => {
+    setSelectedProject(null);
+    setView("projects");
   };
 
   return (
@@ -151,10 +162,7 @@ export default function OnboardingPage() {
       style={{ backgroundColor: colors.bg.secondary }}
     >
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          activeRoute="/settings/onboarding"
-        />
+        <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
@@ -182,6 +190,15 @@ export default function OnboardingPage() {
                   projects={projects}
                   isLoading={isLoadingProjects}
                   onBack={handleBackToOrgs}
+                  onSelectProject={handleSelectProject}
+                />
+              )}
+
+              {view === "users" && selectedOrg && selectedProject && (
+                <UserList
+                  organization={selectedOrg}
+                  project={selectedProject}
+                  onBack={handleBackToProjects}
                 />
               )}
 

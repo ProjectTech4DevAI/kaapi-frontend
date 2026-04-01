@@ -1,12 +1,13 @@
 import { Organization, Project } from "@/app/lib/types/onboarding";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { ArrowLeftIcon } from "@/app/components/icons";
+import { ArrowLeftIcon, ChevronRightIcon } from "@/app/components/icons";
 
 interface ProjectListProps {
   organization: Organization;
   projects: Project[];
   isLoading: boolean;
   onBack: () => void;
+  onSelectProject: (project: Project) => void;
 }
 
 function ProjectListSkeleton() {
@@ -36,6 +37,7 @@ export default function ProjectList({
   projects,
   isLoading,
   onBack,
+  onSelectProject,
 }: ProjectListProps) {
   return (
     <div>
@@ -68,9 +70,10 @@ export default function ProjectList({
       ) : (
         <div className="space-y-2">
           {projects.map((project) => (
-            <div
+            <button
               key={project.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+              onClick={() => onSelectProject(project)}
+              className="w-full flex items-center justify-between p-4 rounded-lg border border-border bg-white text-left transition-colors hover:bg-neutral-50"
             >
               <div>
                 <p className="text-sm font-medium text-text-primary">
@@ -85,16 +88,19 @@ export default function ProjectList({
                   Created {formatRelativeTime(project.inserted_at)}
                 </p>
               </div>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                  project.is_active
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-neutral-100 text-text-secondary border border-border"
-                }`}
-              >
-                {project.is_active ? "Active" : "Inactive"}
-              </span>
-            </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    project.is_active
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-neutral-100 text-text-secondary border border-border"
+                  }`}
+                >
+                  {project.is_active ? "Active" : "Inactive"}
+                </span>
+                <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
+              </div>
+            </button>
           ))}
         </div>
       )}

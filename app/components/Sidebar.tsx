@@ -6,7 +6,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -15,109 +14,30 @@ import {
   DocumentFileIcon,
   BookOpenIcon,
   GearIcon,
-  SlidersIcon,
-  KeyIcon,
   ChevronRightIcon,
 } from "@/app/components/icons";
 import { LoginModal } from "@/app/components/auth";
-import { Button } from "@/app/components";
-
-interface SubMenuItem {
-  name: string;
-  route?: string;
-  comingSoon?: boolean;
-  submenu?: SubMenuItem[];
-}
-
-interface MenuItem {
-  name: string;
-  route?: string;
-  icon: React.ReactNode;
-  submenu?: SubMenuItem[];
-  gateDescription?: string;
-}
-
-interface SidebarProps {
-  collapsed: boolean;
-  activeRoute?: string;
-}
+import { Branding, UserMenuPopover } from "@/app/components/user-menu";
+import GatePopover from "@/app/components/GatePopover";
+import { NAV_ITEMS } from "@/app/lib/navConfig";
+import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 
 /** Routes that are always accessible without auth */
-const PUBLIC_ROUTES = new Set(["/evaluations", "/keystore"]);
-
-// ---- Gate Popover (rendered via portal) ----
-
-function GatePopover({
-  name,
-  description,
-  anchorRect,
-  onMouseEnter,
-  onMouseLeave,
-  onLogin,
-}: {
-  name: string;
-  description: string;
-  anchorRect: DOMRect;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
-  onLogin: () => void;
-}) {
-  return createPortal(
-    <div
-      className="fixed z-9999 w-72"
-      style={{
-        top: anchorRect.top - 40,
-        left: anchorRect.right + 10,
-      }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl border border-border overflow-hidden">
-        {/* Gradient banner */}
-        <div
-          className="h-24"
-          style={{
-            background:
-              "linear-gradient(135deg, #dbeafe 0%, #e0e7ff 30%, #c7d2fe 50%, #ddd6fe 70%, #fce7f3 100%)",
-          }}
-        />
-
-        {/* Content */}
-        <div className="px-4 pt-3 pb-4">
-          <p className="text-[15px] font-semibold text-text-primary leading-snug">
-            {name}
-          </p>
-          <p className="text-[13px] text-text-secondary mt-1.5 leading-relaxed">
-            {description}
-          </p>
-
-          <div className="mt-4">
-            <Button size="sm" onClick={onLogin}>
-              Log in
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
-// ---- Main Sidebar ----
+const PUBLIC_ROUTES = new Set(["/evaluations"]);
 
 export default function Sidebar({
   collapsed,
   activeRoute = "/evaluations",
 }: SidebarProps) {
   const router = useRouter();
-  const { currentUser, googleProfile, isAuthenticated, session, logout } =
-    useAuth();
-  const isGoogleUser = !!session?.accessToken;
+  const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     Evaluations: true,
     Configurations: false,
   });
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [hoveredGate, setHoveredGate] = useState<string | null>(null);
   const [gateRect, setGateRect] = useState<DOMRect | null>(null);
   const gateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -132,6 +52,21 @@ export default function Sidebar({
       }
     }
   }, []);
+
+  // Close user menu on click outside
+  useEffect(() => {
+    if (!showUserMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showUserMenu]);
 
   const toggleMenu = (menuName: string) => {
     const newState = { ...expandedMenus, [menuName]: !expandedMenus[menuName] };
@@ -171,54 +106,23 @@ export default function Sidebar({
     return false;
   };
 
-  const navItems: MenuItem[] = [
-    {
-      name: "Evaluations",
-      icon: <ClipboardIcon />,
-      submenu: [
-        { name: "Text", route: "/evaluations" },
-        { name: "Speech-to-Text", route: "/speech-to-text" },
-        { name: "Text-to-Speech", route: "/text-to-speech" },
-      ],
-      gateDescription:
-        "Log in to compare model response quality across different configs.",
-    },
-    {
-      name: "Documents",
-      route: "/document",
-      icon: <DocumentFileIcon />,
-      gateDescription: "Log in to upload and manage your documents.",
-    },
-    {
-      name: "Knowledge Base",
-      route: "/knowledge-base",
-      icon: <BookOpenIcon />,
-      gateDescription: "Log in to manage your knowledge bases for RAG.",
-    },
-    {
-      name: "Configurations",
-      icon: <GearIcon className="w-5 h-5" />,
-      submenu: [
-        { name: "Library", route: "/configurations" },
-        { name: "Prompt Editor", route: "/configurations/prompt-editor" },
-      ],
-      gateDescription: "Log in to manage prompts and model configurations.",
-    },
-    ...(currentUser?.is_superuser
-      ? [
-          {
-            name: "Settings",
-            icon: <SlidersIcon />,
-            submenu: [
-              { name: "Credentials", route: "/settings/credentials" },
-              { name: "Onboarding", route: "/settings/onboarding" },
-            ],
-          },
-        ]
-      : []),
-  ];
+  const iconMap: Record<string, React.ReactNode> = {
+    clipboard: <ClipboardIcon />,
+    document: <DocumentFileIcon />,
+    book: <BookOpenIcon />,
+    gear: <GearIcon className="w-5 h-5" />,
+  };
 
-  // Find the gate description for the currently hovered item
+  const navItems: MenuItem[] = NAV_ITEMS.filter(
+    (item) => !item.superuserOnly || currentUser?.is_superuser,
+  ).map((item) => ({
+    name: item.name,
+    route: item.route,
+    icon: iconMap[item.icon],
+    submenu: item.submenu,
+    gateDescription: item.gateDescription,
+  }));
+
   const getGateDescription = (name: string): string => {
     for (const item of navItems) {
       if (item.name === name)
@@ -239,12 +143,7 @@ export default function Sidebar({
     <aside
       className={`border-r border-border transition-all duration-300 ease-in-out h-full shrink-0 flex flex-col bg-bg-secondary ${collapsed ? "w-0 overflow-hidden" : "w-60"}`}
     >
-      <div className="px-5 py-[13px] border-b border-border">
-        <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-          Kaapi Konsole
-        </h2>
-        <p className="text-xs mt-0.5 text-text-secondary">Tech4Dev</p>
-      </div>
+      <Branding />
 
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto w-60">
         {navItems.map((item) => {
@@ -394,35 +293,25 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Bottom section */}
       <div className="w-60">
-        {!isGoogleUser && (
-          <div className="px-3 py-3">
-            <button
-              onClick={() => router.push("/keystore")}
-              className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border ${
-                activeRoute === "/keystore"
-                  ? "bg-neutral-100 text-text-primary font-semibold border-border"
-                  : "bg-transparent text-black font-medium border-transparent hover:bg-neutral-100"
-              }`}
-            >
-              <span
-                className={
-                  activeRoute === "/keystore" ? "opacity-100" : "opacity-70"
-                }
-              >
-                <KeyIcon className="w-5 h-5" />
-              </span>
-              Keystore
-            </button>
-          </div>
-        )}
-        {/* Keystore */}
-
-        {/* User profile (authenticated) or login prompt */}
         {isAuthenticated && (currentUser || googleProfile) ? (
-          <div className="px-3 pb-3 pt-1 border-t border-border">
-            <div className="flex items-center gap-3 px-2 py-2">
+          <div
+            className="px-3 pb-3 pt-1 border-t border-border relative"
+            ref={userMenuRef}
+          >
+            {showUserMenu && (
+              <UserMenuPopover
+                currentUser={currentUser}
+                googleProfile={googleProfile}
+                onClose={() => setShowUserMenu(false)}
+                onLogout={logout}
+              />
+            )}
+
+            <button
+              onClick={() => setShowUserMenu((prev) => !prev)}
+              className="w-full flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer hover:bg-neutral-100 transition-colors"
+            >
               {googleProfile?.picture ? (
                 <Image
                   src={googleProfile.picture}
@@ -441,7 +330,7 @@ export default function Sidebar({
                   </span>
                 </div>
               )}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-left">
                 <p className="text-sm font-medium text-text-primary truncate">
                   {googleProfile?.name ||
                     currentUser?.full_name ||
@@ -451,26 +340,7 @@ export default function Sidebar({
                   {currentUser?.email}
                 </p>
               </div>
-              <button
-                onClick={logout}
-                className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors shrink-0"
-                title="Log out"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-              </button>
-            </div>
+            </button>
           </div>
         ) : !isAuthenticated ? (
           <div className="px-4 py-4 w-60 border-t border-border">
@@ -492,7 +362,6 @@ export default function Sidebar({
         ) : null}
       </div>
 
-      {/* Gate popover — rendered via portal so it's never clipped */}
       {hoveredGate && gateRect && (
         <GatePopover
           name={hoveredGate}

@@ -32,6 +32,30 @@ export interface ProjectListResponse {
   metadata?: Record<string, unknown>;
 }
 
+export interface UserProject {
+  user_id: number;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  inserted_at: string;
+}
+
+export interface UserProjectListResponse {
+  success: boolean;
+  data?: UserProject[];
+  error?: string;
+  errors?: { field: string; message: string }[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface UserProjectDeleteResponse {
+  success: boolean;
+  data?: { message: string };
+  error?: string;
+  errors?: { field: string; message: string }[];
+  metadata?: Record<string, unknown>;
+}
+
 export interface OnboardRequest {
   organization_name: string;
   project_name: string;

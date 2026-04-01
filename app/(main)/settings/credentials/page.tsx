@@ -8,11 +8,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Sidebar from "@/app/components/Sidebar";
+import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useApp } from "@/app/lib/context/AppContext";
 import {
   PROVIDERS,
   Credential,
@@ -25,7 +24,6 @@ import { apiFetch } from "@/app/lib/apiClient";
 
 export default function CredentialsPage() {
   const toast = useToast();
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const { apiKeys, isAuthenticated } = useAuth();
   const [selectedProvider, setSelectedProvider] = useState<ProviderDef>(
     PROVIDERS[0],
@@ -198,10 +196,7 @@ export default function CredentialsPage() {
       style={{ backgroundColor: colors.bg.secondary }}
     >
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          activeRoute="/settings/credentials"
-        />
+        <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div
@@ -211,41 +206,19 @@ export default function CredentialsPage() {
               borderColor: colors.border,
             }}
           >
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-md"
-                style={{ color: colors.text.secondary }}
-                aria-label="Toggle sidebar"
+            <div>
+              <h1
+                className="text-base font-semibold"
+                style={{
+                  color: colors.text.primary,
+                  letterSpacing: "-0.01em",
+                }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-              <div>
-                <h1
-                  className="text-base font-semibold"
-                  style={{
-                    color: colors.text.primary,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  Settings
-                </h1>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  Manage provider credentials
-                </p>
-              </div>
+                Credentials
+              </h1>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>
+                Manage provider credentials
+              </p>
             </div>
           </div>
 

@@ -32,7 +32,6 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json(data, { status });
 
-    // Forward Set-Cookie from backend so the browser stores the auth cookie
     const setCookie = backendHeaders.getSetCookie?.();
     if (setCookie) {
       setCookie.forEach((cookie: string) => {

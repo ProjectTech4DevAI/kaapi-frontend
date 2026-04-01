@@ -8,18 +8,18 @@
  * @returns Formatted date string (e.g., "15 Jan 2024, 14:30")
  */
 export const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return "N/A";
   try {
     const date = new Date(dateString);
     if (Number.isNaN(date.getTime())) {
       return dateString;
     }
-    const istDate = new Date(date.getTime() + (5.5 * 60 * 60 * 1000));
+    const istDate = new Date(date.getTime() + 5.5 * 60 * 60 * 1000);
     const day = istDate.getDate();
-    const month = istDate.toLocaleDateString('en-US', { month: 'short' });
+    const month = istDate.toLocaleDateString("en-US", { month: "short" });
     const year = istDate.getFullYear();
-    const hours = String(istDate.getHours()).padStart(2, '0');
-    const minutes = String(istDate.getMinutes()).padStart(2, '0');
+    const hours = String(istDate.getHours()).padStart(2, "0");
+    const minutes = String(istDate.getMinutes()).padStart(2, "0");
     return `${day} ${month} ${year}, ${hours}:${minutes}`;
   } catch {
     return dateString;
@@ -31,21 +31,39 @@ export const formatDate = (dateString?: string): string => {
  * @param status - Status string (completed, processing, failed, etc.)
  * @returns Object with bg, border, and text HSL color values
  */
-export const getStatusColor = (status: string): { bg: string; border: string; text: string } => {
+export const getStatusColor = (
+  status: string,
+): { bg: string; border: string; text: string } => {
   switch (status.toLowerCase()) {
-    case 'completed':
-    case 'success':
-      return { bg: 'hsl(134, 61%, 95%)', border: 'hsl(134, 61%, 70%)', text: 'hsl(134, 61%, 25%)' };
-    case 'processing':
-    case 'pending':
-    case 'queued':
-    case 'running':
-      return { bg: 'hsl(46, 100%, 95%)', border: 'hsl(46, 100%, 80%)', text: 'hsl(46, 100%, 25%)' };
-    case 'failed':
-    case 'error':
-      return { bg: 'hsl(8, 86%, 95%)', border: 'hsl(8, 86%, 80%)', text: 'hsl(8, 86%, 40%)' };
+    case "completed":
+    case "success":
+      return {
+        bg: "hsl(134, 61%, 95%)",
+        border: "hsl(134, 61%, 70%)",
+        text: "hsl(134, 61%, 25%)",
+      };
+    case "processing":
+    case "pending":
+    case "queued":
+    case "running":
+      return {
+        bg: "hsl(46, 100%, 95%)",
+        border: "hsl(46, 100%, 80%)",
+        text: "hsl(46, 100%, 25%)",
+      };
+    case "failed":
+    case "error":
+      return {
+        bg: "hsl(8, 86%, 95%)",
+        border: "hsl(8, 86%, 80%)",
+        text: "hsl(8, 86%, 40%)",
+      };
     default:
-      return { bg: 'hsl(0, 0%, 100%)', border: 'hsl(0, 0%, 85%)', text: 'hsl(330, 3%, 49%)' };
+      return {
+        bg: "hsl(0, 0%, 100%)",
+        border: "hsl(0, 0%, 85%)",
+        text: "hsl(330, 3%, 49%)",
+      };
   }
 };
 
@@ -54,7 +72,9 @@ export const getStatusColor = (status: string): { bg: string; border: string; te
  * @param scores - Array of similarity scores
  * @returns Object with high and medium threshold values (percentile-based)
  */
-export const calculateDynamicThresholds = (scores: number[]): { highThreshold: number; mediumThreshold: number } => {
+export const calculateDynamicThresholds = (
+  scores: number[],
+): { highThreshold: number; mediumThreshold: number } => {
   if (scores.length === 0) {
     return { highThreshold: 0.7, mediumThreshold: 0.5 };
   }
@@ -80,17 +100,29 @@ export const calculateDynamicThresholds = (scores: number[]): { highThreshold: n
  */
 export const getScoreColor = (
   similarity: number,
-  thresholds?: { highThreshold: number; mediumThreshold: number }
+  thresholds?: { highThreshold: number; mediumThreshold: number },
 ): { bg: string; border: string; text: string } => {
   // Use dynamic thresholds if provided, otherwise use fixed thresholds
   const highThreshold = thresholds?.highThreshold ?? 0.7;
   const mediumThreshold = thresholds?.mediumThreshold ?? 0.5;
 
   if (similarity >= highThreshold) {
-    return { bg: 'hsl(134, 61%, 95%)', border: 'hsl(134, 61%, 70%)', text: 'hsl(134, 61%, 25%)' };
+    return {
+      bg: "hsl(134, 61%, 95%)",
+      border: "hsl(134, 61%, 70%)",
+      text: "hsl(134, 61%, 25%)",
+    };
   } else if (similarity >= mediumThreshold) {
-    return { bg: 'hsl(46, 100%, 97%)', border: 'hsl(46, 100%, 85%)', text: 'hsla(50, 84%, 58%, 1.00)' };
+    return {
+      bg: "hsl(46, 100%, 97%)",
+      border: "hsl(46, 100%, 85%)",
+      text: "hsla(50, 84%, 58%, 1.00)",
+    };
   } else {
-    return { bg: 'hsl(8, 86%, 95%)', border: 'hsl(8, 86%, 80%)', text: 'hsl(8, 86%, 40%)' };
+    return {
+      bg: "hsl(8, 86%, 95%)",
+      border: "hsl(8, 86%, 80%)",
+      text: "hsl(8, 86%, 40%)",
+    };
   }
 };

@@ -3,28 +3,27 @@
  * Displays average scores from summary_scores array
  */
 
-"use client"
-import React from 'react';
-import { ScoreObject, hasSummaryScores } from './types';
+"use client";
+
+import { ScoreObject, hasSummaryScores } from "./types";
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;
   errorMessage?: string | null;
 }
 
-export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps) {
+export default function ScoreDisplay({
+  score,
+  errorMessage,
+}: ScoreDisplayProps) {
   // No score available
   if (!score) {
     return (
-      <div
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
-      >
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]">
         <span className="font-medium">Score:</span>
         <span>N/A</span>
         {errorMessage && (
-          <span className="text-xs text-[hsl(8,86%,40%)]">
-            (Error)
-          </span>
+          <span className="text-xs text-[hsl(8,86%,40%)]">(Error)</span>
         )}
       </div>
     );
@@ -36,9 +35,7 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
 
     if (summaryScores.length === 0) {
       return (
-        <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
-        >
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]">
           <span className="font-medium">Score:</span>
           <span>No scores available</span>
         </div>
@@ -46,15 +43,17 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
     }
 
     // Separate numeric and categorical scores
-    const numericScores = summaryScores.filter(s => s.data_type === 'NUMERIC');
-    const categoricalScores = summaryScores.filter(s => s.data_type === 'CATEGORICAL');
+    const numericScores = summaryScores.filter(
+      (s) => s.data_type === "NUMERIC",
+    );
+    const categoricalScores = summaryScores.filter(
+      (s) => s.data_type === "CATEGORICAL",
+    );
 
     // If no numeric scores at all, show a message
     if (numericScores.length === 0 && categoricalScores.length === 0) {
       return (
-        <div
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
-        >
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]">
           <span className="font-medium">Score:</span>
           <span>No numeric scores available</span>
         </div>
@@ -65,7 +64,8 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
     return (
       <div className="flex items-center gap-2 flex-wrap">
         {numericScores.map((summary, idx) => {
-          const value = summary.avg !== undefined ? summary.avg.toFixed(2) : 'N/A';
+          const value =
+            summary.avg !== undefined ? summary.avg.toFixed(2) : "N/A";
           const std = summary.std !== undefined ? summary.std.toFixed(2) : null;
 
           return (
@@ -75,9 +75,7 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
             >
               <span>{summary.name}:</span>
               <span className="font-semibold text-[#171717]">{value}</span>
-              {std !== null && (
-                <span>±{std}</span>
-              )}
+              {std !== null && <span>±{std}</span>}
             </span>
           );
         })}
@@ -87,9 +85,7 @@ export default function ScoreDisplay({ score, errorMessage }: ScoreDisplayProps)
 
   // Fallback for unsupported format
   return (
-    <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]"
-    >
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]">
       <span className="font-medium">Score:</span>
       <span>Unsupported format</span>
     </div>

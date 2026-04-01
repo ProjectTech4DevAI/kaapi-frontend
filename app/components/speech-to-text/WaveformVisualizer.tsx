@@ -5,8 +5,8 @@
  * Shows animated frequency bars when playing, static bars when paused
  */
 
-import React, { useRef, useEffect, useCallback } from 'react';
-import { colors } from '@/app/lib/colors';
+import { useRef, useEffect, useCallback } from "react";
+import { colors } from "@/app/lib/colors";
 
 interface WaveformVisualizerProps {
   audioElement: HTMLAudioElement | null;
@@ -33,8 +33,9 @@ export default function WaveformVisualizer({
     if (!audioElement || isInitialized.current) return;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        window.AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContextClass();
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 64; // Higher = more frequency bins, smoother visualization
@@ -48,7 +49,7 @@ export default function WaveformVisualizer({
       sourceRef.current = source;
       isInitialized.current = true;
     } catch (error) {
-      console.error('Failed to initialize audio context:', error);
+      console.error("Failed to initialize audio context:", error);
     }
   }, [audioElement]);
 
@@ -57,7 +58,7 @@ export default function WaveformVisualizer({
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     if (!isPlaying || !analyserRef.current) {
@@ -78,7 +79,7 @@ export default function WaveformVisualizer({
           i * barWidth + gap / 2,
           (canvas.height - barHeight) / 2,
           barWidth - gap,
-          barHeight
+          barHeight,
         );
       }
       return;
@@ -131,7 +132,7 @@ export default function WaveformVisualizer({
 
   // Resume audio context if suspended
   useEffect(() => {
-    if (isPlaying && audioContextRef.current?.state === 'suspended') {
+    if (isPlaying && audioContextRef.current?.state === "suspended") {
       audioContextRef.current.resume();
     }
   }, [isPlaying]);
@@ -153,7 +154,7 @@ export default function WaveformVisualizer({
       ref={canvasRef}
       width={width}
       height={height}
-      style={{ width: '100%', height: `${height}px` }}
+      style={{ width: "100%", height: `${height}px` }}
     />
   );
 }

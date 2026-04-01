@@ -17,6 +17,7 @@ A comprehensive guide to reproducing the minimalist, modern design aesthetic ins
 ### Core Colors
 
 **Light Mode**
+
 ```
 Backgrounds:
 - Primary:   #ffffff (pure white)
@@ -35,6 +36,7 @@ Accent:
 ```
 
 **Dark Mode**
+
 ```
 Backgrounds:
 - Primary:   #000000 (pure black)
@@ -51,6 +53,7 @@ Borders:
 ### Semantic Colors
 
 Used sparingly for status and feedback:
+
 ```
 Success: #16a34a (green-600)
 Error:   #dc2626 (red-600)
@@ -70,10 +73,12 @@ Warning: #f59e0b (amber-500)
 ## Typography
 
 ### Font Stack
+
 - **Sans-serif**: System font stack or Geist Sans (Vercel's font)
 - **Monospace**: Geist Mono for code
 
 ### Text Sizing
+
 ```
 Extra Small:  10px (badges, labels)
 Small:        12px (secondary UI, submenus)
@@ -83,6 +88,7 @@ Large:        20px+ (page titles, hero text)
 ```
 
 ### Font Weights
+
 ```
 Regular: 400 (default text)
 Medium:  500 (interactive elements, subheadings)
@@ -102,6 +108,7 @@ Semibold: 600 (active states, emphasis)
 ## Spacing System
 
 ### Scale (based on 4px grid)
+
 ```
 0.5 → 2px   (tight gaps)
 1   → 4px   (minimal spacing)
@@ -115,6 +122,7 @@ Semibold: 600 (active states, emphasis)
 ```
 
 ### Padding Patterns
+
 ```
 Buttons:     px-3 py-2 (12px × 8px)
 Inputs:      px-3 py-2 (12px × 8px)
@@ -124,6 +132,7 @@ Sections:    py-8 to py-12 (32px-48px vertical)
 ```
 
 ### Margin Patterns
+
 ```
 Between elements: 8-12px (space-y-2 to space-y-3)
 Between sections: 24-32px (my-6 to my-8)
@@ -137,6 +146,7 @@ Page margins:     24px minimum (px-6)
 ### Buttons
 
 **Primary Button**
+
 ```
 Background:  #171717
 Text:        #ffffff
@@ -157,6 +167,7 @@ Disabled:
 ```
 
 **Secondary Button**
+
 ```
 Background:  transparent
 Text:        #171717
@@ -171,6 +182,7 @@ Hover:
 ```
 
 **Ghost Button**
+
 ```
 Background:  transparent
 Text:        #737373
@@ -219,6 +231,7 @@ Hover (if interactive):
 ### Navigation Items
 
 **Sidebar Item**
+
 ```
 Default:
 - Background: transparent
@@ -239,6 +252,7 @@ Active:
 ```
 
 **Tab Navigation**
+
 ```
 Default:
 - Border bottom: 2px transparent
@@ -361,6 +375,7 @@ Margin:      16px 0
 ## Animation & Transitions
 
 ### Timing Functions
+
 ```
 Standard: ease-in-out
 Quick:    ease (for micro-interactions)
@@ -369,6 +384,7 @@ Exit:     ease-in
 ```
 
 ### Duration Scale
+
 ```
 Instant:   50ms  (color changes)
 Quick:     150ms (hover states, text color)
@@ -380,30 +396,51 @@ Slow:      500ms (layout changes)
 ### Common Animations
 
 **Fade In**
+
 ```css
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-Duration: 0.2s
+duration: 0.2s;
 ```
 
 **Modal Entry**
+
 ```css
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
-Duration: 0.3s
+duration: 0.3s;
 ```
 
 **Page Transition**
+
 ```css
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-Duration: 0.3s
+duration: 0.3s;
 ```
 
 ### Animation Rules
@@ -421,6 +458,7 @@ Duration: 0.3s
 ### Hover States
 
 **General Rules**
+
 - Background lightens slightly (#fafafa)
 - Text darkens to primary color (#171717)
 - Border darkens one shade
@@ -430,6 +468,7 @@ Duration: 0.3s
 ### Focus States
 
 **Keyboard Navigation**
+
 - Use border color change, not glow
 - Border: 2px solid #171717
 - No box-shadow outline
@@ -438,6 +477,7 @@ Duration: 0.3s
 ### Active/Pressed States
 
 **On Click**
+
 - Slightly darker background
 - No scale down
 - 100ms transition (faster than hover)
@@ -445,6 +485,7 @@ Duration: 0.3s
 ### Loading States
 
 **Skeleton Loaders**
+
 ```
 Background:  #fafafa
 Animation:   pulse (opacity 1 → 0.5 → 1)
@@ -454,6 +495,7 @@ Radius:      match final element
 ```
 
 **Spinners**
+
 ```
 Size:        16-24px
 Color:       #171717
@@ -466,6 +508,7 @@ Line width:  2px
 ## Iconography
 
 ### Icon Style
+
 - **Outline style** (not filled)
 - **2px stroke width**
 - **24px default size** (scale down to 16px for compact UI)
@@ -473,6 +516,7 @@ Line width:  2px
 - **Match text color** of surrounding context
 
 ### Icon Spacing
+
 - **Gap from text**: 8-10px (0.5rem to 0.625rem)
 - **Icon-only buttons**: 32px × 32px touch target minimum
 
@@ -489,6 +533,7 @@ Heavy:   0 10px 15px rgba(0, 0, 0, 0.1)
 ```
 
 **When to Use Shadows**
+
 - Modals/dialogs: medium
 - Dropdown menus: light
 - Cards: none or subtle
@@ -519,6 +564,7 @@ Wide:         1280px+
 ```
 
 ### Mobile Adaptations
+
 - Reduce padding: 16px instead of 24px
 - Collapse sidebar to overlay/drawer
 - Stack horizontal layouts vertically
@@ -530,6 +576,7 @@ Wide:         1280px+
 ## Dark Mode Considerations
 
 ### Automatic Switching
+
 ```css
 @media (prefers-color-scheme: dark) {
   /* Apply dark theme */
@@ -539,15 +586,18 @@ Wide:         1280px+
 ### Dark Mode Colors
 
 **Backgrounds**
+
 - Pure black (#000) for drama
 - Slightly lighter (#0a0a0a) for panels
 - Very subtle borders (#262626)
 
 **Text**
+
 - Off-white (#ededed) not pure white
 - Gray (#a1a1a1) for secondary
 
 **Borders**
+
 - Much darker but still subtle (#262626)
 
 **Key Difference**: Dark mode has higher contrast between elements to maintain readability.
@@ -593,6 +643,7 @@ When implementing a new component, ensure:
 ## Implementation Notes
 
 ### CSS Variables Approach
+
 ```css
 :root {
   --bg-primary: #ffffff;
@@ -606,6 +657,7 @@ When implementing a new component, ensure:
 ```
 
 ### Tailwind CSS Approach
+
 ```javascript
 // tailwind.config.js
 theme: {

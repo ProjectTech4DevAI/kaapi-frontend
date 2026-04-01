@@ -1,6 +1,5 @@
-import React from 'react';
-import { colors } from '@/app/lib/colors';
-import { SavedConfig } from '@/app/lib/useConfigs';
+import { colors } from "@/app/lib/colors";
+import { SavedConfig } from "@/app/lib/types/configs";
 
 interface ConfigDiffPaneProps {
   selectedCommit: SavedConfig;
@@ -24,7 +23,7 @@ export default function ConfigDiffPane({
   // Compare provider
   if (compareWith.provider !== selectedCommit.provider) {
     configDiffs.push({
-      field: 'Provider',
+      field: "Provider",
       oldValue: compareWith.provider,
       newValue: selectedCommit.provider,
       changed: true,
@@ -34,7 +33,7 @@ export default function ConfigDiffPane({
   // Compare model
   if (compareWith.modelName !== selectedCommit.modelName) {
     configDiffs.push({
-      field: 'Model',
+      field: "Model",
       oldValue: compareWith.modelName,
       newValue: selectedCommit.modelName,
       changed: true,
@@ -44,7 +43,7 @@ export default function ConfigDiffPane({
   // Compare temperature
   if (compareWith.temperature !== selectedCommit.temperature) {
     configDiffs.push({
-      field: 'Temperature',
+      field: "Temperature",
       oldValue: compareWith.temperature,
       newValue: selectedCommit.temperature,
       changed: true,
@@ -56,7 +55,7 @@ export default function ConfigDiffPane({
   const newTools = selectedCommit.tools || [];
   if (JSON.stringify(oldTools) !== JSON.stringify(newTools)) {
     configDiffs.push({
-      field: 'Tools',
+      field: "Tools",
       oldValue: oldTools,
       newValue: newTools,
       changed: true,
@@ -67,17 +66,21 @@ export default function ConfigDiffPane({
 
   const renderValue = (value: unknown): string => {
     if (Array.isArray(value)) {
-      if (value.length === 0) return '[]';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return value.map((_idx: any) => {
-        const tool = _idx;
-        if (tool.type === 'file_search') {
-          return `File Search (${tool.knowledge_base_ids?.[0] || 'no store'})`;
-        }
-        return JSON.stringify(tool);
-      }).join(', ');
+      if (value.length === 0) return "[]";
+      return (
+        value
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((_idx: any) => {
+            const tool = _idx;
+            if (tool.type === "file_search") {
+              return `File Search (${tool.knowledge_base_ids?.[0] || "no store"})`;
+            }
+            return JSON.stringify(tool);
+          })
+          .join(", ")
+      );
     }
-    if (typeof value === 'object') {
+    if (typeof value === "object") {
       return JSON.stringify(value, null, 2);
     }
     return String(value);
@@ -92,7 +95,10 @@ export default function ConfigDiffPane({
           borderColor: colors.border,
         }}
       >
-        <h3 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: colors.text.primary }}
+        >
           Configuration Changes
         </h3>
         <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
@@ -108,7 +114,10 @@ export default function ConfigDiffPane({
         {!hasChanges ? (
           <div
             className="border-2 border-dashed rounded-lg p-6 text-center"
-            style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+            style={{
+              borderColor: colors.border,
+              backgroundColor: colors.bg.primary,
+            }}
           >
             <p className="text-sm" style={{ color: colors.text.secondary }}>
               No configuration changes
@@ -140,9 +149,9 @@ export default function ConfigDiffPane({
                       Before (v{compareWith.version})
                     </div>
                     <div
-                      className="p-2 rounded text-sm font-mono"
+                      className="p-2 rounded text-sm font-mono break-all"
                       style={{
-                        backgroundColor: '#fee2e2',
+                        backgroundColor: "#fee2e2",
                         color: colors.status.error,
                       }}
                     >
@@ -157,10 +166,10 @@ export default function ConfigDiffPane({
                       After (v{selectedCommit.version})
                     </div>
                     <div
-                      className="p-2 rounded text-sm font-mono"
+                      className="p-2 rounded text-sm font-mono break-all"
                       style={{
-                        backgroundColor: '#dcfce7',
-                        color: '#15803d',
+                        backgroundColor: "#dcfce7",
+                        color: "#15803d",
                       }}
                     >
                       {renderValue(diff.newValue)}

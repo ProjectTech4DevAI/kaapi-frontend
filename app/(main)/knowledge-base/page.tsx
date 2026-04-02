@@ -773,7 +773,7 @@ export default function KnowledgeBasePage() {
       fetchCollections();
       fetchDocuments();
     }
-  }, [isAuthenticated]);
+  }, [apiKey]);
 
   // Keep apiKeyRef in sync so polling always has the current key
   useEffect(() => {
@@ -1135,11 +1135,9 @@ export default function KnowledgeBasePage() {
                       )}
                   </div>
 
-                  {/* Document List */}
                   {selectedCollection.documents &&
                   selectedCollection.documents.length > 0 ? (
                     <div>
-                      {/* Header Row */}
                       <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
                         <div className="flex-1">
                           <p className="text-[10px] font-semibold uppercase text-text-secondary">

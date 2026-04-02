@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Organization,
-  Project,
+  UserListProps,
   UserProject,
   UserProjectListResponse,
   UserProjectDeleteResponse,
@@ -19,12 +18,6 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useToast } from "@/app/components/Toast";
 import AddUserModal from "./AddUserModal";
-
-interface UserListProps {
-  organization: Organization;
-  project: Project;
-  onBack: () => void;
-}
 
 function UserListSkeleton() {
   return (
@@ -98,7 +91,7 @@ export default function UserList({
 
   return (
     <div>
-      <Button variant="ghost" size="sm" className="px-0!" onClick={onBack}>
+      <Button variant="ghost" size="sm" onClick={onBack}>
         <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
       </Button>
 

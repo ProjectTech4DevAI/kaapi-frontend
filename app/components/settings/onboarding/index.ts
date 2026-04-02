@@ -5,3 +5,5 @@ export { default as ProjectList } from "./ProjectList";
 export { default as StepIndicator } from "./StepIndicator";
 export { default as UserList } from "./UserList";
 export { default as AddUserModal } from "./AddUserModal";
+export { default as AddProjectModal } from "./AddProjectModal";
+export { default as EditProjectModal } from "./EditProjectModal";

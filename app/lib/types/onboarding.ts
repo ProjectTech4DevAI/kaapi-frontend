@@ -1,3 +1,5 @@
+import React from "react";
+
 export interface Organization {
   id: number;
   name: string;
@@ -32,6 +34,21 @@ export interface ProjectListResponse {
   metadata?: Record<string, unknown>;
 }
 
+export interface ProjectCreateRequest {
+  name: string;
+  description: string;
+  is_active: boolean;
+  organization_id: number;
+}
+
+export interface ProjectResponse {
+  success: boolean;
+  data?: Project;
+  error?: string;
+  errors?: { field: string; message: string }[];
+  metadata?: Record<string, unknown>;
+}
+
 export interface UserProject {
   user_id: number;
   email: string;
@@ -54,6 +71,54 @@ export interface UserProjectDeleteResponse {
   error?: string;
   errors?: { field: string; message: string }[];
   metadata?: Record<string, unknown>;
+}
+
+export interface OrganizationListProps {
+  organizations: Organization[];
+  isLoadingMore: boolean;
+  onNewOrg: () => void;
+  onSelectOrg: (org: Organization) => void;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+}
+
+export interface ProjectListProps {
+  organization: Organization;
+  projects: Project[];
+  isLoading: boolean;
+  onBack: () => void;
+  onSelectProject: (project: Project) => void;
+  onProjectAdded: () => void;
+}
+
+export interface UserListProps {
+  organization: Organization;
+  project: Project;
+  onBack: () => void;
+}
+
+export interface AddProjectModalProps {
+  open: boolean;
+  onClose: () => void;
+  organizationId: number;
+  apiKey: string;
+  onProjectAdded: () => void;
+}
+
+export interface EditProjectModalProps {
+  open: boolean;
+  onClose: () => void;
+  project: Project;
+  apiKey: string;
+  onProjectUpdated: () => void;
+}
+
+export interface AddUserModalProps {
+  open: boolean;
+  onClose: () => void;
+  organizationId: number;
+  projectId: number;
+  apiKey: string;
+  onUsersAdded: () => void;
 }
 
 export interface OnboardRequest {

@@ -4,18 +4,12 @@ import { useState } from "react";
 import Modal from "@/app/components/Modal";
 import { Button, Field } from "@/app/components";
 import { isValidEmail } from "@/app/lib/utils";
-import { UserProjectListResponse } from "@/app/lib/types/onboarding";
+import {
+  AddUserModalProps,
+  UserProjectListResponse,
+} from "@/app/lib/types/onboarding";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useToast } from "@/app/components/Toast";
-
-interface AddUserModalProps {
-  open: boolean;
-  onClose: () => void;
-  organizationId: number;
-  projectId: number;
-  apiKey: string;
-  onUsersAdded: () => void;
-}
 
 export default function AddUserModal({
   open,

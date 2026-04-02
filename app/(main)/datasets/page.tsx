@@ -16,7 +16,6 @@ import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
 
-// Backend response interface
 export interface Dataset {
   dataset_id: number;
   dataset_name: string;

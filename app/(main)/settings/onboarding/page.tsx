@@ -134,6 +134,21 @@ export default function OnboardingPage() {
     [activeKey],
   );
 
+  const refreshProjects = useCallback(async () => {
+    if (!selectedOrg) return;
+    try {
+      const result = await apiFetch<ProjectListResponse>(
+        `/api/organization/${selectedOrg.id}/projects`,
+        activeKey?.key ?? "",
+      );
+      if (result.success && result.data) {
+        setProjects(result.data);
+      }
+    } catch {
+      // keep current list
+    }
+  }, [selectedOrg, activeKey]);
+
   const handleSuccess = (data: OnboardResponseData) => {
     setOnboardData(data);
     setView("success");
@@ -191,6 +206,7 @@ export default function OnboardingPage() {
                   isLoading={isLoadingProjects}
                   onBack={handleBackToOrgs}
                   onSelectProject={handleSelectProject}
+                  onProjectAdded={refreshProjects}
                 />
               )}
 

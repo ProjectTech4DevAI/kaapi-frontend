@@ -9,15 +9,10 @@ import { LoginModal } from "@/app/components/auth";
 import { Button } from "@/app/components";
 
 interface PageHeaderProps {
-  /** Page title displayed next to the sidebar toggle. Ignored when `children` is provided. */
   title?: string;
-  /** Subtitle shown below the title. Ignored when `children` is provided. */
   subtitle?: string;
-  /** Custom left-side content that replaces the default title/subtitle. */
   children?: ReactNode;
-  /** Right-side action buttons / controls. */
   actions?: ReactNode;
-  /** When true the header is not rendered at all. */
   hidden?: boolean;
 }
 

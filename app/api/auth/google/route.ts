@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 
-/**
- * POST /api/auth/google
- * Receives the Google credential token from the frontend (@react-oauth/google)
- * and sends it to the backend for verification and user creation/login.
- *
- * Request body: { token: string }
- * Backend sets a Set-Cookie with the access_token (HttpOnly).
- * We forward that cookie to the browser.
- */
+/** Proxy Google login token to backend. Forwards Set-Cookie headers back to the browser. */
 export async function POST(request: Request) {
   try {
     const body = await request.json();

@@ -1,17 +1,8 @@
-import { RefObject } from "react";
-import { Organization } from "@/app/lib/types/onboarding";
+import { OrganizationListProps } from "@/app/lib/types/onboarding";
 import { formatRelativeTime } from "@/app/lib/utils";
 import { Button } from "@/app/components";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { ChevronRightIcon, RefreshIcon } from "@/app/components/icons";
-
-interface OrganizationListProps {
-  organizations: Organization[];
-  isLoadingMore: boolean;
-  onNewOrg: () => void;
-  onSelectOrg: (org: Organization) => void;
-  scrollRef: RefObject<HTMLDivElement | null>;
-}
 
 export default function OrganizationList({
   organizations,

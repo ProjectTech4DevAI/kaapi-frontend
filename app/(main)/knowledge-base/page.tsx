@@ -293,8 +293,6 @@ export default function KnowledgeBasePage() {
     return jobStatusMap;
   };
 
-  // Fetch collections
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchCollections = async () => {
     if (!apiKey) return;
 
@@ -846,7 +844,6 @@ export default function KnowledgeBasePage() {
       fetchCollections();
       fetchDocuments();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   // Keep apiKeyRef in sync so polling always has the current key

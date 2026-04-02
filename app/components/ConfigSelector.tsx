@@ -69,7 +69,6 @@ export default function ConfigSelector({
     items.forEach((item) => {
       loadSingleVersion(item.config_id, item.version);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedConfigId, versionItemsMap]);
 
   // Reset expanded state and recheck overflow whenever selected config changes.
@@ -112,7 +111,6 @@ export default function ConfigSelector({
         if (!result) setIsLoadingPreview(false);
       })
       .catch(() => setIsLoadingPreview(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConfigId, selectedVersion, configs]);
 
   // Dropdown display list: all configs from the lightweight allConfigMeta,

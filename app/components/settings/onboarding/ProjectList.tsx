@@ -1,13 +1,17 @@
-import { Organization, Project } from "@/app/lib/types/onboarding";
-import { formatRelativeTime } from "@/app/lib/utils";
-import { ArrowLeftIcon } from "@/app/components/icons";
+"use client";
 
-interface ProjectListProps {
-  organization: Organization;
-  projects: Project[];
-  isLoading: boolean;
-  onBack: () => void;
-}
+import { useState } from "react";
+import { Project, ProjectListProps } from "@/app/lib/types/onboarding";
+import { formatRelativeTime } from "@/app/lib/utils";
+import {
+  ArrowLeftIcon,
+  ChevronRightIcon,
+  EditIcon,
+} from "@/app/components/icons";
+import { Button } from "@/app/components";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import AddProjectModal from "./AddProjectModal";
+import EditProjectModal from "./EditProjectModal";
 
 function ProjectListSkeleton() {
   return (
@@ -36,7 +40,13 @@ export default function ProjectList({
   projects,
   isLoading,
   onBack,
+  onSelectProject,
+  onProjectAdded,
 }: ProjectListProps) {
+  const { activeKey, currentUser } = useAuth();
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+
   return (
     <div>
       <button
@@ -57,6 +67,11 @@ export default function ProjectList({
               : `${projects.length} project${projects.length !== 1 ? "s" : ""}`}
           </p>
         </div>
+        {currentUser?.is_superuser && (
+          <Button size="sm" onClick={() => setShowAddModal(true)}>
+            + Add Project
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -70,9 +85,12 @@ export default function ProjectList({
           {projects.map((project) => (
             <div
               key={project.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white transition-colors hover:bg-neutral-50"
             >
-              <div>
+              <button
+                onClick={() => onSelectProject(project)}
+                className="flex-1 text-left min-w-0"
+              >
                 <p className="text-sm font-medium text-text-primary">
                   {project.name}
                 </p>
@@ -84,19 +102,52 @@ export default function ProjectList({
                 <p className="text-xs text-text-secondary mt-0.5">
                   Created {formatRelativeTime(project.inserted_at)}
                 </p>
+              </button>
+              <div className="flex items-center gap-2 shrink-0 ml-3">
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    project.is_active
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-neutral-100 text-text-secondary border border-border"
+                  }`}
+                >
+                  {project.is_active ? "Active" : "Inactive"}
+                </span>
+                {currentUser?.is_superuser && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingProject(project);
+                    }}
+                    className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors cursor-pointer"
+                    title="Edit project"
+                  >
+                    <EditIcon className="w-4.5 h-4.5" />
+                  </button>
+                )}
+                <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
               </div>
-              <span
-                className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                  project.is_active
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-neutral-100 text-text-secondary border border-border"
-                }`}
-              >
-                {project.is_active ? "Active" : "Inactive"}
-              </span>
             </div>
           ))}
         </div>
+      )}
+
+      <AddProjectModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        organizationId={organization.id}
+        apiKey={activeKey?.key ?? ""}
+        onProjectAdded={onProjectAdded}
+      />
+
+      {editingProject && (
+        <EditProjectModal
+          open={!!editingProject}
+          onClose={() => setEditingProject(null)}
+          project={editingProject}
+          apiKey={activeKey?.key ?? ""}
+          onProjectUpdated={onProjectAdded}
+        />
       )}
     </div>
   );

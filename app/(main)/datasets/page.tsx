@@ -15,7 +15,6 @@ import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
 
-// Backend response interface
 export interface Dataset {
   dataset_id: number;
   dataset_name: string;
@@ -52,7 +51,6 @@ export default function Datasets() {
     if (apiKey) {
       fetchDatasets();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
   const fetchDatasets = async () => {

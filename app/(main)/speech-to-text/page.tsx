@@ -487,7 +487,6 @@ export default function SpeechToTextPage() {
     if (activeTab === "evaluations") {
       loadRuns();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Handle audio file selection and upload

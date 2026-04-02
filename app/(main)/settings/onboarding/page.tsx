@@ -13,6 +13,7 @@ import {
   OrganizationList,
   ProjectList,
   StepIndicator,
+  UserList,
 } from "@/app/components/settings/onboarding";
 import {
   Organization,
@@ -25,7 +26,7 @@ import { colors } from "@/app/lib/colors";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 
-type View = "loading" | "list" | "projects" | "form" | "success";
+type View = "loading" | "list" | "projects" | "users" | "form" | "success";
 
 function OrganizationListSkeleton() {
   return (
@@ -64,6 +65,7 @@ export default function OnboardingPage() {
   const { activeKey, currentUser, isHydrated } = useAuth();
   const [view, setView] = useState<View>("loading");
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [onboardData, setOnboardData] = useState<OnboardResponseData | null>(
@@ -134,15 +136,41 @@ export default function OnboardingPage() {
     [activeKey],
   );
 
+  const refreshProjects = useCallback(async () => {
+    if (!selectedOrg) return;
+    try {
+      const result = await apiFetch<ProjectListResponse>(
+        `/api/organization/${selectedOrg.id}/projects`,
+        activeKey?.key ?? "",
+      );
+      if (result.success && result.data) {
+        setProjects(result.data);
+      }
+    } catch {
+      // keep current list
+    }
+  }, [selectedOrg, activeKey]);
+
   const handleSuccess = (data: OnboardResponseData) => {
     setOnboardData(data);
     setView("success");
   };
 
+  const handleSelectProject = (project: Project) => {
+    setSelectedProject(project);
+    setView("users");
+  };
+
   const handleBackToOrgs = () => {
     setSelectedOrg(null);
+    setSelectedProject(null);
     setProjects([]);
     setView("list");
+  };
+
+  const handleBackToProjects = () => {
+    setSelectedProject(null);
+    setView("projects");
   };
 
   return (
@@ -182,6 +210,16 @@ export default function OnboardingPage() {
                   projects={projects}
                   isLoading={isLoadingProjects}
                   onBack={handleBackToOrgs}
+                  onSelectProject={handleSelectProject}
+                  onProjectAdded={refreshProjects}
+                />
+              )}
+
+              {view === "users" && selectedOrg && selectedProject && (
+                <UserList
+                  organization={selectedOrg}
+                  project={selectedProject}
+                  onBack={handleBackToProjects}
                 />
               )}
 

@@ -71,7 +71,6 @@ export default function ModelComparisonCard({
   // Also reset when modelId changes (new model added)
   useEffect(() => {
     if (status === "pending") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsExpanded(false);
     }
   }, [status, modelId]);

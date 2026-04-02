@@ -148,7 +148,7 @@ export default function DetailedResultsTable({
     >
       {/* Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse" style={{ minWidth: "800px" }}>
+        <table className="w-full border-collapse min-w-[800px] table-fixed">
           {/* Table Header */}
           <thead>
             <tr
@@ -230,14 +230,7 @@ export default function DetailedResultsTable({
                     className="px-4 py-3 align-top"
                     style={{ backgroundColor: "#fafafa" }}
                   >
-                    <div
-                      className="text-sm overflow-auto"
-                      style={{
-                        color: "#171717",
-                        lineHeight: "1.5",
-                        maxHeight: "150px",
-                      }}
-                    >
+                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {question}
                     </div>
                   </td>
@@ -247,28 +240,14 @@ export default function DetailedResultsTable({
                     className="px-4 py-3 align-top"
                     style={{ backgroundColor: "#fafafa" }}
                   >
-                    <div
-                      className="text-sm overflow-auto"
-                      style={{
-                        color: "#171717",
-                        lineHeight: "1.5",
-                        maxHeight: "150px",
-                      }}
-                    >
+                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {groundTruth}
                     </div>
                   </td>
 
                   {/* Answer */}
                   <td className="px-4 py-3 align-top">
-                    <div
-                      className="text-sm overflow-auto"
-                      style={{
-                        color: "#171717",
-                        lineHeight: "1.5",
-                        maxHeight: "150px",
-                      }}
-                    >
+                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {answer}
                     </div>
                   </td>
@@ -487,28 +466,14 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
 
                   {/* Question */}
                   <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
-                    <div
-                      className="text-sm overflow-auto"
-                      style={{
-                        color: "#171717",
-                        lineHeight: "1.5",
-                        maxHeight: "150px",
-                      }}
-                    >
+                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {group.question}
                     </div>
                   </td>
 
                   {/* Ground Truth */}
-                  <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
-                    <div
-                      className="text-sm overflow-auto"
-                      style={{
-                        color: "#171717",
-                        lineHeight: "1.5",
-                        maxHeight: "150px",
-                      }}
-                    >
+                  <td className="px-4 pt-3 pb-1 align-top bg-bg-secondary">
+                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {group.ground_truth_answer}
                     </div>
                   </td>
@@ -522,7 +487,7 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                         className="px-4 pt-3 pb-1 align-top"
                       >
                         {answer ? (
-                          <div className="text-sm overflow-auto text-[#171717] leading-6 max-h-[150px]">
+                          <div className="text-sm overflow-auto text-[#171717] leading-6 max-h-[150px] wrap-break-word">
                             {answer}
                           </div>
                         ) : (

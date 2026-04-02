@@ -1,11 +1,14 @@
 import { NextRequest } from "next/server";
+import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 
+/** Coalesces concurrent refresh calls into a single request. */
+let refreshPromise: Promise<boolean> | null = null;
+
 /**
- * Passthrough proxy helper for Next.js route handlers.
- * Extracts X-API-KEY and cookies from the incoming request and forwards them to the backend.
- * Returns raw { status, data, headers } so the route handler can relay the exact HTTP status.
+ * Forwards a request to the backend, relaying auth headers (X-API-KEY, Cookie).
+ * Returns raw { status, data, headers } so the route handler can relay the response.
  */
 export async function apiClient(
   request: NextRequest | Request,
@@ -33,18 +36,27 @@ export async function apiClient(
   return { status: response.status, data, headers: response.headers };
 }
 
-/**
- * Dispatched when both the access token AND refresh token are expired /
- * invalid.  AuthContext listens for this and triggers logout.
- */
-export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
+/** Parse an error body into a readable message string. */
+function extractErrorMessage(
+  body: Record<string, unknown>,
+  fallback: string,
+): string {
+  const msg =
+    (body.error as string) ||
+    (body.message as string) ||
+    (body.detail as string) ||
+    "";
+  return msg || fallback;
+}
 
-/**
- * Singleton refresh promise so concurrent 401s don't fire multiple
- * refresh requests — they all await the same in-flight call.
- */
-let refreshPromise: Promise<boolean> | null = null;
+/** Dispatch the auth-expired event (client-side only). */
+function dispatchAuthExpired() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+  }
+}
 
+/** Attempt a silent token refresh. Returns true if new cookies were set. */
 async function tryRefreshToken(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
 
@@ -67,12 +79,11 @@ async function tryRefreshToken(): Promise<boolean> {
 
 /**
  * Client-side fetch helper for Next.js route handlers (/api/*).
- * Attaches the X-API-KEY header and includes credentials for cookie-based auth.
  *
- * On a 401 response it automatically attempts a token refresh via
- * `/api/auth/refresh`.  If the refresh succeeds the original request is
- * retried once.  If the refresh also fails, a `kaapi:auth-expired` event
- * is dispatched so AuthContext can trigger logout.
+ * - Attaches X-API-KEY header and `credentials: "include"` for cookie auth.
+ * - On **403 "revoked"**: forces immediate logout (no refresh).
+ * - On **401**: tries a silent token refresh, retries once, then logs out.
+ * - All other errors are thrown as-is.
  */
 export async function apiFetch<T>(
   url: string,
@@ -88,63 +99,50 @@ export async function apiFetch<T>(
     return headers;
   };
 
-  const res = await fetch(url, {
-    ...options,
-    headers: buildHeaders(),
-    credentials: "include",
-  });
+  const doFetch = () =>
+    fetch(url, { ...options, headers: buildHeaders(), credentials: "include" });
 
-  // Happy path
+  const res = await doFetch();
+
+  // Response OK → return parsed JSON
   if (res.ok) return (await res.json()) as T;
 
-  // 403 "access revoked" — force logout immediately, no refresh attempt
-  if (res.status === 403) {
-    const data = await res.json().catch(() => ({}));
-    const msg =
-      (data as Record<string, string>).error ||
-      (data as Record<string, string>).message ||
-      "";
-    if (msg.toLowerCase().includes("access revoked")) {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
-      }
-      throw new Error(msg || "Access revoked. Please log in again.");
-    }
-    throw new Error(msg || `Request failed: ${res.status}`);
+  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  const message = extractErrorMessage(body, `Request failed: ${res.status}`);
+
+  // 403 with "revoked" → force logout, no refresh attempt
+  if (res.status === 403 && message.toLowerCase().includes("revoked")) {
+    dispatchAuthExpired();
+    throw new Error(message.trim() || "Access revoked. Please log in again.");
   }
 
-  // Not a 401 — throw immediately
+  // Non-401 errors → throw immediately
   if (res.status !== 401) {
-    const data = await res.json();
-    throw new Error(
-      data.error || data.message || `Request failed: ${res.status}`,
-    );
+    throw new Error(message);
   }
 
-  // 401 — attempt a silent token refresh
+  // Auth endpoints (login, register, etc.) — never auto-refresh, just throw
+  if (url.startsWith("/api/auth/")) {
+    throw new Error(message);
+  }
+
+  // 401 → attempt silent token refresh, then retry once
   const refreshed = await tryRefreshToken();
 
   if (refreshed) {
-    const retry = await fetch(url, {
-      ...options,
-      headers: buildHeaders(),
-      credentials: "include",
-    });
-    const retryData = await retry.json();
-    if (retry.ok) return retryData as T;
+    const retry = await doFetch();
+    if (retry.ok) return (await retry.json()) as T;
 
+    const retryBody = (await retry.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    >;
     throw new Error(
-      retryData.error || retryData.message || `Request failed: ${retry.status}`,
+      extractErrorMessage(retryBody, `Request failed: ${retry.status}`),
     );
   }
 
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
-  }
-  const data = await res.json().catch(() => ({}));
-  throw new Error(
-    (data as Record<string, string>).error ||
-      (data as Record<string, string>).message ||
-      "Session expired. Please log in again.",
-  );
+  // Refresh failed → both tokens expired, force logout
+  dispatchAuthExpired();
+  throw new Error("Session expired. Please log in again.");
 }

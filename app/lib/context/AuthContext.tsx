@@ -14,7 +14,8 @@ import {
   Session,
   AuthContextValue,
 } from "@/app/lib/types/auth";
-import { apiFetch, AUTH_EXPIRED_EVENT } from "@/app/lib/apiClient";
+import { apiFetch } from "@/app/lib/apiClient";
+import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
 
 const STORAGE_KEY = "kaapi_api_keys";

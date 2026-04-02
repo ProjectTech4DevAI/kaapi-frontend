@@ -1,62 +1,30 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { colors } from "@/app/lib/colors";
 import { formatDate } from "@/app/components/utils";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import Modal from "@/app/components/Modal";
+import {
+  CloseIcon,
+  TrashIcon,
+  BookOpenIcon,
+  ChevronRightIcon,
+} from "@/app/components/icons";
+import { Button, Field } from "@/app/components";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-
-export interface Document {
-  id: string;
-  fname: string;
-  object_store_url: string;
-  signed_url?: string;
-  file_size?: number;
-  inserted_at?: string;
-  updated_at?: string;
-}
-
-export interface Collection {
-  id: string;
-  name?: string;
-  description?: string;
-  knowledge_base_id?: string;
-  inserted_at: string;
-  updated_at: string;
-  status?: string;
-  job_id?: string;
-  documents?: Document[];
-}
-
-interface JobStatusData {
-  status?: string | null;
-  collection?: { id?: string; knowledge_base_id?: string };
-  collection_id?: string | null;
-}
-
-interface CollectionResponse {
-  data?: Collection[] | Collection;
-}
-
-interface DocumentResponse {
-  data?: Document[];
-}
-
-interface CreateCollectionResponse {
-  data?: { job_id?: string };
-}
-
-interface DeleteCollectionResponse {
-  data?: { job_id?: string };
-}
-
-interface DocumentDetailResponse {
-  data?: Document;
-}
+import { Document } from "@/app/lib/types/document";
+import {
+  Collection,
+  JobStatusData,
+  CollectionResponse,
+  DocumentResponse,
+  CreateCollectionResponse,
+  DeleteCollectionResponse,
+  DocumentDetailResponse,
+} from "@/app/lib/types/knowledgeBase";
 
 export default function KnowledgeBasePage() {
   const { sidebarCollapsed } = useApp();
@@ -490,7 +458,7 @@ export default function KnowledgeBasePage() {
 
     pollingRef.current = setInterval(async () => {
       const currentApiKey = apiKeyRef.current;
-      if (!currentApiKey) return;
+      if (!currentApiKey && !isAuthenticated) return;
 
       const jobs = activeJobsRef.current;
       if (jobs.size === 0) {
@@ -505,7 +473,7 @@ export default function KnowledgeBasePage() {
         try {
           const result = await apiFetch<
             { data?: JobStatusData } & JobStatusData
-          >(`/api/collections/jobs/${jobId}`, currentApiKey.key);
+          >(`/api/collections/jobs/${jobId}`, currentApiKey?.key ?? "");
           const jobData = result.data || result;
           const status = jobData.status || null;
           const realCollectionId =
@@ -721,7 +689,7 @@ export default function KnowledgeBasePage() {
           try {
             const jobResult = await apiFetch<
               { data?: JobStatusData } & JobStatusData
-            >(`/api/collections/jobs/${jobId}`, currentApiKey.key);
+            >(`/api/collections/jobs/${jobId}`, currentApiKey?.key ?? "");
             const jobData = jobResult.data || jobResult;
             const status = jobData.status;
             const statusLower = status?.toLowerCase();
@@ -801,16 +769,16 @@ export default function KnowledgeBasePage() {
   };
 
   useEffect(() => {
-    if (apiKey) {
+    if (isAuthenticated) {
       fetchCollections();
       fetchDocuments();
     }
-  }, [apiKey]);
+  }, [isAuthenticated]);
 
   // Keep apiKeyRef in sync so polling always has the current key
   useEffect(() => {
     apiKeyRef.current = apiKey;
-  }, [apiKey]);
+  }, [apiKey, isAuthenticated]);
 
   // Keep fetchCollectionsRef in sync so polling always has the current function
   useEffect(() => {
@@ -837,8 +805,8 @@ export default function KnowledgeBasePage() {
       }
     });
 
-    if (newJobAdded && apiKey) startPolling();
-  }, [collections, apiKey]);
+    if (newJobAdded && isAuthenticated) startPolling();
+  }, [collections, isAuthenticated]);
 
   // Reset showAllDocs when selectedCollection changes
   useEffect(() => {
@@ -856,10 +824,7 @@ export default function KnowledgeBasePage() {
   }, []);
 
   return (
-    <div
-      className="flex h-screen"
-      style={{ backgroundColor: colors.bg.primary }}
-    >
+    <div className="flex h-screen bg-bg-primary">
       <Sidebar collapsed={sidebarCollapsed} activeRoute="/knowledge-base" />
 
       {/* Main Content */}
@@ -872,165 +837,94 @@ export default function KnowledgeBasePage() {
         {/* Content Area - Split View */}
         <div className="flex-1 overflow-hidden flex">
           {/* Left Panel - Collections List */}
-          <div
-            className="w-1/3 border-r flex flex-col"
-            style={{ borderColor: colors.border }}
-          >
+          <div className="w-1/3 border-r border-border flex flex-col">
             {/* Create Button */}
             <div className="p-6 flex justify-end">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setShowCreateForm(true);
                   setSelectedCollection(null);
                 }}
-                className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                  border: `1px solid ${colors.border}`,
-                }}
               >
                 + Create
-              </button>
+              </Button>
             </div>
 
             {/* Collections List */}
             <div className="flex-1 overflow-y-auto px-6 pb-6">
               {isLoading && collections.length === 0 ? (
-                <div
-                  className="text-center py-8"
-                  style={{ color: colors.text.secondary }}
-                >
+                <div className="text-center py-8 text-text-secondary">
                   Loading knowledge bases...
                 </div>
               ) : collections.length === 0 ? (
-                <div
-                  className="text-center py-8"
-                  style={{ color: colors.text.secondary }}
-                >
+                <div className="text-center py-8 text-text-secondary">
                   No knowledge bases yet. Create your first one!
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {collections.map((collection) => (
-                    <div
-                      key={collection.id}
-                      onClick={() => {
-                        setShowCreateForm(false);
-                        setShowDocumentPicker(false);
-                        fetchCollectionDetails(collection.id);
-                      }}
-                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                        selectedCollection?.id === collection.id
-                          ? "ring-2 ring-offset-1"
-                          : ""
-                      }`}
-                      style={{
-                        backgroundColor:
-                          selectedCollection?.id === collection.id
-                            ? "hsl(202, 100%, 95%)"
-                            : colors.bg.primary,
-                        borderColor:
-                          selectedCollection?.id === collection.id
-                            ? "hsl(202, 100%, 50%)"
-                            : colors.border,
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <svg
-                              className="w-5 h-5 flex-shrink-0"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              style={{ color: colors.text.primary }}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                <div className="space-y-1.5">
+                  {collections.map((collection) => {
+                    const isSelected = selectedCollection?.id === collection.id;
+                    return (
+                      <button
+                        key={collection.id}
+                        onClick={() => {
+                          setShowCreateForm(false);
+                          setShowDocumentPicker(false);
+                          fetchCollectionDetails(collection.id);
+                        }}
+                        className={`w-full text-left rounded-lg p-3 transition-all duration-150 border ${
+                          isSelected
+                            ? "bg-neutral-100 border-border font-semibold"
+                            : "bg-white border-border hover:bg-neutral-50"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <BookOpenIcon
+                                className={`w-4 h-4 shrink-0 ${isSelected ? "text-text-primary" : "text-text-secondary"}`}
                               />
-                            </svg>
-                            <h3
-                              className="text-sm font-semibold truncate"
-                              style={{ color: colors.text.primary }}
-                            >
-                              {collection.name}
-                            </h3>
-                          </div>
-                          {collection.description && (
-                            <p
-                              className="text-xs truncate"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              {collection.description}
+                              <h3 className="text-sm font-medium text-text-primary truncate">
+                                {collection.name}
+                              </h3>
+                            </div>
+                            {collection.description && (
+                              <p className="text-xs text-text-secondary truncate pl-6">
+                                {collection.description}
+                              </p>
+                            )}
+                            <p className="text-xs text-text-secondary mt-0.5 pl-6">
+                              {formatDate(collection.inserted_at)}
                             </p>
-                          )}
-                          <p
-                            className="text-xs mt-1"
-                            style={{ color: colors.text.secondary }}
-                          >
-                            {formatDate(collection.inserted_at)}
-                          </p>
-                        </div>
-                        {!collection.id.startsWith("optimistic-") && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteCollection(collection.id);
-                            }}
-                            className="p-1.5 rounded-md transition-colors flex-shrink-0"
-                            style={{
-                              borderWidth: "1px",
-                              borderColor: "hsl(8, 86%, 80%)",
-                              backgroundColor: colors.bg.primary,
-                              color: "hsl(8, 86%, 40%)",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "hsl(8, 86%, 95%)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                colors.bg.primary;
-                            }}
-                            title="Delete Knowledge Base"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                          </div>
+                          {!collection.id.startsWith("optimistic-") && (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCollection(collection.id);
+                              }}
+                              className="p-1.5 rounded-md border border-red-200 bg-white text-red-500 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
+                              title="Delete Knowledge Base"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right Panel - Create Form or Preview */}
           <div className="w-2/3 flex flex-col">
             {showCreateForm ? (
-              /* Create Form */
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2
-                    className="text-xl font-semibold"
-                    style={{ color: colors.text.primary }}
-                  >
+                  <h2 className="text-xl font-semibold text-text-primary">
                     Create Knowledge Base
                   </h2>
                   <button
@@ -1041,53 +935,25 @@ export default function KnowledgeBasePage() {
                       setCollectionDescription("");
                       setSelectedDocuments(new Set());
                     }}
-                    className="p-2 rounded-md transition-colors"
-                    style={{ color: colors.text.secondary }}
+                    className="p-2 rounded-md text-text-secondary hover:bg-neutral-100 transition-colors"
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <CloseIcon className="w-5 h-5" />
                   </button>
                 </div>
 
                 {/* Name Input */}
                 <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.text.primary }}
-                  >
-                    Name *
-                  </label>
-                  <input
-                    type="text"
+                  <Field
+                    label="Name *"
                     value={collectionName}
-                    onChange={(e) => setCollectionName(e.target.value)}
+                    onChange={setCollectionName}
                     placeholder="Enter collection name"
-                    className="w-full px-4 py-2 rounded-md border text-sm"
-                    style={{
-                      borderColor: colors.border,
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.primary,
-                    }}
                   />
                 </div>
 
                 {/* Description Input */}
                 <div className="mb-4">
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.text.primary }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-text-primary">
                     Description
                   </label>
                   <textarea
@@ -1095,51 +961,26 @@ export default function KnowledgeBasePage() {
                     onChange={(e) => setCollectionDescription(e.target.value)}
                     placeholder="Enter collection description (optional)"
                     rows={3}
-                    className="w-full px-4 py-2 rounded-md border text-sm resize-none"
-                    style={{
-                      borderColor: colors.border,
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.primary,
-                    }}
+                    className="w-full px-4 py-2 rounded-md border border-border bg-bg-secondary text-text-primary text-sm resize-none focus:outline-none focus:ring-1 focus:ring-border"
                   />
                 </div>
 
                 {/* Document Selection */}
                 <div className="mb-6">
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: colors.text.primary }}
-                  >
+                  <label className="block text-sm font-medium mb-2 text-text-primary">
                     Select Documents *
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowDocumentPicker(true)}
-                    className="w-full px-4 py-3 rounded-md border text-left flex items-center justify-between"
-                    style={{
-                      borderColor: colors.border,
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.primary,
-                    }}
+                    className="w-full px-4 py-3 rounded-md border border-border bg-bg-secondary text-text-primary text-left flex items-center justify-between hover:bg-neutral-100 transition-colors"
                   >
                     <span className="text-sm">
                       {selectedDocuments.size === 0
                         ? "Click to select documents"
                         : `${selectedDocuments.size} document${selectedDocuments.size > 1 ? "s" : ""} selected`}
                     </span>
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                    <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
                   </button>
 
                   {/* Show selected documents */}
@@ -1153,37 +994,16 @@ export default function KnowledgeBasePage() {
                         return (
                           <div
                             key={docId}
-                            className="flex items-center justify-between p-2 rounded-md"
-                            style={{
-                              backgroundColor: colors.bg.secondary,
-                              borderColor: colors.border,
-                              border: `1px solid ${colors.border}`,
-                            }}
+                            className="flex items-center justify-between p-2 rounded-md border border-border bg-bg-secondary"
                           >
-                            <span
-                              className="text-sm truncate"
-                              style={{ color: colors.text.primary }}
-                            >
+                            <span className="text-sm text-text-primary truncate">
                               {doc.fname}
                             </span>
                             <button
                               onClick={() => toggleDocumentSelection(docId)}
-                              className="ml-2 p-1 rounded-md transition-colors"
-                              style={{ color: colors.text.secondary }}
+                              className="ml-2 p-1 rounded-md text-text-secondary hover:text-red-500 transition-colors"
                             >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
+                              <CloseIcon className="w-4 h-4" />
                             </button>
                           </div>
                         );
@@ -1194,128 +1014,79 @@ export default function KnowledgeBasePage() {
 
                 {/* Create Button */}
                 <div className="flex justify-end">
-                  <button
+                  <Button
                     onClick={handleCreateClick}
                     disabled={
                       isCreating ||
                       !collectionName.trim() ||
                       selectedDocuments.size === 0
                     }
-                    className="px-6 py-2 rounded-md text-sm font-medium"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.primary,
-                      border: `1px solid ${colors.border}`,
-                      opacity:
-                        isCreating ||
-                        !collectionName.trim() ||
-                        selectedDocuments.size === 0
-                          ? 0.5
-                          : 1,
-                    }}
                   >
                     {isCreating ? "Creating..." : "Create"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : selectedCollection ? (
               <>
                 {/* Preview Header */}
-                <div
-                  className="p-6 border-b"
-                  style={{ borderColor: colors.border }}
-                >
+                <div className="p-6 border-b border-border">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h2
-                        className="text-xl font-semibold"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <h2 className="text-xl font-semibold text-text-primary">
                         {selectedCollection.name}
                       </h2>
                       {selectedCollection.description && (
-                        <p
-                          className="text-sm mt-1"
-                          style={{ color: colors.text.secondary }}
-                        >
+                        <p className="text-sm mt-1 text-text-secondary">
                           {selectedCollection.description}
                         </p>
                       )}
                     </div>
                     {!selectedCollection.id.startsWith("optimistic-") && (
-                      <button
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() =>
                           handleDeleteCollection(selectedCollection.id)
                         }
-                        className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
-                        style={{
-                          backgroundColor: "transparent",
-                          color: "#ef4444",
-                          border: "1px solid #ef4444",
-                        }}
                       >
                         Delete
-                      </button>
+                      </Button>
                     )}
                   </div>
 
                   {/* Metadata */}
                   <div className="space-y-3 mt-6">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="text-xs uppercase font-semibold"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <div className="text-xs uppercase font-semibold text-text-secondary">
                         Status:
                       </div>
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <div className="text-sm font-semibold text-text-primary">
                         {(selectedCollection.status || "N/A")
                           .replace(/_/g, " ")
                           .toUpperCase()}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div
-                        className="text-xs uppercase font-semibold"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <div className="text-xs uppercase font-semibold text-text-secondary">
                         Knowledge Base ID:
                       </div>
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <div className="text-sm font-semibold text-text-primary">
                         {selectedCollection.knowledge_base_id || "N/A"}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div
-                        className="text-xs uppercase font-semibold"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <div className="text-xs uppercase font-semibold text-text-secondary">
                         Created:
                       </div>
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <div className="text-sm font-semibold text-text-primary">
                         {formatDate(selectedCollection.inserted_at)}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div
-                        className="text-xs uppercase font-semibold"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <div className="text-xs uppercase font-semibold text-text-secondary">
                         Last Updated:
                       </div>
-                      <div
-                        className="text-sm font-semibold"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <div className="text-sm font-semibold text-text-primary">
                         {formatDate(selectedCollection.updated_at)}
                       </div>
                     </div>
@@ -1325,10 +1096,7 @@ export default function KnowledgeBasePage() {
                 {/* Documents in Collection */}
                 <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3
-                      className="text-sm font-semibold"
-                      style={{ color: colors.text.primary }}
-                    >
+                    <h3 className="text-sm font-semibold text-text-primary">
                       Documents Present (
                       {selectedCollection.documents?.length || 0})
                     </h3>
@@ -1341,7 +1109,7 @@ export default function KnowledgeBasePage() {
                             const firstDoc = selectedCollection.documents![0];
                             setPreviewDoc(firstDoc);
 
-                            if (apiKey) {
+                            if (isAuthenticated) {
                               try {
                                 const data = await apiFetch<
                                   DocumentDetailResponse & Document
@@ -1360,12 +1128,7 @@ export default function KnowledgeBasePage() {
                               }
                             }
                           }}
-                          className="text-xs px-3 py-1.5 rounded-md hover:opacity-80 transition-opacity"
-                          style={{
-                            color: colors.text.primary,
-                            backgroundColor: colors.bg.secondary,
-                            border: `1px solid ${colors.border}`,
-                          }}
+                          className="text-xs px-3 py-1.5 rounded-md border border-border bg-bg-secondary text-text-primary hover:bg-neutral-100 transition-colors"
                         >
                           Preview
                         </button>
@@ -1377,23 +1140,14 @@ export default function KnowledgeBasePage() {
                   selectedCollection.documents.length > 0 ? (
                     <div>
                       {/* Header Row */}
-                      <div
-                        className="flex items-center justify-between pb-2 mb-2 border-b"
-                        style={{ borderColor: colors.border }}
-                      >
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
                         <div className="flex-1">
-                          <p
-                            className="text-[10px] font-semibold uppercase"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <p className="text-[10px] font-semibold uppercase text-text-secondary">
                             Name
                           </p>
                         </div>
                         <div className="flex-shrink-0">
-                          <p
-                            className="text-[10px] font-semibold uppercase"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <p className="text-[10px] font-semibold uppercase text-text-secondary">
                             Uploaded At
                           </p>
                         </div>
@@ -1414,18 +1168,12 @@ export default function KnowledgeBasePage() {
                               className="flex items-center justify-between py-1"
                             >
                               <div className="flex-1 min-w-0 mr-4">
-                                <p
-                                  className="text-sm truncate"
-                                  style={{ color: colors.text.primary }}
-                                >
+                                <p className="text-sm text-text-primary truncate">
                                   {doc.fname}
                                 </p>
                               </div>
                               <div className="flex-shrink-0">
-                                <p
-                                  className="text-xs"
-                                  style={{ color: colors.text.secondary }}
-                                >
+                                <p className="text-xs text-text-secondary">
                                   {doc.inserted_at
                                     ? formatDate(doc.inserted_at)
                                     : "N/A"}
@@ -1437,36 +1185,29 @@ export default function KnowledgeBasePage() {
 
                       {/* Show More / Show Less Button */}
                       {selectedCollection.documents.length > 3 && (
-                        <button
-                          onClick={() => setShowAllDocs(!showAllDocs)}
-                          className="w-full py-2 px-4 rounded-md text-sm font-medium transition-colors mt-3"
-                          style={{
-                            backgroundColor: "transparent",
-                            color: colors.text.secondary,
-                            border: `1px solid ${colors.border}`,
-                          }}
-                        >
-                          {showAllDocs
-                            ? "Show Less"
-                            : `Show More (${selectedCollection.documents.length - 3} more)`}
-                        </button>
+                        <div className="mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth
+                            onClick={() => setShowAllDocs(!showAllDocs)}
+                          >
+                            {showAllDocs
+                              ? "Show Less"
+                              : `Show More (${selectedCollection.documents.length - 3} more)`}
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ) : (
-                    <p
-                      className="text-sm text-center py-8"
-                      style={{ color: colors.text.secondary }}
-                    >
+                    <p className="text-sm text-center py-8 text-text-secondary">
                       No documents in this collection
                     </p>
                   )}
                 </div>
               </>
             ) : (
-              <div
-                className="flex-1 flex items-center justify-center"
-                style={{ color: colors.text.secondary }}
-              >
+              <div className="flex-1 flex items-center justify-center text-text-secondary">
                 Select a knowledge base to view details
               </div>
             )}
@@ -1474,55 +1215,36 @@ export default function KnowledgeBasePage() {
         </div>
       </div>
 
-      {showConfirmDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            className="rounded-lg p-6 w-full max-w-md"
-            style={{ backgroundColor: colors.bg.primary }}
-          >
-            <h2
-              className="text-xl font-semibold mb-4"
-              style={{ color: colors.text.primary }}
+      <Modal
+        open={showConfirmDelete}
+        onClose={() => {
+          setShowConfirmDelete(false);
+          setCollectionToDelete(null);
+        }}
+        title="Delete Collection"
+        maxWidth="max-w-md"
+      >
+        <div className="px-6 pb-6">
+          <p className="text-sm text-text-secondary mb-6">
+            Are you sure you want to delete this collection? This action cannot
+            be undone.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowConfirmDelete(false);
+                setCollectionToDelete(null);
+              }}
             >
-              Delete Collection
-            </h2>
-            <p
-              className="text-sm mb-6"
-              style={{ color: colors.text.secondary }}
-            >
-              Are you sure you want to delete this collection? This action
-              cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowConfirmDelete(false);
-                  setCollectionToDelete(null);
-                }}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: "transparent",
-                  color: colors.text.secondary,
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: "#ef4444",
-                  color: "#ffffff",
-                  border: "1px solid #ef4444",
-                }}
-              >
-                Delete
-              </button>
-            </div>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
 
       <Modal
         open={showDocumentPicker}
@@ -1532,10 +1254,7 @@ export default function KnowledgeBasePage() {
         <div className="p-6">
           <div className="mb-4">
             {availableDocuments.length === 0 ? (
-              <div
-                className="p-8 text-center text-sm"
-                style={{ color: colors.text.secondary }}
-              >
+              <div className="p-8 text-center text-sm text-text-secondary">
                 No documents available. Please upload documents first.
               </div>
             ) : (
@@ -1543,26 +1262,11 @@ export default function KnowledgeBasePage() {
                 {availableDocuments.map((doc) => (
                   <label
                     key={doc.id}
-                    className="flex items-center p-4 rounded-md border cursor-pointer transition-colors"
-                    style={{
-                      backgroundColor: selectedDocuments.has(doc.id)
-                        ? colors.bg.secondary
-                        : "transparent",
-                      borderColor: selectedDocuments.has(doc.id)
-                        ? colors.border
-                        : "transparent",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!selectedDocuments.has(doc.id)) {
-                        e.currentTarget.style.backgroundColor =
-                          colors.bg.secondary;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!selectedDocuments.has(doc.id)) {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }
-                    }}
+                    className={`flex items-center p-4 rounded-md border cursor-pointer transition-colors ${
+                      selectedDocuments.has(doc.id)
+                        ? "bg-neutral-50 border-border"
+                        : "border-transparent hover:bg-neutral-50"
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -1571,16 +1275,10 @@ export default function KnowledgeBasePage() {
                       className="mr-3 w-4 h-4"
                     />
                     <div className="flex-1 min-w-0">
-                      <p
-                        className="text-sm font-medium truncate"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <p className="text-sm font-medium text-text-primary truncate">
                         {doc.fname}
                       </p>
-                      <p
-                        className="text-xs mt-1"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <p className="text-xs mt-1 text-text-secondary">
                         ID: {doc.id.substring(0, 8)}...
                       </p>
                     </div>
@@ -1591,132 +1289,122 @@ export default function KnowledgeBasePage() {
           </div>
 
           {/* Selected Count and Actions */}
-          <div
-            className="flex items-center justify-between pt-4 border-t"
-            style={{ borderColor: colors.border }}
-          >
-            <p className="text-sm" style={{ color: colors.text.secondary }}>
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <p className="text-sm text-text-secondary">
               {selectedDocuments.size} document
               {selectedDocuments.size !== 1 ? "s" : ""} selected
             </p>
             <div className="flex gap-3">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setShowDocumentPicker(false)}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: "transparent",
-                  color: colors.text.secondary,
-                  border: `1px solid ${colors.border}`,
-                }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowDocumentPicker(false)}
                 disabled={selectedDocuments.size === 0}
-                className="px-4 py-2 rounded-md text-sm font-medium"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                  border: `1px solid ${colors.border}`,
-                  opacity: selectedDocuments.size === 0 ? 0.5 : 1,
-                }}
               >
                 Done
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={showDocPreviewModal && !!selectedCollection?.documents}
-        onClose={() => {
-          setShowDocPreviewModal(false);
-          setPreviewDoc(null);
-        }}
-        title="Document Preview"
-        maxWidth="max-w-5xl"
-        maxHeight="h-[80vh]"
-      >
-        {/* Two-pane body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left pane — doc list */}
+      {showDocPreviewModal && !!selectedCollection?.documents && (
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-50"
+          onClick={() => {
+            setShowDocPreviewModal(false);
+            setPreviewDoc(null);
+          }}
+        >
           <div
-            className="w-1/5 flex flex-col overflow-y-auto shrink-0"
-            style={{ borderRight: `1px solid ${colors.border}` }}
+            className="bg-white rounded-2xl shadow-xl border border-border w-full max-w-5xl h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
           >
-            {selectedCollection?.documents?.map((doc: Document) => (
+            <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-border">
+              <h2 className="text-lg font-semibold text-text-primary">
+                Document Preview
+              </h2>
               <button
-                key={doc.id}
-                onClick={async () => {
-                  setPreviewDoc(doc);
-
-                  if (apiKey) {
-                    try {
-                      const data = await apiFetch<
-                        DocumentDetailResponse & Document
-                      >(`/api/document/${doc.id}`, apiKey?.key ?? "");
-                      const documentDetails = (data.data || data) as Document;
-                      setPreviewDoc(documentDetails);
-                    } catch (err) {
-                      console.error(
-                        "Failed to fetch document details for preview:",
-                        err,
-                      );
-                    }
-                  }
+                onClick={() => {
+                  setShowDocPreviewModal(false);
+                  setPreviewDoc(null);
                 }}
-                className="text-left px-4 py-3 shrink-0 transition-colors"
-                style={{
-                  backgroundColor:
-                    previewDoc?.id === doc.id
-                      ? colors.bg.secondary
-                      : "transparent",
-                  borderBottom: `1px solid ${colors.border}`,
-                }}
+                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
               >
-                <p
-                  className="text-sm truncate"
-                  style={{ color: colors.text.primary }}
-                >
-                  {doc.fname}
-                </p>
-                {doc.inserted_at && (
-                  <p
-                    className="text-xs mt-0.5"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    {formatDate(doc.inserted_at)}
-                  </p>
-                )}
+                <CloseIcon className="w-5 h-5" />
               </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Right pane — preview content */}
-          <div
-            className="flex-1 overflow-hidden flex items-center justify-center"
-            style={{ backgroundColor: colors.bg.secondary }}
-          >
-            {previewDoc?.signed_url ? (
-              <iframe
-                key={previewDoc.id}
-                src={previewDoc.signed_url}
-                title={previewDoc.fname}
-                className="w-full h-full"
-                style={{ border: "none" }}
-              />
-            ) : (
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
-                {previewDoc
-                  ? "No preview available for this document"
-                  : "Select a document to preview"}
-              </p>
-            )}
+            {/* Two-pane body */}
+            <div className="flex flex-1 min-h-0">
+              {/* Left pane — doc list */}
+              <div className="w-56 shrink-0 border-r border-border overflow-y-auto">
+                {selectedCollection?.documents?.map((doc: Document) => (
+                  <button
+                    key={doc.id}
+                    onClick={async () => {
+                      setPreviewDoc(doc);
+                      if (isAuthenticated) {
+                        try {
+                          const data = await apiFetch<
+                            DocumentDetailResponse & Document
+                          >(`/api/document/${doc.id}`, apiKey?.key ?? "");
+                          const documentDetails = (data.data ||
+                            data) as Document;
+                          setPreviewDoc(documentDetails);
+                        } catch (err) {
+                          console.error(
+                            "Failed to fetch document details:",
+                            err,
+                          );
+                        }
+                      }
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-border transition-colors ${
+                      previewDoc?.id === doc.id
+                        ? "bg-neutral-100"
+                        : "hover:bg-neutral-50"
+                    }`}
+                  >
+                    <p className="text-sm text-text-primary truncate">
+                      {doc.fname}
+                    </p>
+                    {doc.inserted_at && (
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        {formatDate(doc.inserted_at)}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right pane — preview */}
+              <div className="flex-1 min-h-0 bg-neutral-50">
+                {previewDoc?.signed_url ? (
+                  <iframe
+                    key={previewDoc.id}
+                    src={previewDoc.signed_url}
+                    title={previewDoc.fname}
+                    className="w-full h-full border-none"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-sm text-text-secondary">
+                      {previewDoc
+                        ? "No preview available for this document"
+                        : "Select a document to preview"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 }

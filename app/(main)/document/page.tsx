@@ -12,16 +12,9 @@ import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
+import { Document } from "@/app/lib/types/document";
 
-export interface Document {
-  id: string;
-  fname: string;
-  object_store_url: string;
-  signed_url?: string;
-  file_size?: number;
-  inserted_at?: string;
-  updated_at?: string;
-}
+export type { Document } from "@/app/lib/types/document";
 
 export default function DocumentPage() {
   const toast = useToast();

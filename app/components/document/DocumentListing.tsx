@@ -1,7 +1,7 @@
 "use client";
 
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/(main)/document/page";
+import { Document } from "@/app/lib/types/document";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   RefreshIcon,

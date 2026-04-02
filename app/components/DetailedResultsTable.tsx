@@ -218,10 +218,7 @@ export default function DetailedResultsTable({
                     row.style.backgroundColor = "#ffffff";
                   }}
                 >
-                  <td
-                    className="px-4 py-3 text-sm font-medium align-top"
-                    style={{ color: "#737373" }}
-                  >
+                  <td className="px-4 py-3 text-sm font-medium align-top text-text-secondary">
                     {index + 1}
                   </td>
 

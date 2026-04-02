@@ -51,7 +51,7 @@ export default function ProjectList({
     <div>
       <button
         onClick={onBack}
-        className="text-sm text-text-secondary hover:text-text-primary mb-6 flex items-center gap-1 transition-colors"
+        className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
       >
         <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to organizations
       </button>

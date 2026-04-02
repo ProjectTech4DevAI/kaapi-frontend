@@ -91,9 +91,12 @@ export default function UserList({
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack}>
+      <button
+        onClick={onBack}
+        className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
+      >
         <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
-      </Button>
+      </button>
 
       <div className="flex items-center justify-between mb-4">
         <div>

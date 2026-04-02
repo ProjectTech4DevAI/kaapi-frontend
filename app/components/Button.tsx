@@ -52,7 +52,7 @@ export default function Button({
   return (
     <button
       disabled={disabled}
-      className={`rounded-lg font-medium transition-colors inline-flex items-center justify-center gap-2 ${
+      className={`rounded-lg font-medium transition-colors inline-flex items-center justify-center gap-2 cursor-pointer ${
         sizeStyles[size]
       } ${disabled ? styles.disabled : styles.base} ${
         fullWidth ? "w-full" : ""

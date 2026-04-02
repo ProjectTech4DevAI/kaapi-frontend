@@ -97,6 +97,22 @@ export async function apiFetch<T>(
   // Happy path
   if (res.ok) return (await res.json()) as T;
 
+  // 403 "access revoked" — force logout immediately, no refresh attempt
+  if (res.status === 403) {
+    const data = await res.json().catch(() => ({}));
+    const msg =
+      (data as Record<string, string>).error ||
+      (data as Record<string, string>).message ||
+      "";
+    if (msg.toLowerCase().includes("access revoked")) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT));
+      }
+      throw new Error(msg || "Access revoked. Please log in again.");
+    }
+    throw new Error(msg || `Request failed: ${res.status}`);
+  }
+
   // Not a 401 — throw immediately
   if (res.status !== 401) {
     const data = await res.json();

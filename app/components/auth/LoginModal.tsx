@@ -42,8 +42,6 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
       });
 
       loginWithGoogle(data.access_token, data.user, data.google_profile);
-
-      toast.success("Logged in successfully!");
       onClose();
     } catch (err) {
       toast.error(

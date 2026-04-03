@@ -29,19 +29,8 @@ import {
 import { invalidateConfigCache } from "@/app/lib/utils";
 import { configState } from "@/app/lib/store/configStore";
 import { apiFetch } from "@/app/lib/apiClient";
-
-const DEFAULT_CONFIG: ConfigBlob = {
-  completion: {
-    provider: "openai",
-    type: "text",
-    params: {
-      model: "gpt-4o-mini",
-      instructions: "",
-      temperature: 0.7,
-      tools: [],
-    },
-  },
-};
+import { isGpt5Model } from "@/app/lib/models";
+import { DEFAULT_CONFIG } from "@/app/lib/constants";
 
 function PromptEditorContent() {
   const toast = useToast();
@@ -55,7 +44,6 @@ function PromptEditorContent() {
   const urlDatasetId = searchParams.get("dataset");
   const urlExperimentName = searchParams.get("experiment");
   const fromEvaluations = searchParams.get("from") === "evaluations";
-
   const {
     configs: savedConfigs,
     isLoading,
@@ -78,10 +66,10 @@ function PromptEditorContent() {
   const [currentConfigBlob, setCurrentConfigBlob] =
     useState<ConfigBlob>(DEFAULT_CONFIG);
   const [currentConfigName, setCurrentConfigName] = useState<string>("");
-  const [selectedConfigId, setSelectedConfigId] = useState<string>(""); // Selected version ID
+  const [selectedConfigId, setSelectedConfigId] = useState<string>("");
   const [currentConfigParentId, setCurrentConfigParentId] =
     useState<string>("");
-  const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0); // Version number for evaluation
+  const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0);
   const [provider, setProvider] = useState<string>("openai");
   const [temperature, setTemperature] = useState<number>(0.7);
   const [tools, setTools] = useState<Tool[]>([]);
@@ -287,17 +275,22 @@ function PromptEditorContent() {
         }
       });
 
+      const model = currentConfigBlob.completion.params.model;
+      const gpt5 = isGpt5Model(model);
+
       const configBlob: ConfigBlob = {
         completion: {
           provider: currentConfigBlob.completion.provider,
           type: currentConfigBlob.completion.type || "text",
           params: {
-            model: currentConfigBlob.completion.params.model,
+            model,
             instructions: currentContent,
-            temperature: currentConfigBlob.completion.params.temperature,
+            ...(!gpt5 && {
+              temperature: currentConfigBlob.completion.params.temperature,
+            }),
             ...(allKnowledgeBaseIds.length > 0 && {
               knowledge_base_ids: allKnowledgeBaseIds,
-              max_num_results: maxNumResults,
+              ...(!gpt5 && { max_num_results: maxNumResults }),
             }),
           },
         },

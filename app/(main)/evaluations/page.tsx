@@ -17,6 +17,7 @@ import TabNavigation from "@/app/components/TabNavigation";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
+import { apiFetch } from "@/app/lib/apiClient";
 import Loader from "@/app/components/Loader";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
@@ -37,14 +38,8 @@ function SimplifiedEvalContent() {
   });
 
   const { sidebarCollapsed } = useApp();
-  const { apiKeys } = useAuth();
-  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
+  const { activeKey } = useAuth();
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Dataset creation state
   const [datasetName, setDatasetName] = useState("");
   const [datasetDescription, setDatasetDescription] = useState("");
@@ -74,41 +69,33 @@ function SimplifiedEvalContent() {
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  // Set initial selected key from context
   useEffect(() => {
-    if (apiKeys.length > 0 && !selectedKeyId) {
-      setSelectedKeyId(apiKeys[0].id);
-    }
-  }, [apiKeys, selectedKeyId]);
+    setMounted(true);
+  }, []);
 
-  // Fetch datasets from backend
   const loadStoredDatasets = useCallback(async () => {
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
+    if (!activeKey?.key) {
       console.error("No selected API key found for loading datasets");
       return;
     }
     setIsDatasetsLoading(true);
     try {
-      const response = await fetch("/api/evaluations/datasets", {
-        method: "GET",
-        headers: { "X-API-KEY": selectedKey.key },
-      });
-      if (!response.ok) return;
-      const data = await response.json();
+      const data = await apiFetch<Dataset[] | { data: Dataset[] }>(
+        "/api/evaluations/datasets",
+        activeKey.key,
+      );
       setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
       console.error("Failed to load datasets:", e);
     } finally {
       setIsDatasetsLoading(false);
     }
-  }, [apiKeys, selectedKeyId]);
+  }, [activeKey]);
 
   useEffect(() => {
-    if (apiKeys.length > 0 && selectedKeyId) loadStoredDatasets();
-  }, [apiKeys, selectedKeyId, loadStoredDatasets]);
+    if (activeKey?.key) loadStoredDatasets();
+  }, [activeKey, loadStoredDatasets]);
 
-  // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -163,7 +150,6 @@ function SimplifiedEvalContent() {
     reader.readAsText(file);
   };
 
-  // Create dataset
   const handleCreateDataset = async () => {
     if (!uploadedFile) {
       toast.error("Please select a CSV file");
@@ -173,8 +159,7 @@ function SimplifiedEvalContent() {
       toast.error("Please enter a dataset name");
       return;
     }
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
+    if (!activeKey?.key) {
       toast.error("No API key selected. Please select one in the Keystore.");
       return;
     }
@@ -191,29 +176,17 @@ function SimplifiedEvalContent() {
         formData.append("duplication_factor", duplicationFactor);
       }
 
-      const response = await fetch("/api/evaluations/datasets", {
-        method: "POST",
-        body: formData,
-        headers: { "X-API-KEY": selectedKey.key },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Upload failed with status ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<{ dataset_id?: number }>(
+        "/api/evaluations/datasets",
+        activeKey.key,
+        { method: "POST", body: formData },
+      );
       await loadStoredDatasets();
 
       if (data.dataset_id) {
         setSelectedDatasetId(data.dataset_id.toString());
       }
 
-      // Reset form
       setUploadedFile(null);
       setDatasetName("");
       setDatasetDescription("");
@@ -229,9 +202,8 @@ function SimplifiedEvalContent() {
     }
   };
 
-  // Run evaluation
   const handleRunEvaluation = async () => {
-    if (!selectedKeyId) {
+    if (!activeKey?.key) {
       toast.error("Please select an API key first");
       return;
     }
@@ -248,12 +220,6 @@ function SimplifiedEvalContent() {
       return;
     }
 
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
-      toast.error("Selected API key not found");
-      return;
-    }
-
     setIsEvaluating(true);
     try {
       const payload = {
@@ -263,31 +229,13 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
       };
 
-      const response = await fetch("/api/evaluations", {
+      await apiFetch("/api/evaluations", activeKey.key, {
         method: "POST",
-        headers: {
-          "X-API-KEY": selectedKey.key,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Evaluation failed with status ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
-      const evalId = data.id || data.data?.id || data.eval_id || "unknown";
-
       setIsEvaluating(false);
-      toast.success(
-        `Evaluation created! ${evalId !== "unknown" ? `Job ID: ${evalId}` : ""}`,
-      );
+      toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
       toast.error(
@@ -323,7 +271,7 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          {!mounted || apiKeys.length === 0 ? (
+          {!mounted || !activeKey ? (
             <div
               className="flex-1 flex items-center justify-center"
               style={{ backgroundColor: colors.bg.secondary }}
@@ -390,16 +338,14 @@ function SimplifiedEvalContent() {
               }}
               storedDatasets={storedDatasets}
               isDatasetsLoading={isDatasetsLoading}
-              apiKeys={apiKeys}
-              selectedKeyId={selectedKeyId}
+              activeKey={activeKey}
               loadStoredDatasets={loadStoredDatasets}
               toast={toast}
             />
           ) : (
             <EvaluationsTab
               leftPanelWidth={leftPanelWidth}
-              apiKeys={apiKeys}
-              selectedKeyId={selectedKeyId}
+              activeKey={activeKey}
               storedDatasets={storedDatasets}
               selectedDatasetId={selectedDatasetId}
               setSelectedDatasetId={setSelectedDatasetId}
@@ -421,7 +367,7 @@ function SimplifiedEvalContent() {
     </div>
   );
 }
-// Wrapper component with Suspense
+
 export default function SimplifiedEval() {
   return (
     <Suspense fallback={<Loader size="lg" message="Loading..." fullScreen />}>

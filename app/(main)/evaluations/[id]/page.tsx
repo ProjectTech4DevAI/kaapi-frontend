@@ -20,7 +20,6 @@ import {
   GroupedTraceItem,
   isGroupedFormat,
 } from "@/app/components/types";
-import { getStatusColor } from "@/app/components/utils";
 import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/DetailedResultsTable";
@@ -35,6 +34,7 @@ import {
   GroupIcon,
   RefreshIcon,
 } from "@/app/components/icons";
+import { sanitizeCSVCell } from "@/app/lib/utils";
 
 export default function EvaluationReport() {
   const router = useRouter();
@@ -55,23 +55,6 @@ export default function EvaluationReport() {
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
-
-  // CSV helper functions
-  const escapeCSVValue = (value: string): string => {
-    return value.replace(/"/g, '""').replace(/\n/g, " ");
-  };
-
-  const sanitizeCSVCell = (
-    value: string,
-    preventFormulaInjection = false,
-  ): string => {
-    let sanitized = escapeCSVValue(value);
-    // Prevent CSV formula injection by prepending space to values starting with =, +, -, @
-    if (preventFormulaInjection && /^[=+\-@]/.test(sanitized)) {
-      sanitized = " " + sanitized;
-    }
-    return `"${sanitized}"`;
-  };
 
   useEffect(() => {
     if (apiKeys.length > 0 && !selectedKeyId) {
@@ -393,11 +376,13 @@ export default function EvaluationReport() {
 
   const scoreObject = getScoreObject(job);
   const hasScore = !!scoreObject;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const statusColor = getStatusColor(job.status);
   const isNewFormat = hasSummaryScores(scoreObject);
   const summaryScores =
     isNewFormat && scoreObject ? scoreObject.summary_scores || [] : [];
+
+  const isJobInProgress =
+    job.status.toLowerCase() !== "completed" &&
+    job.status.toLowerCase() !== "failed";
 
   return (
     <div
@@ -564,26 +549,25 @@ export default function EvaluationReport() {
             </div>
           </div>
 
-          {/* Content */}
           <div
             className="flex-1 overflow-auto p-6"
             style={{ backgroundColor: colors.bg.secondary }}
           >
             <div className="max-w-7xl mx-auto space-y-6">
-              {/* Metrics */}
               {hasScore && isNewFormat ? (
                 <div>
                   {summaryScores.some(
                     (s) => job.total_items && s.total_pairs < job.total_items,
-                  ) && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs bg-amber-500/10 border border-amber-500/30 text-status-warning">
-                      <WarningTriangleIcon className="flex-shrink-0" />
-                      Some traces are still being scored. Scores shown are
-                      partial and may change — click{" "}
-                      <strong className="font-semibold mx-1">Resync</strong> to
-                      get the latest.
-                    </div>
-                  )}
+                  ) &&
+                    isJobInProgress && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg mb-3 text-xs bg-amber-500/10 border border-amber-500/30 text-status-warning">
+                        <WarningTriangleIcon className="shrink-0" />
+                        Some traces are still being scored. Scores shown are
+                        partial and may change - click{" "}
+                        <strong className="font-semibold">Resync</strong> to get
+                        the latest.
+                      </div>
+                    )}
                   <div className="flex items-center justify-between mb-3">
                     <h3
                       className="text-sm font-semibold"
@@ -635,18 +619,13 @@ export default function EvaluationReport() {
                             >
                               {summary.std !== undefined &&
                                 `±${summary.std.toFixed(3)} · `}
-                              {job.total_items &&
-                              summary.total_pairs < job.total_items ? (
-                                <span
-                                  className="inline-flex items-center gap-1 font-medium text-status-warning"
-                                  title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
-                                >
-                                  {summary.total_pairs}/{job.total_items} pairs
-                                  <WarningTriangleIcon className="w-3 h-3" />
-                                </span>
-                              ) : (
-                                <span>{summary.total_pairs} pairs</span>
-                              )}
+                              <span>
+                                {summary.total_pairs}
+                                {job.total_items &&
+                                  summary.total_pairs < job.total_items &&
+                                  `/${job.total_items}`}{" "}
+                                pairs
+                              </span>
                             </div>
                           </div>
                         ))}
@@ -685,18 +664,13 @@ export default function EvaluationReport() {
                                 )}
                             </div>
                             <div className="text-xs mt-2 text-center text-text-secondary">
-                              {job.total_items &&
-                              summary.total_pairs < job.total_items ? (
-                                <span
-                                  className="inline-flex items-center gap-1 font-medium text-status-warning"
-                                  title={`Only ${summary.total_pairs} of ${job.total_items} traces scored — resync to update`}
-                                >
-                                  {summary.total_pairs}/{job.total_items} pairs
-                                  <WarningTriangleIcon className="w-3 h-3" />
-                                </span>
-                              ) : (
-                                <span>{summary.total_pairs} pairs</span>
-                              )}
+                              <span>
+                                {summary.total_pairs}
+                                {job.total_items &&
+                                  summary.total_pairs < job.total_items &&
+                                  `/${job.total_items}`}{" "}
+                                pairs
+                              </span>
                             </div>
                           </div>
                         ))}

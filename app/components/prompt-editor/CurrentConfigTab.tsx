@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { colors } from "@/app/lib/colors";
+import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
 import { Config, Tool } from "@/app/lib/types/promptEditor";
 
 interface CurrentConfigTabProps {
@@ -46,6 +47,7 @@ export default function CurrentConfigTab({
   onUseCurrentPrompt,
 }: CurrentConfigTabProps) {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const isGpt5 = isGpt5Model(model);
 
   const addTool = () => {
     onToolsChange([
@@ -223,10 +225,11 @@ export default function CurrentConfigTab({
             backgroundColor: colors.bg.primary,
           }}
         >
-          <option value="gpt-4o-mini">gpt-4o-mini</option>
-          <option value="gpt-4o">gpt-4o</option>
-          <option value="gpt-4-turbo">gpt-4-turbo</option>
-          <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+          {MODEL_OPTIONS.openai.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -282,41 +285,43 @@ export default function CurrentConfigTab({
       </div>
 
       {/* Temperature Slider */}
-      <div>
-        <label
-          style={{
-            display: "block",
-            fontSize: "12px",
-            fontWeight: 600,
-            color: colors.text.primary,
-            marginBottom: "6px",
-          }}
-        >
-          Temperature: {temperature.toFixed(1)}
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={temperature}
-          onChange={(e) => onTemperatureChange(parseFloat(e.target.value))}
-          style={{ width: "100%" }}
-        />
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: "11px",
-            color: colors.text.secondary,
-            marginTop: "4px",
-          }}
-        >
-          <span>Focused (0)</span>
-          <span>Balanced (0.5)</span>
-          <span>Creative (1)</span>
+      {!isGpt5 && (
+        <div>
+          <label
+            style={{
+              display: "block",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: colors.text.primary,
+              marginBottom: "6px",
+            }}
+          >
+            Temperature: {temperature.toFixed(1)}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={temperature}
+            onChange={(e) => onTemperatureChange(parseFloat(e.target.value))}
+            style={{ width: "100%" }}
+          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "11px",
+              color: colors.text.secondary,
+              marginTop: "4px",
+            }}
+          >
+            <span>Focused (0)</span>
+            <span>Balanced (0.5)</span>
+            <span>Creative (1)</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tools Section */}
       <div>
@@ -414,36 +419,38 @@ export default function CurrentConfigTab({
                 }}
               />
             </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "11px",
-                  color: colors.text.secondary,
-                  marginBottom: "4px",
-                }}
-              >
-                Max Results
-              </label>
-              <input
-                type="number"
-                value={tool.max_num_results}
-                onChange={(e) =>
-                  updateTool(
-                    index,
-                    "max_num_results",
-                    parseInt(e.target.value) || 20,
-                  )
-                }
-                style={{
-                  width: "100%",
-                  padding: "6px",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                }}
-              />
-            </div>
+            {!isGpt5 && (
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "11px",
+                    color: colors.text.secondary,
+                    marginBottom: "4px",
+                  }}
+                >
+                  Max Results
+                </label>
+                <input
+                  type="number"
+                  value={tool.max_num_results}
+                  onChange={(e) =>
+                    updateTool(
+                      index,
+                      "max_num_results",
+                      parseInt(e.target.value) || 20,
+                    )
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "6px",
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                  }}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>

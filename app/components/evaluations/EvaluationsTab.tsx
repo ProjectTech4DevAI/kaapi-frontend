@@ -9,13 +9,13 @@ import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 import { APIKey } from "@/app/lib/types/credentials";
+import { apiFetch } from "@/app/lib/apiClient";
 
 type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
-  apiKeys: APIKey[];
-  selectedKeyId: string;
+  activeKey: APIKey;
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   setSelectedDatasetId: (id: string) => void;
@@ -31,8 +31,7 @@ export interface EvaluationsTabProps {
 
 export default function EvaluationsTab({
   leftPanelWidth,
-  apiKeys,
-  selectedKeyId,
+  activeKey,
   storedDatasets,
   selectedDatasetId,
   setSelectedDatasetId,
@@ -65,13 +64,8 @@ export default function EvaluationsTab({
 
   // Fetch evaluation jobs
   const fetchEvaluations = useCallback(async () => {
-    if (!selectedKeyId) {
+    if (!activeKey?.key) {
       setError("Please select an API key first");
-      return;
-    }
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) {
-      setError("Selected API key not found");
       return;
     }
 
@@ -79,19 +73,10 @@ export default function EvaluationsTab({
     setError(null);
 
     try {
-      const response = await fetch("/api/evaluations", {
-        method: "GET",
-        headers: { "X-API-KEY": selectedKey.key },
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed to fetch evaluations: ${response.status}`,
-        );
-      }
-      const data = await response.json();
+      const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
+        "/api/evaluations",
+        activeKey.key,
+      );
       setEvalJobs(Array.isArray(data) ? data : data.data || []);
     } catch (err: unknown) {
       setError(
@@ -100,25 +85,21 @@ export default function EvaluationsTab({
     } finally {
       setIsLoading(false);
     }
-  }, [apiKeys, selectedKeyId]);
+  }, [activeKey]);
 
   // Fetch assistant config
   const fetchAssistantConfig = useCallback(
     async (assistantId: string) => {
-      if (!selectedKeyId) return;
-      const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-      if (!selectedKey) return;
+      if (!activeKey?.key) return;
 
       try {
-        const response = await fetch(`/api/assistant/${assistantId}`, {
-          method: "GET",
-          headers: { "X-API-KEY": selectedKey.key },
-        });
-        if (!response.ok) return;
-        const result = await response.json();
+        const result = await apiFetch<{
+          success: boolean;
+          data?: AssistantConfig;
+        }>(`/api/assistant/${assistantId}`, activeKey.key);
         if (result.success && result.data) {
           setAssistantConfigs((prev) =>
-            new Map(prev).set(assistantId, result.data),
+            new Map(prev).set(assistantId, result.data!),
           );
         }
       } catch (err) {
@@ -128,7 +109,7 @@ export default function EvaluationsTab({
         );
       }
     },
-    [apiKeys, selectedKeyId],
+    [activeKey],
   );
 
   useEffect(() => {
@@ -140,8 +121,8 @@ export default function EvaluationsTab({
   }, [evalJobs, assistantConfigs, fetchAssistantConfig]);
 
   useEffect(() => {
-    if (selectedKeyId) fetchEvaluations();
-  }, [selectedKeyId, fetchEvaluations]);
+    if (activeKey?.key) fetchEvaluations();
+  }, [activeKey, fetchEvaluations]);
 
   return (
     <div className="flex-1 flex overflow-hidden">

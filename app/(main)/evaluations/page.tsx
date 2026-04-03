@@ -40,6 +40,7 @@ function SimplifiedEvalContent() {
 
   const { sidebarCollapsed } = useApp();
   const { activeKey, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   // Dataset creation state
@@ -81,7 +82,7 @@ function SimplifiedEvalContent() {
     try {
       const data = await apiFetch<Dataset[] | { data: Dataset[] }>(
         "/api/evaluations/datasets",
-        activeKey.key,
+        apiKey,
       );
       setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
@@ -89,7 +90,7 @@ function SimplifiedEvalContent() {
     } finally {
       setIsDatasetsLoading(false);
     }
-  }, [activeKey, isAuthenticated]);
+  }, [apiKey, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) loadStoredDatasets();
@@ -177,7 +178,7 @@ function SimplifiedEvalContent() {
 
       const data = await apiFetch<{ dataset_id?: number }>(
         "/api/evaluations/datasets",
-        activeKey.key,
+        apiKey,
         { method: "POST", body: formData },
       );
       await loadStoredDatasets();
@@ -228,7 +229,7 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
       };
 
-      await apiFetch("/api/evaluations", activeKey.key, {
+      await apiFetch("/api/evaluations", apiKey, {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -304,14 +305,14 @@ function SimplifiedEvalContent() {
               }}
               storedDatasets={storedDatasets}
               isDatasetsLoading={isDatasetsLoading}
-              activeKey={activeKey}
+              apiKey={apiKey}
               loadStoredDatasets={loadStoredDatasets}
               toast={toast}
             />
           ) : (
             <EvaluationsTab
               leftPanelWidth={leftPanelWidth}
-              activeKey={activeKey}
+              apiKey={apiKey}
               storedDatasets={storedDatasets}
               selectedDatasetId={selectedDatasetId}
               setSelectedDatasetId={setSelectedDatasetId}

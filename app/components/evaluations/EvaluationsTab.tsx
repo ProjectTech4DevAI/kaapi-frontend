@@ -9,14 +9,13 @@ import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { APIKey } from "@/app/lib/types/credentials";
 import { useAuth } from "@/app/lib/context/AuthContext";
 
 type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
-  activeKey: APIKey;
+  apiKey: string;
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   setSelectedDatasetId: (id: string) => void;
@@ -32,7 +31,7 @@ export interface EvaluationsTabProps {
 
 export default function EvaluationsTab({
   leftPanelWidth,
-  activeKey,
+  apiKey,
   storedDatasets,
   selectedDatasetId,
   setSelectedDatasetId,
@@ -74,7 +73,7 @@ export default function EvaluationsTab({
     try {
       const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
         "/api/evaluations",
-        activeKey.key,
+        apiKey,
       );
       setEvalJobs(Array.isArray(data) ? data : data.data || []);
     } catch (err: unknown) {
@@ -84,7 +83,7 @@ export default function EvaluationsTab({
     } finally {
       setIsLoading(false);
     }
-  }, [activeKey, isAuthenticated]);
+  }, [apiKey, isAuthenticated]);
 
   const fetchAssistantConfig = useCallback(
     async (assistantId: string) => {
@@ -94,7 +93,7 @@ export default function EvaluationsTab({
         const result = await apiFetch<{
           success: boolean;
           data?: AssistantConfig;
-        }>(`/api/assistant/${assistantId}`, activeKey.key);
+        }>(`/api/assistant/${assistantId}`, apiKey);
         if (result.success && result.data) {
           setAssistantConfigs((prev) =>
             new Map(prev).set(assistantId, result.data!),
@@ -107,7 +106,7 @@ export default function EvaluationsTab({
         );
       }
     },
-    [activeKey, isAuthenticated],
+    [apiKey, isAuthenticated],
   );
 
   useEffect(() => {

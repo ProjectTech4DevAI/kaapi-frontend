@@ -688,7 +688,7 @@ export default function ConfigSelector({
                       className="text-sm font-mono"
                       style={{ color: colors.text.primary }}
                     >
-                      {selectedConfig.temperature.toFixed(2)}
+                      {selectedConfig.temperature!.toFixed(2)}
                     </div>
                   </div>
                 )}

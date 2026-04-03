@@ -345,7 +345,7 @@ export default function Sidebar({
         ) : !isAuthenticated ? (
           <div className="px-4 py-4 w-60 border-t border-border">
             <div className="rounded-lg bg-neutral-50 py-3">
-              <p className="text-sm font-semibold text-text-primary">
+              <p className="text-sm font-bold text-text-primary">
                 Get full access
               </p>
               <p className="text-xs text-text-secondary mt-1 leading-relaxed">

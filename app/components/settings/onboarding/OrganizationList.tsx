@@ -25,7 +25,9 @@ export default function OrganizationList({
           </p>
         </div>
         {currentUser?.is_superuser && (
-          <Button onClick={onNewOrg}>+ New Organization</Button>
+          <Button size="sm" onClick={onNewOrg}>
+            + New Organization
+          </Button>
         )}
       </div>
 

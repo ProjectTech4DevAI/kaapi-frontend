@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { context, propagation } from "@opentelemetry/api";
 
 const BACKEND_URL =
   process.env.BACKEND_URL || "http://localhost:8000";
@@ -17,6 +18,13 @@ export async function apiClient(
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
   headers.set("X-API-KEY", apiKey);
+
+  // Propagate W3C trace context (traceparent) to the backend
+  const carrier: Record<string, string> = {};
+  propagation.inject(context.active(), carrier);
+  for (const [key, value] of Object.entries(carrier)) {
+    headers.set(key, value);
+  }
 
   const response = await fetch(`${BACKEND_URL}${endpoint}`, {
     ...options,

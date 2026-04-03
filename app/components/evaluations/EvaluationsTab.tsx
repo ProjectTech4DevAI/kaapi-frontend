@@ -9,13 +9,14 @@ import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
+import { APIKey } from "@/app/lib/types/credentials";
 import { useAuth } from "@/app/lib/context/AuthContext";
 
 type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
-  apiKey: string;
+  activeKey: APIKey;
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   setSelectedDatasetId: (id: string) => void;
@@ -31,7 +32,7 @@ export interface EvaluationsTabProps {
 
 export default function EvaluationsTab({
   leftPanelWidth,
-  apiKey,
+  activeKey,
   storedDatasets,
   selectedDatasetId,
   setSelectedDatasetId,
@@ -62,7 +63,6 @@ export default function EvaluationsTab({
     selectedConfigVersion &&
     !isEvaluating;
 
-  // Fetch evaluation jobs
   const { isAuthenticated } = useAuth();
 
   const fetchEvaluations = useCallback(async () => {
@@ -74,7 +74,7 @@ export default function EvaluationsTab({
     try {
       const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
         "/api/evaluations",
-        apiKey,
+        activeKey.key,
       );
       setEvalJobs(Array.isArray(data) ? data : data.data || []);
     } catch (err: unknown) {
@@ -84,9 +84,8 @@ export default function EvaluationsTab({
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, isAuthenticated]);
+  }, [activeKey, isAuthenticated]);
 
-  // Fetch assistant config
   const fetchAssistantConfig = useCallback(
     async (assistantId: string) => {
       if (!isAuthenticated) return;
@@ -95,7 +94,7 @@ export default function EvaluationsTab({
         const result = await apiFetch<{
           success: boolean;
           data?: AssistantConfig;
-        }>(`/api/assistant/${assistantId}`, apiKey);
+        }>(`/api/assistant/${assistantId}`, activeKey.key);
         if (result.success && result.data) {
           setAssistantConfigs((prev) =>
             new Map(prev).set(assistantId, result.data!),
@@ -108,7 +107,7 @@ export default function EvaluationsTab({
         );
       }
     },
-    [apiKey, isAuthenticated],
+    [activeKey, isAuthenticated],
   );
 
   useEffect(() => {

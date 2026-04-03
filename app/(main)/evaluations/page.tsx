@@ -39,15 +39,9 @@ function SimplifiedEvalContent() {
   });
 
   const { sidebarCollapsed } = useApp();
-  const { apiKeys, isAuthenticated } = useAuth();
-  const apiKey = apiKeys[0]?.key ?? "";
+  const { activeKey, isAuthenticated } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Dataset creation state
   const [datasetName, setDatasetName] = useState("");
   const [datasetDescription, setDatasetDescription] = useState("");
@@ -77,14 +71,17 @@ function SimplifiedEvalContent() {
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
 
-  // Fetch datasets from backend
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const loadStoredDatasets = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsDatasetsLoading(true);
     try {
       const data = await apiFetch<Dataset[] | { data: Dataset[] }>(
         "/api/evaluations/datasets",
-        apiKey,
+        activeKey.key,
       );
       setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
@@ -92,13 +89,12 @@ function SimplifiedEvalContent() {
     } finally {
       setIsDatasetsLoading(false);
     }
-  }, [apiKey, isAuthenticated]);
+  }, [activeKey, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) loadStoredDatasets();
   }, [isAuthenticated, loadStoredDatasets]);
 
-  // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -153,7 +149,6 @@ function SimplifiedEvalContent() {
     reader.readAsText(file);
   };
 
-  // Create dataset
   const handleCreateDataset = async () => {
     if (!uploadedFile) {
       toast.error("Please select a CSV file");
@@ -182,11 +177,8 @@ function SimplifiedEvalContent() {
 
       const data = await apiFetch<{ dataset_id?: number }>(
         "/api/evaluations/datasets",
-        apiKey,
-        {
-          method: "POST",
-          body: formData,
-        },
+        activeKey.key,
+        { method: "POST", body: formData },
       );
       await loadStoredDatasets();
 
@@ -194,7 +186,6 @@ function SimplifiedEvalContent() {
         setSelectedDatasetId(data.dataset_id.toString());
       }
 
-      // Reset form
       setUploadedFile(null);
       setDatasetName("");
       setDatasetDescription("");
@@ -210,7 +201,6 @@ function SimplifiedEvalContent() {
     }
   };
 
-  // Run evaluation
   const handleRunEvaluation = async () => {
     if (!isAuthenticated) {
       toast.error("Please log in to run evaluations.");
@@ -238,20 +228,13 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
       };
 
-      const data = await apiFetch<{
-        id?: string;
-        data?: { id?: string };
-        eval_id?: string;
-      }>("/api/evaluations", apiKey, {
+      await apiFetch("/api/evaluations", activeKey.key, {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const evalId = data.id || data.data?.id || data.eval_id || "unknown";
 
       setIsEvaluating(false);
-      toast.success(
-        `Evaluation created! ${evalId !== "unknown" ? `Job ID: ${evalId}` : ""}`,
-      );
+      toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
       toast.error(
@@ -321,14 +304,14 @@ function SimplifiedEvalContent() {
               }}
               storedDatasets={storedDatasets}
               isDatasetsLoading={isDatasetsLoading}
-              apiKey={apiKey}
+              activeKey={activeKey}
               loadStoredDatasets={loadStoredDatasets}
               toast={toast}
             />
           ) : (
             <EvaluationsTab
               leftPanelWidth={leftPanelWidth}
-              apiKey={apiKey}
+              activeKey={activeKey}
               storedDatasets={storedDatasets}
               selectedDatasetId={selectedDatasetId}
               setSelectedDatasetId={setSelectedDatasetId}
@@ -350,7 +333,7 @@ function SimplifiedEvalContent() {
     </div>
   );
 }
-// Wrapper component with Suspense
+
 export default function SimplifiedEval() {
   return (
     <Suspense fallback={<Loader size="lg" message="Loading..." fullScreen />}>

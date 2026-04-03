@@ -7,6 +7,7 @@ import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 import Loader from "@/app/components/Loader";
+import { APIKey } from "@/app/lib/types/credentials";
 
 export interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -24,7 +25,7 @@ export interface DatasetsTabProps {
   resetForm: () => void;
   storedDatasets: Dataset[];
   isDatasetsLoading: boolean;
-  apiKey: string;
+  activeKey: APIKey;
   loadStoredDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
@@ -45,7 +46,7 @@ export default function DatasetsTab({
   resetForm,
   storedDatasets,
   isDatasetsLoading,
-  apiKey,
+  activeKey,
   loadStoredDatasets,
   toast,
 }: DatasetsTabProps) {
@@ -71,9 +72,11 @@ export default function DatasetsTab({
   }, [showDuplicationInfo]);
 
   const handleDeleteDataset = async (datasetId: number) => {
+    if (!activeKey?.key) return;
+
     setDeletingId(datasetId);
     try {
-      await apiFetch(`/api/evaluations/datasets/${datasetId}`, apiKey, {
+      await apiFetch(`/api/evaluations/datasets/${datasetId}`, activeKey.key, {
         method: "DELETE",
       });
       toast.success("Dataset deleted");
@@ -97,6 +100,8 @@ export default function DatasetsTab({
   } | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
+    if (!activeKey?.key) return;
+
     setViewingId(datasetId);
     try {
       const data = await apiFetch<{
@@ -105,7 +110,7 @@ export default function DatasetsTab({
         csv_content?: string;
       }>(
         `/api/evaluations/datasets/${datasetId}?include_signed_url=true&fetch_content=true`,
-        apiKey,
+        activeKey.key,
       );
       const signedUrl = data?.data?.signed_url || data?.signed_url;
       const csvText = data?.csv_content;

@@ -7,6 +7,7 @@ import {
   ConfigVersionItems,
 } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
+import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
 import {
   ChevronRightIcon,
   ChevronDownIcon,
@@ -15,11 +16,7 @@ import {
   SpinnerIcon,
   InfoIcon,
 } from "@/app/components/icons";
-import {
-  MODEL_OPTIONS,
-  PROVIDER_TYPES,
-  PROVIDES_OPTIONS,
-} from "@/app/lib/constants";
+import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -119,6 +116,7 @@ export default function ConfigEditorPane({
 
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
+  const isGpt5 = isGpt5Model(params.model);
   const tools = (params.tools || []) as Tool[];
 
   // Find currently selected config from loaded set
@@ -673,34 +671,35 @@ export default function ConfigEditorPane({
               </select>
             </div>
 
-            {/* Temperature */}
-            <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
-                Temperature: {(params.temperature ?? 0.7).toFixed(2)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={params.temperature ?? 0.7}
-                onChange={(e) =>
-                  handleTemperatureChange(parseFloat(e.target.value))
-                }
-                className="w-full"
-                style={{ accentColor: colors.accent.primary }}
-              />
-              <div
-                className="flex justify-between text-xs mt-1"
-                style={{ color: colors.text.secondary }}
-              >
-                <span>0</span>
-                <span>2</span>
+            {!isGpt5 && (
+              <div>
+                <label
+                  className="block text-xs font-semibold mb-2"
+                  style={{ color: colors.text.primary }}
+                >
+                  Temperature: {(params.temperature ?? 0.7).toFixed(2)}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.01"
+                  value={params.temperature ?? 0.7}
+                  onChange={(e) =>
+                    handleTemperatureChange(parseFloat(e.target.value))
+                  }
+                  className="w-full"
+                  style={{ accentColor: colors.accent.primary }}
+                />
+                <div
+                  className="flex justify-between text-xs mt-1"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <span>0</span>
+                  <span>2</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tools */}
             <div>
@@ -717,8 +716,6 @@ export default function ConfigEditorPane({
                   style={{
                     backgroundColor: colors.accent.primary,
                     color: colors.bg.primary,
-                    border: "none",
-                    cursor: "pointer",
                   }}
                 >
                   + Add Tool
@@ -778,55 +775,58 @@ export default function ConfigEditorPane({
                       }}
                     />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <label
-                        className="text-xs"
-                        style={{ color: colors.text.primary }}
-                      >
-                        Max Results
-                      </label>
-                      <div
-                        className="relative inline-flex items-center justify-center cursor-help w-[14px] h-[14px]"
-                        onMouseEnter={() => setShowTooltip(index)}
-                        onMouseLeave={() => setShowTooltip(null)}
-                      >
-                        <InfoIcon
-                          className="w-3.5 h-3.5"
-                          style={{ color: colors.text.secondary }}
-                        />
-                        {showTooltip === index && (
-                          <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-[#1f2937] text-white top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
-                            Controls how many matching results are returned
-                            <br />
-                            from the search
-                            <div className="absolute right-[100%] top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#1f2937]" />
-                          </div>
-                        )}
+
+                  {!isGpt5 && (
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        <label
+                          className="text-xs"
+                          style={{ color: colors.text.primary }}
+                        >
+                          Max Results
+                        </label>
+                        <div
+                          className="relative inline-flex items-center justify-center cursor-help w-[14px] h-[14px]"
+                          onMouseEnter={() => setShowTooltip(index)}
+                          onMouseLeave={() => setShowTooltip(null)}
+                        >
+                          <InfoIcon
+                            className="w-3.5 h-3.5"
+                            style={{ color: colors.text.secondary }}
+                          />
+                          {showTooltip === index && (
+                            <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-[#1f2937] text-white top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
+                              Controls how many matching results are returned
+                              <br />
+                              from the search
+                              <div className="absolute right-[100%] top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#1f2937]" />
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      <input
+                        type="number"
+                        value={tool.max_num_results}
+                        onChange={(e) =>
+                          handleUpdateTool(
+                            index,
+                            "max_num_results",
+                            parseInt(e.target.value) || 20,
+                          )
+                        }
+                        className="w-full px-2 py-1 rounded text-xs focus:outline-none"
+                        style={{
+                          border: `1px solid ${colors.border}`,
+                          backgroundColor: colors.bg.primary,
+                          color: colors.text.primary,
+                        }}
+                      />
                     </div>
-                    <input
-                      type="number"
-                      value={tool.max_num_results}
-                      onChange={(e) =>
-                        handleUpdateTool(
-                          index,
-                          "max_num_results",
-                          parseInt(e.target.value) || 20,
-                        )
-                      }
-                      className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-gray-300"
-                      style={{
-                        backgroundColor: colors.bg.primary,
-                        color: colors.text.primary,
-                      }}
-                    />
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Commit Message */}
             <div>
               <label
                 className="block text-xs font-semibold mb-2"
@@ -848,7 +848,6 @@ export default function ConfigEditorPane({
               />
             </div>
 
-            {/* Save Button */}
             <button
               onClick={onSave}
               disabled={!configName.trim() || isSaving}

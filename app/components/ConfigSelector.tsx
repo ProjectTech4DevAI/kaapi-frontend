@@ -54,11 +54,11 @@ export default function ConfigSelector({
   const [promptExpanded, setPromptExpanded] = useState(false);
   const [isPromptOverflowing, setIsPromptOverflowing] = useState(false);
   const promptRef = useRef<HTMLDivElement>(null);
-  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null); // config group is expanded in the dropdown
+  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
   const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
     new Set(),
-  ); // State for use which config groups are currently loading their version list
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false); // True while full config details are being fetched for the preview pane
+  );
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   // When a config group is expanded, eagerly load full version details (provider,
   // modelName, temperature).
@@ -86,13 +86,11 @@ export default function ConfigSelector({
     (c) => c.config_id === selectedConfigId && c.version === selectedVersion,
   );
 
-  // Config name from lightweight metadata
   const selectedConfigName = selectedConfigId
     ? allConfigMeta.find((m) => m.id === selectedConfigId)?.name
     : undefined;
 
   // Auto-load full config details for the preview pane whenever the selection changes
-  // and the full data isn't already in the loaded set.
   useEffect(() => {
     if (!selectedConfigId || !selectedVersion) {
       setIsLoadingPreview(false);
@@ -328,7 +326,7 @@ export default function ConfigSelector({
         style={{ color: colors.text.secondary }}
       >
         {full
-          ? `${full.provider}/${full.modelName} • T:${full.temperature.toFixed(2)} • ${formatRelativeTime(item.inserted_at)}`
+          ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""} • ${formatRelativeTime(item.inserted_at)}`
           : formatRelativeTime(item.inserted_at)}
       </div>
     );
@@ -591,7 +589,6 @@ export default function ConfigSelector({
                               </button>
                             );
                           })}
-                        {/* Spinner while version list is being fetched */}
                         {isExpanded && isLoadingGroup && (
                           <div
                             className="px-4 py-3 text-xs"
@@ -600,7 +597,7 @@ export default function ConfigSelector({
                             Loading versions…
                           </div>
                         )}
-                        {/* Empty state: expanded but no versions returned */}
+
                         {isExpanded &&
                           !isLoadingGroup &&
                           versionItems.length === 0 && (
@@ -676,20 +673,24 @@ export default function ConfigSelector({
                     {selectedConfig.provider}/{selectedConfig.modelName}
                   </div>
                 </div>
-                <div>
-                  <div
-                    className="text-xs font-medium mb-1"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    Temperature
+
+                {selectedConfig.temperature !== undefined && (
+                  <div>
+                    <div
+                      className="text-xs font-medium mb-1"
+                      style={{ color: colors.text.secondary }}
+                    >
+                      Temperature
+                    </div>
+                    <div
+                      className="text-sm font-mono"
+                      style={{ color: colors.text.primary }}
+                    >
+                      {selectedConfig.temperature.toFixed(2)}
+                    </div>
                   </div>
-                  <div
-                    className="text-sm font-mono"
-                    style={{ color: colors.text.primary }}
-                  >
-                    {selectedConfig.temperature.toFixed(2)}
-                  </div>
-                </div>
+                )}
+
                 {selectedConfig.tools && selectedConfig.tools.length > 0 && (
                   <>
                     <div className="col-span-2">

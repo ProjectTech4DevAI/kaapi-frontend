@@ -8,7 +8,7 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
-import { isGpt5Model } from "./models";
+import { isGpt5Model } from "@/app/lib/models";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -160,6 +160,16 @@ export const groupConfigs = (
     };
   });
 };
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
+export const isValidEmail = (email: string): boolean => EMAIL_REGEX.test(email);
+
+export const isValidPassword = (password: string): boolean =>
+  password.length >= MIN_PASSWORD_LENGTH;
+
+export const isNonEmpty = (value: string): boolean => value.trim().length > 0;
 
 export const escapeCSVValue = (value: string): string => {
   return value.replace(/"/g, '""').replace(/\n/g, " ");

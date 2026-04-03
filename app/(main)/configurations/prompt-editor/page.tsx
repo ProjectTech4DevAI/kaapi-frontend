@@ -19,7 +19,7 @@ import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useConfigs } from "@/app/hooks/useConfigs";
+import { useConfigs } from "@/app/hooks";
 import {
   SavedConfig,
   ConfigCreate,

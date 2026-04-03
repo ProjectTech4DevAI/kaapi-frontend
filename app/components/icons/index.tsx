@@ -1,6 +1,9 @@
 // Common Icons (shared across multiple pages)
+export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
+export { default as EyeIcon } from "./common/EyeIcon";
+export { default as EyeOffIcon } from "./common/EyeOffIcon";
 export { default as RefreshIcon } from "./common/RefreshIcon";
 export { default as GearIcon } from "./common/GearIcon";
 export { default as WarningTriangleIcon } from "./common/WarningTriangleIcon";

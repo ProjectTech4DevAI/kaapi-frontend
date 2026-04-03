@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   ClipboardIcon,
   DocumentFileIcon,
@@ -41,6 +42,7 @@ export default function Sidebar({
   activeRoute = "/evaluations",
 }: SidebarProps) {
   const router = useRouter();
+  const { currentUser } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     Evaluations: true,
     Configurations: false,
@@ -91,11 +93,18 @@ export default function Sidebar({
         { name: "Prompt Editor", route: "/configurations/prompt-editor" },
       ],
     },
-    {
-      name: "Settings",
-      route: "/settings/credentials",
-      icon: <SlidersIcon />,
-    },
+    ...(currentUser?.is_superuser
+      ? [
+          {
+            name: "Settings",
+            icon: <SlidersIcon />,
+            submenu: [
+              { name: "Credentials", route: "/settings/credentials" },
+              { name: "Onboarding", route: "/settings/onboarding" },
+            ],
+          },
+        ]
+      : []),
   ];
 
   const bottomItem: MenuItem = {

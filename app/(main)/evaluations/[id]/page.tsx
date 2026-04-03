@@ -107,7 +107,6 @@ export default function EvaluationReport() {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, selectedKeyId, jobId, exportFormat]);
 
   const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {

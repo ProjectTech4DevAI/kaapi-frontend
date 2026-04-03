@@ -408,7 +408,6 @@ export default function TextToSpeechPage() {
     if (activeTab === "evaluations") {
       loadRuns();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys, activeTab]);
 
   // Add a new text sample

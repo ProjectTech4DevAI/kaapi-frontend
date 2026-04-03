@@ -45,7 +45,6 @@ export default function CredentialsPage() {
   useEffect(() => {
     if (apiKeys.length === 0) return;
     loadCredentials();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKeys]);
 
   // Re-populate form when provider or credentials change

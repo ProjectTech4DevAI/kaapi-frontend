@@ -58,7 +58,7 @@ export default function Modal({
             {showClose && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary"
+                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
               >
                 <CloseIcon className="w-5 h-5" />
               </button>

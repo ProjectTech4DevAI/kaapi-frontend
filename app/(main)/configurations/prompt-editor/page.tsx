@@ -36,7 +36,7 @@ function PromptEditorContent() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const { sidebarCollapsed } = useApp();
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
   const urlConfigId = searchParams.get("config");
   const urlVersion = searchParams.get("version");
   const showHistory = searchParams.get("history") === "true";
@@ -253,9 +253,9 @@ function PromptEditorContent() {
       return;
     }
 
-    const apiKey = activeKey?.key;
-    if (!apiKey) {
-      toast.error("No API key found. Please add an API key in the Keystore.");
+    const apiKey = activeKey?.key ?? "";
+    if (!isAuthenticated) {
+      toast.error("Please log in to save configurations.");
       return;
     }
 

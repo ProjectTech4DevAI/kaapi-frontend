@@ -1,11 +1,10 @@
 "use client";
 
-import { APIKey } from "@/app/lib/types/credentials";
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/(main)/document/page";
+import { Document } from "@/app/lib/types/document";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   RefreshIcon,
-  KeyIcon,
   DocumentFileIcon,
   TrashIcon,
 } from "@/app/components/icons";
@@ -19,7 +18,6 @@ interface DocumentListingProps {
   isLoading: boolean;
   isLoadingMore: boolean;
   error: string | null;
-  apiKey: APIKey | null;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -32,9 +30,9 @@ export function DocumentListing({
   isLoading,
   isLoadingMore,
   error,
-  apiKey,
   scrollRef,
 }: DocumentListingProps) {
+  const { isAuthenticated } = useAuth();
   return (
     <div className="h-full flex flex-col">
       <div className="px-4 py-2.5 border-b bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
@@ -61,21 +59,12 @@ export function DocumentListing({
             <RefreshIcon className="w-12 h-12 mx-auto mb-4 animate-spin" />
             <p className="text-sm">Loading documents...</p>
           </div>
-        ) : !apiKey ? (
+        ) : !isAuthenticated ? (
           <div className="text-center py-12 text-[hsl(330,3%,49%)]">
-            <KeyIcon className="mx-auto mb-4" />
             <p className="font-medium mb-2 text-[hsl(330,3%,19%)]">
-              No API key found
+              Login required
             </p>
-            <p className="text-sm mb-4">
-              Please add an API key in the Keystore
-            </p>
-            <a
-              href="/keystore"
-              className="inline-block px-6 py-2 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white"
-            >
-              Go to Keystore
-            </a>
+            <p className="text-sm">Please log in to manage documents</p>
           </div>
         ) : error ? (
           <div className="border rounded-lg p-6 bg-[hsl(8,86%,95%)] border-[hsl(8,86%,80%)]">

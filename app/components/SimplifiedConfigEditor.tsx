@@ -14,6 +14,8 @@
 import { useState, useEffect } from "react";
 import ConfigDrawer from "./ConfigDrawer";
 import { useToast } from "./Toast";
+import { apiFetch } from "@/app/lib/apiClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   ConfigPublic,
   ConfigVersionPublic,
@@ -24,6 +26,7 @@ import {
   ConfigListResponse,
   ConfigWithVersionResponse,
   ConfigVersionListResponse,
+  ConfigVersionResponse,
 } from "@/app/lib/types/configs";
 import { colors } from "../lib/colors";
 
@@ -80,20 +83,8 @@ export default function SimplifiedConfigEditor({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>("");
-
-  // Get API key from localStorage
-  const getApiKey = (): string | null => {
-    try {
-      const stored = localStorage.getItem("kaapi_api_keys");
-      if (stored) {
-        const keys = JSON.parse(stored);
-        return keys.length > 0 ? keys[0].key : null;
-      }
-    } catch (e) {
-      console.error("Failed to get API key:", e);
-    }
-    return null;
-  };
+  const { activeKey, isAuthenticated } = useAuth();
+  const apiKeyStr = activeKey?.key ?? "";
 
   // Flatten config versions for UI
   const flattenConfigVersion = (
@@ -143,21 +134,15 @@ export default function SimplifiedConfigEditor({
   useEffect(() => {
     const fetchConfigs = async () => {
       setIsLoading(true);
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        console.warn(
-          "No API key found. Please add an API key in the Keystore.",
-        );
+      if (!isAuthenticated) {
         setIsLoading(false);
         return;
       }
+      const apiKey = apiKeyStr;
 
       try {
         // Fetch all configs
-        const response = await fetch("/api/configs", {
-          headers: { "X-API-KEY": apiKey },
-        });
-        const data: ConfigListResponse = await response.json();
+        const data = await apiFetch<ConfigListResponse>("/api/configs", apiKey);
 
         if (!data.success || !data.data) {
           console.error("Failed to fetch configs:", data.error);
@@ -169,24 +154,19 @@ export default function SimplifiedConfigEditor({
         const allVersions: SavedConfig[] = [];
         for (const config of data.data) {
           try {
-            const versionsResponse = await fetch(
+            const versionsData = await apiFetch<ConfigVersionListResponse>(
               `/api/configs/${config.id}/versions`,
-              {
-                headers: { "X-API-KEY": apiKey },
-              },
+              apiKey,
             );
-            const versionsData: ConfigVersionListResponse =
-              await versionsResponse.json();
 
             if (versionsData.success && versionsData.data) {
               // Fetch full version details for each version
               for (const versionItem of versionsData.data) {
                 try {
-                  const versionResponse = await fetch(
+                  const versionData = await apiFetch<ConfigVersionResponse>(
                     `/api/configs/${config.id}/versions/${versionItem.version}`,
-                    { headers: { "X-API-KEY": apiKey } },
+                    apiKey,
                   );
-                  const versionData = await versionResponse.json();
 
                   if (versionData.success && versionData.data) {
                     allVersions.push(
@@ -260,11 +240,11 @@ export default function SimplifiedConfigEditor({
       return;
     }
 
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      toast.error("No API key found. Please add an API key in the Keystore.");
+    if (!isAuthenticated) {
+      toast.error("Please log in to save configurations.");
       return;
     }
+    const apiKey = apiKeyStr;
 
     try {
       // Build config blob
@@ -312,19 +292,14 @@ export default function SimplifiedConfigEditor({
             `Updated to ${modelName} with temperature ${temperature}`,
         };
 
-        const response = await fetch(
+        const data = await apiFetch<ConfigVersionResponse>(
           `/api/configs/${existingConfig.config_id}/versions`,
+          apiKey,
           {
             method: "POST",
-            headers: {
-              "X-API-KEY": apiKey,
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify(versionCreate),
           },
         );
-
-        const data = await response.json();
 
         if (!data.success) {
           toast.error(
@@ -345,16 +320,14 @@ export default function SimplifiedConfigEditor({
           commit_message: commitMessage.trim() || "Initial version",
         };
 
-        const response = await fetch("/api/configs", {
-          method: "POST",
-          headers: {
-            "X-API-KEY": apiKey,
-            "Content-Type": "application/json",
+        const data = await apiFetch<ConfigWithVersionResponse>(
+          "/api/configs",
+          apiKey,
+          {
+            method: "POST",
+            body: JSON.stringify(configCreate),
           },
-          body: JSON.stringify(configCreate),
-        });
-
-        const data: ConfigWithVersionResponse = await response.json();
+        );
 
         if (!data.success || !data.data) {
           toast.error(
@@ -367,32 +340,27 @@ export default function SimplifiedConfigEditor({
       }
 
       // Refresh configs list
-      const response = await fetch("/api/configs", {
-        headers: { "X-API-KEY": apiKey },
-      });
-      const data: ConfigListResponse = await response.json();
+      const refreshData = await apiFetch<ConfigListResponse>(
+        "/api/configs",
+        apiKey,
+      );
 
-      if (data.success && data.data) {
+      if (refreshData.success && refreshData.data) {
         const allVersions: SavedConfig[] = [];
-        for (const config of data.data) {
+        for (const config of refreshData.data) {
           try {
-            const versionsResponse = await fetch(
+            const versionsData = await apiFetch<ConfigVersionListResponse>(
               `/api/configs/${config.id}/versions`,
-              {
-                headers: { "X-API-KEY": apiKey },
-              },
+              apiKey,
             );
-            const versionsData: ConfigVersionListResponse =
-              await versionsResponse.json();
 
             if (versionsData.success && versionsData.data) {
               for (const versionItem of versionsData.data) {
                 try {
-                  const versionResponse = await fetch(
+                  const versionData = await apiFetch<ConfigVersionResponse>(
                     `/api/configs/${config.id}/versions/${versionItem.version}`,
-                    { headers: { "X-API-KEY": apiKey } },
+                    apiKey,
                   );
-                  const versionData = await versionResponse.json();
 
                   if (versionData.success && versionData.data) {
                     allVersions.push(

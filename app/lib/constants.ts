@@ -15,6 +15,9 @@ export const DEFAULT_PAGE_LIMIT = 10;
 /** Custom event dispatched when background validation invalidates the in-memory cache */
 export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 
+/** Dispatched when the user's session is no longer valid (expired or revoked). */
+export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
+
 export const PROVIDES_OPTIONS = [
   { value: "openai", label: "OpenAI" },
   { value: "anthropic", label: "Anthropic" },

@@ -9,7 +9,12 @@ import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
 import { EvalJob, AssistantConfig } from "./types";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Tool } from "@/app/lib/types/configs";
+import { apiFetch } from "@/app/lib/apiClient";
+import {
+  Tool,
+  ConfigVersionPublic,
+  CompletionParams,
+} from "@/app/lib/types/configs";
 
 interface ConfigModalProps {
   isOpen: boolean;
@@ -24,7 +29,7 @@ interface ConfigVersionInfo {
   model?: string;
   instructions?: string;
   temperature?: number;
-  tools?: { type: string; [key: string]: unknown }[];
+  tools?: Tool[];
   provider?: string;
   type?: "text" | "stt" | "tts";
   knowledge_base_ids?: string[];
@@ -36,7 +41,7 @@ export default function ConfigModal({
   job,
   assistantConfig,
 }: ConfigModalProps) {
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
   const [configVersionInfo, setConfigVersionInfo] =
     useState<ConfigVersionInfo | null>(null);
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
@@ -49,45 +54,31 @@ export default function ConfigModal({
     }
 
     const fetchConfigVersionInfo = async () => {
+      if (!isAuthenticated) return;
+      const apiKey = activeKey?.key ?? "";
+
       setIsLoadingConfig(true);
       try {
-        const apiKey = activeKey?.key;
-        if (!apiKey) {
-          console.error("No API key found");
-          return;
-        }
-
         // Fetch config name first
-        const configResponse = await fetch(`/api/configs/${job.config_id}`, {
-          headers: { "X-API-KEY": apiKey },
-        });
-
-        if (!configResponse.ok) {
-          console.error("Failed to fetch config info");
-          return;
-        }
-
-        const configData = await configResponse.json();
+        const configData = await apiFetch<{
+          success: boolean;
+          data?: { name: string };
+        }>(`/api/configs/${job.config_id}`, apiKey);
         const configName =
           configData.success && configData.data ? configData.data.name : null;
 
         // Fetch full version details including config_blob
-        const versionResponse = await fetch(
+        const versionData = await apiFetch<{
+          success: boolean;
+          data?: ConfigVersionPublic;
+        }>(
           `/api/configs/${job.config_id}/versions/${job.config_version}`,
-          {
-            headers: { "X-API-KEY": apiKey },
-          },
+          apiKey,
         );
-
-        if (!versionResponse.ok) {
-          console.error("Failed to fetch version details");
-          return;
-        }
-
-        const versionData = await versionResponse.json();
         if (versionData.success && versionData.data) {
           const blob = versionData.data.config_blob;
-          const params = blob?.completion?.params || {};
+          const params: CompletionParams =
+            blob?.completion?.params || ({} as CompletionParams);
 
           // Extract knowledge base IDs from multiple sources
           const knowledgeBaseIds: string[] = [];

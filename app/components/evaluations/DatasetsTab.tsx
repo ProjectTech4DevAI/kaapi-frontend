@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
-import { APIKey } from "@/app/lib/types/credentials";
 import { Dataset } from "@/app/(main)/datasets/page";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 import Loader from "@/app/components/Loader";
-
 export interface DatasetsTabProps {
   leftPanelWidth: number;
   datasetName: string;
@@ -25,7 +23,7 @@ export interface DatasetsTabProps {
   resetForm: () => void;
   storedDatasets: Dataset[];
   isDatasetsLoading: boolean;
-  activeKey: APIKey;
+  apiKey: string;
   loadStoredDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
@@ -46,7 +44,7 @@ export default function DatasetsTab({
   resetForm,
   storedDatasets,
   isDatasetsLoading,
-  activeKey,
+  apiKey,
   loadStoredDatasets,
   toast,
 }: DatasetsTabProps) {
@@ -72,18 +70,19 @@ export default function DatasetsTab({
   }, [showDuplicationInfo]);
 
   const handleDeleteDataset = async (datasetId: number) => {
-    if (!activeKey?.key) return;
+    if (!apiKey) return;
 
     setDeletingId(datasetId);
     try {
-      await apiFetch(`/api/evaluations/datasets/${datasetId}`, activeKey.key, {
+      await apiFetch(`/api/evaluations/datasets/${datasetId}`, apiKey, {
         method: "DELETE",
       });
       toast.success("Dataset deleted");
       loadStoredDatasets();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete dataset");
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to delete dataset",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -99,7 +98,7 @@ export default function DatasetsTab({
   } | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
-    if (!activeKey?.key) return;
+    if (!apiKey) return;
 
     setViewingId(datasetId);
     try {
@@ -109,7 +108,7 @@ export default function DatasetsTab({
         csv_content?: string;
       }>(
         `/api/evaluations/datasets/${datasetId}?include_signed_url=true&fetch_content=true`,
-        activeKey.key,
+        apiKey,
       );
       const signedUrl = data?.data?.signed_url || data?.signed_url;
       const csvText = data?.csv_content;
@@ -485,7 +484,7 @@ export default function DatasetsTab({
 
         {/* Bottom Action Bar */}
         <div
-          className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3"
+          className="flex-shrink-0 border-t px-4 py-4 flex items-center justify-end gap-3"
           style={{
             borderColor: colors.border,
             backgroundColor: colors.bg.primary,

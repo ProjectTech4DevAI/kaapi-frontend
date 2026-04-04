@@ -69,15 +69,15 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
   const [error, setError] = useState<string | null>(null);
   const [isCached, setIsCached] = useState<boolean>(false);
   const [totalKnownCount, setTotalKnownCount] = useState<number>(0);
-  const { activeKey, isHydrated } = useAuth();
-  const apiKey = activeKey?.key;
+  const { activeKey, isHydrated, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
 
   const fetchConfigs = useCallback(
     async (force: boolean = false) => {
       if (!isHydrated) return;
 
-      if (!apiKey) {
-        setError("No API key found. Please add an API key in the Keystore.");
+      if (!isAuthenticated) {
+        setError("Please log in to continue.");
         setIsLoading(false);
         return;
       }
@@ -239,7 +239,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         return;
       }
 
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
 
       const loadPromise = (async () => {
         const versionsData = await apiFetch<{
@@ -288,7 +288,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       const existing = pendingSingleVersionLoads.get(key);
       if (existing) return existing;
 
-      if (!apiKey) return null;
+      if (!isAuthenticated) return null;
 
       const configSource = configs.find((c) => c.config_id === config_id);
       // Fall back to the lightweight allConfigMeta when the config hasn't been detail-fetched yet
@@ -364,8 +364,8 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
   const loadMoreConfigs = useCallback(async () => {
     if (!configState.allConfigMeta || configState.allConfigMeta.length === 0)
       return;
-    const apiKey = activeKey?.key;
-    if (!apiKey) return;
+    const localApiKey = activeKey?.key ?? "";
+    if (!isAuthenticated) return;
 
     const loadedIds = new Set(
       (configState.inMemoryCache?.configs ?? configs).map((c) => c.config_id),
@@ -384,7 +384,11 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
 
     configState.pendingLoadMore = (async () => {
       const { newVersions, newVersionCounts, newConfigMeta } =
-        await fetchNextConfigBatch(apiKey, loadedIds, pageSize ?? PAGE_SIZE);
+        await fetchNextConfigBatch(
+          localApiKey,
+          loadedIds,
+          pageSize ?? PAGE_SIZE,
+        );
 
       setConfigs((prev) => {
         const merged = [...prev, ...newVersions];

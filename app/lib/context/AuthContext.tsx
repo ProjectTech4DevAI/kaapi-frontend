@@ -58,17 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        const data = await apiFetch<User>(
+        const res = await apiFetch<{ success: boolean; data: User } | User>(
           "/api/users/me",
           apiKeys[0]?.key ?? "",
         );
+        const userData =
+          "success" in res && res.data ? res.data : (res as User);
         if (!cancelled) {
-          setCurrentUser(data);
+          setCurrentUser(userData);
           const storedRaw = localStorage.getItem(SESSION_KEY);
           if (storedRaw) {
             try {
               const stored = JSON.parse(storedRaw);
-              stored.user = data;
+              stored.user = userData;
               localStorage.setItem(SESSION_KEY, JSON.stringify(stored));
             } catch {
               /* ignore */

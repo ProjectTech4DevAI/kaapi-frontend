@@ -9,11 +9,39 @@ export interface User {
 }
 
 export interface GoogleProfile {
-  email: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  given_name?: string;
+  family_name?: string;
+  [key: string]: unknown;
+}
+
+export interface Project {
+  id: number;
   name: string;
-  picture: string;
-  given_name: string;
-  family_name: string;
+}
+
+export interface GoogleAuthResponse {
+  success: boolean;
+  data: {
+    access_token: string;
+    token_type: string;
+    user: User;
+    google_profile: GoogleProfile;
+    requires_project_selection: boolean;
+    available_projects: Project[];
+  };
+  error?: string;
+}
+
+export interface AuthTokenResponse {
+  success: boolean;
+  data: {
+    access_token: string;
+    token_type: string;
+  };
+  error?: string;
 }
 
 export interface Session {

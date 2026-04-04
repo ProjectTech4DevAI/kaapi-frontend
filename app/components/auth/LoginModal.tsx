@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import Modal from "@/app/components/Modal";
-import { useAuth, User, GoogleProfile } from "@/app/lib/context/AuthContext";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { GoogleAuthResponse } from "@/app/lib/types/auth";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 
@@ -31,17 +32,13 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     setIsLoggingIn(true);
 
     try {
-      const data = await apiFetch<{
-        access_token: string;
-        token_type: string;
-        user: User;
-        google_profile: GoogleProfile;
-      }>("/api/auth/google", "", {
+      const res = await apiFetch<GoogleAuthResponse>("/api/auth/google", "", {
         method: "POST",
         body: JSON.stringify({ token }),
       });
 
-      loginWithGoogle(data.access_token, data.user, data.google_profile);
+      const { access_token, user, google_profile } = res.data;
+      loginWithGoogle(access_token, user, google_profile);
       onClose();
     } catch (err) {
       toast.error(

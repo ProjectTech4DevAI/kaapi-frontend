@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepare": "husky"
   },
   "dependencies": {
+    "cockatiel": "^3.2.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "next": "^16.0.7",
@@ -33,12 +36,14 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
+    "prettier": "^3.3.3",
     "tailwindcss": "^4",
     "typescript": "^5",
     "typescript-eslint": "^8.49.0"
   },
   "lint-staged": {
-    "**/*.{js,ts,jsx,tsx}": [
+    "**/*.{js,ts,jsx,tsx,json,md,css}": [
+      "prettier --write",
       "eslint --fix"
     ]
   }

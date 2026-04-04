@@ -1,58 +1,49 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import { apiClient } from "@/app/lib/apiClient";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ config_id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ config_id: string }> },
 ) {
   const { config_id } = await params;
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-  const search = request.nextUrl.searchParams.toString();
-  const url = `${backendUrl}/api/v1/configs/${config_id}/versions${search ? `?${search}` : ''}`;
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        'X-API-KEY': apiKey || '',
-      },
-    });
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const endpoint = `/api/v1/configs/${config_id}/versions${queryString ? `?${queryString}` : ""}`;
+    const { status, data } = await apiClient(request, endpoint);
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data, { status });
   } catch (_error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch versions', data: null },
-      { status: 500 }
+      { success: false, error: "Failed to fetch versions", data: null },
+      { status: 500 },
     );
   }
 }
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ config_id: string }> }
+  request: Request,
+  { params }: { params: Promise<{ config_id: string }> },
 ) {
   const { config_id } = await params;
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
 
   try {
     const body = await request.json();
-
-    const response = await fetch(`${backendUrl}/api/v1/configs/${config_id}/versions`, {
-      method: 'POST',
-      headers: {
-        'X-API-KEY': apiKey || '',
-        'Content-Type': 'application/json',
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/configs/${config_id}/versions`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
 
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data, { status });
   } catch (_error) {
     return NextResponse.json(
-      { success: false, error: 'Failed to create version', data: null },
-      { status: 500 }
+      { success: false, error: "Failed to create version", data: null },
+      { status: 500 },
     );
   }
 }

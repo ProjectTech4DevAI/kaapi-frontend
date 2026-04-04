@@ -6,8 +6,8 @@
  * - Expandable for full details
  */
 
-import React, { useState, useEffect } from 'react';
-import { colors } from '@/app/lib/colors';
+import React, { useState, useEffect } from "react";
+import { colors } from "@/app/lib/colors";
 
 interface WerMetrics {
   wer: number;
@@ -24,7 +24,7 @@ interface ModelComparisonCardProps {
   modelName: string;
   provider: string;
   transcript: string;
-  status: 'success' | 'error' | 'pending';
+  status: "success" | "error" | "pending";
   error?: string;
   strictMetrics?: WerMetrics;
   lenientMetrics?: WerMetrics;
@@ -38,17 +38,17 @@ interface ModelComparisonCardProps {
 // Get WER color based on value
 const getWerColor = (wer: number) => {
   if (wer < 5) return colors.status.success;
-  if (wer < 10) return '#ca8a04'; // yellow-600
+  if (wer < 10) return "#ca8a04"; // yellow-600
   if (wer < 20) return colors.status.warning;
   return colors.status.error;
 };
 
 // Get WER label
 const getWerLabel = (wer: number) => {
-  if (wer < 5) return 'Excellent';
-  if (wer < 10) return 'Good';
-  if (wer < 20) return 'Fair';
-  return 'Poor';
+  if (wer < 5) return "Excellent";
+  if (wer < 10) return "Good";
+  if (wer < 20) return "Fair";
+  return "Poor";
 };
 
 export default function ModelComparisonCard({
@@ -70,8 +70,8 @@ export default function ModelComparisonCard({
   // Reset expanded state when status changes to pending
   // Also reset when modelId changes (new model added)
   useEffect(() => {
-    if (status === 'pending') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (status === "pending") {
+       
       setIsExpanded(false);
     }
   }, [status, modelId]);
@@ -82,7 +82,8 @@ export default function ModelComparisonCard({
   };
 
   // Check if we have enough data to show expanded content
-  const hasExpandedContent = status === 'success' && (transcript || strictMetrics);
+  const hasExpandedContent =
+    status === "success" && (transcript || strictMetrics);
 
   return (
     <div
@@ -91,12 +92,10 @@ export default function ModelComparisonCard({
         borderColor: isBest
           ? colors.status.success
           : isWorst
-          ? colors.status.error
-          : colors.border,
-        backgroundColor: isBest
-          ? 'rgba(22, 163, 74, 0.02)'
-          : colors.bg.primary,
-        borderWidth: isBest ? '2px' : '1px',
+            ? colors.status.error
+            : colors.border,
+        backgroundColor: isBest ? "rgba(22, 163, 74, 0.02)" : colors.bg.primary,
+        borderWidth: isBest ? "2px" : "1px",
       }}
     >
       {/* Minimal Header - Always Visible */}
@@ -113,9 +112,7 @@ export default function ModelComparisonCard({
 
             {/* Best Badge - small */}
             {isBest && (
-              <span
-                className="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 bg-[#dcfce7] text-[#15803d]"
-              >
+              <span className="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 bg-[#dcfce7] text-[#15803d]">
                 Best
               </span>
             )}
@@ -123,20 +120,23 @@ export default function ModelComparisonCard({
 
           {/* Right side: Status/WER + Expand */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {status === 'pending' && (
+            {status === "pending" && (
               <div
                 className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }}
+                style={{
+                  borderColor: colors.text.secondary,
+                  borderTopColor: "transparent",
+                }}
               />
             )}
 
-            {status === 'error' && (
+            {status === "error" && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-[#fee2e2] text-[#dc2626]">
                 Error
               </span>
             )}
 
-            {status === 'success' && werPercent !== null && (
+            {status === "success" && werPercent !== null && (
               <span
                 className="text-sm font-bold tabular-nums"
                 style={{ color: getWerColor(werPercent) }}
@@ -158,11 +158,16 @@ export default function ModelComparisonCard({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   style={{
-                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease',
+                    transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease",
                   }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
             )}
@@ -170,9 +175,12 @@ export default function ModelComparisonCard({
         </div>
 
         {/* Error Message */}
-        {status === 'error' && (
-          <div className="text-xs mt-2 truncate" style={{ color: colors.status.error }}>
-            {error || 'Transcription failed'}
+        {status === "error" && (
+          <div
+            className="text-xs mt-2 truncate"
+            style={{ color: colors.status.error }}
+          >
+            {error || "Transcription failed"}
           </div>
         )}
       </div>
@@ -181,33 +189,60 @@ export default function ModelComparisonCard({
       {isExpanded && hasExpandedContent && (
         <div
           className="border-t px-3 pb-3 pt-2 space-y-3"
-          style={{ borderColor: colors.border, backgroundColor: colors.bg.secondary }}
+          style={{
+            borderColor: colors.border,
+            backgroundColor: colors.bg.secondary,
+          }}
         >
           {/* WER Comparison */}
           {werPercent !== null && lenientWerPercent !== null ? (
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                <div className="text-xs mb-0.5" style={{ color: colors.text.secondary }}>
+              <div
+                className="p-2 rounded"
+                style={{ backgroundColor: colors.bg.primary }}
+              >
+                <div
+                  className="text-xs mb-0.5"
+                  style={{ color: colors.text.secondary }}
+                >
                   Strict WER
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-bold" style={{ color: getWerColor(werPercent) }}>
+                  <span
+                    className="text-lg font-bold"
+                    style={{ color: getWerColor(werPercent) }}
+                  >
                     {werPercent.toFixed(1)}%
                   </span>
-                  <span className="text-xs" style={{ color: getWerColor(werPercent) }}>
+                  <span
+                    className="text-xs"
+                    style={{ color: getWerColor(werPercent) }}
+                  >
                     {getWerLabel(werPercent)}
                   </span>
                 </div>
               </div>
-              <div className="p-2 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                <div className="text-xs mb-0.5" style={{ color: colors.text.secondary }}>
+              <div
+                className="p-2 rounded"
+                style={{ backgroundColor: colors.bg.primary }}
+              >
+                <div
+                  className="text-xs mb-0.5"
+                  style={{ color: colors.text.secondary }}
+                >
                   Lenient WER
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-bold" style={{ color: getWerColor(lenientWerPercent) }}>
+                  <span
+                    className="text-lg font-bold"
+                    style={{ color: getWerColor(lenientWerPercent) }}
+                  >
                     {lenientWerPercent.toFixed(1)}%
                   </span>
-                  <span className="text-xs" style={{ color: getWerColor(lenientWerPercent) }}>
+                  <span
+                    className="text-xs"
+                    style={{ color: getWerColor(lenientWerPercent) }}
+                  >
                     {getWerLabel(lenientWerPercent)}
                   </span>
                 </div>
@@ -218,9 +253,15 @@ export default function ModelComparisonCard({
             <div className="flex items-center justify-center py-2">
               <div
                 className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2"
-                style={{ borderColor: colors.text.secondary, borderTopColor: 'transparent' }}
+                style={{
+                  borderColor: colors.text.secondary,
+                  borderTopColor: "transparent",
+                }}
               />
-              <span className="text-xs" style={{ color: colors.text.secondary }}>
+              <span
+                className="text-xs"
+                style={{ color: colors.text.secondary }}
+              >
                 Computing WER...
               </span>
             </div>
@@ -229,27 +270,71 @@ export default function ModelComparisonCard({
           {/* Error Breakdown */}
           {strictMetrics && (
             <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="p-1.5 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                <div className="text-xs" style={{ color: colors.text.secondary }}>Sub</div>
-                <div className="text-sm font-medium" style={{ color: colors.status.warning }}>
+              <div
+                className="p-1.5 rounded"
+                style={{ backgroundColor: colors.bg.primary }}
+              >
+                <div
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Sub
+                </div>
+                <div
+                  className="text-sm font-medium"
+                  style={{ color: colors.status.warning }}
+                >
                   {strictMetrics.substitutions}
                 </div>
               </div>
-              <div className="p-1.5 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                <div className="text-xs" style={{ color: colors.text.secondary }}>Del</div>
-                <div className="text-sm font-medium" style={{ color: colors.status.error }}>
+              <div
+                className="p-1.5 rounded"
+                style={{ backgroundColor: colors.bg.primary }}
+              >
+                <div
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Del
+                </div>
+                <div
+                  className="text-sm font-medium"
+                  style={{ color: colors.status.error }}
+                >
                   {strictMetrics.deletions}
                 </div>
               </div>
-              <div className="p-1.5 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                <div className="text-xs" style={{ color: colors.text.secondary }}>Ins</div>
-                <div className="text-sm font-medium" style={{ color: colors.accent.primary }}>
+              <div
+                className="p-1.5 rounded"
+                style={{ backgroundColor: colors.bg.primary }}
+              >
+                <div
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Ins
+                </div>
+                <div
+                  className="text-sm font-medium"
+                  style={{ color: colors.accent.primary }}
+                >
                   {strictMetrics.insertions}
                 </div>
               </div>
-              <div className="p-1.5 rounded" style={{ backgroundColor: colors.bg.primary }}>
-                <div className="text-xs" style={{ color: colors.text.secondary }}>Words</div>
-                <div className="text-sm font-medium" style={{ color: colors.text.primary }}>
+              <div
+                className="p-1.5 rounded"
+                style={{ backgroundColor: colors.bg.primary }}
+              >
+                <div
+                  className="text-xs"
+                  style={{ color: colors.text.secondary }}
+                >
+                  Words
+                </div>
+                <div
+                  className="text-sm font-medium"
+                  style={{ color: colors.text.primary }}
+                >
                   {strictMetrics.reference_word_count}
                 </div>
               </div>
@@ -259,12 +344,18 @@ export default function ModelComparisonCard({
           {/* Transcription */}
           {transcript && (
             <div>
-              <div className="text-xs font-medium mb-1" style={{ color: colors.text.secondary }}>
+              <div
+                className="text-xs font-medium mb-1"
+                style={{ color: colors.text.secondary }}
+              >
                 Transcription
               </div>
               <div
                 className="text-xs p-2 rounded leading-relaxed max-h-24 overflow-auto"
-                style={{ backgroundColor: colors.bg.primary, color: colors.text.primary }}
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  color: colors.text.primary,
+                }}
               >
                 {transcript}
               </div>
@@ -282,8 +373,18 @@ export default function ModelComparisonCard({
                 border: `1px solid ${colors.border}`,
               }}
             >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
               View Diff Comparison
             </button>

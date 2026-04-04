@@ -1,6 +1,5 @@
-import React from 'react';
-import { colors } from '@/app/lib/colors';
-import { Config } from '@/app/configurations/prompt-editor/types';
+import { colors } from "@/app/lib/colors";
+import { Config } from "@/app/lib/types/promptEditor";
 
 interface HistoryTabProps {
   configs: Config[];
@@ -30,14 +29,14 @@ export default function HistoryTab({
   const sortedConfigs = [...configs].sort((a, b) => b.timestamp - a.timestamp);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       {sortedConfigs.length === 0 ? (
         <div
           style={{
-            padding: '24px',
-            textAlign: 'center',
+            padding: "24px",
+            textAlign: "center",
             color: colors.text.secondary,
-            fontSize: '13px',
+            fontSize: "13px",
           }}
         >
           No configurations saved yet.
@@ -48,15 +47,19 @@ export default function HistoryTab({
             key={config.id}
             onClick={() => onLoadConfig(config.id)}
             style={{
-              padding: '12px',
+              padding: "12px",
               border: `2px solid ${
-                selectedConfigId === config.id ? colors.accent.primary : colors.border
+                selectedConfigId === config.id
+                  ? colors.accent.primary
+                  : colors.border
               }`,
-              borderRadius: '6px',
-              cursor: 'pointer',
+              borderRadius: "6px",
+              cursor: "pointer",
               backgroundColor:
-                selectedConfigId === config.id ? colors.bg.secondary : colors.bg.primary,
-              transition: 'all 0.2s ease',
+                selectedConfigId === config.id
+                  ? colors.bg.secondary
+                  : colors.bg.primary,
+              transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
               if (selectedConfigId !== config.id) {
@@ -71,15 +74,15 @@ export default function HistoryTab({
           >
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '6px',
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "6px",
               }}
             >
               <span
                 style={{
-                  fontSize: '14px',
+                  fontSize: "14px",
                   fontWeight: 600,
                   color: colors.text.primary,
                 }}
@@ -88,7 +91,7 @@ export default function HistoryTab({
               </span>
               <span
                 style={{
-                  fontSize: '11px',
+                  fontSize: "11px",
                   color: colors.text.secondary,
                 }}
               >
@@ -97,20 +100,21 @@ export default function HistoryTab({
             </div>
             <div
               style={{
-                fontSize: '12px',
+                fontSize: "12px",
                 color: colors.text.secondary,
-                marginBottom: '6px',
+                marginBottom: "6px",
               }}
             >
-              {config.config_blob.completion.type || 'text'} • {config.config_blob.completion.params.model} • temp:{' '}
+              {config.config_blob.completion.type || "text"} •{" "}
+              {config.config_blob.completion.params.model} • temp:{" "}
               {config.config_blob.completion.params.temperature}
             </div>
             {config.commitMessage && (
               <div
                 style={{
-                  fontSize: '12px',
+                  fontSize: "12px",
                   color: colors.text.secondary,
-                  fontStyle: 'italic',
+                  fontStyle: "italic",
                 }}
               >
                 {config.commitMessage}

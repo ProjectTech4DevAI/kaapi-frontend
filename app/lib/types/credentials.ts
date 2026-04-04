@@ -102,3 +102,11 @@ export const PROVIDERS: ProviderDef[] = [
     ],
   },
 ];
+
+export interface APIKey {
+  id: string;
+  label: string;
+  key: string;
+  provider: string;
+  createdAt?: string;
+}

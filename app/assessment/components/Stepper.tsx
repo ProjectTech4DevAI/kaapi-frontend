@@ -1,6 +1,6 @@
 "use client";
 
-import { colors } from '@/app/lib/colors';
+import { colors } from "@/app/lib/colors";
 
 export interface Step {
   id: number;
@@ -14,9 +14,17 @@ interface StepperProps {
   completedSteps: Set<number>;
 }
 
-export default function Stepper({ steps, currentStep, onStepClick, completedSteps }: StepperProps) {
+export default function Stepper({
+  steps,
+  currentStep,
+  onStepClick,
+  completedSteps,
+}: StepperProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 px-6 py-4 border-b" style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}>
+    <div
+      className="flex flex-wrap items-center gap-2 px-6 py-4 border-b"
+      style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
+    >
       {steps.map((step, index) => {
         const isActive = currentStep === step.id;
         const isCompleted = completedSteps.has(step.id);
@@ -27,29 +35,54 @@ export default function Stepper({ steps, currentStep, onStepClick, completedStep
             {index > 0 && (
               <div
                 className="w-8 h-px"
-                style={{ backgroundColor: isCompleted || isActive ? colors.accent.primary : colors.border }}
+                style={{
+                  backgroundColor:
+                    isCompleted || isActive
+                      ? colors.accent.primary
+                      : colors.border,
+                }}
               />
             )}
             <button
               onClick={() => isClickable && onStepClick(step.id)}
               disabled={!isClickable}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium text-left transition-colors"
               style={{
-                backgroundColor: isActive ? colors.accent.primary : isCompleted ? colors.bg.secondary : 'transparent',
-                color: isActive ? '#ffffff' : isCompleted ? colors.text.primary : colors.text.secondary,
+                backgroundColor: isActive
+                  ? colors.accent.primary
+                  : isCompleted
+                    ? colors.bg.secondary
+                    : "transparent",
+                color: isActive
+                  ? "#ffffff"
+                  : isCompleted
+                    ? colors.text.primary
+                    : colors.text.secondary,
                 border: `1px solid ${isActive ? colors.accent.primary : isCompleted ? colors.border : colors.border}`,
-                cursor: isClickable ? 'pointer' : 'default',
+                cursor: isClickable ? "pointer" : "default",
                 opacity: isClickable ? 1 : 0.5,
               }}
             >
               {isCompleted && !isActive ? (
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               ) : (
-                <span className="w-4 h-4 flex items-center justify-center text-[10px] font-bold">{step.id}</span>
+                <span className="w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                  {step.id}
+                </span>
               )}
-              {step.label}
+              <span className="max-w-[9rem] leading-4">{step.label}</span>
             </button>
           </div>
         );

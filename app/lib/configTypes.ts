@@ -5,7 +5,7 @@
 
 // Config Blob Structure
 export interface Tool {
-  type: 'file_search';
+  type: "file_search";
   knowledge_base_ids: string[];
   max_num_results: number;
 }
@@ -24,8 +24,8 @@ export interface CompletionParams {
 }
 
 export interface CompletionConfig {
-  provider: 'openai'; // | 'anthropic' | 'google'; // Only OpenAI supported for now
-  type?: 'text' | 'stt' | 'tts'; // Config type - optional for backward compatibility
+  provider: "openai" | "google";
+  type?: "text" | "stt" | "tts"; // Config type - optional for backward compatibility
   params: CompletionParams;
 }
 

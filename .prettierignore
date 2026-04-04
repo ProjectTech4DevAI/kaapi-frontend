@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+coverage
+dist
+.git
+.husky
+public/mock-data
+*.tsbuildinfo
+next-env.d.ts
+.prettierrc
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { colors } from '@/app/lib/colors';
-import { useConfigs, SavedConfig, formatRelativeTime } from '@/app/lib/useConfigs';
-import { ConfigSelection, MAX_CONFIGS } from '../types';
+import { useState, useRef, useEffect } from "react";
+import { colors } from "@/app/lib/colors";
+import { useConfigs } from "@/app/hooks/useConfigs";
+import { SavedConfig } from "@/app/lib/types/configs";
+import { formatRelativeTime } from "@/app/lib/utils";
+import { ConfigSelection, MAX_CONFIGS } from "../types";
 
 interface MultiConfigStepProps {
   configs: ConfigSelection[];
@@ -20,20 +22,32 @@ export default function MultiConfigStep({
 }: MultiConfigStepProps) {
   const { configGroups, isLoading, error } = useConfigs();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filteredGroups = searchQuery.trim()
-    ? configGroups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? configGroups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
     : configGroups;
 
   const isSelected = (configId: string, version: number) =>
-    configs.some(c => c.config_id === configId && c.config_version === version);
+    configs.some(
+      (c) => c.config_id === configId && c.config_version === version,
+    );
 
   const handleSelect = (config: SavedConfig) => {
     if (isSelected(config.config_id, config.version)) {
-      setConfigs(configs.filter(c => !(c.config_id === config.config_id && c.config_version === config.version)));
+      setConfigs(
+        configs.filter(
+          (c) =>
+            !(
+              c.config_id === config.config_id &&
+              c.config_version === config.version
+            ),
+        ),
+      );
     } else if (configs.length < MAX_CONFIGS) {
       setConfigs([
         ...configs,
@@ -46,7 +60,7 @@ export default function MultiConfigStep({
         },
       ]);
     }
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   const removeConfig = (index: number) => {
@@ -56,14 +70,17 @@ export default function MultiConfigStep({
   // Close dropdown on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsDropdownOpen(false);
-        setSearchQuery('');
+        setSearchQuery("");
       }
     };
     if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClick);
-      return () => document.removeEventListener('mousedown', handleClick);
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
     }
   }, [isDropdownOpen]);
 
@@ -77,16 +94,25 @@ export default function MultiConfigStep({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h2 className="text-lg font-semibold" style={{ color: colors.text.primary }}>Select Configurations</h2>
+        <h2
+          className="text-lg font-semibold"
+          style={{ color: colors.text.primary }}
+        >
+          Select Configurations
+        </h2>
         <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
-          Choose up to {MAX_CONFIGS} configurations for comparison. Each will run as a separate batch.
+          Choose up to {MAX_CONFIGS} configurations for comparison. Each will
+          run as a separate batch.
         </p>
       </div>
 
       {/* Selected configs as tags */}
       {configs.length > 0 && (
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: colors.text.secondary }}>
+          <label
+            className="block text-xs font-medium mb-2"
+            style={{ color: colors.text.secondary }}
+          >
             Selected ({configs.length}/{MAX_CONFIGS})
           </label>
           <div className="flex flex-wrap gap-2">
@@ -94,19 +120,31 @@ export default function MultiConfigStep({
               <div
                 key={`${config.config_id}-${config.config_version}`}
                 className="inline-flex items-center gap-2 border rounded-full pl-3 pr-1.5 py-1.5"
-                style={{ borderColor: colors.accent.primary, backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
+                style={{
+                  borderColor: colors.accent.primary,
+                  backgroundColor: "rgba(59, 130, 246, 0.05)",
+                }}
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-medium" style={{ color: colors.text.primary }}>
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: colors.text.primary }}
+                  >
                     {config.name}
                   </span>
                   <span
                     className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                    style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                    style={{
+                      backgroundColor: colors.bg.secondary,
+                      color: colors.text.secondary,
+                    }}
                   >
                     v{config.config_version}
                   </span>
-                  <span className="text-xs" style={{ color: colors.text.secondary }}>
+                  <span
+                    className="text-xs"
+                    style={{ color: colors.text.secondary }}
+                  >
                     {config.provider}/{config.model}
                   </span>
                 </div>
@@ -115,8 +153,18 @@ export default function MultiConfigStep({
                   className="p-0.5 rounded-full transition-colors hover:bg-red-50"
                   style={{ color: colors.text.secondary }}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -128,14 +176,27 @@ export default function MultiConfigStep({
       {/* Config selector */}
       {configs.length < MAX_CONFIGS && (
         <div ref={dropdownRef} className="relative">
-          <label className="block text-xs font-medium mb-1.5" style={{ color: colors.text.secondary }}>
+          <label
+            className="block text-xs font-medium mb-1.5"
+            style={{ color: colors.text.secondary }}
+          >
             Add Configuration
           </label>
 
           {isLoading ? (
-            <div className="text-sm py-4 text-center" style={{ color: colors.text.secondary }}>Loading configurations...</div>
+            <div
+              className="text-sm py-4 text-center"
+              style={{ color: colors.text.secondary }}
+            >
+              Loading configurations...
+            </div>
           ) : error ? (
-            <div className="text-sm py-4 text-center" style={{ color: colors.status.error }}>{error}</div>
+            <div
+              className="text-sm py-4 text-center"
+              style={{ color: colors.status.error }}
+            >
+              {error}
+            </div>
           ) : (
             <div className="relative">
               {/* Trigger / search input */}
@@ -143,22 +204,37 @@ export default function MultiConfigStep({
                 className="flex items-center border rounded-lg px-3 py-2.5 cursor-text"
                 style={{
                   backgroundColor: colors.bg.primary,
-                  borderColor: isDropdownOpen ? colors.accent.primary : colors.border,
-                  boxShadow: isDropdownOpen ? `0 0 0 1px ${colors.accent.primary}` : 'none',
+                  borderColor: isDropdownOpen
+                    ? colors.accent.primary
+                    : colors.border,
+                  boxShadow: isDropdownOpen
+                    ? `0 0 0 1px ${colors.accent.primary}`
+                    : "none",
                 }}
                 onClick={() => {
                   setIsDropdownOpen(true);
                   inputRef.current?.focus();
                 }}
               >
-                <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.text.secondary }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="w-4 h-4 mr-2 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style={{ color: colors.text.secondary }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 <input
                   ref={inputRef}
                   type="text"
                   value={searchQuery}
-                  onChange={e => {
+                  onChange={(e) => {
                     setSearchQuery(e.target.value);
                     if (!isDropdownOpen) setIsDropdownOpen(true);
                   }}
@@ -169,12 +245,26 @@ export default function MultiConfigStep({
                 />
                 {isDropdownOpen && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setIsDropdownOpen(false); setSearchQuery(''); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDropdownOpen(false);
+                      setSearchQuery("");
+                    }}
                     className="p-0.5 rounded"
                     style={{ color: colors.text.secondary }}
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 15l7-7 7 7"
+                      />
                     </svg>
                   </button>
                 )}
@@ -184,15 +274,23 @@ export default function MultiConfigStep({
               {isDropdownOpen && (
                 <div
                   className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg overflow-hidden"
-                  style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+                  style={{
+                    backgroundColor: colors.bg.primary,
+                    borderColor: colors.border,
+                  }}
                 >
                   <div className="max-h-72 overflow-auto">
                     {filteredGroups.length === 0 ? (
-                      <div className="px-4 py-6 text-center text-sm" style={{ color: colors.text.secondary }}>
-                        {searchQuery ? `No configs match "${searchQuery}"` : 'No configurations available'}
+                      <div
+                        className="px-4 py-6 text-center text-sm"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        {searchQuery
+                          ? `No configs match "${searchQuery}"`
+                          : "No configurations available"}
                       </div>
                     ) : (
-                      filteredGroups.map(group => (
+                      filteredGroups.map((group) => (
                         <div key={group.config_id}>
                           {/* Group header */}
                           <div
@@ -205,39 +303,64 @@ export default function MultiConfigStep({
                           >
                             {group.name}
                             <span className="font-normal ml-1 normal-case">
-                              ({group.totalVersions} version{group.totalVersions !== 1 ? 's' : ''})
+                              ({group.totalVersions} version
+                              {group.totalVersions !== 1 ? "s" : ""})
                             </span>
                           </div>
                           {/* Versions */}
-                          {group.versions.map(version => {
-                            const selected = isSelected(version.config_id, version.version);
+                          {group.versions.map((version) => {
+                            const selected = isSelected(
+                              version.config_id,
+                              version.version,
+                            );
                             return (
                               <button
                                 key={version.id}
                                 onClick={() => handleSelect(version)}
                                 className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors border-b"
                                 style={{
-                                  backgroundColor: selected ? 'rgba(59, 130, 246, 0.04)' : colors.bg.primary,
+                                  backgroundColor: selected
+                                    ? "rgba(59, 130, 246, 0.04)"
+                                    : colors.bg.primary,
                                   borderColor: colors.border,
                                 }}
-                                onMouseEnter={e => {
-                                  if (!selected) e.currentTarget.style.backgroundColor = colors.bg.secondary;
+                                onMouseEnter={(e) => {
+                                  if (!selected)
+                                    e.currentTarget.style.backgroundColor =
+                                      colors.bg.secondary;
                                 }}
-                                onMouseLeave={e => {
-                                  e.currentTarget.style.backgroundColor = selected ? 'rgba(59, 130, 246, 0.04)' : colors.bg.primary;
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    selected
+                                      ? "rgba(59, 130, 246, 0.04)"
+                                      : colors.bg.primary;
                                 }}
                               >
                                 {/* Checkbox */}
                                 <div
                                   className="w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center"
                                   style={{
-                                    borderColor: selected ? colors.accent.primary : colors.border,
-                                    backgroundColor: selected ? colors.accent.primary : 'transparent',
+                                    borderColor: selected
+                                      ? colors.accent.primary
+                                      : colors.border,
+                                    backgroundColor: selected
+                                      ? colors.accent.primary
+                                      : "transparent",
                                   }}
                                 >
                                   {selected && (
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="white"
+                                      strokeWidth={3}
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M5 13l4 4L19 7"
+                                      />
                                     </svg>
                                   )}
                                 </div>
@@ -246,20 +369,35 @@ export default function MultiConfigStep({
                                   <div className="flex items-center gap-2">
                                     <span
                                       className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                                      style={{ backgroundColor: colors.bg.secondary, color: colors.text.secondary }}
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        color: colors.text.secondary,
+                                      }}
                                     >
                                       v{version.version}
                                     </span>
-                                    <span className="text-sm truncate" style={{ color: colors.text.primary }}>
-                                      {version.commit_message || 'No message'}
+                                    <span
+                                      className="text-sm truncate"
+                                      style={{ color: colors.text.primary }}
+                                    >
+                                      {version.commit_message || "No message"}
                                     </span>
                                   </div>
-                                  <div className="text-xs mt-0.5 flex items-center gap-1" style={{ color: colors.text.secondary }}>
-                                    <span>{version.provider}/{version.modelName}</span>
+                                  <div
+                                    className="text-xs mt-0.5 flex items-center gap-1"
+                                    style={{ color: colors.text.secondary }}
+                                  >
+                                    <span>
+                                      {version.provider}/{version.modelName}
+                                    </span>
                                     <span>·</span>
-                                    <span>T:{version.temperature.toFixed(2)}</span>
+                                    <span>
+                                      T:{version.temperature.toFixed(2)}
+                                    </span>
                                     <span>·</span>
-                                    <span>{formatRelativeTime(version.timestamp)}</span>
+                                    <span>
+                                      {formatRelativeTime(version.timestamp)}
+                                    </span>
                                   </div>
                                 </div>
                               </button>
@@ -282,12 +420,29 @@ export default function MultiConfigStep({
           className="rounded-lg border-2 border-dashed p-8 text-center"
           style={{ borderColor: colors.border }}
         >
-          <svg className="mx-auto w-10 h-10 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: colors.border }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          <svg
+            className="mx-auto w-10 h-10 mb-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            style={{ color: colors.border }}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+            />
           </svg>
-          <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>No configurations selected</p>
+          <p
+            className="text-sm font-medium mb-1"
+            style={{ color: colors.text.primary }}
+          >
+            No configurations selected
+          </p>
           <p className="text-xs" style={{ color: colors.text.secondary }}>
-            Use the search above to find and select up to {MAX_CONFIGS} configurations
+            Use the search above to find and select up to {MAX_CONFIGS}{" "}
+            configurations
           </p>
         </div>
       )}
@@ -297,7 +452,11 @@ export default function MultiConfigStep({
         <button
           onClick={onBack}
           className="px-6 py-2.5 rounded-lg text-sm font-medium border"
-          style={{ borderColor: colors.border, color: colors.text.primary, backgroundColor: colors.bg.primary }}
+          style={{
+            borderColor: colors.border,
+            color: colors.text.primary,
+            backgroundColor: colors.bg.primary,
+          }}
         >
           Back
         </button>
@@ -306,9 +465,10 @@ export default function MultiConfigStep({
           disabled={configs.length === 0}
           className="px-6 py-2.5 rounded-lg text-sm font-medium"
           style={{
-            backgroundColor: configs.length > 0 ? colors.accent.primary : colors.bg.secondary,
-            color: configs.length > 0 ? '#fff' : colors.text.secondary,
-            cursor: configs.length > 0 ? 'pointer' : 'not-allowed',
+            backgroundColor:
+              configs.length > 0 ? colors.accent.primary : colors.bg.secondary,
+            color: configs.length > 0 ? "#fff" : colors.text.secondary,
+            cursor: configs.length > 0 ? "pointer" : "not-allowed",
           }}
         >
           Next: Review

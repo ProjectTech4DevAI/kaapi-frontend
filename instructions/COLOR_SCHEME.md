@@ -34,19 +34,23 @@ Edit `/app/lib/colors.ts` to change the entire app's color scheme.
 ## Quick Color Scheme Presets
 
 ### Vercel Style (Current)
+
 - Accent: `#0070f3` (blue)
 
 ### Linear Style
+
 - Accent: `#5E6AD2` (purple-blue)
 - Update `colors.accent.primary` to `#5E6AD2`
 - Update `colors.accent.hover` to `#4F5CC0`
 
 ### GitHub Style
+
 - Accent: `#2DA44E` (green)
 - Update `colors.accent.primary` to `#2DA44E`
 - Update `colors.accent.hover` to `#238636`
 
 ### Minimal Black
+
 - Accent: `#171717` (black)
 - Update `colors.accent.primary` to `#171717`
 - Update `colors.accent.hover` to `#404040`

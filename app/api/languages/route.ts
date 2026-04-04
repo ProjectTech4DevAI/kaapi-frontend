@@ -1,22 +1,14 @@
-import { NextResponse } from 'next/server';
+import { apiClient } from "@/app/lib/apiClient";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-  const apiKey = request.headers.get('X-API-KEY');
-
   try {
-    const response = await fetch(`${backendUrl}/api/v1/languages`, {
-      headers: {
-        'X-API-KEY': apiKey || '',
-      },
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const { status, data } = await apiClient(request, "/api/v1/languages");
+    return NextResponse.json(data, { status });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error, data: null },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -5,27 +5,36 @@
  * Supports both row format (individual traces) and grouped format (multiple answers per question)
  */
 
-import React, { useState, useEffect } from 'react';
-import { TraceScore, getScoreObject, normalizeToIndividualScores, hasSummaryScores, isNewScoreObjectV2, isGroupedFormat, GroupedTraceItem, EvalJob } from '@/app/components/types';
+import React, { useState, useEffect } from "react";
+import {
+  TraceScore,
+  getScoreObject,
+  normalizeToIndividualScores,
+  hasSummaryScores,
+  isNewScoreObjectV2,
+  isGroupedFormat,
+  GroupedTraceItem,
+  EvalJob,
+} from "@/app/components/types";
 
 // Helper function to format score value with color
 const formatScoreValue = (score: TraceScore | undefined) => {
-  if (!score) return { value: 'N/A', color: '#737373', bg: 'transparent' };
+  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
 
-  if (score.data_type === 'CATEGORICAL') {
+  if (score.data_type === "CATEGORICAL") {
     const catValue = String(score.value);
-    let color = '#171717';
-    let bg = '#fafafa';
+    let color = "#171717";
+    let bg = "#fafafa";
 
-    if (catValue === 'CORRECT') {
-      color = '#15803d';
-      bg = '#dcfce7';
-    } else if (catValue === 'PARTIAL') {
-      color = '#92400e';
-      bg = '#fef3c7';
-    } else if (catValue === 'INCORRECT') {
-      color = '#dc2626';
-      bg = '#fee2e2';
+    if (catValue === "CORRECT") {
+      color = "#15803d";
+      bg = "#dcfce7";
+    } else if (catValue === "PARTIAL") {
+      color = "#92400e";
+      bg = "#fef3c7";
+    } else if (catValue === "INCORRECT") {
+      color = "#dc2626";
+      bg = "#fee2e2";
     }
 
     return { value: catValue, color, bg };
@@ -34,19 +43,19 @@ const formatScoreValue = (score: TraceScore | undefined) => {
   // NUMERIC
   const numValue = Number(score.value);
   const formattedValue = numValue.toFixed(2);
-  let color = '#171717';
-  let bg = 'transparent';
+  let color = "#171717";
+  let bg = "transparent";
 
   // Color based on value
   if (numValue >= 0.7) {
-    color = '#15803d';
-    bg = '#dcfce7';
+    color = "#15803d";
+    bg = "#dcfce7";
   } else if (numValue >= 0.5) {
-    color = '#92400e';
-    bg = '#fef3c7';
+    color = "#92400e";
+    bg = "#fef3c7";
   } else {
-    color = '#dc2626';
-    bg = '#fee2e2';
+    color = "#dc2626";
+    bg = "#fee2e2";
   }
 
   return { value: formattedValue, color, bg };
@@ -56,16 +65,18 @@ interface DetailedResultsTableProps {
   job: EvalJob;
 }
 
-export default function DetailedResultsTable({ job }: DetailedResultsTableProps) {
+export default function DetailedResultsTable({
+  job,
+}: DetailedResultsTableProps) {
   const [openCommentId, setOpenCommentId] = useState<string | null>(null);
   const [commentPos, setCommentPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     if (!openCommentId) return;
     const handleScroll = () => setOpenCommentId(null);
-    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener("scroll", handleScroll, true);
     return () => {
-      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [openCommentId]);
 
@@ -74,8 +85,11 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
   // 1. First check: Does it have summary_scores at all?
   if (!scoreObject || !hasSummaryScores(scoreObject)) {
     return (
-      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
-        <p className="text-sm" style={{ color: '#92400e' }}>
+      <div
+        className="border rounded-lg p-6 text-center"
+        style={{ backgroundColor: "#fef3c7", borderColor: "#fbbf24" }}
+      >
+        <p className="text-sm" style={{ color: "#92400e" }}>
           No detailed results available or using legacy format
         </p>
       </div>
@@ -86,7 +100,11 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
   if (isNewScoreObjectV2(scoreObject)) {
     // Check if grouped format
     if (isGroupedFormat(scoreObject.traces)) {
-      return <GroupedResultsTable traces={scoreObject.traces as GroupedTraceItem[]} />;
+      return (
+        <GroupedResultsTable
+          traces={scoreObject.traces as GroupedTraceItem[]}
+        />
+      );
     }
     // Otherwise show row format
   }
@@ -98,44 +116,78 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
   // 4. If no individual scores available (e.g., BasicScoreObject with only summary_scores)
   if (!individual_scores || individual_scores.length === 0) {
     return (
-      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
-        <p className="text-sm" style={{ color: '#92400e' }}>
-          No individual scores available. Only summary metrics are available for this evaluation.
+      <div
+        className="border rounded-lg p-6 text-center"
+        style={{ backgroundColor: "#fef3c7", borderColor: "#fbbf24" }}
+      >
+        <p className="text-sm" style={{ color: "#92400e" }}>
+          No individual scores available. Only summary metrics are available for
+          this evaluation.
         </p>
       </div>
     );
   }
 
   // Get all unique score names from the first item
-  const scoreNames = individual_scores[0]?.trace_scores?.map(s => s.name) || [];
+  const scoreNames =
+    individual_scores[0]?.trace_scores?.map((s) => s.name) || [];
 
   // Helper function to get score value by name
-  const getScoreByName = (scores: TraceScore[], name: string): TraceScore | undefined => {
+  const getScoreByName = (
+    scores: TraceScore[],
+    name: string,
+  ): TraceScore | undefined => {
     if (!scores || !Array.isArray(scores)) return undefined;
-    return scores.find(s => s?.name === name);
+    return scores.find((s) => s?.name === name);
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>
+    <div
+      className="border rounded-lg overflow-hidden"
+      style={{ backgroundColor: "#ffffff", borderColor: "#e5e5e5" }}
+    >
       {/* Table Container */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse" style={{ minWidth: '800px' }}>
+        <table className="w-full border-collapse" style={{ minWidth: "800px" }}>
           {/* Table Header */}
           <thead>
-            <tr style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '5%' }}>
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
+            <tr
+              style={{
+                backgroundColor: "#fafafa",
+                borderBottom: "1px solid #e5e5e5",
+              }}
+            >
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase"
+                style={{ color: "#171717", width: "5%" }}
+              ></th>
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase"
+                style={{ color: "#171717", width: "25%" }}
+              >
                 Question
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase"
+                style={{ color: "#171717", width: "25%" }}
+              >
                 Ground Truth
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase" style={{ color: '#171717', width: '25%' }}>
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase"
+                style={{ color: "#171717", width: "25%" }}
+              >
                 Answer
               </th>
               {scoreNames.map((scoreName) => (
-                <th key={scoreName} className="px-4 py-3 text-center text-xs font-semibold uppercase" style={{ color: '#171717', width: `${20 / scoreNames.length}%` }}>
+                <th
+                  key={scoreName}
+                  className="px-4 py-3 text-center text-xs font-semibold uppercase"
+                  style={{
+                    color: "#171717",
+                    width: `${20 / scoreNames.length}%`,
+                  }}
+                >
                   {scoreName}
                 </th>
               ))}
@@ -145,36 +197,45 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
           {/* Table Body */}
           <tbody>
             {individual_scores.map((item, index) => {
-              const question = item.input?.question || 'N/A';
-              const answer = item.output?.answer || 'N/A';
-              const groundTruth = item.metadata?.ground_truth || 'N/A';
+              const question = item.input?.question || "N/A";
+              const answer = item.output?.answer || "N/A";
+              const groundTruth = item.metadata?.ground_truth || "N/A";
 
               return (
                 <tr
                   key={item.trace_id || index}
                   className="border-b"
-                  style={{ borderColor: '#e5e5e5', transition: 'background-color 0.15s ease' }}
+                  style={{
+                    borderColor: "#e5e5e5",
+                    transition: "background-color 0.15s ease",
+                  }}
                   onMouseEnter={(e) => {
                     const row = e.currentTarget;
-                    row.style.backgroundColor = '#fafafa';
+                    row.style.backgroundColor = "#fafafa";
                   }}
                   onMouseLeave={(e) => {
                     const row = e.currentTarget;
-                    row.style.backgroundColor = '#ffffff';
+                    row.style.backgroundColor = "#ffffff";
                   }}
                 >
-                  <td className="px-4 py-3 text-sm font-medium align-top" style={{ color: '#737373' }}>
+                  <td
+                    className="px-4 py-3 text-sm font-medium align-top"
+                    style={{ color: "#737373" }}
+                  >
                     {index + 1}
                   </td>
 
                   {/* Question */}
-                  <td className="px-4 py-3 align-top" style={{ backgroundColor: '#fafafa' }}>
+                  <td
+                    className="px-4 py-3 align-top"
+                    style={{ backgroundColor: "#fafafa" }}
+                  >
                     <div
                       className="text-sm overflow-auto"
                       style={{
-                        color: '#171717',
-                        lineHeight: '1.5',
-                        maxHeight: '150px'
+                        color: "#171717",
+                        lineHeight: "1.5",
+                        maxHeight: "150px",
                       }}
                     >
                       {question}
@@ -182,13 +243,16 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                   </td>
 
                   {/* Ground Truth */}
-                  <td className="px-4 py-3 align-top" style={{ backgroundColor: '#fafafa' }}>
+                  <td
+                    className="px-4 py-3 align-top"
+                    style={{ backgroundColor: "#fafafa" }}
+                  >
                     <div
                       className="text-sm overflow-auto"
                       style={{
-                        color: '#171717',
-                        lineHeight: '1.5',
-                        maxHeight: '150px'
+                        color: "#171717",
+                        lineHeight: "1.5",
+                        maxHeight: "150px",
                       }}
                     >
                       {groundTruth}
@@ -200,9 +264,9 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                     <div
                       className="text-sm overflow-auto"
                       style={{
-                        color: '#171717',
-                        lineHeight: '1.5',
-                        maxHeight: '150px'
+                        color: "#171717",
+                        lineHeight: "1.5",
+                        maxHeight: "150px",
                       }}
                     >
                       {answer}
@@ -215,15 +279,18 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                     const { value, color, bg } = formatScoreValue(score);
 
                     return (
-                      <td key={scoreName} className="px-4 py-3 text-center align-top">
+                      <td
+                        key={scoreName}
+                        className="px-4 py-3 text-center align-top"
+                      >
                         <div className="flex items-center justify-center gap-2">
                           <div
                             className="inline-block px-2 py-1 rounded text-xs font-medium"
                             style={{
                               color,
                               backgroundColor: bg,
-                              borderWidth: bg === 'transparent' ? '1px' : '0',
-                              borderColor: '#e5e5e5'
+                              borderWidth: bg === "transparent" ? "1px" : "0",
+                              borderColor: "#e5e5e5",
                             }}
                           >
                             {value}
@@ -233,15 +300,28 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                               <div
                                 className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
                                 style={{
-                                  backgroundColor: openCommentId === `${index}-${scoreName}` ? '#171717' : '#fafafa',
-                                  color: openCommentId === `${index}-${scoreName}` ? '#ffffff' : '#737373',
+                                  backgroundColor:
+                                    openCommentId === `${index}-${scoreName}`
+                                      ? "#171717"
+                                      : "#fafafa",
+                                  color:
+                                    openCommentId === `${index}-${scoreName}`
+                                      ? "#ffffff"
+                                      : "#737373",
                                 }}
                                 onMouseEnter={(e) => {
-                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const rect =
+                                    e.currentTarget.getBoundingClientRect();
                                   const tooltipWidth = 300;
                                   const centerX = rect.left + rect.width / 2;
-                                  const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
-                                  setCommentPos({ top: rect.top - 8, left: clampedLeft });
+                                  const clampedLeft = Math.min(
+                                    Math.max(centerX - tooltipWidth / 2, 8),
+                                    window.innerWidth - tooltipWidth - 8,
+                                  );
+                                  setCommentPos({
+                                    top: rect.top - 8,
+                                    left: clampedLeft,
+                                  });
                                   setOpenCommentId(`${index}-${scoreName}`);
                                 }}
                                 onMouseLeave={() => setOpenCommentId(null)}
@@ -252,13 +332,13 @@ export default function DetailedResultsTable({ job }: DetailedResultsTableProps)
                                 <div
                                   className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
                                   style={{
-                                    backgroundColor: '#171717',
-                                    color: '#ffffff',
-                                    width: '300px',
-                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                    backgroundColor: "#171717",
+                                    color: "#ffffff",
+                                    width: "300px",
+                                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                                     top: commentPos.top,
                                     left: commentPos.left,
-                                    transform: 'translateY(-100%)',
+                                    transform: "translateY(-100%)",
                                   }}
                                 >
                                   {score.comment}
@@ -287,16 +367,19 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
   useEffect(() => {
     if (!openCommentId) return;
     const handleScroll = () => setOpenCommentId(null);
-    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener("scroll", handleScroll, true);
     return () => {
-      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [openCommentId]);
 
   if (!traces || traces.length === 0) {
     return (
-      <div className="border rounded-lg p-6 text-center" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
-        <p className="text-sm" style={{ color: '#92400e' }}>
+      <div
+        className="border rounded-lg p-6 text-center"
+        style={{ backgroundColor: "#fef3c7", borderColor: "#fbbf24" }}
+      >
+        <p className="text-sm" style={{ color: "#92400e" }}>
           No grouped results available
         </p>
       </div>
@@ -304,7 +387,7 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
   }
 
   // Get max answers count
-  const maxAnswers = Math.max(...traces.map(t => t.llm_answers.length));
+  const maxAnswers = Math.max(...traces.map((t) => t.llm_answers.length));
 
   // Fixed column widths (in pixels) for predictable layout
   const COLUMN_WIDTHS = {
@@ -316,32 +399,56 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
 
   // Calculate minimum table width based on number of answers
   // This ensures horizontal scroll activates at the right point
-  const fixedColumnsWidth = COLUMN_WIDTHS.qId + COLUMN_WIDTHS.question + COLUMN_WIDTHS.groundTruth;
-  const tableMinWidth = fixedColumnsWidth + (maxAnswers * COLUMN_WIDTHS.answer);
+  const fixedColumnsWidth =
+    COLUMN_WIDTHS.qId + COLUMN_WIDTHS.question + COLUMN_WIDTHS.groundTruth;
+  const tableMinWidth = fixedColumnsWidth + maxAnswers * COLUMN_WIDTHS.answer;
 
   return (
-    <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: '#ffffff', borderColor: '#e5e5e5' }}>
+    <div
+      className="border rounded-lg overflow-hidden"
+      style={{ backgroundColor: "#ffffff", borderColor: "#e5e5e5" }}
+    >
       {/* Table Container - overflow-x-auto enables horizontal scroll when table exceeds viewport */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse" style={{ minWidth: `${tableMinWidth}px` }}>
+        <table
+          className="w-full border-collapse"
+          style={{ minWidth: `${tableMinWidth}px` }}
+        >
           {/* Table Header - matching row format styling */}
           <thead>
-            <tr style={{ backgroundColor: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
+            <tr
+              style={{
+                backgroundColor: "#fafafa",
+                borderBottom: "1px solid #e5e5e5",
+              }}
+            >
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                style={{ color: '#171717', width: `${COLUMN_WIDTHS.qId}px`, minWidth: `${COLUMN_WIDTHS.qId}px` }}
+                style={{
+                  color: "#171717",
+                  width: `${COLUMN_WIDTHS.qId}px`,
+                  minWidth: `${COLUMN_WIDTHS.qId}px`,
+                }}
               >
                 Q.ID
               </th>
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                style={{ color: '#171717', width: `${COLUMN_WIDTHS.question}px`, minWidth: `${COLUMN_WIDTHS.question}px` }}
+                style={{
+                  color: "#171717",
+                  width: `${COLUMN_WIDTHS.question}px`,
+                  minWidth: `${COLUMN_WIDTHS.question}px`,
+                }}
               >
                 Question
               </th>
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                style={{ color: '#171717', width: `${COLUMN_WIDTHS.groundTruth}px`, minWidth: `${COLUMN_WIDTHS.groundTruth}px` }}
+                style={{
+                  color: "#171717",
+                  width: `${COLUMN_WIDTHS.groundTruth}px`,
+                  minWidth: `${COLUMN_WIDTHS.groundTruth}px`,
+                }}
               >
                 Ground Truth
               </th>
@@ -349,7 +456,11 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                 <th
                   key={`answer-${i}`}
                   className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                  style={{ color: '#171717', width: `${COLUMN_WIDTHS.answer}px`, minWidth: `${COLUMN_WIDTHS.answer}px` }}
+                  style={{
+                    color: "#171717",
+                    width: `${COLUMN_WIDTHS.answer}px`,
+                    minWidth: `${COLUMN_WIDTHS.answer}px`,
+                  }}
                 >
                   Answer {i + 1}
                 </th>
@@ -364,10 +475,13 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                 {/* Text row */}
                 <tr
                   key={`${group.question_id || index}-text`}
-                  style={{ backgroundColor: '#ffffff' }}
+                  style={{ backgroundColor: "#ffffff" }}
                 >
                   {/* Question ID */}
-                  <td className="px-4 pt-3 pb-1 text-sm font-medium align-top" style={{ color: '#737373' }}>
+                  <td
+                    className="px-4 pt-3 pb-1 text-sm font-medium align-top"
+                    style={{ color: "#737373" }}
+                  >
                     {group.question_id}
                   </td>
 
@@ -375,7 +489,11 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                   <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
                     <div
                       className="text-sm overflow-auto"
-                      style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
+                      style={{
+                        color: "#171717",
+                        lineHeight: "1.5",
+                        maxHeight: "150px",
+                      }}
                     >
                       {group.question}
                     </div>
@@ -385,7 +503,11 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                   <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
                     <div
                       className="text-sm overflow-auto"
-                      style={{ color: '#171717', lineHeight: '1.5', maxHeight: '150px' }}
+                      style={{
+                        color: "#171717",
+                        lineHeight: "1.5",
+                        maxHeight: "150px",
+                      }}
                     >
                       {group.ground_truth_answer}
                     </div>
@@ -395,7 +517,10 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
                     const answer = group.llm_answers[answerIndex];
                     return (
-                      <td key={answerIndex} className="px-4 pt-3 pb-1 align-top">
+                      <td
+                        key={answerIndex}
+                        className="px-4 pt-3 pb-1 align-top"
+                      >
                         {answer ? (
                           <div className="text-sm overflow-auto text-[#171717] leading-6 max-h-[150px]">
                             {answer}
@@ -414,81 +539,128 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
                 >
                   {/* Empty cells for Q.ID, Question, Ground Truth */}
                   <td className="px-4 pt-1 pb-3" />
-                  <td className="px-4 pt-1 pb-3" style={{ backgroundColor: '#fafafa' }} />
-                  <td className="px-4 pt-1 pb-3" style={{ backgroundColor: '#fafafa' }} />
+                  <td
+                    className="px-4 pt-1 pb-3"
+                    style={{ backgroundColor: "#fafafa" }}
+                  />
+                  <td
+                    className="px-4 pt-1 pb-3"
+                    style={{ backgroundColor: "#fafafa" }}
+                  />
 
                   {/* Score cells */}
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
-                    const answerScores: TraceScore[] = group.scores?.[answerIndex] || [];
+                    const answerScores: TraceScore[] =
+                      group.scores?.[answerIndex] || [];
                     const answer = group.llm_answers[answerIndex];
 
                     return (
-                      <td key={answerIndex} className="px-4 pt-1 pb-3 align-bottom">
+                      <td
+                        key={answerIndex}
+                        className="px-4 pt-1 pb-3 align-bottom"
+                      >
                         {answer && answerScores.length > 0 ? (
                           <div className="space-y-1">
-                            {answerScores.map((score: TraceScore, scoreIdx: number) => {
-                              if (!score) return null;
-                              const { value, color, bg } = formatScoreValue(score);
-                              return (
-                                <div key={score.name || scoreIdx} className="flex items-center justify-between gap-1">
-                                  <span className="text-xs truncate min-w-0" style={{ color: '#737373' }}>{score.name}:</span>
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <div
-                                      className="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                                      style={{
-                                        color,
-                                        backgroundColor: bg,
-                                        borderWidth: bg === 'transparent' ? '1px' : '0',
-                                        borderColor: '#e5e5e5'
-                                      }}
+                            {answerScores.map(
+                              (score: TraceScore, scoreIdx: number) => {
+                                if (!score) return null;
+                                const { value, color, bg } =
+                                  formatScoreValue(score);
+                                return (
+                                  <div
+                                    key={score.name || scoreIdx}
+                                    className="flex items-center justify-between gap-1"
+                                  >
+                                    <span
+                                      className="text-xs truncate min-w-0"
+                                      style={{ color: "#737373" }}
                                     >
-                                      {value}
+                                      {score.name}:
+                                    </span>
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                      <div
+                                        className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+                                        style={{
+                                          color,
+                                          backgroundColor: bg,
+                                          borderWidth:
+                                            bg === "transparent" ? "1px" : "0",
+                                          borderColor: "#e5e5e5",
+                                        }}
+                                      >
+                                        {value}
+                                      </div>
+                                      {score?.comment &&
+                                        (() => {
+                                          const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
+                                          return (
+                                            <>
+                                              <div
+                                                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
+                                                style={{
+                                                  backgroundColor:
+                                                    openCommentId === commentId
+                                                      ? "#171717"
+                                                      : "#fafafa",
+                                                  color:
+                                                    openCommentId === commentId
+                                                      ? "#ffffff"
+                                                      : "#737373",
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                  const rect =
+                                                    e.currentTarget.getBoundingClientRect();
+                                                  const tooltipWidth = 300;
+                                                  const centerX =
+                                                    rect.left + rect.width / 2;
+                                                  const clampedLeft = Math.min(
+                                                    Math.max(
+                                                      centerX -
+                                                        tooltipWidth / 2,
+                                                      8,
+                                                    ),
+                                                    window.innerWidth -
+                                                      tooltipWidth -
+                                                      8,
+                                                  );
+                                                  setCommentPos({
+                                                    top: rect.top - 8,
+                                                    left: clampedLeft,
+                                                  });
+                                                  setOpenCommentId(commentId);
+                                                }}
+                                                onMouseLeave={() =>
+                                                  setOpenCommentId(null)
+                                                }
+                                              >
+                                                i
+                                              </div>
+                                              {openCommentId === commentId && (
+                                                <div
+                                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
+                                                  style={{
+                                                    backgroundColor: "#171717",
+                                                    color: "#ffffff",
+                                                    width: "300px",
+                                                    boxShadow:
+                                                      "0 4px 6px rgba(0, 0, 0, 0.1)",
+                                                    top: commentPos.top,
+                                                    left: commentPos.left,
+                                                    transform:
+                                                      "translateY(-100%)",
+                                                  }}
+                                                >
+                                                  {score.comment}
+                                                </div>
+                                              )}
+                                            </>
+                                          );
+                                        })()}
                                     </div>
-                                    {score?.comment && (() => {
-                                      const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
-                                      return (
-                                        <>
-                                          <div
-                                            className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
-                                            style={{
-                                              backgroundColor: openCommentId === commentId ? '#171717' : '#fafafa',
-                                              color: openCommentId === commentId ? '#ffffff' : '#737373',
-                                            }}
-                                            onMouseEnter={(e) => {
-                                              const rect = e.currentTarget.getBoundingClientRect();
-                                              const tooltipWidth = 300;
-                                              const centerX = rect.left + rect.width / 2;
-                                              const clampedLeft = Math.min(Math.max(centerX - tooltipWidth / 2, 8), window.innerWidth - tooltipWidth - 8);
-                                              setCommentPos({ top: rect.top - 8, left: clampedLeft });
-                                              setOpenCommentId(commentId);
-                                            }}
-                                            onMouseLeave={() => setOpenCommentId(null)}
-                                          >
-                                            i
-                                          </div>
-                                          {openCommentId === commentId && (
-                                            <div
-                                              className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
-                                              style={{
-                                                backgroundColor: '#171717',
-                                                color: '#ffffff',
-                                                width: '300px',
-                                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                                                top: commentPos.top,
-                                                left: commentPos.left,
-                                                transform: 'translateY(-100%)',
-                                              }}
-                                            >
-                                              {score.comment}
-                                            </div>
-                                          )}
-                                        </>
-                                      );
-                                    })()}
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              },
+                            )}
                           </div>
                         ) : null}
                       </td>

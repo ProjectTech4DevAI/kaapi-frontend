@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsHydrated(true);
   }, []);
 
-  // Always fetch the latest user profile from the backend on hydration.
+  // Always fetch the latest user profile on hydration.
   useEffect(() => {
     if (!isHydrated) return;
     const hasApiKey = !!apiKeys[0]?.key;

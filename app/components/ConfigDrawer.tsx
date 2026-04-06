@@ -537,7 +537,7 @@ export default function ConfigDrawer({
               </div>
 
               {/* Temperature */}
-              {!isGpt5 && (
+              {!isGpt5 && currentConfig.temperature != null && (
                 <div>
                   <label
                     style={{

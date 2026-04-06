@@ -341,20 +341,22 @@ export default function DiffView({
                         {selectedCommit.modelName}
                       </div>
                     </div>
-                    <div>
-                      <div
-                        className="text-xs font-semibold mb-1"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        Temperature
+                    {selectedCommit.temperature != null && (
+                      <div>
+                        <div
+                          className="text-xs font-semibold mb-1"
+                          style={{ color: colors.text.secondary }}
+                        >
+                          Temperature
+                        </div>
+                        <div
+                          className="text-sm"
+                          style={{ color: colors.text.primary }}
+                        >
+                          {selectedCommit.temperature}
+                        </div>
                       </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: colors.text.primary }}
-                      >
-                        {selectedCommit.temperature}
-                      </div>
-                    </div>
+                    )}
                     {selectedCommit.tools &&
                       selectedCommit.tools.length > 0 && (
                         <div>

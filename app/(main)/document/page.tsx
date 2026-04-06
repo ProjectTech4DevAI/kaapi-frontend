@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import Sidebar from "@/app/components/Sidebar";
@@ -8,7 +8,11 @@ import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
 import { usePaginatedList } from "@/app/hooks/usePaginatedList";
 import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
-import { apiFetch } from "@/app/lib/apiClient";
+import {
+  apiFetch,
+  uploadWithProgress,
+  type UploadPhase,
+} from "@/app/lib/apiClient";
 import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
@@ -34,6 +38,9 @@ export default function DocumentPage() {
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase>("uploading");
+  const abortUploadRef = useRef<(() => void) | null>(null);
   const { activeKey: apiKey } = useAuth();
 
   const {
@@ -66,16 +73,24 @@ export default function DocumentPage() {
     if (!apiKey || !selectedFile) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadPhase("uploading");
 
     try {
       const formData = new FormData();
       formData.append("src", selectedFile);
 
-      const data = await apiFetch<{ data?: { id: string } }>(
+      const { promise, abort } = uploadWithProgress<{ data?: { id: string } }>(
         "/api/document",
         apiKey.key,
-        { method: "POST", body: formData },
+        formData,
+        (percent, phase) => {
+          setUploadProgress(percent);
+          setUploadPhase(phase);
+        },
       );
+      abortUploadRef.current = abort;
+      const data = await promise;
       if (selectedFile && data.data?.id) {
         const fileSizeMap = JSON.parse(
           localStorage.getItem("document_file_sizes") || "{}",
@@ -99,6 +114,7 @@ export default function DocumentPage() {
       );
     } finally {
       setIsUploading(false);
+      abortUploadRef.current = null;
     }
   };
 
@@ -198,18 +214,22 @@ export default function DocumentPage() {
         </div>
       </div>
 
-      {isModalOpen && (
-        <UploadDocumentModal
-          selectedFile={selectedFile}
-          isUploading={isUploading}
-          onFileSelect={handleFileSelect}
-          onUpload={handleUpload}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedFile(null);
-          }}
-        />
-      )}
+      <UploadDocumentModal
+        open={isModalOpen}
+        selectedFile={selectedFile}
+        isUploading={isUploading}
+        uploadProgress={uploadProgress}
+        uploadPhase={uploadPhase}
+        onFileSelect={handleFileSelect}
+        onUpload={handleUpload}
+        onClose={() => {
+          abortUploadRef.current?.();
+          setIsModalOpen(false);
+          setSelectedFile(null);
+          setUploadProgress(0);
+          setUploadPhase("uploading");
+        }}
+      />
     </div>
   );
 }

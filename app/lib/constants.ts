@@ -12,6 +12,9 @@ export const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
 
 export const DEFAULT_PAGE_LIMIT = 10;
 
+export const ACCEPTED_DOCUMENT_TYPES =
+  ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.webp";
+
 /** Custom event dispatched when background validation invalidates the in-memory cache */
 export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 

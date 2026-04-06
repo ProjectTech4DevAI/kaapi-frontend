@@ -1687,9 +1687,7 @@ export default function KnowledgeBasePage() {
         maxWidth="max-w-5xl"
         maxHeight="h-[80vh]"
       >
-        {/* Two-pane body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left pane — doc list */}
+        <div className="flex flex-1 overflow-hidden h-full">
           <div
             className="w-1/5 flex flex-col overflow-y-auto shrink-0"
             style={{ borderRight: `1px solid ${colors.border}` }}

@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
         method: "POST",
         body: uploadBody,
         headers: { "Content-Type": contentType },
+        signal: request.signal,
         // @ts-expect-error -- Node fetch supports duplex for streaming request bodies
         duplex: "half",
       });

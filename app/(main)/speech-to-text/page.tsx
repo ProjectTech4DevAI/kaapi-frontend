@@ -22,6 +22,7 @@ import { APIKey } from "@/app/lib/types/credentials";
 import WaveformVisualizer from "@/app/components/speech-to-text/WaveformVisualizer";
 import { computeWordDiff } from "@/app/components/speech-to-text/TranscriptionDiffViewer";
 import ErrorModal from "@/app/components/ErrorModal";
+import { getStatusColor } from "@/app/components/utils";
 
 type Tab = "datasets" | "evaluations";
 
@@ -3169,14 +3170,13 @@ function EvaluationsTab({
                     {filteredRuns.map((run) => {
                       const isCompleted =
                         run.status.toLowerCase() === "completed";
+                      const statusColor = getStatusColor(run.status);
                       return (
                         <div
                           key={run.id}
-                          className="rounded-lg overflow-hidden"
+                          className="rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-3"
                           style={{
-                            backgroundColor: colors.bg.primary,
-                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
-                            borderLeft: "3px solid #DCCFC3",
+                            borderLeftColor: statusColor.border,
                           }}
                         >
                           <div className="px-5 py-4">

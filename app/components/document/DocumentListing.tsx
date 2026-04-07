@@ -127,7 +127,7 @@ export function DocumentListing({
                       e.stopPropagation();
                       onDelete(doc.id);
                     }}
-                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)]"
+                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)] cursor-pointer"
                     title="Delete Document"
                   >
                     <TrashIcon />

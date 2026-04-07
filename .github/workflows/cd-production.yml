@@ -7,41 +7,29 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Kaapi Frontend to EC2 Production
     runs-on: ubuntu-latest
     environment: AWS_PRODUCTION_ENV
+ 
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          PM2_APP_NAME: ${{ secrets.PM2_APP_NAME }}
-          BUILD_DIRECTORY: ${{ secrets.BUILD_DIRECTORY }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-            echo "=== Navigating to Project Directory ==="
-            cd $BUILD_DIRECTORY
-
-            echo "=== Fetch Latest Code ==="
-            git pull origin release
-
-            echo "=== Stop Running Application ==="
-            pm2 stop "$PM2_APP_NAME" || true
-
-            echo "=== Install Dependencies ==="
-            npm ci
-
-            echo "=== Build Application ==="
-            npm run build
-
-            echo "=== Start Application ==="
-            pm2 start "$PM2_APP_NAME"
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["git config --global --add safe.directory ${{ secrets.BUILD_DIRECTORY }} && set -e && cd ${{ secrets.BUILD_DIRECTORY }} && git pull origin release && npm ci && npm run build && pm2 start ${{ secrets.PM2_APP_NAME }}"]' \
+            --region ${{ secrets.AWS_REGION }}

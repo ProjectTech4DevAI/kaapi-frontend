@@ -252,15 +252,19 @@ export default function ConfigCard({
                     {latestVersion.modelName}
                   </span>
                 </div>
-                <div
-                  className="px-2.5 py-1 rounded-md text-xs"
-                  style={{ backgroundColor: colors.bg.secondary }}
-                >
-                  <span style={{ color: colors.text.secondary }}>Temp: </span>
-                  <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-                    {latestVersion.temperature.toFixed(2)}
-                  </span>
-                </div>
+                {latestVersion.temperature != null && (
+                  <div
+                    className="px-2.5 py-1 rounded-md text-xs"
+                    style={{ backgroundColor: colors.bg.secondary }}
+                  >
+                    <span style={{ color: colors.text.secondary }}>Temp: </span>
+                    <span
+                      style={{ color: colors.text.primary, fontWeight: 500 }}
+                    >
+                      {latestVersion.temperature.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Tools Dropdown */}

@@ -126,7 +126,6 @@ export function UploadDocumentModal({
         </div>
       )}
 
-      {/* Modal Footer */}
       <div className="border-t px-6 py-4 flex items-center justify-end gap-3 border-border shrink-0">
         <button
           onClick={onClose}

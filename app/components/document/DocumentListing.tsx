@@ -2,7 +2,7 @@
 
 import { APIKey } from "@/app/lib/types/credentials";
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/(main)/document/page";
+import { Document } from "@/app/lib/types/document";
 import {
   RefreshIcon,
   KeyIcon,
@@ -44,7 +44,7 @@ export function DocumentListing({
           </h2>
           <button
             onClick={onUploadNew}
-            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
+            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover cursor-pointer"
           >
             + Upload
           </button>
@@ -55,7 +55,6 @@ export function DocumentListing({
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 bg-[hsl(0,0%,98%)]"
       >
-        {/* Loading State */}
         {isLoading && documents.length === 0 ? (
           <div className="text-center py-12 text-[hsl(330,3%,49%)]">
             <RefreshIcon className="w-12 h-12 mx-auto mb-4 animate-spin" />

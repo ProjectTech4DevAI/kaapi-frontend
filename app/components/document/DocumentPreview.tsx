@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/(main)/document/page";
+import { Document } from "@/app/lib/types/document";
 import {
   RefreshIcon,
   DocumentFileIcon,
@@ -18,7 +18,6 @@ interface DocumentPreviewProps {
 export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
   const [imageLoadError, setImageLoadError] = useState(false);
 
-  // Reset error state when document changes
   useEffect(() => {
     setImageLoadError(false);
   }, [document?.id]);
@@ -109,13 +108,11 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
           </div>
         </div>
 
-        {/* Preview Area */}
         <div className="border rounded-lg p-6 min-h-[600px] bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
           <h3 className="text-lg font-semibold mb-4 text-[hsl(330,3%,19%)]">
             Preview
           </h3>
 
-          {/* Info message if signed_url is not available */}
           {!document.signed_url && document.object_store_url && (
             <div className="mb-4 p-3 rounded-lg border bg-[hsl(48,100%,95%)] border-[hsl(48,100%,80%)]">
               <p className="text-xs text-[hsl(48,100%,30%)]">
@@ -190,7 +187,6 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
             </div>
           )}
 
-          {/* Download button */}
           <div className="mt-6 text-center">
             {(document.signed_url || document.object_store_url) && (
               <a

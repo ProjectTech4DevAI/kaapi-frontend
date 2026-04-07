@@ -3,7 +3,10 @@
 import Modal from "@/app/components/Modal";
 import { CloudUploadIcon } from "@/app/components/icons";
 import type { UploadPhase } from "@/app/lib/apiClient";
-import { ACCEPTED_DOCUMENT_TYPES } from "@/app/lib/constants";
+import {
+  ACCEPTED_DOCUMENT_TYPES,
+  MAX_DOCUMENT_SIZE_MB,
+} from "@/app/lib/constants";
 
 export interface UploadDocumentModalProps {
   open: boolean;
@@ -34,9 +37,14 @@ export function UploadDocumentModal({
       maxHeight="max-h-[90vh]"
     >
       <div className="p-6">
-        <p className="text-sm mb-6 text-text-secondary">
+        <p className="text-sm mb-4 text-text-secondary">
           Upload a document file. Supported formats: pdf, doc, txt and more.
         </p>
+
+        <div className="text-xs mb-6 px-3 py-2 rounded-md bg-neutral-50 border border-border text-text-secondary">
+          <span className="font-medium text-text-primary">Note:</span> Maximum
+          file size is {MAX_DOCUMENT_SIZE_MB} MB. Larger files will be rejected.
+        </div>
 
         <div className="border-2 border-dashed rounded-lg p-12 text-center transition-colors border-border">
           <div className="space-y-4">

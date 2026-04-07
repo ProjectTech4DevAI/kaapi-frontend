@@ -16,17 +16,12 @@ import {
 import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
-import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-
-export interface Document {
-  id: string;
-  fname: string;
-  object_store_url: string;
-  signed_url?: string;
-  file_size?: number;
-  inserted_at?: string;
-  updated_at?: string;
-}
+import {
+  DEFAULT_PAGE_LIMIT,
+  MAX_DOCUMENT_SIZE_BYTES,
+  MAX_DOCUMENT_SIZE_MB,
+} from "@/app/lib/constants";
+import { Document } from "@/app/lib/types/document";
 
 export default function DocumentPage() {
   const toast = useToast();
@@ -65,6 +60,14 @@ export default function DocumentPage() {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      toast.error(
+        `File size exceeds ${MAX_DOCUMENT_SIZE_MB} MB limit. Please select a smaller file within ${MAX_DOCUMENT_SIZE_MB} MB.`,
+      );
+      event.target.value = "";
+      return;
+    }
 
     setSelectedFile(file);
   };

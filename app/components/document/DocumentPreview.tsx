@@ -101,8 +101,8 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                   {ext}
                 </span>
               )}
-              <span>{formatFileSize(document.file_size)}</span>
-              <span>{formatDate(document.inserted_at)}</span>
+              <span>Size: {formatFileSize(document.file_size)}</span>
+              <span>Uploaded: {formatDate(document.inserted_at)}</span>
             </div>
           </div>
           {(document.signed_url || document.object_store_url) &&

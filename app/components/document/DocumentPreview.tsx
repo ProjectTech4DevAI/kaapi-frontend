@@ -119,6 +119,8 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
               <a
                 href={document.signed_url || document.object_store_url}
                 download={document.fname}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="shrink-0 px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
               >
                 Download
@@ -161,22 +163,24 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                   className="w-full h-[700px]"
                   title={document.fname}
                 />
-              ) : mimeType.startsWith("text/") ? (
-                <iframe
-                  src={document.signed_url}
-                  className="w-full h-[500px] bg-white"
-                  title={document.fname}
-                />
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
                   <DocumentTextIcon className="mx-auto mb-3 opacity-40" />
                   <p className="text-sm font-medium text-text-primary mb-1">
-                    Preview not available
+                    Preview is not available for .{ext} files
                   </p>
-                  <p className="text-xs">
-                    This file type ({ext.toUpperCase()}) cannot be previewed.
-                    Download to view.
+                  <p className="text-xs mb-4">
+                    This file type cannot be rendered in the browser.
                   </p>
+                  <a
+                    href={document.signed_url}
+                    download={document.fname}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
+                  >
+                    Download to view
+                  </a>
                 </div>
               )}
             </div>

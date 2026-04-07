@@ -106,11 +106,11 @@ export function DocumentListing({
                 onClick={() => onSelect(doc)}
                 className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                   selectedDocument?.id === doc.id
-                    ? "ring-2 ring-offset-1 bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
+                    ? "bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
                     : "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <DocumentFileIcon className="w-5 h-5 shrink-0 text-[#171717]" />

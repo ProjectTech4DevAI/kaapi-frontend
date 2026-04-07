@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import { isGpt5Model } from "@/app/lib/models";
+import { STORAGE_KEYS } from "@/app/lib/constants";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -56,6 +57,11 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   return new Date(date).toLocaleDateString();
 };
 
+/** Clear all app-related localStorage */
+export function clearAllStorage() {
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+}
+
 export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
@@ -64,7 +70,7 @@ export const invalidateConfigCache = (): void => {
 export const getApiKey = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem("kaapi_api_keys");
+    const stored = localStorage.getItem(STORAGE_KEYS.API_KEYS);
     if (stored) {
       const keys = JSON.parse(stored);
       return keys.length > 0 ? keys[0].key : null;

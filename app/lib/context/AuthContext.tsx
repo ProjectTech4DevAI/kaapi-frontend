@@ -15,11 +15,9 @@ import {
   AuthContextValue,
 } from "@/app/lib/types/auth";
 import { apiFetch } from "@/app/lib/apiClient";
-import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
+import { AUTH_EXPIRED_EVENT, STORAGE_KEYS } from "@/app/lib/constants";
+import { clearAllStorage } from "@/app/lib/utils";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
-
-const STORAGE_KEY = "kaapi_api_keys";
-const SESSION_KEY = "kaapi_session";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -32,10 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize from localStorage after hydration
   useEffect(() => {
     try {
-      const storedKeys = localStorage.getItem(STORAGE_KEY);
+      const storedKeys = localStorage.getItem(STORAGE_KEYS.API_KEYS);
       if (storedKeys) setApiKeys(JSON.parse(storedKeys));
 
-      const storedSession = localStorage.getItem(SESSION_KEY);
+      const storedSession = localStorage.getItem(STORAGE_KEYS.SESSION);
       if (storedSession) {
         const parsed = JSON.parse(storedSession) as Session;
         setSession(parsed);
@@ -66,12 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           "success" in res && res.data ? res.data : (res as User);
         if (!cancelled) {
           setCurrentUser(userData);
-          const storedRaw = localStorage.getItem(SESSION_KEY);
+          const storedRaw = localStorage.getItem(STORAGE_KEYS.SESSION);
           if (storedRaw) {
             try {
               const stored = JSON.parse(storedRaw);
               stored.user = userData;
-              localStorage.setItem(SESSION_KEY, JSON.stringify(stored));
+              localStorage.setItem(
+                STORAGE_KEYS.SESSION,
+                JSON.stringify(stored),
+              );
             } catch {
               /* ignore */
             }
@@ -90,9 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const persist = useCallback((keys: APIKey[]) => {
     setApiKeys(keys);
     if (keys.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
+      localStorage.setItem(STORAGE_KEYS.API_KEYS, JSON.stringify(keys));
     } else {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEYS.API_KEYS);
     }
   }, []);
 
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         googleProfile: googleProfile ?? null,
       };
       setSession(newSession);
-      localStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
+      localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(newSession));
 
       if (user) setCurrentUser(user);
     },
@@ -132,8 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setSession(null);
     setCurrentUser(null);
-    localStorage.removeItem(SESSION_KEY);
-    persist([]);
+    clearAllStorage();
+    setApiKeys([]);
   }, [persist]);
 
   // logout when both access + refresh tokens are expired

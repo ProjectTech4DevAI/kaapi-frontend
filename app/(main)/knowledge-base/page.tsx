@@ -15,9 +15,7 @@ import { Button, Field } from "@/app/components";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import { Document } from "@/app/lib/types/document";
 import {
-  Collection,
   JobStatusData,
   CollectionResponse,
   DocumentResponse,
@@ -25,6 +23,7 @@ import {
   DeleteCollectionResponse,
   DocumentDetailResponse,
 } from "@/app/lib/types/knowledgeBase";
+import { Document, Collection } from "@/app/lib/types/document";
 
 export default function KnowledgeBasePage() {
   const { sidebarCollapsed } = useApp();
@@ -757,6 +756,23 @@ export default function KnowledgeBasePage() {
     }
   };
 
+  // Fetch document details and set preview
+  const fetchAndPreviewDoc = async (doc: Document) => {
+    setPreviewDoc(doc);
+    if (isAuthenticated) {
+      try {
+        const data = await apiFetch<DocumentDetailResponse & Document>(
+          `/api/document/${doc.id}`,
+          apiKey?.key ?? "",
+        );
+        const documentDetails = (data.data || data) as Document;
+        setPreviewDoc(documentDetails);
+      } catch (err) {
+        console.error("Failed to fetch document details:", err);
+      }
+    }
+  };
+
   // Toggle document selection
   const toggleDocumentSelection = (documentId: string) => {
     const newSelection = new Set(selectedDocuments);
@@ -839,7 +855,7 @@ export default function KnowledgeBasePage() {
           {/* Left Panel - Collections List */}
           <div className="w-1/3 border-r border-border flex flex-col">
             {/* Create Button */}
-            <div className="p-6 flex justify-end">
+            <div className="px-6 py-4 flex justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -852,7 +868,6 @@ export default function KnowledgeBasePage() {
               </Button>
             </div>
 
-            {/* Collections List */}
             <div className="flex-1 overflow-y-auto px-6 pb-6">
               {isLoading && collections.length === 0 ? (
                 <div className="text-center py-8 text-text-secondary">
@@ -983,7 +998,6 @@ export default function KnowledgeBasePage() {
                     <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
                   </button>
 
-                  {/* Show selected documents */}
                   {selectedDocuments.size > 0 && (
                     <div className="mt-3 space-y-2">
                       {Array.from(selectedDocuments).map((docId) => {
@@ -1012,7 +1026,6 @@ export default function KnowledgeBasePage() {
                   )}
                 </div>
 
-                {/* Create Button */}
                 <div className="flex justify-end">
                   <Button
                     onClick={handleCreateClick}
@@ -1028,7 +1041,6 @@ export default function KnowledgeBasePage() {
               </div>
             ) : selectedCollection ? (
               <>
-                {/* Preview Header */}
                 <div className="p-6 border-b border-border">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -1093,7 +1105,6 @@ export default function KnowledgeBasePage() {
                   </div>
                 </div>
 
-                {/* Documents in Collection */}
                 <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-text-primary">
@@ -1103,30 +1114,11 @@ export default function KnowledgeBasePage() {
                     {selectedCollection.documents &&
                       selectedCollection.documents.length > 0 && (
                         <button
-                          onClick={async () => {
+                          onClick={() => {
                             setShowDocPreviewModal(true);
-                            // Fetch the first document with signed_url
-                            const firstDoc = selectedCollection.documents![0];
-                            setPreviewDoc(firstDoc);
-
-                            if (isAuthenticated) {
-                              try {
-                                const data = await apiFetch<
-                                  DocumentDetailResponse & Document
-                                >(
-                                  `/api/document/${firstDoc.id}`,
-                                  apiKey?.key ?? "",
-                                );
-                                const documentDetails = (data.data ||
-                                  data) as Document;
-                                setPreviewDoc(documentDetails);
-                              } catch (err) {
-                                console.error(
-                                  "Failed to fetch document details for preview:",
-                                  err,
-                                );
-                              }
-                            }
+                            fetchAndPreviewDoc(
+                              selectedCollection.documents![0],
+                            );
                           }}
                           className="text-xs px-3 py-1.5 rounded-md border border-border bg-bg-secondary text-text-primary hover:bg-neutral-100 transition-colors"
                         >
@@ -1310,58 +1302,27 @@ export default function KnowledgeBasePage() {
         </div>
       </Modal>
 
-      {showDocPreviewModal && !!selectedCollection?.documents && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center z-50"
-          onClick={() => {
-            setShowDocPreviewModal(false);
-            setPreviewDoc(null);
-          }}
-        >
+      <Modal
+        open={showDocPreviewModal && !!selectedCollection?.documents}
+        onClose={() => {
+          setShowDocPreviewModal(false);
+          setPreviewDoc(null);
+        }}
+        title="Document Preview"
+        maxWidth="max-w-5xl"
+        maxHeight="h-[80vh]"
+      >
+        <div className="flex flex-1 overflow-hidden h-full">
           <div
             className="bg-white rounded-2xl shadow-xl border border-border w-full max-w-5xl h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 shrink-0 border-b border-border">
-              <h2 className="text-lg font-semibold text-text-primary">
-                Document Preview
-              </h2>
-              <button
-                onClick={() => {
-                  setShowDocPreviewModal(false);
-                  setPreviewDoc(null);
-                }}
-                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
-              >
-                <CloseIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Two-pane body */}
             <div className="flex flex-1 min-h-0">
-              {/* Left pane — doc list */}
               <div className="w-56 shrink-0 border-r border-border overflow-y-auto">
                 {selectedCollection?.documents?.map((doc: Document) => (
                   <button
                     key={doc.id}
-                    onClick={async () => {
-                      setPreviewDoc(doc);
-                      if (isAuthenticated) {
-                        try {
-                          const data = await apiFetch<
-                            DocumentDetailResponse & Document
-                          >(`/api/document/${doc.id}`, apiKey?.key ?? "");
-                          const documentDetails = (data.data ||
-                            data) as Document;
-                          setPreviewDoc(documentDetails);
-                        } catch (err) {
-                          console.error(
-                            "Failed to fetch document details:",
-                            err,
-                          );
-                        }
-                      }
-                    }}
+                    onClick={() => fetchAndPreviewDoc(doc)}
                     className={`w-full text-left px-4 py-3 border-b border-border transition-colors ${
                       previewDoc?.id === doc.id
                         ? "bg-neutral-100"
@@ -1380,7 +1341,6 @@ export default function KnowledgeBasePage() {
                 ))}
               </div>
 
-              {/* Right pane — preview */}
               <div className="flex-1 min-h-0 bg-neutral-50">
                 {previewDoc?.signed_url ? (
                   <iframe
@@ -1402,7 +1362,7 @@ export default function KnowledgeBasePage() {
             </div>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

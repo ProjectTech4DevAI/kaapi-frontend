@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+export type UploadPhase = "uploading" | "processing" | "done";
 
 /** Coalesces concurrent refresh calls into a single request. */
 let refreshPromise: Promise<boolean> | null = null;
@@ -18,7 +19,7 @@ export async function apiClient(
   const apiKey = request.headers.get("X-API-KEY") || "";
   const cookie = request.headers.get("Cookie") || "";
   const headers = new Headers(options.headers);
-  if (!(options.body instanceof FormData)) {
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
   headers.set("X-API-KEY", apiKey);
@@ -75,6 +76,83 @@ async function tryRefreshToken(): Promise<boolean> {
   });
 
   return refreshPromise;
+}
+
+/**
+ * Upload a file with real-time progress tracking.
+ *
+ * Works with a streaming proxy endpoint that sends newline-delimited JSON:
+ *   { phase: "uploading", progress: 42 }   — bytes consumed by backend
+ *   { phase: "processing" }                 — backend is processing the file
+ *   { done: true, status, data }            — final response
+ *   { error: "message" }                    — failure
+ *
+ * Returns `{ promise, abort }` so callers can cancel in-flight uploads.
+ */
+export function uploadWithProgress<T>(
+  url: string,
+  apiKey: string,
+  body: FormData,
+  onProgress: (percent: number, phase: UploadPhase) => void,
+): { promise: Promise<T>; abort: () => void } {
+  const controller = new AbortController();
+
+  const promise = (async () => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "X-API-KEY": apiKey },
+      body,
+      signal: controller.signal,
+    });
+
+    if (!res.body) throw new Error("No response stream");
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let result: T | null = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const event = JSON.parse(line);
+
+        if (event.error) {
+          throw new Error(event.error);
+        }
+        if (event.phase === "uploading" && event.progress !== undefined) {
+          onProgress(event.progress, "uploading");
+        }
+        if (event.phase === "processing") {
+          onProgress(100, "processing");
+        }
+        if (event.done) {
+          onProgress(100, "done");
+          if (event.status >= 400) {
+            const msg =
+              event.data?.error ||
+              event.data?.message ||
+              event.data?.detail ||
+              `Upload failed: ${event.status}`;
+            throw new Error(msg);
+          }
+          result = event.data as T;
+        }
+      }
+    }
+
+    if (!result) throw new Error("No response received from server");
+    return result;
+  })();
+
+  return { promise, abort: () => controller.abort() };
 }
 
 /**

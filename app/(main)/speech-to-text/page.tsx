@@ -1879,7 +1879,7 @@ function DatasetsTab({
                       </td>
                       <td className="px-4 py-3 align-top">
                         <select
-                          value={sample.language_id}
+                          value={sample.language_id ?? ""}
                           onChange={(e) =>
                             handleUpdateSample(
                               sample.id,

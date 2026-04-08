@@ -2,7 +2,7 @@
 
 import { APIKey } from "@/app/lib/types/credentials";
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/(main)/document/page";
+import { Document } from "@/app/lib/types/document";
 import {
   RefreshIcon,
   KeyIcon,
@@ -44,7 +44,7 @@ export function DocumentListing({
           </h2>
           <button
             onClick={onUploadNew}
-            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
+            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover cursor-pointer"
           >
             + Upload
           </button>
@@ -55,7 +55,6 @@ export function DocumentListing({
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 bg-[hsl(0,0%,98%)]"
       >
-        {/* Loading State */}
         {isLoading && documents.length === 0 ? (
           <div className="text-center py-12 text-[hsl(330,3%,49%)]">
             <RefreshIcon className="w-12 h-12 mx-auto mb-4 animate-spin" />
@@ -107,11 +106,11 @@ export function DocumentListing({
                 onClick={() => onSelect(doc)}
                 className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                   selectedDocument?.id === doc.id
-                    ? "ring-2 ring-offset-1 bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
+                    ? "bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
                     : "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <DocumentFileIcon className="w-5 h-5 shrink-0 text-[#171717]" />
@@ -128,7 +127,7 @@ export function DocumentListing({
                       e.stopPropagation();
                       onDelete(doc.id);
                     }}
-                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)]"
+                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)] cursor-pointer"
                     title="Delete Document"
                   >
                     <TrashIcon />

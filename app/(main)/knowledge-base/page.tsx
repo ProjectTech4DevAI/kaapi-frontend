@@ -8,28 +8,7 @@ import PageHeader from "@/app/components/PageHeader";
 import Modal from "@/app/components/Modal";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-
-export interface Document {
-  id: string;
-  fname: string;
-  object_store_url: string;
-  signed_url?: string;
-  file_size?: number;
-  inserted_at?: string;
-  updated_at?: string;
-}
-
-export interface Collection {
-  id: string;
-  name?: string;
-  description?: string;
-  knowledge_base_id?: string;
-  inserted_at: string;
-  updated_at: string;
-  status?: string;
-  job_id?: string;
-  documents?: Document[];
-}
+import { Document, Collection } from "@/app/lib/types/document";
 
 export default function KnowledgeBasePage() {
   const { sidebarCollapsed } = useApp();
@@ -919,37 +898,25 @@ export default function KnowledgeBasePage() {
             style={{ borderColor: colors.border }}
           >
             {/* Create Button */}
-            <div className="p-6 flex justify-end">
+            <div className="px-6 py-4 flex justify-end">
               <button
                 onClick={() => {
                   setShowCreateForm(true);
                   setSelectedCollection(null);
                 }}
-                className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                  border: `1px solid ${colors.border}`,
-                }}
+                className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-bg-secondary text-text-primary border border-border"
               >
                 + Create
               </button>
             </div>
 
-            {/* Collections List */}
             <div className="flex-1 overflow-y-auto px-6 pb-6">
               {isLoading && collections.length === 0 ? (
-                <div
-                  className="text-center py-8"
-                  style={{ color: colors.text.secondary }}
-                >
+                <div className="text-center py-8 text-text-secondary">
                   Loading knowledge bases...
                 </div>
               ) : collections.length === 0 ? (
-                <div
-                  className="text-center py-8"
-                  style={{ color: colors.text.secondary }}
-                >
+                <div className="text-center py-8 text-text-secondary">
                   No knowledge bases yet. Create your first one!
                 </div>
               ) : (
@@ -963,9 +930,7 @@ export default function KnowledgeBasePage() {
                         fetchCollectionDetails(collection.id);
                       }}
                       className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                        selectedCollection?.id === collection.id
-                          ? "ring-2 ring-offset-1"
-                          : ""
+                        selectedCollection?.id === collection.id ? "" : ""
                       }`}
                       style={{
                         backgroundColor:
@@ -978,7 +943,7 @@ export default function KnowledgeBasePage() {
                             : colors.border,
                       }}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <svg
@@ -1687,9 +1652,7 @@ export default function KnowledgeBasePage() {
         maxWidth="max-w-5xl"
         maxHeight="h-[80vh]"
       >
-        {/* Two-pane body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left pane — doc list */}
+        <div className="flex flex-1 overflow-hidden h-full">
           <div
             className="w-1/5 flex flex-col overflow-y-auto shrink-0"
             style={{ borderRight: `1px solid ${colors.border}` }}

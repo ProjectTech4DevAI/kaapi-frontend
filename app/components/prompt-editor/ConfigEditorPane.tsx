@@ -366,7 +366,6 @@ export default function ConfigEditorPane({
                 />
               </button>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <div
                   className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto"
@@ -642,7 +641,6 @@ export default function ConfigEditorPane({
               </p>
             </div>
 
-            {/* Model */}
             <div>
               <label
                 className="block text-xs font-semibold mb-2"

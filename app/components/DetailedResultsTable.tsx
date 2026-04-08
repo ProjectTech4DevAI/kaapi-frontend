@@ -387,7 +387,7 @@ function GroupedResultsTable({ traces }: { traces: GroupedTraceItem[] }) {
       {/* Table Container - overflow-x-auto enables horizontal scroll when table exceeds viewport */}
       <div className="overflow-x-auto">
         <table
-          className="w-full border-collapse"
+          className="w-full border-collapse table-fixed"
           style={{ minWidth: `${tableMinWidth}px` }}
         >
           {/* Table Header - matching row format styling */}

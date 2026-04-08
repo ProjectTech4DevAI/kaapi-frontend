@@ -16,7 +16,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ open, onClose }: LoginModalProps) {
   const router = useRouter();
-  const { loginWithGoogle } = useAuth();
+  const { loginWithToken } = useAuth();
   const toast = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -38,7 +38,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
       });
 
       const { access_token, user, google_profile } = res.data;
-      loginWithGoogle(access_token, user, google_profile);
+      loginWithToken(access_token, user, google_profile);
       onClose();
     } catch (err) {
       toast.error(

@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const setKeys = useCallback((keys: APIKey[]) => persist(keys), [persist]);
 
-  const loginWithGoogle = useCallback(
+  const loginWithToken = useCallback(
     (accessToken: string, user?: User, googleProfile?: GoogleProfile) => {
       const newSession: Session = {
         accessToken,
@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         addKey,
         removeKey,
         setKeys,
-        loginWithGoogle,
+        loginWithToken,
         logout,
       }}
     >

@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
-import { Dataset } from "@/app/(main)/datasets/page";
+import { Dataset } from "@/app/lib/types/dataset";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";

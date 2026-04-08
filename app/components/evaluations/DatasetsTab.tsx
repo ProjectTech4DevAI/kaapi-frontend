@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
-import { Dataset } from "@/app/(main)/datasets/page";
+import { Dataset } from "@/app/lib/types/dataset";
 import { useToast } from "@/app/components/Toast";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 import Loader from "@/app/components/Loader";
@@ -48,6 +49,7 @@ export default function DatasetsTab({
   loadStoredDatasets,
   toast,
 }: DatasetsTabProps) {
+  const { isAuthenticated } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -70,7 +72,7 @@ export default function DatasetsTab({
   }, [showDuplicationInfo]);
 
   const handleDeleteDataset = async (datasetId: number) => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
 
     setDeletingId(datasetId);
     try {
@@ -98,7 +100,7 @@ export default function DatasetsTab({
   } | null>(null);
 
   const handleViewDataset = async (datasetId: number, datasetName: string) => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
 
     setViewingId(datasetId);
     try {

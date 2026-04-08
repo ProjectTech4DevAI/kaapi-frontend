@@ -11,23 +11,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
+import { Dataset } from "@/app/lib/types/dataset";
 
-export interface Dataset {
-  dataset_id: number;
-  dataset_name: string;
-  description?: string;
-  total_items: number;
-  original_items: number;
-  duplication_factor: number;
-  langfuse_dataset_id: string;
-  object_store_url: string;
-}
-
-// Keep for backward compatibility with evaluations page
 export const DATASETS_STORAGE_KEY = "kaapi_datasets";
 
 export default function Datasets() {
@@ -42,17 +30,14 @@ export default function Datasets() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { activeKey: apiKey, isAuthenticated } = useAuth();
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Fetch datasets from backend when API key is available
   useEffect(() => {
-    if (apiKey) {
+    if (isAuthenticated) {
       fetchDatasets();
     }
-  }, [apiKey]);
+  }, [apiKey, isAuthenticated]);
 
   const fetchDatasets = async () => {
     if (!isAuthenticated) {
@@ -197,7 +182,7 @@ export default function Datasets() {
                 onUploadNew={() => setIsModalOpen(true)}
                 isLoading={isLoading}
                 error={error}
-                apiKey={apiKey}
+                isAuthenticated={isAuthenticated}
                 totalPages={totalPages}
                 currentPage={currentPage}
                 onPageChange={paginate}
@@ -236,7 +221,7 @@ interface DatasetListingProps {
   onUploadNew: () => void;
   isLoading: boolean;
   error: string | null;
-  apiKey: APIKey | null;
+  isAuthenticated: boolean;
   totalPages: number;
   currentPage: number;
   onPageChange: (page: number) => void;
@@ -248,7 +233,7 @@ function DatasetListing({
   onUploadNew,
   isLoading,
   error,
-  apiKey,
+  isAuthenticated,
   totalPages,
   currentPage,
   onPageChange,
@@ -310,7 +295,7 @@ function DatasetListing({
             </svg>
             <p className="text-sm">Loading datasets...</p>
           </div>
-        ) : !apiKey ? (
+        ) : !isAuthenticated ? (
           <div className="text-center py-12 text-text-secondary">
             <p className="font-medium mb-2 text-text-primary">Login required</p>
             <p className="text-sm">Please log in to manage datasets</p>
@@ -512,7 +497,7 @@ function DatasetListing({
         {/* Pagination */}
         {!isLoading &&
           !error &&
-          apiKey &&
+          isAuthenticated &&
           datasets.length > 0 &&
           totalPages > 1 && (
             <div

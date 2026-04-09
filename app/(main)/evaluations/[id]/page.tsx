@@ -24,6 +24,7 @@ import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
+import { formatCostUSD, formatTokenCount } from "@/app/components/utils";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
 import {
@@ -690,6 +691,104 @@ export default function EvaluationReport() {
                       >
                         No summary scores available
                       </p>
+                    </div>
+                  )}
+
+                  {/* Cost Breakdown */}
+                  {job.cost && (
+                    <div className="mt-6">
+                      <h3
+                        className="text-sm font-semibold mb-3"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        Cost Breakdown
+                      </h3>
+                      <div className="flex gap-4 flex-wrap">
+                        {/* Total Cost */}
+                        <div
+                          className="rounded-lg px-6 py-5 text-center min-w-[180px]"
+                          style={{
+                            backgroundColor: colors.bg.primary,
+                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
+                          }}
+                        >
+                          <div
+                            className="text-xs font-medium mb-2"
+                            style={{ color: colors.text.secondary }}
+                          >
+                            Total Cost
+                          </div>
+                          <div
+                            className="text-2xl font-bold"
+                            style={{ color: colors.text.primary }}
+                          >
+                            {formatCostUSD(job.cost.total_cost_usd)}
+                          </div>
+                        </div>
+
+                        {/* Response Cost */}
+                        {job.cost.response && (
+                          <div
+                            className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px]"
+                            style={{
+                              backgroundColor: colors.bg.primary,
+                              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
+                            }}
+                          >
+                            <div
+                              className="text-xs font-medium mb-2"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              Response ({job.cost.response.model})
+                            </div>
+                            <div
+                              className="text-2xl font-bold"
+                              style={{ color: colors.text.primary }}
+                            >
+                              {formatCostUSD(job.cost.response.cost_usd)}
+                            </div>
+                            <div
+                              className="text-xs mt-1"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              {formatTokenCount(job.cost.response.total_tokens)} tokens
+                              {job.cost.response.input_tokens != null && job.cost.response.output_tokens != null && (
+                                <span> · {formatTokenCount(job.cost.response.input_tokens)} in / {formatTokenCount(job.cost.response.output_tokens)} out</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Embedding Cost */}
+                        {job.cost.embedding && (
+                          <div
+                            className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px]"
+                            style={{
+                              backgroundColor: colors.bg.primary,
+                              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.06)",
+                            }}
+                          >
+                            <div
+                              className="text-xs font-medium mb-2"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              Embedding ({job.cost.embedding.model})
+                            </div>
+                            <div
+                              className="text-2xl font-bold"
+                              style={{ color: colors.text.primary }}
+                            >
+                              {formatCostUSD(job.cost.embedding.cost_usd)}
+                            </div>
+                            <div
+                              className="text-xs mt-1"
+                              style={{ color: colors.text.secondary }}
+                            >
+                              {formatTokenCount(job.cost.embedding.total_tokens)} tokens
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

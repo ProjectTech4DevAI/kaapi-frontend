@@ -19,6 +19,7 @@ function InviteContent() {
   const { loginWithToken } = useAuth();
   const [status, setStatus] = useState<Status>("verifying");
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -50,10 +51,6 @@ function InviteContent() {
 
         loginWithToken(data.data.access_token, data.data.user);
         setStatus("success");
-
-        setTimeout(() => {
-          if (!cancelled) router.push("/evaluations");
-        }, 2000);
       } catch {
         if (!cancelled) {
           setStatus("error");
@@ -65,7 +62,28 @@ function InviteContent() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, router, loginWithToken]);
+  }, [searchParams, loginWithToken]);
+
+  useEffect(() => {
+    if (status !== "success") return;
+
+    const duration = 2000;
+    const interval = 30;
+    let elapsed = 0;
+
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const pct = Math.min((elapsed / duration) * 100, 100);
+      setProgress(pct);
+
+      if (elapsed >= duration) {
+        clearInterval(timer);
+        router.push("/evaluations");
+      }
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [status, router]);
 
   return (
     <div className="min-h-screen bg-bg-secondary flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -144,7 +162,10 @@ function InviteContent() {
             {status === "success" && (
               <div className="mt-6 flex justify-center">
                 <div className="h-1 w-32 rounded-full bg-neutral-100 overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full animate-[progress_2s_ease-in-out]" />
+                  <div
+                    className="h-full bg-green-500 rounded-full transition-[width] duration-75 ease-linear"
+                    style={{ width: `${progress}%` }}
+                  />
                 </div>
               </div>
             )}

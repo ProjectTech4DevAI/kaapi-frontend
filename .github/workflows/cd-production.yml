@@ -1,0 +1,35 @@
+name: Deploy Kaapi to EC2 Production
+
+on:
+  push:
+    tags:
+      - "v*" # Deploy only when tags like v1.0.0, v2.1.0, etc., are created
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: AWS_PRODUCTION_ENV
+ 
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["git config --global --add safe.directory ${{ secrets.BUILD_DIRECTORY }} && set -e && cd ${{ secrets.BUILD_DIRECTORY }} && git pull origin release && npm ci && npm run build && pm2 start ${{ secrets.PM2_APP_NAME }}"]' \
+            --region ${{ secrets.AWS_REGION }}

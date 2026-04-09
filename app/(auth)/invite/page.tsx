@@ -9,6 +9,7 @@ import {
   WarningIcon,
   SpinnerIcon,
 } from "@/app/components/icons";
+import { Button } from "@/app/components";
 
 type Status = "verifying" | "success" | "error";
 
@@ -48,12 +49,11 @@ function InviteContent() {
         }
 
         loginWithToken(data.data.access_token, data.data.user);
-
         setStatus("success");
 
         setTimeout(() => {
           if (!cancelled) router.push("/evaluations");
-        }, 1500);
+        }, 2000);
       } catch {
         if (!cancelled) {
           setStatus("error");
@@ -68,11 +68,31 @@ function InviteContent() {
   }, [searchParams, router, loginWithToken]);
 
   return (
-    <div className="min-h-screen bg-bg-secondary flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+    <div className="min-h-screen bg-bg-secondary flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/4 w-[600px] h-[600px] rounded-full bg-linear-to-br from-blue-50 to-purple-50 opacity-60 blur-3xl" />
+        <div className="absolute -bottom-1/2 -left-1/4 w-[500px] h-[500px] rounded-full bg-linear-to-tr from-green-50 to-blue-50 opacity-40 blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-sm relative z-10">
+        <div className="text-center mb-8">
+          <h2 className="text-lg font-semibold text-text-primary tracking-tight">
+            Kaapi Konsole
+          </h2>
+          <p className="text-xs text-text-secondary mt-0.5">by Tech4Dev</p>
+        </div>
+
+        <div
+          className={`bg-white rounded-2xl border shadow-sm overflow-hidden transition-all duration-500 ${
+            status === "error"
+              ? "border-red-200"
+              : status === "success"
+                ? "border-green-200"
+                : "border-border"
+          }`}
+        >
           <div
-            className="h-2"
+            className="h-1 transition-all duration-700"
             style={{
               background:
                 status === "error"
@@ -83,33 +103,34 @@ function InviteContent() {
             }}
           />
 
-          <div className="px-8 py-10 text-center">
-            <p className="text-xs font-medium text-text-secondary tracking-wider mb-8">
-              Kaapi Konsole
-            </p>
-
-            <div className="flex justify-center mb-6">
-              {status === "verifying" && (
-                <div className="w-14 h-14 rounded-full bg-neutral-50 border border-border flex items-center justify-center">
+          <div className="px-8 py-10">
+            <div className="flex justify-center mb-5">
+              <div
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  status === "verifying"
+                    ? "bg-neutral-50 border border-border"
+                    : status === "success"
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-red-50 border border-red-200"
+                }`}
+              >
+                {status === "verifying" && (
                   <SpinnerIcon className="w-7 h-7 text-text-secondary animate-spin" />
-                </div>
-              )}
-              {status === "success" && (
-                <div className="w-14 h-14 rounded-full bg-green-50 border border-green-200 flex items-center justify-center">
-                  <CheckCircleIcon className="w-7 h-7 text-green-600" />
-                </div>
-              )}
-              {status === "error" && (
-                <div className="w-14 h-14 rounded-full bg-red-50 border border-red-200 flex items-center justify-center">
-                  <WarningIcon className="w-7 h-7 text-red-500" />
-                </div>
-              )}
+                )}
+                {status === "success" && (
+                  <CheckCircleIcon className="w-8 h-8 text-green-600" />
+                )}
+                {status === "error" && (
+                  <WarningIcon className="w-8 h-8 text-red-500" />
+                )}
+              </div>
             </div>
 
-            <h1 className="text-xl font-semibold text-text-primary mb-2">
-              {status === "verifying" && "Verifying your invitation..."}
-              {status === "success" && "You're all set!"}
-              {status === "error" && "Invitation failed"}
+            {/* Title */}
+            <h1 className="text-center text-xl font-semibold text-text-primary mb-2">
+              {status === "verifying" && "Verifying invitation"}
+              {status === "success" && "Welcome aboard!"}
+              {status === "error" && "Something went wrong"}
             </h1>
 
             <p className="text-sm text-text-secondary leading-relaxed">
@@ -121,33 +142,47 @@ function InviteContent() {
             </p>
 
             {status === "success" && (
-              <div className="mt-6">
-                <div className="h-1 w-24 mx-auto rounded-full bg-neutral-100 overflow-hidden">
-                  <div className="h-full bg-green-500 rounded-full animate-[progress_1.5s_ease-in-out]" />
+              <div className="mt-6 flex justify-center">
+                <div className="h-1 w-32 rounded-full bg-neutral-100 overflow-hidden">
+                  <div className="h-full bg-green-500 rounded-full animate-[progress_2s_ease-in-out]" />
                 </div>
               </div>
             )}
 
+            {status === "verifying" && (
+              <div className="mt-6 flex justify-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-pulse"
+                    style={{ animationDelay: `${i * 200}ms` }}
+                  />
+                ))}
+              </div>
+            )}
+
             {status === "error" && (
-              <div className="mt-6 space-y-3">
-                <button
-                  onClick={() => router.push("/evaluations")}
-                  className="w-full py-2.5 rounded-lg bg-text-primary text-white text-sm font-medium hover:opacity-90 transition-opacity"
-                >
+              <div className="mt-8 space-y-3">
+                <Button fullWidth onClick={() => router.push("/evaluations")}>
                   Go to Dashboard
+                </Button>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="w-full text-center text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                >
+                  Try again
                 </button>
-                <p className="text-xs text-text-secondary">
-                  If you believe this is a mistake, please contact your
-                  administrator.
-                </p>
               </div>
             )}
           </div>
         </div>
 
-        <p className="text-center text-xs text-text-secondary mt-6">
-          Powered by Tech4Dev
-        </p>
+        {status === "error" && (
+          <p className="text-center text-xs text-text-secondary mt-5 leading-relaxed">
+            If this keeps happening, please contact your organization
+            administrator for a new invitation link.
+          </p>
+        )}
       </div>
     </div>
   );

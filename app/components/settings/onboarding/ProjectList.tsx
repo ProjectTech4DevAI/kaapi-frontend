@@ -51,7 +51,7 @@ export default function ProjectList({
     <div>
       <button
         onClick={onBack}
-        className="text-sm text-text-secondary hover:text-text-primary mb-6 flex items-center gap-1 transition-colors"
+        className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
       >
         <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to organizations
       </button>
@@ -105,7 +105,7 @@ export default function ProjectList({
               </button>
               <div className="flex items-center gap-2 shrink-0 ml-3">
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                  className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${
                     project.is_active
                       ? "bg-green-50 text-green-700 border border-green-200"
                       : "bg-neutral-100 text-text-secondary border border-border"
@@ -125,7 +125,9 @@ export default function ProjectList({
                     <EditIcon className="w-4.5 h-4.5" />
                   </button>
                 )}
-                <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
+                <button onClick={() => onSelectProject(project)}>
+                  <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
+                </button>
               </div>
             </div>
           ))}

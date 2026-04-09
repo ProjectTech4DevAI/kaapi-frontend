@@ -91,9 +91,12 @@ export default function UserList({
 
   return (
     <div>
-      <Button variant="ghost" size="sm" onClick={onBack}>
+      <button
+        onClick={onBack}
+        className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
+      >
         <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
-      </Button>
+      </button>
 
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -140,7 +143,7 @@ export default function UserList({
               </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium ${
+                  className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${
                     user.is_active
                       ? "bg-green-50 text-green-700 border border-green-200"
                       : "bg-neutral-100 text-text-secondary border border-border"
@@ -153,10 +156,10 @@ export default function UserList({
                   <button
                     onClick={() => handleRemoveUser(user.user_id)}
                     disabled={removingId === user.user_id}
-                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full font-medium border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 font-medium rounded-lg border border-red bg-white text-red-600 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
                   >
                     <TrashIcon className="w-3.5 h-3.5" />
-                    {removingId === user.user_id ? "Deleting..." : "Delete"}
+                    {removingId === user.user_id ? "Removing..." : "Remove"}
                   </button>
                 )}
               </div>

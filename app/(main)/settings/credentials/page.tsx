@@ -8,11 +8,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Sidebar from "@/app/components/Sidebar";
+import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useApp } from "@/app/lib/context/AppContext";
 import {
   PROVIDERS,
   Credential,
@@ -22,12 +21,10 @@ import { getExistingForProvider } from "@/app/lib/utils";
 import ProviderList from "@/app/components/settings/credentials/ProviderList";
 import CredentialForm from "@/app/components/settings/credentials/CredentialForm";
 import { apiFetch } from "@/app/lib/apiClient";
-import Link from "next/link";
 
 export default function CredentialsPage() {
   const toast = useToast();
-  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
-  const { apiKeys } = useAuth();
+  const { apiKeys, isAuthenticated } = useAuth();
   const [selectedProvider, setSelectedProvider] = useState<ProviderDef>(
     PROVIDERS[0],
   );
@@ -43,7 +40,7 @@ export default function CredentialsPage() {
 
   // Load credentials once we have an API key
   useEffect(() => {
-    if (apiKeys.length === 0) return;
+    if (!isAuthenticated) return;
     loadCredentials();
   }, [apiKeys]);
 
@@ -75,11 +72,11 @@ export default function CredentialsPage() {
     try {
       const data = await apiFetch<{ data?: Credential[] } | Credential[]>(
         "/api/credentials",
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
       );
       setCredentials(Array.isArray(data) ? data : data.data || []);
-    } catch (err) {
-      console.error("Failed to load credentials:", err);
+    } catch {
+      // Silently ignore — credentials may not exist yet or auth may be cookie-only
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +97,7 @@ export default function CredentialsPage() {
   };
 
   const handleSave = async () => {
-    if (apiKeys.length === 0) {
+    if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
@@ -115,13 +112,13 @@ export default function CredentialsPage() {
     setIsSaving(true);
     try {
       if (existingCredential) {
-        await apiFetch("/api/credentials", apiKeys[0].key, {
+        await apiFetch("/api/credentials", apiKeys[0]?.key ?? "", {
           method: "PATCH",
           body: JSON.stringify(buildCredentialBody(true)),
         });
         toast.success(`${selectedProvider.name} credentials updated`);
       } else {
-        await apiFetch("/api/credentials", apiKeys[0].key, {
+        await apiFetch("/api/credentials", apiKeys[0]?.key ?? "", {
           method: "POST",
           body: JSON.stringify(buildCredentialBody(false)),
         });
@@ -158,12 +155,12 @@ export default function CredentialsPage() {
   };
 
   const handleDelete = async () => {
-    if (!existingCredential || apiKeys.length === 0) return;
+    if (!existingCredential || !isAuthenticated) return;
     setIsDeleting(true);
     try {
       await apiFetch(
         `/api/credentials/${selectedProvider.credentialKey}`,
-        apiKeys[0].key,
+        apiKeys[0]?.key ?? "",
         { method: "DELETE" },
       );
       toast.success(`${selectedProvider.name} credentials removed`);
@@ -199,10 +196,7 @@ export default function CredentialsPage() {
       style={{ backgroundColor: colors.bg.secondary }}
     >
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          activeRoute="/settings/credentials"
-        />
+        <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div
@@ -212,41 +206,19 @@ export default function CredentialsPage() {
               borderColor: colors.border,
             }}
           >
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-md"
-                style={{ color: colors.text.secondary }}
-                aria-label="Toggle sidebar"
+            <div>
+              <h1
+                className="text-base font-semibold"
+                style={{
+                  color: colors.text.primary,
+                  letterSpacing: "-0.01em",
+                }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
-              <div>
-                <h1
-                  className="text-base font-semibold"
-                  style={{
-                    color: colors.text.primary,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  Settings
-                </h1>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  Manage provider credentials
-                </p>
-              </div>
+                Credentials
+              </h1>
+              <p className="text-xs" style={{ color: colors.text.secondary }}>
+                Manage provider credentials
+              </p>
             </div>
           </div>
 
@@ -259,7 +231,7 @@ export default function CredentialsPage() {
             />
 
             <div className="flex-1 overflow-y-auto p-8">
-              {apiKeys.length === 0 ? (
+              {!isAuthenticated ? (
                 <div
                   className="max-w-lg rounded-lg border p-6 text-sm"
                   style={{
@@ -268,15 +240,7 @@ export default function CredentialsPage() {
                     color: colors.text.secondary,
                   }}
                 >
-                  No API key found. Please add one in{" "}
-                  <Link
-                    href="/keystore"
-                    className="underline"
-                    style={{ color: colors.text.primary }}
-                  >
-                    Keystore
-                  </Link>{" "}
-                  first.
+                  Please log in to manage credentials.
                 </div>
               ) : (
                 <CredentialForm

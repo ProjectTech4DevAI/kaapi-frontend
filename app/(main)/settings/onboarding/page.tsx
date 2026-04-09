@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/app/components/Sidebar";
+import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
@@ -61,8 +60,7 @@ function OrganizationListSkeleton() {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { sidebarCollapsed } = useApp();
-  const { activeKey, currentUser, isHydrated } = useAuth();
+  const { activeKey, currentUser, isHydrated, isAuthenticated } = useAuth();
   const [view, setView] = useState<View>("loading");
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -102,7 +100,7 @@ export default function OnboardingPage() {
   // Redirect if no API key or not a superuser
   useEffect(() => {
     if (!isHydrated) return;
-    if (!activeKey) {
+    if (!isAuthenticated) {
       router.replace("/");
       return;
     }
@@ -179,10 +177,7 @@ export default function OnboardingPage() {
       style={{ backgroundColor: colors.bg.secondary }}
     >
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          activeRoute="/settings/onboarding"
-        />
+        <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader

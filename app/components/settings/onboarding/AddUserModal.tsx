@@ -160,7 +160,7 @@ export default function AddUserModal({
               {userRows.length > 1 && (
                 <button
                   onClick={() => removeRow(index)}
-                  className="mt-2 p-1 text-text-secondary hover:text-red-500 transition-colors"
+                  className="mt-2 p-1 text-text-secondary hover:text-red-500 transition-colors cursor-pointer"
                 >
                   &times;
                 </button>

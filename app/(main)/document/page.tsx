@@ -35,7 +35,7 @@ export default function DocumentPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("uploading");
   const abortUploadRef = useRef<(() => void) | null>(null);
-  const { activeKey: apiKey } = useAuth();
+  const { activeKey: apiKey, isAuthenticated } = useAuth();
 
   const {
     items: documents,
@@ -72,7 +72,7 @@ export default function DocumentPage() {
   };
 
   const handleUpload = async () => {
-    if (!apiKey || !selectedFile) return;
+    if (!isAuthenticated || !selectedFile) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -84,7 +84,7 @@ export default function DocumentPage() {
 
       const { promise, abort } = uploadWithProgress<{ data?: { id: string } }>(
         "/api/document",
-        apiKey.key,
+        apiKey?.key ?? "",
         formData,
         (percent, phase) => {
           setUploadProgress(percent);
@@ -121,8 +121,8 @@ export default function DocumentPage() {
   };
 
   const handleDeleteDocument = async (documentId: string) => {
-    if (!apiKey) {
-      toast.error("No API key found");
+    if (!isAuthenticated) {
+      toast.error("Please log in to continue");
       return;
     }
 
@@ -131,7 +131,7 @@ export default function DocumentPage() {
     }
 
     try {
-      await apiFetch(`/api/document/${documentId}`, apiKey.key, {
+      await apiFetch(`/api/document/${documentId}`, apiKey?.key ?? "", {
         method: "DELETE",
       });
 
@@ -150,13 +150,13 @@ export default function DocumentPage() {
   };
 
   const handleSelectDocument = async (doc: Document) => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingDocument(true);
     try {
       const data = await apiFetch<{ data?: Document }>(
         `/api/document/${doc.id}`,
-        apiKey.key,
+        apiKey?.key ?? "",
       );
       const documentDetails: Document =
         data.data ?? (data as unknown as Document);
@@ -201,7 +201,6 @@ export default function DocumentPage() {
                 isLoading={isLoading}
                 isLoadingMore={isLoadingMore}
                 error={error}
-                apiKey={apiKey}
                 scrollRef={scrollRef}
               />
             </div>

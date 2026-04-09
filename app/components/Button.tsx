@@ -33,9 +33,9 @@ const variantStyles: Record<ButtonVariant, { base: string; disabled: string }> =
   };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-xs",
-  md: "px-4 py-2 text-sm",
-  lg: "px-5 py-2.5 text-sm",
+  sm: "px-3 py-1.5",
+  md: "px-4 py-2",
+  lg: "px-5 py-2.5",
 };
 
 export default function Button({
@@ -52,7 +52,7 @@ export default function Button({
   return (
     <button
       disabled={disabled}
-      className={`rounded-lg font-medium transition-colors inline-flex items-center justify-center gap-2 cursor-pointer ${
+      className={`rounded-full text-sm font-medium transition-colors inline-flex items-center justify-center gap-2 cursor-pointer ${
         sizeStyles[size]
       } ${disabled ? styles.disabled : styles.base} ${
         fullWidth ? "w-full" : ""

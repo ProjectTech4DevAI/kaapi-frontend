@@ -45,8 +45,8 @@ export default function ConfigLibraryPage() {
     Record<string, number>
   >({});
   const { sidebarCollapsed } = useApp();
-  const { activeKey } = useAuth();
-  const apiKey = activeKey?.key;
+  const { activeKey, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [columnCount, setColumnCount] = useState(3);
@@ -100,11 +100,11 @@ export default function ConfigLibraryPage() {
 
   useEffect(() => {
     const fetchEvaluationCounts = async () => {
-      if (!activeKey) return;
+      if (!isAuthenticated) return;
       try {
         const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
           "/api/evaluations",
-          activeKey.key,
+          apiKey,
         );
         const jobs: EvalJob[] = Array.isArray(data) ? data : data.data || [];
         const counts: Record<string, number> = {};
@@ -129,7 +129,7 @@ export default function ConfigLibraryPage() {
         await existing;
         return;
       }
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
 
       const loadPromise = (async () => {
         const res = await apiFetch<{
@@ -144,7 +144,7 @@ export default function ConfigLibraryPage() {
       pendingVersionLoads.set(configId, loadPromise);
       await loadPromise;
     },
-    [apiKey],
+    [apiKey, isAuthenticated],
   );
 
   const loadSingleVersion = useCallback(
@@ -152,7 +152,7 @@ export default function ConfigLibraryPage() {
       const key = `${configId}:${version}`;
       const existing = pendingSingleVersionLoads.get(key);
       if (existing) return existing;
-      if (!apiKey) return null;
+      if (!isAuthenticated) return null;
 
       const configPublic =
         configs.find((c) => c.id === configId) ??
@@ -179,7 +179,7 @@ export default function ConfigLibraryPage() {
       pendingSingleVersionLoads.set(key, loadPromise);
       return loadPromise;
     },
-    [apiKey, configs],
+    [apiKey, configs, isAuthenticated],
   );
 
   const handleCreateNew = () => {
@@ -277,17 +277,7 @@ export default function ConfigLibraryPage() {
             ) : error ? (
               <div className="rounded-lg p-6 text-center bg-[#fef2f2] border border-[#fecaca]">
                 <WarningTriangleIcon className="w-12 h-12 mx-auto mb-3 text-[#dc2626]" />
-                <p className="text-sm font-medium text-[#dc2626]">{error}</p>
-                <button
-                  onClick={() => router.push("/keystore")}
-                  className="mt-4 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: colors.bg.primary,
-                  }}
-                >
-                  Go to Keystore
-                </button>
+                <p className="text-sm font-medium text-status-error">{error}</p>
               </div>
             ) : configs.length === 0 ? (
               <div

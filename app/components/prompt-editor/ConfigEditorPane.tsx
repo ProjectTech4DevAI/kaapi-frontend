@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
 import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
 import {
   ConfigPublic,
   SavedConfig,
   ConfigVersionItems,
+  GuardrailRef,
 } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
 import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
@@ -17,6 +18,187 @@ import {
   InfoIcon,
 } from "@/app/components/icons";
 import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
+
+interface ValidatorConfigOption {
+  id: string;
+  name: string;
+  type: string;
+  stage?: string;
+}
+
+function GuardrailsSection({
+  label,
+  guardrails,
+  onChange,
+  apiKey,
+  queryString,
+  stage,
+}: {
+  label: string;
+  guardrails: GuardrailRef[];
+  onChange: (refs: GuardrailRef[]) => void;
+  apiKey: string;
+  queryString: string | null;
+  stage: "input" | "output";
+}) {
+  const [validators, setValidators] = useState<ValidatorConfigOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (!queryString) return;
+    setLoading(true);
+    fetch(`/api/guardrails/validators/configs${queryString}`, {
+      headers: apiKey ? { "X-API-KEY": apiKey } : {},
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const items: ValidatorConfigOption[] = Array.isArray(
+          data?.data?.configs,
+        )
+          ? data.data.configs
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.configs)
+              ? data.configs
+              : Array.isArray(data)
+                ? data
+                : [];
+        setValidators(items);
+      })
+      .catch(() => setValidators([]))
+      .finally(() => setLoading(false));
+  }, [queryString, apiKey]);
+
+  const addedIds = new Set(guardrails.map((g) => g.validator_config_id));
+  const available = validators.filter(
+    (v) => !addedIds.has(v.id) && (!v.stage || v.stage === stage),
+  );
+
+  const handleAdd = (id: string) => {
+    onChange([...guardrails, { validator_config_id: id }]);
+    setDropdownOpen(false);
+  };
+
+  const handleRemove = (id: string) => {
+    onChange(guardrails.filter((g) => g.validator_config_id !== id));
+  };
+
+  const getValidatorName = (id: string) => {
+    const v = validators.find(
+      (v) => v.id === id && (!v.stage || v.stage === stage),
+    );
+    return v ? v.name || v.type : id.slice(0, 8) + "…";
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <label
+          className="text-xs font-semibold"
+          style={{ color: colors.text.primary }}
+        >
+          {label}
+        </label>
+        <div className="relative">
+          <button
+            onClick={() => setDropdownOpen((prev) => !prev)}
+            disabled={loading || available.length === 0}
+            className="px-2 py-1 rounded text-xs font-medium"
+            style={{
+              backgroundColor:
+                loading || available.length === 0
+                  ? colors.bg.secondary
+                  : colors.accent.primary,
+              color:
+                loading || available.length === 0
+                  ? colors.text.secondary
+                  : colors.bg.primary,
+              cursor:
+                loading || available.length === 0 ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading
+              ? "Loading…"
+              : available.length === 0
+                ? "No validators"
+                : "+ Add"}
+          </button>
+          {dropdownOpen && available.length > 0 && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setDropdownOpen(false)}
+              />
+              <div
+                className="absolute right-0 z-50 mt-1 w-56 rounded-md shadow-lg max-h-48 overflow-auto"
+                style={{
+                  backgroundColor: colors.bg.primary,
+                  border: `1px solid ${colors.border}`,
+                }}
+              >
+                {available.map((v) => (
+                  <button
+                    key={v.id}
+                    onClick={() => handleAdd(v.id)}
+                    className="w-full px-3 py-2 text-left text-sm transition-colors"
+                    style={{ color: colors.text.primary }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        colors.bg.secondary)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
+                  >
+                    {v.name || v.type}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+      {guardrails.length === 0 ? (
+        <p className="text-xs" style={{ color: colors.text.secondary }}>
+          No validators added
+        </p>
+      ) : (
+        <div className="space-y-1">
+          {guardrails.map((g) => (
+            <div
+              key={g.validator_config_id}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded"
+              style={{
+                backgroundColor: colors.bg.secondary,
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              <span
+                className="text-xs truncate"
+                style={{ color: colors.text.primary }}
+              >
+                {getValidatorName(g.validator_config_id)}
+              </span>
+              <button
+                onClick={() => handleRemove(g.validator_config_id)}
+                className="ml-2 text-xs flex-shrink-0"
+                style={{
+                  color: colors.status.error,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -39,6 +221,7 @@ interface ConfigEditorPaneProps {
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
+  apiKey?: string;
 }
 
 export default function ConfigEditorPane({
@@ -59,7 +242,28 @@ export default function ConfigEditorPane({
   versionItemsMap = {},
   loadVersionsForConfig,
   loadSingleVersion,
+  apiKey = "",
 }: ConfigEditorPaneProps) {
+  const [guardrailsQueryString, setGuardrailsQueryString] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    if (!apiKey) return;
+    fetch("/api/apikeys/verify", { headers: { "X-API-KEY": apiKey } })
+      .then((r) => r.json())
+      .then((data) => {
+        const org_id = data?.data?.organization_id;
+        const proj_id = data?.data?.project_id;
+        if (org_id != null && proj_id != null) {
+          setGuardrailsQueryString(
+            `?organization_id=${parseInt(String(org_id), 10)}&project_id=${parseInt(String(proj_id), 10)}`,
+          );
+        }
+      })
+      .catch(() => {});
+  }, [apiKey]);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null); // config group is expanded in the Load dropdown
   const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
@@ -824,6 +1028,30 @@ export default function ConfigEditorPane({
                 </div>
               ))}
             </div>
+
+            {/* Input Guardrails */}
+            <GuardrailsSection
+              label="Input Guardrails"
+              guardrails={configBlob.input_guardrails ?? []}
+              onChange={(refs) =>
+                onConfigChange({ ...configBlob, input_guardrails: refs })
+              }
+              apiKey={apiKey}
+              queryString={guardrailsQueryString}
+              stage="input"
+            />
+
+            {/* Output Guardrails */}
+            <GuardrailsSection
+              label="Output Guardrails"
+              guardrails={configBlob.output_guardrails ?? []}
+              onChange={(refs) =>
+                onConfigChange({ ...configBlob, output_guardrails: refs })
+              }
+              apiKey={apiKey}
+              queryString={guardrailsQueryString}
+              stage="output"
+            />
 
             <div>
               <label

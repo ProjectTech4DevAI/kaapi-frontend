@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://0.0.0.0:8000";
+const GUARDRAILS_URL = process.env.GUARDRAILS_URL || "http://localhost:8001";
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export type UploadPhase = "uploading" | "processing" | "done";
 
@@ -153,6 +155,38 @@ export function uploadWithProgress<T>(
   })();
 
   return { promise, abort: () => controller.abort() };
+}
+
+/**
+ * Passthrough proxy helper for the Guardrails backend.
+ * By default uses X-API-KEY from the incoming request.
+ * Pass `authHeader` to override (e.g. "Bearer <token>" for env-based auth).
+ */
+export async function guardrailsClient(
+  request: NextRequest | Request,
+  endpoint: string,
+  options: RequestInit & { authHeader?: string } = {},
+) {
+  const { authHeader, ...fetchOptions } = options;
+  const headers = new Headers(fetchOptions.headers);
+  if (!(fetchOptions.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (authHeader) {
+    headers.set("Authorization", authHeader);
+  } else {
+    headers.set("X-API-KEY", request.headers.get("X-API-KEY") || "");
+  }
+
+  const response = await fetch(`${GUARDRAILS_URL}${endpoint}`, {
+    ...fetchOptions,
+    headers,
+  });
+
+  const text = response.status === 204 ? "" : await response.text();
+  const data = text ? JSON.parse(text) : null;
+
+  return { status: response.status, data };
 }
 
 /**

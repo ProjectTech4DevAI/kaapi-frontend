@@ -294,6 +294,12 @@ function PromptEditorContent() {
             }),
           },
         },
+        ...(currentConfigBlob.input_guardrails?.length && {
+          input_guardrails: currentConfigBlob.input_guardrails,
+        }),
+        ...(currentConfigBlob.output_guardrails?.length && {
+          output_guardrails: currentConfigBlob.output_guardrails,
+        }),
       };
 
       const existingConfigMeta = allConfigMeta.find(
@@ -502,6 +508,7 @@ function PromptEditorContent() {
                         isSaving={isSaving}
                         collapsed={!showConfigPane}
                         onToggle={() => setShowConfigPane(!showConfigPane)}
+                        apiKey={activeKey?.key ?? ""}
                       />
                     </div>
                   </div>

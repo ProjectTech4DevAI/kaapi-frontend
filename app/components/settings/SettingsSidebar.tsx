@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ArrowLeftIcon, KeyIcon, SlidersIcon } from "@/app/components/icons";
 import { SETTINGS_NAV } from "@/app/lib/navConfig";
 import { useAuth } from "@/app/lib/context/AuthContext";
+import { useApp } from "@/app/lib/context/AppContext";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -17,6 +18,7 @@ export default function SettingsSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
+  const { sidebarCollapsed } = useApp();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -41,7 +43,9 @@ export default function SettingsSidebar() {
     .toUpperCase();
 
   return (
-    <aside className="w-60 h-full border-r border-border bg-bg-secondary flex flex-col shrink-0">
+    <aside
+      className={`h-full border-r border-border bg-bg-secondary flex flex-col shrink-0 transition-all duration-300 ease-in-out ${sidebarCollapsed ? "w-0 overflow-hidden" : "w-60"}`}
+    >
       <Branding />
 
       <div className="px-3 pt-3 pb-1">

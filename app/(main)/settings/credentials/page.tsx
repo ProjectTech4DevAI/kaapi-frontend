@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from "react";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
+import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
@@ -180,16 +181,10 @@ export default function CredentialsPage() {
         <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b border-border px-4 py-3 flex items-center justify-between shrink-0 bg-bg-primary">
-            <div>
-              <h1 className="text-base font-semibold text-text-primary tracking-tight">
-                Credentials
-              </h1>
-              <p className="text-xs text-text-secondary">
-                Manage provider credentials
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            title="Credentials"
+            subtitle="Manage provider credentials"
+          />
 
           <div className="flex flex-1 overflow-hidden">
             <ProviderSidebar

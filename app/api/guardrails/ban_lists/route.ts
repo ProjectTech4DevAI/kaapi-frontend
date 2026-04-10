@@ -3,7 +3,10 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const { status, data } = await guardrailsClient(request, "/api/v1/guardrails/ban_lists");
+    const { status, data } = await guardrailsClient(
+      request,
+      "/api/v1/guardrails/ban_lists",
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -16,10 +19,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { status, data } = await guardrailsClient(request, "/api/v1/guardrails/ban_lists", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    const { status, data } = await guardrailsClient(
+      request,
+      "/api/v1/guardrails/ban_lists",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(

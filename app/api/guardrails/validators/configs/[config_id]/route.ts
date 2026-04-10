@@ -30,7 +30,11 @@ export async function GET(
   }
   try {
     const { config_id } = await params;
-    const { status, data } = await guardrailsClient(request, buildEndpoint(request, config_id), { authHeader });
+    const { status, data } = await guardrailsClient(
+      request,
+      buildEndpoint(request, config_id),
+      { authHeader },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -54,11 +58,15 @@ export async function PATCH(
   try {
     const { config_id } = await params;
     const body = await request.json();
-    const { status, data } = await guardrailsClient(request, buildEndpoint(request, config_id), {
-      method: "PATCH",
-      body: JSON.stringify(body),
-      authHeader,
-    });
+    const { status, data } = await guardrailsClient(
+      request,
+      buildEndpoint(request, config_id),
+      {
+        method: "PATCH",
+        body: JSON.stringify(body),
+        authHeader,
+      },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -81,10 +89,14 @@ export async function DELETE(
   }
   try {
     const { config_id } = await params;
-    const { status, data } = await guardrailsClient(request, buildEndpoint(request, config_id), {
-      method: "DELETE",
-      authHeader,
-    });
+    const { status, data } = await guardrailsClient(
+      request,
+      buildEndpoint(request, config_id),
+      {
+        method: "DELETE",
+        authHeader,
+      },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(

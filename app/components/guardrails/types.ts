@@ -1,20 +1,26 @@
 export interface ValidatorConfigSchema {
   title: string;
   type: string;
-  properties: Record<string, {
-    type?: string;
-    title?: string;
-    default?: unknown;
-    enum?: string[];
-    anyOf?: unknown[];
-    items?: unknown;
-    $ref?: string;
-    const?: string;
-  }>;
-  $defs?: Record<string, {
-    enum?: string[];
-    type?: string;
-  }>;
+  properties: Record<
+    string,
+    {
+      type?: string;
+      title?: string;
+      default?: unknown;
+      enum?: string[];
+      anyOf?: unknown[];
+      items?: unknown;
+      $ref?: string;
+      const?: string;
+    }
+  >;
+  $defs?: Record<
+    string,
+    {
+      enum?: string[];
+      type?: string;
+    }
+  >;
   required?: string[];
   additionalProperties?: boolean;
 }
@@ -38,7 +44,7 @@ export interface SavedValidatorConfig {
 
 export function formatValidatorName(type: string): string {
   return type
-    .split('_')
+    .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+    .join(" ");
 }

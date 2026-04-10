@@ -26,7 +26,11 @@ export async function GET(request: NextRequest) {
     );
   }
   try {
-    const { status, data } = await guardrailsClient(request, buildEndpoint(request), { authHeader });
+    const { status, data } = await guardrailsClient(
+      request,
+      buildEndpoint(request),
+      { authHeader },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -46,11 +50,15 @@ export async function POST(request: NextRequest) {
   }
   try {
     const body = await request.json();
-    const { status, data } = await guardrailsClient(request, buildEndpoint(request), {
-      method: "POST",
-      body: JSON.stringify(body),
-      authHeader,
-    });
+    const { status, data } = await guardrailsClient(
+      request,
+      buildEndpoint(request),
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+        authHeader,
+      },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(

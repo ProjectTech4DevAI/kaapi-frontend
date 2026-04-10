@@ -15,7 +15,6 @@ import {
   BookOpenIcon,
   GearIcon,
   SlidersIcon,
-  KeyIcon,
   ShieldCheckIcon,
   ChevronRightIcon,
 } from "@/app/components/icons";
@@ -108,7 +107,7 @@ export default function Sidebar({
     {
       name: "Guardrails",
       route: "/guardrails",
-      icon: <ShieldCheckIcon />
+      icon: <ShieldCheckIcon />,
     },
     {
       name: "Settings",

@@ -7,7 +7,10 @@ export async function GET(
 ) {
   try {
     const { ban_list_id } = await params;
-    const { status, data } = await guardrailsClient(request, `/api/v1/guardrails/ban_lists/${ban_list_id}`);
+    const { status, data } = await guardrailsClient(
+      request,
+      `/api/v1/guardrails/ban_lists/${ban_list_id}`,
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -24,10 +27,14 @@ export async function PUT(
   try {
     const { ban_list_id } = await params;
     const body = await request.json();
-    const { status, data } = await guardrailsClient(request, `/api/v1/guardrails/ban_lists/${ban_list_id}`, {
-      method: "PUT",
-      body: JSON.stringify(body),
-    });
+    const { status, data } = await guardrailsClient(
+      request,
+      `/api/v1/guardrails/ban_lists/${ban_list_id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(body),
+      },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -43,9 +50,13 @@ export async function DELETE(
 ) {
   try {
     const { ban_list_id } = await params;
-    const { status, data } = await guardrailsClient(request, `/api/v1/guardrails/ban_lists/${ban_list_id}`, {
-      method: "DELETE",
-    });
+    const { status, data } = await guardrailsClient(
+      request,
+      `/api/v1/guardrails/ban_lists/${ban_list_id}`,
+      {
+        method: "DELETE",
+      },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(

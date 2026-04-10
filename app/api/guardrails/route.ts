@@ -6,7 +6,6 @@ function getAuthHeader(): string | undefined {
   return token ? `Bearer ${token}` : undefined;
 }
 
-
 export async function GET(request: NextRequest) {
   const authHeader = getAuthHeader();
   if (!authHeader) {
@@ -16,7 +15,11 @@ export async function GET(request: NextRequest) {
     );
   }
   try {
-    const { status, data } = await guardrailsClient(request,"/api/v1/guardrails/" , { authHeader });
+    const { status, data } = await guardrailsClient(
+      request,
+      "/api/v1/guardrails/",
+      { authHeader },
+    );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(

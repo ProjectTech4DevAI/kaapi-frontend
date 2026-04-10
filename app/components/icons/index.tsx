@@ -32,7 +32,7 @@ export { default as CloudUploadIcon } from "./document/CloudUploadIcon";
 export { default as ClipboardIcon } from "./sidebar/ClipboardIcon";
 export { default as BookOpenIcon } from "./sidebar/BookOpenIcon";
 export { default as SlidersIcon } from "./sidebar/SlidersIcon";
-export { default as ShieldCheckIcon} from "./sidebar/ShieldCheckIcon"
+export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
 export { default as LogoutIcon } from "./sidebar/LogoutIcon";
 
 // Prompt Editor Icons

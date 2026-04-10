@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { colors } from '@/app/lib/colors';
+import { useState } from "react";
+import { colors } from "@/app/lib/colors";
 
 interface BanListModalProps {
   onClose: () => void;
@@ -7,42 +7,55 @@ interface BanListModalProps {
   apiKey: string;
 }
 
-export default function BanListModal({ onClose, onCreated, apiKey }: BanListModalProps) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [bannedWords, setBannedWords] = useState('');
-  const [domain, setDomain] = useState('');
+export default function BanListModal({
+  onClose,
+  onCreated,
+  apiKey,
+}: BanListModalProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [bannedWords, setBannedWords] = useState("");
+  const [domain, setDomain] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleCreate = async () => {
-    if (!name.trim()) { setError('Name is required'); return; }
-    if (!bannedWords.trim()) { setError('At least one banned word is required'); return; }
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
+    if (!bannedWords.trim()) {
+      setError("At least one banned word is required");
+      return;
+    }
 
-    setError('');
+    setError("");
     setIsSaving(true);
     try {
       const body = {
         name: name.trim(),
         description: description.trim(),
-        banned_words: bannedWords.split(',').map((w) => w.trim()).filter(Boolean),
+        banned_words: bannedWords
+          .split(",")
+          .map((w) => w.trim())
+          .filter(Boolean),
         domain: domain.trim(),
         is_public: isPublic,
       };
-      const res = await fetch('/api/guardrails/ban_lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-KEY': apiKey },
+      const res = await fetch("/api/guardrails/ban_lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-KEY": apiKey },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error ?? 'Failed to create ban list');
+        throw new Error(err?.error ?? "Failed to create ban list");
       }
       const data = await res.json();
       onCreated({ id: data.id, name: data.name ?? name.trim() });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setIsSaving(false);
     }
@@ -51,15 +64,15 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
       {/* Modal */}
       <div
         className="relative w-full max-w-md rounded-xl shadow-xl flex flex-col"
-        style={{ backgroundColor: colors.bg.primary, border: `1px solid ${colors.border}` }}
+        style={{
+          backgroundColor: colors.bg.primary,
+          border: `1px solid ${colors.border}`,
+        }}
       >
         {/* Header */}
         <div
@@ -67,10 +80,16 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
           style={{ borderColor: colors.border }}
         >
           <div>
-            <h2 className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+            <h2
+              className="text-sm font-semibold"
+              style={{ color: colors.text.primary }}
+            >
               Create Ban List
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: colors.text.secondary }}>
+            <p
+              className="text-xs mt-0.5"
+              style={{ color: colors.text.secondary }}
+            >
               Define a list of words to ban from outputs
             </p>
           </div>
@@ -78,8 +97,19 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
             onClick={onClose}
             className="p-1 rounded hover:bg-neutral-100 transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: colors.text.secondary }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              style={{ color: colors.text.secondary }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -93,7 +123,10 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
           )}
 
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{ color: colors.text.primary }}
+            >
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -102,12 +135,19 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. profanity-list"
               className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-              style={{ borderColor: colors.border, backgroundColor: colors.bg.primary, color: colors.text.primary }}
+              style={{
+                borderColor: colors.border,
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+              }}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{ color: colors.text.primary }}
+            >
               Description
             </label>
             <textarea
@@ -116,14 +156,26 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
               placeholder="Describe what this ban list covers…"
               rows={2}
               className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1 resize-none"
-              style={{ borderColor: colors.border, backgroundColor: colors.bg.primary, color: colors.text.primary }}
+              style={{
+                borderColor: colors.border,
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+              }}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{ color: colors.text.primary }}
+            >
               Banned Words <span className="text-red-500">*</span>
-              <span className="ml-1 font-normal" style={{ color: colors.text.secondary }}>(comma-separated)</span>
+              <span
+                className="ml-1 font-normal"
+                style={{ color: colors.text.secondary }}
+              >
+                (comma-separated)
+              </span>
             </label>
             <textarea
               value={bannedWords}
@@ -131,12 +183,19 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
               placeholder="word1, word2, word3"
               rows={3}
               className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1 resize-none"
-              style={{ borderColor: colors.border, backgroundColor: colors.bg.primary, color: colors.text.primary }}
+              style={{
+                borderColor: colors.border,
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+              }}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: colors.text.primary }}>
+            <label
+              className="block text-xs font-medium mb-1"
+              style={{ color: colors.text.primary }}
+            >
               Domain
             </label>
             <input
@@ -145,7 +204,11 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
               onChange={(e) => setDomain(e.target.value)}
               placeholder="e.g. healthcare, finance"
               className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-              style={{ borderColor: colors.border, backgroundColor: colors.bg.primary, color: colors.text.primary }}
+              style={{
+                borderColor: colors.border,
+                backgroundColor: colors.bg.primary,
+                color: colors.text.primary,
+              }}
             />
           </div>
 
@@ -156,7 +219,9 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
               onChange={(e) => setIsPublic(e.target.checked)}
               className="w-4 h-4 rounded"
             />
-            <span className="text-sm" style={{ color: colors.text.primary }}>Make this ban list public</span>
+            <span className="text-sm" style={{ color: colors.text.primary }}>
+              Make this ban list public
+            </span>
           </label>
         </div>
 
@@ -176,9 +241,9 @@ export default function BanListModal({ onClose, onCreated, apiKey }: BanListModa
             onClick={handleCreate}
             disabled={isSaving}
             className="px-4 py-1.5 text-sm rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
+            style={{ backgroundColor: colors.accent.primary, color: "#ffffff" }}
           >
-            {isSaving ? 'Creating…' : 'Create Ban List'}
+            {isSaving ? "Creating…" : "Create Ban List"}
           </button>
         </div>
       </div>

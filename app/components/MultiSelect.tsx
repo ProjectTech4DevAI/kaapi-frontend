@@ -10,13 +10,21 @@ interface MultiSelectProps {
   placeholder?: string;
 }
 
-export default function MultiSelect({ options, value, onChange, placeholder }: MultiSelectProps) {
+export default function MultiSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+}: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };

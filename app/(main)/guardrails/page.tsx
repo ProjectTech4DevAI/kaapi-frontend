@@ -13,7 +13,11 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import PageHeader from "@/app/components/PageHeader";
-import { Validator, SavedValidatorConfig, formatValidatorName } from "@/app/components/guardrails/types";
+import {
+  Validator,
+  SavedValidatorConfig,
+  formatValidatorName,
+} from "@/app/components/guardrails/types";
 import ValidatorConfigPanel from "@/app/components/guardrails/ValidatorConfigPanel";
 import { TrashIcon } from "@/app/components/icons";
 import validatorMeta from "@/app/components/guardrails/validators.json";
@@ -29,10 +33,9 @@ interface ValidatorMeta {
   description: string;
 }
 
-const metaMap: Record<string, ValidatorMeta> = (validatorMeta as ValidatorMeta[]).reduce(
-  (acc, v) => ({ ...acc, [v.validator_type]: v }),
-  {},
-);
+const metaMap: Record<string, ValidatorMeta> = (
+  validatorMeta as ValidatorMeta[]
+).reduce((acc, v) => ({ ...acc, [v.validator_type]: v }), {});
 
 export default function GuardrailsPage() {
   const { sidebarCollapsed } = useApp();
@@ -51,15 +54,20 @@ export default function GuardrailsPage() {
   const [savedConfigsLoading, setSavedConfigsLoading] = useState(true);
 
   // Form state
-  const [selectedValidatorType, setSelectedValidatorType] = useState<string | null>(null);
-  const [selectedSavedConfig, setSelectedSavedConfig] = useState<SavedValidatorConfig | null>(null);
+  const [selectedValidatorType, setSelectedValidatorType] = useState<
+    string | null
+  >(null);
+  const [selectedSavedConfig, setSelectedSavedConfig] =
+    useState<SavedValidatorConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // Step 1: verify API key → get org/project IDs
   useEffect(() => {
     if (!isHydrated) return;
     if (!activeKey?.key) {
-      toast.error("No API key found. Please add your Kaapi API key in the Keystore.");
+      toast.error(
+        "No API key found. Please add your Kaapi API key in the Keystore.",
+      );
       return;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,7 +81,12 @@ export default function GuardrailsPage() {
           toast.error("Could not determine organization/project from API key");
         }
       })
-      .catch((e: Error) => toast.error(e.message || "API key verification failed — check your key in the Keystore"));
+      .catch((e: Error) =>
+        toast.error(
+          e.message ||
+            "API key verification failed — check your key in the Keystore",
+        ),
+      );
   }, [isHydrated, activeKey?.key]);
 
   // Step 2: fetch available validators (no auth needed for catalog)
@@ -82,7 +95,9 @@ export default function GuardrailsPage() {
     fetch("/api/guardrails")
       .then((r) => r.json())
       .then((data) => {
-        const list: Validator[] = Array.isArray(data?.validators) ? data.validators : [];
+        const list: Validator[] = Array.isArray(data?.validators)
+          ? data.validators
+          : [];
         setValidators(list);
       })
       .catch(() => toast.error("Failed to load validators"))
@@ -103,12 +118,12 @@ export default function GuardrailsPage() {
         const list: SavedValidatorConfig[] = Array.isArray(data?.data?.configs)
           ? data.data.configs
           : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.configs)
-          ? data.configs
-          : Array.isArray(data)
-          ? data
-          : [];
+            ? data.data
+            : Array.isArray(data?.configs)
+              ? data.configs
+              : Array.isArray(data)
+                ? data
+                : [];
         setSavedConfigs(list);
       })
       .catch(() => toast.error("Failed to load saved configs"))
@@ -149,7 +164,10 @@ export default function GuardrailsPage() {
     }
   };
 
-  const handleSaveConfig = async (name: string, configValues: Record<string, unknown>) => {
+  const handleSaveConfig = async (
+    name: string,
+    configValues: Record<string, unknown>,
+  ) => {
     if (!name.trim()) {
       toast.error("Please enter a config name");
       return;
@@ -183,9 +201,13 @@ export default function GuardrailsPage() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error ?? (isUpdate ? "Update failed" : "Save failed"));
+        throw new Error(
+          err?.error ?? (isUpdate ? "Update failed" : "Save failed"),
+        );
       }
-      toast.success(isUpdate ? `Config "${name}" updated` : `Config "${name}" saved`);
+      toast.success(
+        isUpdate ? `Config "${name}" updated` : `Config "${name}" saved`,
+      );
       fetchSavedConfigs();
       setSelectedSavedConfig(null);
     } catch (e) {
@@ -205,7 +227,10 @@ export default function GuardrailsPage() {
     : null;
 
   return (
-    <div className="w-full h-screen flex" style={{ backgroundColor: colors.bg.secondary }}>
+    <div
+      className="w-full h-screen flex"
+      style={{ backgroundColor: colors.bg.secondary }}
+    >
       <Sidebar collapsed={sidebarCollapsed} activeRoute="/guardrails" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -220,7 +245,7 @@ export default function GuardrailsPage() {
           {/* LEFT: Config form panel */}
           <div
             className="flex-shrink-0 border-r overflow-hidden"
-            style={{ width: '420px', borderColor: colors.border }}
+            style={{ width: "420px", borderColor: colors.border }}
           >
             <ValidatorConfigPanel
               validators={validators}
@@ -230,7 +255,7 @@ export default function GuardrailsPage() {
               existingValues={existingValues}
               existingName={selectedSavedConfig?.name}
               isSaving={isSaving}
-              apiKey={activeKey?.key ?? ''}
+              apiKey={activeKey?.key ?? ""}
               onSave={handleSaveConfig}
               onClear={handleClearForm}
             />
@@ -277,24 +302,34 @@ function SavedConfigsList({
       {/* Panel header */}
       <div
         className="flex items-center justify-between px-5 py-3 border-b shrink-0"
-        style={{ backgroundColor: colors.bg.primary, borderColor: colors.border }}
+        style={{
+          backgroundColor: colors.bg.primary,
+          borderColor: colors.border,
+        }}
       >
         <div>
-          <div className="text-sm font-semibold" style={{ color: colors.text.primary }}>
+          <div
+            className="text-sm font-semibold"
+            style={{ color: colors.text.primary }}
+          >
             Saved Configurations
           </div>
           {!isLoading && (
             <div className="text-xs" style={{ color: colors.text.secondary }}>
-              {configs.length} config{configs.length !== 1 ? 's' : ''}
+              {configs.length} config{configs.length !== 1 ? "s" : ""}
             </div>
           )}
         </div>
         <button
           onClick={onNewConfig}
           className="text-sm px-3 py-1.5 rounded-md font-medium transition-colors"
-          style={{ backgroundColor: colors.accent.primary, color: '#ffffff' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.accent.hover)}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.accent.primary)}
+          style={{ backgroundColor: colors.accent.primary, color: "#ffffff" }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.backgroundColor = colors.accent.hover)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.backgroundColor = colors.accent.primary)
+          }
         >
           + New Config
         </button>
@@ -308,7 +343,10 @@ function SavedConfigsList({
               <div
                 key={i}
                 className="h-24 rounded-lg animate-pulse border"
-                style={{ backgroundColor: colors.bg.secondary, borderColor: colors.border }}
+                style={{
+                  backgroundColor: colors.bg.secondary,
+                  borderColor: colors.border,
+                }}
               />
             ))}
           </div>
@@ -331,7 +369,10 @@ function SavedConfigsList({
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
               />
             </svg>
-            <p className="text-sm font-medium mb-1" style={{ color: colors.text.primary }}>
+            <p
+              className="text-sm font-medium mb-1"
+              style={{ color: colors.text.primary }}
+            >
               No saved configurations yet
             </p>
             <p className="text-xs" style={{ color: colors.text.secondary }}>
@@ -342,7 +383,9 @@ function SavedConfigsList({
           <div className="space-y-3">
             {configs.map((cfg) => {
               const isSelected = selectedConfigId === cfg.id;
-              const displayName = metaMap[cfg.type]?.validator_name ?? formatValidatorName(cfg.type);
+              const displayName =
+                metaMap[cfg.type]?.validator_name ??
+                formatValidatorName(cfg.type);
               return (
                 <div
                   key={cfg.id}
@@ -350,28 +393,41 @@ function SavedConfigsList({
                   style={{
                     backgroundColor: colors.bg.primary,
                     borderColor: colors.border,
-                    borderLeftWidth: '4px',
-                    borderLeftColor: isSelected ? colors.status.success : '#d97706',
+                    borderLeftWidth: "4px",
+                    borderLeftColor: isSelected
+                      ? colors.status.success
+                      : "#d97706",
                   }}
                   onClick={() => onSelectConfig(cfg)}
                 >
                   <div className="flex items-center gap-3 px-4 py-4">
                     {/* Text + badges */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold mb-2 truncate" style={{ color: colors.text.primary }}>
+                      <div
+                        className="text-sm font-semibold mb-2 truncate"
+                        style={{ color: colors.text.primary }}
+                      >
                         {cfg.name}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span
                           className="text-[11px] px-2 py-0.5 rounded-md border"
-                          style={{ color: colors.text.secondary, borderColor: colors.border, backgroundColor: colors.bg.secondary }}
+                          style={{
+                            color: colors.text.secondary,
+                            borderColor: colors.border,
+                            backgroundColor: colors.bg.secondary,
+                          }}
                         >
                           {displayName}
                         </span>
                         {cfg.stage && (
                           <span
                             className="text-[11px] px-2 py-0.5 rounded-md border"
-                            style={{ color: colors.text.secondary, borderColor: colors.border, backgroundColor: colors.bg.secondary }}
+                            style={{
+                              color: colors.text.secondary,
+                              borderColor: colors.border,
+                              backgroundColor: colors.bg.secondary,
+                            }}
                           >
                             {cfg.stage}
                           </span>
@@ -379,7 +435,11 @@ function SavedConfigsList({
                         {cfg.on_fail_action && (
                           <span
                             className="text-[11px] px-2 py-0.5 rounded-md border"
-                            style={{ color: colors.text.secondary, borderColor: colors.border, backgroundColor: colors.bg.secondary }}
+                            style={{
+                              color: colors.text.secondary,
+                              borderColor: colors.border,
+                              backgroundColor: colors.bg.secondary,
+                            }}
                           >
                             on fail: {cfg.on_fail_action}
                           </span>
@@ -395,23 +455,56 @@ function SavedConfigsList({
                     {/* Action buttons */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
-                        onClick={(e) => { e.stopPropagation(); onSelectConfig(cfg); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectConfig(cfg);
+                        }}
                         className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium"
-                        style={{ borderColor: colors.border, color: colors.text.primary, backgroundColor: colors.bg.secondary }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#e5e5e5')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.bg.secondary)}
+                        style={{
+                          borderColor: colors.border,
+                          color: colors.text.primary,
+                          backgroundColor: colors.bg.secondary,
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#e5e5e5")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor =
+                            colors.bg.secondary)
+                        }
                       >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
                         </svg>
                         Edit
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteConfig(cfg.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteConfig(cfg.id);
+                        }}
                         className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium"
-                        style={{ borderColor: '#fecaca', color: colors.status.error, backgroundColor: '#fff5f5' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#fff5f5')}
+                        style={{
+                          borderColor: "#fecaca",
+                          color: colors.status.error,
+                          backgroundColor: "#fff5f5",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fee2e2")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.backgroundColor = "#fff5f5")
+                        }
                       >
                         <TrashIcon className="w-3 h-3" />
                         Delete

@@ -19,4 +19,3 @@ export default function ShieldCheckIcon({ className }: IconProps) {
     </svg>
   );
 }
-

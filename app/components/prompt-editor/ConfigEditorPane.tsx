@@ -53,15 +53,17 @@ function GuardrailsSection({
     })
       .then((r) => r.json())
       .then((data) => {
-        const items: ValidatorConfigOption[] = Array.isArray(data?.data?.configs)
+        const items: ValidatorConfigOption[] = Array.isArray(
+          data?.data?.configs,
+        )
           ? data.data.configs
           : Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.configs)
-          ? data.configs
-          : Array.isArray(data)
-          ? data
-          : [];
+            ? data.data
+            : Array.isArray(data?.configs)
+              ? data.configs
+              : Array.isArray(data)
+                ? data
+                : [];
         setValidators(items);
       })
       .catch(() => setValidators([]))
@@ -83,7 +85,9 @@ function GuardrailsSection({
   };
 
   const getValidatorName = (id: string) => {
-    const v = validators.find((v) => v.id === id && (!v.stage || v.stage === stage));
+    const v = validators.find(
+      (v) => v.id === id && (!v.stage || v.stage === stage),
+    );
     return v ? v.name || v.type : id.slice(0, 8) + "…";
   };
 
@@ -114,7 +118,11 @@ function GuardrailsSection({
                 loading || available.length === 0 ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Loading…" : available.length === 0 ? "No validators" : "+ Add"}
+            {loading
+              ? "Loading…"
+              : available.length === 0
+                ? "No validators"
+                : "+ Add"}
           </button>
           {dropdownOpen && available.length > 0 && (
             <>
@@ -166,13 +174,21 @@ function GuardrailsSection({
                 border: `1px solid ${colors.border}`,
               }}
             >
-              <span className="text-xs truncate" style={{ color: colors.text.primary }}>
+              <span
+                className="text-xs truncate"
+                style={{ color: colors.text.primary }}
+              >
                 {getValidatorName(g.validator_config_id)}
               </span>
               <button
                 onClick={() => handleRemove(g.validator_config_id)}
                 className="ml-2 text-xs flex-shrink-0"
-                style={{ color: colors.status.error, background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  color: colors.status.error,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
                 Remove
               </button>
@@ -228,7 +244,9 @@ export default function ConfigEditorPane({
   loadSingleVersion,
   apiKey = "",
 }: ConfigEditorPaneProps) {
-  const [guardrailsQueryString, setGuardrailsQueryString] = useState<string | null>(null);
+  const [guardrailsQueryString, setGuardrailsQueryString] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!apiKey) return;

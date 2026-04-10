@@ -10,7 +10,10 @@ interface InfoTooltipProps {
 export default function InfoTooltip({ text }: InfoTooltipProps) {
   const [visible, setVisible] = useState(false);
   return (
-    <span className="relative inline-flex items-center ml-1" style={{ verticalAlign: 'text-bottom' }}>
+    <span
+      className="relative inline-flex items-center ml-1"
+      style={{ verticalAlign: "text-bottom" }}
+    >
       <button
         type="button"
         className="w-3.5 h-3.5 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none"

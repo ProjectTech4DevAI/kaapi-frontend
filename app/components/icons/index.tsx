@@ -29,6 +29,7 @@ export { default as CloudUploadIcon } from "./document/CloudUploadIcon";
 export { default as ClipboardIcon } from "./sidebar/ClipboardIcon";
 export { default as BookOpenIcon } from "./sidebar/BookOpenIcon";
 export { default as SlidersIcon } from "./sidebar/SlidersIcon";
+export { default as ShieldCheckIcon} from "./sidebar/ShieldCheckIcon"
 
 // Prompt Editor Icons
 export { default as ChevronRightIcon } from "./prompt-editor/ChevronRightIcon";

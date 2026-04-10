@@ -14,6 +14,7 @@ import {
   GearIcon,
   SlidersIcon,
   KeyIcon,
+  ShieldCheckIcon,
   ChevronRightIcon,
 } from "@/app/components/icons";
 
@@ -90,6 +91,11 @@ export default function Sidebar({
         { name: "Library", route: "/configurations" },
         { name: "Prompt Editor", route: "/configurations/prompt-editor" },
       ],
+    },
+    {
+      name: "Guardrails",
+      route: "/guardrails",
+      icon: <ShieldCheckIcon />
     },
     {
       name: "Settings",

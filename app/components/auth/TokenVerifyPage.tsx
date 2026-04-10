@@ -10,6 +10,7 @@ import {
   SpinnerIcon,
 } from "@/app/components/icons";
 import { Button } from "@/app/components";
+import { APP_NAME } from "@/app/lib/constants";
 
 type Status = "verifying" | "success" | "error";
 
@@ -126,7 +127,7 @@ export default function TokenVerifyPage({
       <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
           <h2 className="text-lg font-semibold text-text-primary tracking-tight">
-            Kaapi Konsole
+            {APP_NAME}
           </h2>
           <p className="text-xs text-text-secondary mt-0.5">by Tech4Dev</p>
         </div>

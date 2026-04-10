@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
 import {
@@ -30,6 +30,13 @@ export default function EvalRunCard({
   const isCompleted = job.status?.toLowerCase() === "completed";
   const scoreObj = getScoreObject(job);
   const statusColor = getStatusColor(job.status || "");
+
+  useEffect(() => {
+    if (!isCostTooltipOpen) return;
+    const handleScroll = () => setIsCostTooltipOpen(false);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isCostTooltipOpen]);
 
   return (
     <div

@@ -80,13 +80,6 @@ export const formatCostUSD = (cost: number): string => {
 };
 
 /**
- * Formats a token count for display (e.g., 1234 → "1,234")
- */
-export const formatTokenCount = (count: number): string => {
-  return count.toLocaleString();
-};
-
-/**
  * Calculates dynamic thresholds for color coding based on score distribution
  * @param scores - Array of similarity scores
  * @returns Object with high and medium threshold values (percentile-based)

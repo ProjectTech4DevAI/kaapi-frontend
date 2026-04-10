@@ -161,3 +161,12 @@ a {
   border: 3px solid #e5e5e5;
   border-top-color: #171717;
 }
+
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}

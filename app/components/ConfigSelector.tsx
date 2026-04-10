@@ -8,7 +8,7 @@
 import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
-import { useConfigs } from "@/app/hooks/useConfigs";
+import { useConfigs } from "@/app/hooks";
 import {
   ChevronUpIcon,
   ChevronDownIcon,
@@ -69,7 +69,6 @@ export default function ConfigSelector({
     items.forEach((item) => {
       loadSingleVersion(item.config_id, item.version);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedConfigId, versionItemsMap]);
 
   // Reset expanded state and recheck overflow whenever selected config changes.
@@ -110,7 +109,6 @@ export default function ConfigSelector({
         if (!result) setIsLoadingPreview(false);
       })
       .catch(() => setIsLoadingPreview(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConfigId, selectedVersion, configs]);
 
   // Dropdown display list: all configs from the lightweight allConfigMeta,
@@ -688,7 +686,7 @@ export default function ConfigSelector({
                       className="text-sm font-mono"
                       style={{ color: colors.text.primary }}
                     >
-                      {selectedConfig.temperature.toFixed(2)}
+                      {selectedConfig.temperature!.toFixed(2)}
                     </div>
                   </div>
                 )}

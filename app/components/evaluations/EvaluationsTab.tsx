@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
-import { Dataset } from "@/app/(main)/datasets/page";
+import { Dataset } from "@/app/lib/types/dataset";
 import { EvalJob, AssistantConfig } from "@/app/components/types";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { APIKey } from "@/app/lib/types/credentials";
-import { apiFetch } from "@/app/lib/apiClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
 
 type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
-  activeKey: APIKey;
+  apiKey: string;
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   setSelectedDatasetId: (id: string) => void;
@@ -31,7 +31,7 @@ export interface EvaluationsTabProps {
 
 export default function EvaluationsTab({
   leftPanelWidth,
-  activeKey,
+  apiKey,
   storedDatasets,
   selectedDatasetId,
   setSelectedDatasetId,
@@ -62,12 +62,10 @@ export default function EvaluationsTab({
     selectedConfigVersion &&
     !isEvaluating;
 
-  // Fetch evaluation jobs
+  const { isAuthenticated } = useAuth();
+
   const fetchEvaluations = useCallback(async () => {
-    if (!activeKey?.key) {
-      setError("Please select an API key first");
-      return;
-    }
+    if (!isAuthenticated) return;
 
     setIsLoading(true);
     setError(null);
@@ -75,7 +73,7 @@ export default function EvaluationsTab({
     try {
       const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
         "/api/evaluations",
-        activeKey.key,
+        apiKey,
       );
       setEvalJobs(Array.isArray(data) ? data : data.data || []);
     } catch (err: unknown) {
@@ -85,18 +83,17 @@ export default function EvaluationsTab({
     } finally {
       setIsLoading(false);
     }
-  }, [activeKey]);
+  }, [apiKey, isAuthenticated]);
 
-  // Fetch assistant config
   const fetchAssistantConfig = useCallback(
     async (assistantId: string) => {
-      if (!activeKey?.key) return;
+      if (!isAuthenticated) return;
 
       try {
         const result = await apiFetch<{
           success: boolean;
           data?: AssistantConfig;
-        }>(`/api/assistant/${assistantId}`, activeKey.key);
+        }>(`/api/assistant/${assistantId}`, apiKey);
         if (result.success && result.data) {
           setAssistantConfigs((prev) =>
             new Map(prev).set(assistantId, result.data!),
@@ -109,7 +106,7 @@ export default function EvaluationsTab({
         );
       }
     },
-    [activeKey],
+    [apiKey, isAuthenticated],
   );
 
   useEffect(() => {
@@ -121,8 +118,8 @@ export default function EvaluationsTab({
   }, [evalJobs, assistantConfigs, fetchAssistantConfig]);
 
   useEffect(() => {
-    if (activeKey?.key) fetchEvaluations();
-  }, [activeKey, fetchEvaluations]);
+    if (isAuthenticated) fetchEvaluations();
+  }, [isAuthenticated, fetchEvaluations]);
 
   return (
     <div className="flex-1 flex overflow-hidden">

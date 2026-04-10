@@ -1,28 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
-import { usePaginatedList } from "@/app/hooks/usePaginatedList";
-import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
-import { apiFetch } from "@/app/lib/apiClient";
+import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
+import {
+  apiFetch,
+  uploadWithProgress,
+  type UploadPhase,
+} from "@/app/lib/apiClient";
 import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
-import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-
-export interface Document {
-  id: string;
-  fname: string;
-  object_store_url: string;
-  signed_url?: string;
-  file_size?: number;
-  inserted_at?: string;
-  updated_at?: string;
-}
+import {
+  DEFAULT_PAGE_LIMIT,
+  MAX_DOCUMENT_SIZE_BYTES,
+  MAX_DOCUMENT_SIZE_MB,
+} from "@/app/lib/constants";
+import { Document } from "@/app/lib/types/document";
 
 export default function DocumentPage() {
   const toast = useToast();
@@ -34,7 +32,10 @@ export default function DocumentPage() {
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const { activeKey: apiKey } = useAuth();
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState<UploadPhase>("uploading");
+  const abortUploadRef = useRef<(() => void) | null>(null);
+  const { activeKey: apiKey, isAuthenticated } = useAuth();
 
   const {
     items: documents,
@@ -59,23 +60,39 @@ export default function DocumentPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+      toast.error(
+        `File size exceeds ${MAX_DOCUMENT_SIZE_MB} MB limit. Please select a smaller file within ${MAX_DOCUMENT_SIZE_MB} MB.`,
+      );
+      event.target.value = "";
+      return;
+    }
+
     setSelectedFile(file);
   };
 
   const handleUpload = async () => {
-    if (!apiKey || !selectedFile) return;
+    if (!isAuthenticated || !selectedFile) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadPhase("uploading");
 
     try {
       const formData = new FormData();
       formData.append("src", selectedFile);
 
-      const data = await apiFetch<{ data?: { id: string } }>(
+      const { promise, abort } = uploadWithProgress<{ data?: { id: string } }>(
         "/api/document",
-        apiKey.key,
-        { method: "POST", body: formData },
+        apiKey?.key ?? "",
+        formData,
+        (percent, phase) => {
+          setUploadProgress(percent);
+          setUploadPhase(phase);
+        },
       );
+      abortUploadRef.current = abort;
+      const data = await promise;
       if (selectedFile && data.data?.id) {
         const fileSizeMap = JSON.parse(
           localStorage.getItem("document_file_sizes") || "{}",
@@ -99,12 +116,13 @@ export default function DocumentPage() {
       );
     } finally {
       setIsUploading(false);
+      abortUploadRef.current = null;
     }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
-    if (!apiKey) {
-      toast.error("No API key found");
+    if (!isAuthenticated) {
+      toast.error("Please log in to continue");
       return;
     }
 
@@ -113,7 +131,7 @@ export default function DocumentPage() {
     }
 
     try {
-      await apiFetch(`/api/document/${documentId}`, apiKey.key, {
+      await apiFetch(`/api/document/${documentId}`, apiKey?.key ?? "", {
         method: "DELETE",
       });
 
@@ -132,13 +150,13 @@ export default function DocumentPage() {
   };
 
   const handleSelectDocument = async (doc: Document) => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
 
     setIsLoadingDocument(true);
     try {
       const data = await apiFetch<{ data?: Document }>(
         `/api/document/${doc.id}`,
-        apiKey.key,
+        apiKey?.key ?? "",
       );
       const documentDetails: Document =
         data.data ?? (data as unknown as Document);
@@ -183,7 +201,6 @@ export default function DocumentPage() {
                 isLoading={isLoading}
                 isLoadingMore={isLoadingMore}
                 error={error}
-                apiKey={apiKey}
                 scrollRef={scrollRef}
               />
             </div>
@@ -198,18 +215,22 @@ export default function DocumentPage() {
         </div>
       </div>
 
-      {isModalOpen && (
-        <UploadDocumentModal
-          selectedFile={selectedFile}
-          isUploading={isUploading}
-          onFileSelect={handleFileSelect}
-          onUpload={handleUpload}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedFile(null);
-          }}
-        />
-      )}
+      <UploadDocumentModal
+        open={isModalOpen}
+        selectedFile={selectedFile}
+        isUploading={isUploading}
+        uploadProgress={uploadProgress}
+        uploadPhase={uploadPhase}
+        onFileSelect={handleFileSelect}
+        onUpload={handleUpload}
+        onClose={() => {
+          abortUploadRef.current?.();
+          setIsModalOpen(false);
+          setSelectedFile(null);
+          setUploadProgress(0);
+          setUploadPhase("uploading");
+        }}
+      />
     </div>
   );
 }

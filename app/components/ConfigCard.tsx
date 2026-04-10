@@ -99,7 +99,7 @@ export default function ConfigCard({
 
   return (
     <div
-      className="border rounded-lg overflow-hidden transition-all"
+      className="border rounded-lg overflow-hidden transition-all min-w-0"
       style={{
         backgroundColor: colors.bg.primary,
         borderColor: expanded ? colors.accent.primary : colors.border,
@@ -119,7 +119,7 @@ export default function ConfigCard({
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3
-              className="text-base font-semibold truncate"
+              className="text-sm font-semibold truncate"
               style={{ color: colors.text.primary }}
             >
               {config.name}
@@ -252,15 +252,19 @@ export default function ConfigCard({
                     {latestVersion.modelName}
                   </span>
                 </div>
-                <div
-                  className="px-2.5 py-1 rounded-md text-xs"
-                  style={{ backgroundColor: colors.bg.secondary }}
-                >
-                  <span style={{ color: colors.text.secondary }}>Temp: </span>
-                  <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-                    {latestVersion.temperature.toFixed(2)}
-                  </span>
-                </div>
+                {latestVersion.temperature != null && (
+                  <div
+                    className="px-2.5 py-1 rounded-md text-xs"
+                    style={{ backgroundColor: colors.bg.secondary }}
+                  >
+                    <span style={{ color: colors.text.secondary }}>Temp: </span>
+                    <span
+                      style={{ color: colors.text.primary, fontWeight: 500 }}
+                    >
+                      {latestVersion.temperature.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Tools Dropdown */}

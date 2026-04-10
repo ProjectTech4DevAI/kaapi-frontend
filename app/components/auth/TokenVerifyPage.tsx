@@ -153,7 +153,6 @@ export default function TokenVerifyPage({
           />
 
           <div className="px-8 py-10">
-            {/* Icon */}
             <div className="flex justify-center mb-5">
               <div
                 className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 ${
@@ -188,7 +187,6 @@ export default function TokenVerifyPage({
               {status === "error" && error}
             </p>
 
-            {/* Progress bar */}
             {status === "success" && (
               <div className="mt-6 flex justify-center">
                 <div className="h-1 w-32 rounded-full bg-neutral-100 overflow-hidden">
@@ -200,7 +198,6 @@ export default function TokenVerifyPage({
               </div>
             )}
 
-            {/* Pulsing dots */}
             {status === "verifying" && (
               <div className="mt-6 flex justify-center gap-1.5">
                 {[0, 1, 2].map((i) => (

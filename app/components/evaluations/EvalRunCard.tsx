@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
 import {
@@ -8,7 +8,7 @@ import {
   AssistantConfig,
   getScoreObject,
 } from "@/app/components/types";
-import { getStatusColor } from "@/app/components/utils";
+import { getStatusColor, formatCostUSD } from "@/app/components/utils";
 import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";
 import ScoreDisplay from "@/app/components/ScoreDisplay";
@@ -24,10 +24,19 @@ export default function EvalRunCard({
 }: EvalRunCardProps) {
   const router = useRouter();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isCostTooltipOpen, setIsCostTooltipOpen] = useState(false);
+  const [costTooltipPos, setCostTooltipPos] = useState({ top: 0, left: 0 });
 
   const isCompleted = job.status?.toLowerCase() === "completed";
   const scoreObj = getScoreObject(job);
   const statusColor = getStatusColor(job.status || "");
+
+  useEffect(() => {
+    if (!isCostTooltipOpen) return;
+    const handleScroll = () => setIsCostTooltipOpen(false);
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isCostTooltipOpen]);
 
   return (
     <div
@@ -81,7 +90,7 @@ export default function EvalRunCard({
           </div>
         )}
 
-        {/* Row 3: Dataset + Config (left) | Actions (right) */}
+        {/* Row 3: Dataset + Config + Cost (left) | Actions (right) */}
         <div className="flex items-center justify-between gap-4 mt-3">
           <div
             className="flex items-center gap-3 text-xs"
@@ -111,6 +120,81 @@ export default function EvalRunCard({
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 {assistantConfig.name}
+              </span>
+            )}
+            {job.cost?.total_cost_usd != null && (
+              <span className="flex items-center gap-1.5">
+                <svg
+                  className="w-3.5 h-3.5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  />
+                </svg>
+                {formatCostUSD(job.cost.total_cost_usd)}
+                <div
+                  className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal cursor-help"
+                  style={{
+                    backgroundColor: isCostTooltipOpen ? "#171717" : "#fafafa",
+                    color: isCostTooltipOpen ? "#ffffff" : "#737373",
+                  }}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const tooltipWidth = 280;
+                    const centerX = rect.left + rect.width / 2;
+                    const clampedLeft = Math.min(
+                      Math.max(centerX - tooltipWidth / 2, 8),
+                      window.innerWidth - tooltipWidth - 8,
+                    );
+                    setCostTooltipPos({
+                      top: rect.top - 8,
+                      left: clampedLeft,
+                    });
+                    setIsCostTooltipOpen(true);
+                  }}
+                  onMouseLeave={() => setIsCostTooltipOpen(false)}
+                >
+                  i
+                </div>
+                {isCostTooltipOpen && (
+                  <div
+                    className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none space-y-1"
+                    style={{
+                      backgroundColor: "#171717",
+                      color: "#ffffff",
+                      width: "260px",
+                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                      top: costTooltipPos.top,
+                      left: costTooltipPos.left,
+                      transform: "translateY(-100%)",
+                    }}
+                  >
+                    {job.cost.response && (
+                      <div className="flex justify-between gap-3">
+                        <span style={{ color: "#a3a3a3" }}>
+                          Response generation
+                        </span>
+                        <span>{formatCostUSD(job.cost.response.cost_usd)}</span>
+                      </div>
+                    )}
+                    {job.cost.embedding && (
+                      <div className="flex justify-between gap-3">
+                        <span style={{ color: "#a3a3a3" }}>
+                          Cosine similarity calculation
+                        </span>
+                        <span>
+                          {formatCostUSD(job.cost.embedding.cost_usd)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </span>
             )}
           </div>

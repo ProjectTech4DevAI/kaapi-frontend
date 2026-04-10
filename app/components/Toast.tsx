@@ -1,6 +1,19 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
+import {
+  CheckCircleIcon,
+  ErrorCircleIcon,
+  WarningTriangleIcon,
+  InfoIcon,
+  CloseIcon,
+} from "@/app/components/icons";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -21,7 +34,9 @@ interface ToastContextType {
   warning: (message: string, duration?: number) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+export const ToastContext = createContext<ToastContextType | undefined>(
+  undefined,
+);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -34,43 +49,31 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     (message: string, type: ToastType = "info", duration: number = 5000) => {
       const id = `toast-${Date.now()}-${Math.random()}`;
       const toast: Toast = { id, message, type, duration };
-
       setToasts((prev) => [...prev, toast]);
-
-      if (duration > 0) {
-        setTimeout(() => {
-          removeToast(id);
-        }, duration);
-      }
     },
-    [removeToast],
+    [],
   );
 
   const success = useCallback(
-    (message: string, duration?: number) => {
-      addToast(message, "success", duration);
-    },
+    (message: string, duration?: number) =>
+      addToast(message, "success", duration),
     [addToast],
   );
 
   const error = useCallback(
-    (message: string, duration?: number) => {
-      addToast(message, "error", duration);
-    },
+    (message: string, duration?: number) =>
+      addToast(message, "error", duration),
     [addToast],
   );
 
   const info = useCallback(
-    (message: string, duration?: number) => {
-      addToast(message, "info", duration);
-    },
+    (message: string, duration?: number) => addToast(message, "info", duration),
     [addToast],
   );
 
   const warning = useCallback(
-    (message: string, duration?: number) => {
-      addToast(message, "warning", duration);
-    },
+    (message: string, duration?: number) =>
+      addToast(message, "warning", duration),
     [addToast],
   );
 
@@ -92,7 +95,6 @@ export function useToast() {
   return context;
 }
 
-// Toast Container Component
 function ToastContainer({
   toasts,
   removeToast,
@@ -101,7 +103,7 @@ function ToastContainer({
   removeToast: (id: string) => void;
 }) {
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none max-w-[420px]">
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}
@@ -113,152 +115,127 @@ function ToastContainer({
   );
 }
 
-// Individual Toast Item
+const TOAST_CONFIG: Record<
+  ToastType,
+  {
+    accent: string;
+    bg: string;
+    icon: string;
+    progressBg: string;
+  }
+> = {
+  success: {
+    accent: "#07bc0c",
+    bg: "#ffffff",
+    icon: "#07bc0c",
+    progressBg: "#07bc0c",
+  },
+  error: {
+    accent: "#e74c3c",
+    bg: "#ffffff",
+    icon: "#e74c3c",
+    progressBg: "#e74c3c",
+  },
+  warning: {
+    accent: "#f1c40f",
+    bg: "#ffffff",
+    icon: "#f1c40f",
+    progressBg: "#f1c40f",
+  },
+  info: {
+    accent: "#3498db",
+    bg: "#ffffff",
+    icon: "#3498db",
+    progressBg: "#3498db",
+  },
+};
+
+function ToastIcon({ type }: { type: ToastType }) {
+  const config = TOAST_CONFIG[type];
+  const style = { color: config.icon };
+
+  switch (type) {
+    case "success":
+      return <CheckCircleIcon className="w-5 h-5" style={style} />;
+    case "error":
+      return <ErrorCircleIcon className="w-5 h-5" style={style} />;
+    case "warning":
+      return <WarningTriangleIcon className="w-5 h-5" style={style} />;
+    case "info":
+      return <InfoIcon className="w-5 h-5" style={style} />;
+  }
+}
+
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
-  const styles = getToastStyles(toast.type);
+  const [exiting, setExiting] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [remaining, setRemaining] = useState(toast.duration ?? 5000);
+  const config = TOAST_CONFIG[toast.type];
+
+  useEffect(() => {
+    if (paused || remaining <= 0) return;
+
+    const start = Date.now();
+    const timer = setTimeout(() => {
+      setExiting(true);
+    }, remaining);
+
+    return () => {
+      clearTimeout(timer);
+      setRemaining((prev) => prev - (Date.now() - start));
+    };
+  }, [paused, remaining]);
+
+  useEffect(() => {
+    if (!exiting) return;
+    const timer = setTimeout(onClose, 300);
+    return () => clearTimeout(timer);
+  }, [exiting, onClose]);
+
+  const duration = toast.duration ?? 5000;
 
   return (
     <div
-      className="pointer-events-auto animate-slideIn"
-      style={{
-        animation: "slideIn 0.2s ease-out",
-      }}
+      className={`pointer-events-auto ${exiting ? "animate-slideOut" : "animate-slideIn"}`}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
     >
       <div
-        className="rounded-lg border p-4 shadow-lg flex items-start gap-3 min-w-[300px] max-w-[420px]"
-        style={{
-          backgroundColor: styles.bg,
-          borderColor: styles.border,
-        }}
+        className="relative overflow-hidden rounded-md shadow-[0_1px_10px_0_rgba(0,0,0,0.1),0_2px_15px_0_rgba(0,0,0,0.05)] min-w-[320px] max-w-[420px] flex items-center"
+        style={{ backgroundColor: config.bg }}
       >
-        {/* Icon */}
-        <div className="flex-shrink-0 mt-0.5">
-          {toast.type === "success" && (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              style={{ color: styles.icon }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          )}
-          {toast.type === "error" && (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              style={{ color: styles.icon }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          )}
-          {toast.type === "warning" && (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              style={{ color: styles.icon }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          )}
-          {toast.type === "info" && (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              style={{ color: styles.icon }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          )}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-[5px]"
+          style={{ backgroundColor: config.accent }}
+        />
+
+        <div className="flex items-center gap-3 px-4 py-3 pl-5 flex-1 min-w-0">
+          <div className="flex-shrink-0">
+            <ToastIcon type={toast.type} />
+          </div>
+          <p className="text-sm text-[#757575] flex-1 min-w-0 break-words leading-snug">
+            {toast.message}
+          </p>
         </div>
 
-        {/* Message */}
-        <div className="flex-1 text-sm" style={{ color: styles.text }}>
-          {toast.message}
-        </div>
-
-        {/* Close Button */}
         <button
-          onClick={onClose}
-          className="flex-shrink-0 rounded-md p-1 hover:bg-black/5 transition-colors"
-          style={{ color: styles.text }}
+          onClick={() => setExiting(true)}
+          className="flex-shrink-0 self-start p-2 opacity-50 hover:opacity-100 transition-opacity"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <CloseIcon className="w-3.5 h-3.5 text-[#757575]" />
         </button>
+
+        <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-transparent">
+          <div
+            className="h-full opacity-70"
+            style={{
+              backgroundColor: config.progressBg,
+              animation: `toastProgress ${duration}ms linear`,
+              animationPlayState: paused ? "paused" : "running",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
-}
-
-function getToastStyles(type: ToastType) {
-  switch (type) {
-    case "success":
-      return {
-        bg: "#f0fdf4",
-        border: "#86efac",
-        text: "#15803d",
-        icon: "#16a34a",
-      };
-    case "error":
-      return {
-        bg: "#fef2f2",
-        border: "#fca5a5",
-        text: "#b91c1c",
-        icon: "#dc2626",
-      };
-    case "warning":
-      return {
-        bg: "#fffbeb",
-        border: "#fcd34d",
-        text: "#b45309",
-        icon: "#f59e0b",
-      };
-    case "info":
-    default:
-      return {
-        bg: "#eff6ff",
-        border: "#93c5fd",
-        text: "#1e40af",
-        icon: "#3b82f6",
-      };
-  }
 }

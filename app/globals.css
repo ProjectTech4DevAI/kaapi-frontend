@@ -154,7 +154,31 @@ a {
 }
 
 .animate-slideIn {
-  animation: slideIn 0.2s ease-out;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.animate-slideOut {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
 }
 
 .loader-spinner {

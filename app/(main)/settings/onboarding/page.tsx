@@ -13,6 +13,7 @@ import {
   ProjectList,
   StepIndicator,
   UserList,
+  OnboardingCredentials,
 } from "@/app/components/settings/onboarding";
 import {
   Organization,
@@ -24,6 +25,12 @@ import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
+import TabNavigation from "@/app/components/TabNavigation";
+
+const PROJECT_TABS = [
+  { id: "users", label: "Users" },
+  { id: "credentials", label: "Credentials" },
+];
 
 type View = "loading" | "list" | "projects" | "users" | "form" | "success";
 
@@ -69,6 +76,7 @@ export default function OnboardingPage() {
   const [onboardData, setOnboardData] = useState<OnboardResponseData | null>(
     null,
   );
+  const [activeProjectTab, setActiveProjectTab] = useState("users");
 
   const {
     items: organizations,
@@ -211,11 +219,47 @@ export default function OnboardingPage() {
               )}
 
               {view === "users" && selectedOrg && selectedProject && (
-                <UserList
-                  organization={selectedOrg}
-                  project={selectedProject}
-                  onBack={handleBackToProjects}
-                />
+                <div>
+                  <button
+                    onClick={handleBackToProjects}
+                    className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
+                  </button>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-text-primary">
+                        {selectedProject.name}
+                      </h2>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        {selectedOrg.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <TabNavigation
+                    tabs={PROJECT_TABS}
+                    activeTab={activeProjectTab}
+                    onTabChange={setActiveProjectTab}
+                  />
+
+                  {activeProjectTab === "users" && (
+                    <UserList
+                      organization={selectedOrg}
+                      project={selectedProject}
+                      onBack={handleBackToProjects}
+                      hideHeader
+                    />
+                  )}
+
+                  {activeProjectTab === "credentials" && (
+                    <OnboardingCredentials
+                      organizationId={selectedOrg.id}
+                      projectId={selectedProject.id}
+                    />
+                  )}
+                </div>
               )}
 
               {view === "form" && (

@@ -1,8 +1,9 @@
 interface IconProps {
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export default function CloseIcon({ className }: IconProps) {
+export default function CloseIcon({ className, style }: IconProps) {
   return (
     <svg
       className={`w-6 h-6 ${className ?? ""}`}
@@ -10,6 +11,7 @@ export default function CloseIcon({ className }: IconProps) {
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={2}
+      style={style}
     >
       <path
         strokeLinecap="round"

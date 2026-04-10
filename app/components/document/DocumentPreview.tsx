@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { formatDate } from "@/app/components/utils";
 import { Document } from "@/app/lib/types/document";
 import {
@@ -111,7 +112,7 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                 href={document.signed_url || document.object_store_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
+                className="shrink-0 px-4 py-1.5 text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover rounded-full"
               >
                 Download
               </a>
@@ -121,7 +122,7 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                 download={document.fname}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
+                className="shrink-0 px-4 py-1.5 text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover rounded-full"
               >
                 Download
               </a>
@@ -148,14 +149,17 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                     <p className="text-sm">Failed to load image preview</p>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center p-6 bg-[repeating-conic-gradient(hsl(0,0%,92%)_0%_25%,transparent_0%_50%)] bg-size-[16px_16px]">
-                    <img
-                      src={document.signed_url}
-                      alt={document.fname}
-                      className="max-w-full h-auto rounded shadow-sm"
-                      onError={() => setImageLoadError(true)}
-                    />
-                  </div>
+                  <Image
+                    src={document.signed_url}
+                    alt={document.fname}
+                    width={800}
+                    height={600}
+                    className="max-w-full h-auto rounded"
+                    unoptimized
+                    onError={() => {
+                      setImageLoadError(true);
+                    }}
+                  />
                 )
               ) : mimeType === "application/pdf" ? (
                 <iframe

@@ -70,14 +70,22 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     setIsSendingLink(true);
 
     try {
-      await fetch("/api/auth/magic-link", {
+      const res = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim() }),
       });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setEmailError(data.error || "Failed to send login link.");
+        return;
+      }
+
       setLinkSent(true);
     } catch {
-      toast.error("Failed to send login link. Please try again.");
+      toast.error("Failed to connect to server. Please try again.");
     } finally {
       setIsSendingLink(false);
     }

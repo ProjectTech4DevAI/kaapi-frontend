@@ -73,6 +73,9 @@ export const getStatusColor = (
  * @returns Formatted cost string (e.g., "$0.0013", "$1.25")
  */
 export const formatCostUSD = (cost: number): string => {
+  if (!Number.isFinite(cost)) {
+    return "N/A";
+  }
   if (cost < 0.01) {
     return `$${cost.toFixed(4)}`;
   }

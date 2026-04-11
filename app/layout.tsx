@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/components/providers";
+import { APP_NAME } from "@/app/lib/constants";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -16,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kaapi Konsole",
+  title: APP_NAME,
   description: "",
 };
 

@@ -411,14 +411,14 @@ export default function ConfigCard({
 
               {/* Prompt */}
               <div
-                className="rounded-md p-3 mb-4 text-xs font-mono overflow-auto"
+                className="rounded-md p-3 mb-4 text-xs font-mono overflow-y-auto overflow-x-hidden"
                 style={{
                   backgroundColor: colors.bg.secondary,
                   maxHeight: "200px",
                 }}
               >
                 <p
-                  className="whitespace-pre-wrap"
+                  className="whitespace-pre-wrap wrap-break-word"
                   style={{ color: colors.text.secondary }}
                 >
                   {latestVersion.instructions || "No instructions set"}

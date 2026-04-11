@@ -5,29 +5,29 @@ import { useSearchParams } from "next/navigation";
 import { SpinnerIcon } from "@/app/components/icons";
 import TokenVerifyPage from "@/app/components/auth/TokenVerifyPage";
 
-function InviteContent() {
+function VerifyContent() {
   const searchParams = useSearchParams();
 
   return (
     <TokenVerifyPage
       token={searchParams.get("token")}
-      apiUrl="/api/auth/invite"
+      apiUrl="/api/auth/magic-link/verify"
       title={{
-        verifying: "Verifying invitation",
-        success: "Welcome aboard!",
-        error: "Something went wrong",
+        verifying: "Signing you in",
+        success: "You're in!",
+        error: "Login link failed",
       }}
       description={{
-        verifying: "Hang tight — we're setting up your account.",
-        success: "Your account has been activated. Redirecting to dashboard...",
+        verifying: "Verifying your login link...",
+        success: "Redirecting to dashboard...",
       }}
-      errorFallback="Invitation link is invalid or has expired."
-      helpText="If this keeps happening, please contact your organization administrator for a new invitation link."
+      errorFallback="Login link is invalid or has expired."
+      helpText="Login links expire after 15 minutes. Please request a new one from the login page."
     />
   );
 }
 
-export default function InvitePage() {
+export default function VerifyPage() {
   return (
     <Suspense
       fallback={
@@ -36,7 +36,7 @@ export default function InvitePage() {
         </div>
       }
     >
-      <InviteContent />
+      <VerifyContent />
     </Suspense>
   );
 }

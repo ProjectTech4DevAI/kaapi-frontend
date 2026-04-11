@@ -4,7 +4,8 @@
 
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 
-// localStorage keys
+export const APP_NAME = "Kaapi Konsole";
+
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",
   SESSION: "kaapi_session",

@@ -20,6 +20,7 @@ const PUBLIC_ROUTES = new Set<string>([
 ]);
 
 const HOME_ROUTE = "/evaluations";
+const PATHNAME_STARTS_WITH = ["/settings"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -33,7 +34,7 @@ export function middleware(request: NextRequest) {
   }
 
   // /settings/* requires superuser
-  if (pathname.startsWith("/settings")) {
+  if (PATHNAME_STARTS_WITH.some((prefix) => pathname.startsWith(prefix))) {
     if (!isAuthenticated) {
       return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
     }

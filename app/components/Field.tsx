@@ -48,7 +48,7 @@ export default function Field({
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
             tabIndex={-1}
           >
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}

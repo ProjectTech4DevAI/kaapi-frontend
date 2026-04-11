@@ -1,7 +1,6 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import { colors } from "@/app/lib/colors";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { MenuIcon } from "@/app/components/icons";
@@ -31,18 +30,11 @@ export default function PageHeader({
 
   return (
     <>
-      <div
-        className="border-b px-4 py-3 flex items-center justify-between shrink-0"
-        style={{
-          backgroundColor: colors.bg.primary,
-          borderColor: colors.border,
-        }}
-      >
+      <div className="border-b px-4 py-3 flex items-center justify-between shrink-0 bg-bg-primary border-border">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1.5 rounded-md"
-            style={{ color: colors.text.secondary }}
+            className="p-1.5 rounded-md text-text-secondary"
             aria-label="Toggle sidebar"
           >
             <MenuIcon className="w-5 h-5" />
@@ -50,20 +42,12 @@ export default function PageHeader({
           {children ?? (
             <div>
               {title && (
-                <h1
-                  className="text-base font-semibold"
-                  style={{
-                    color: colors.text.primary,
-                    letterSpacing: "-0.01em",
-                  }}
-                >
+                <h1 className="text-base font-semibold text-text-primary tracking-[-0.01em]">
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
-                  {subtitle}
-                </p>
+                <p className="text-xs text-text-secondary">{subtitle}</p>
               )}
             </div>
           )}

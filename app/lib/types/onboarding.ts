@@ -94,6 +94,7 @@ export interface UserListProps {
   organization: Organization;
   project: Project;
   onBack: () => void;
+  hideHeader?: boolean;
 }
 
 export interface AddProjectModalProps {

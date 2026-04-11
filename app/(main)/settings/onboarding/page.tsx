@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -66,8 +65,7 @@ function OrganizationListSkeleton() {
 }
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { activeKey, currentUser, isHydrated, isAuthenticated } = useAuth();
+  const { activeKey } = useAuth();
   const [view, setView] = useState<View>("loading");
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -104,18 +102,6 @@ export default function OnboardingPage() {
       setView(organizations.length > 0 ? "list" : "form");
     }
   }, [isLoadingOrgs, organizations.length]);
-
-  // Redirect if no API key or not a superuser
-  useEffect(() => {
-    if (!isHydrated) return;
-    if (!isAuthenticated) {
-      router.replace("/");
-      return;
-    }
-    if (currentUser && !currentUser.is_superuser) {
-      router.replace("/settings/credentials");
-    }
-  }, [isHydrated, activeKey, currentUser, router]);
 
   const fetchProjects = useCallback(
     async (org: Organization) => {

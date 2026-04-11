@@ -368,10 +368,7 @@ function PromptEditorContent() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -396,19 +393,8 @@ function PromptEditorContent() {
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="animate-spin rounded-full border-4 border-solid"
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      borderColor: colors.bg.primary,
-                      borderTopColor: colors.accent.primary,
-                    }}
-                  />
-                  <p
-                    className="text-sm"
-                    style={{ color: colors.text.secondary }}
-                  >
+                  <div className="animate-spin rounded-full border-4 border-solid w-9 h-9 border-bg-primary border-t-accent-primary" />
+                  <p className="text-sm text-text-secondary">
                     Loading configuration...
                   </p>
                 </div>
@@ -469,7 +455,6 @@ function PromptEditorContent() {
                   />
                 ) : (
                   <div className="flex-1 flex flex-col overflow-hidden">
-                    {/* Split View: Prompt (left) + Config (right) */}
                     <div className="flex flex-1 overflow-hidden">
                       <div
                         className="flex"

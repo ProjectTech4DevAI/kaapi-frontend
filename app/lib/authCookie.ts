@@ -47,17 +47,14 @@ function extractUser(body: unknown): UserLike | null {
   if (!body || typeof body !== "object") return null;
   const outer = body as Record<string, unknown>;
 
-  // Shape: { data: { user: {...} } }
   if (outer.data && typeof outer.data === "object") {
     const data = outer.data as Record<string, unknown>;
     if (data.user && typeof data.user === "object") {
       return data.user as UserLike;
     }
-    // Shape: { data: {...user fields...} } (e.g. /users/me)
     if ("is_superuser" in data) return data as UserLike;
   }
 
-  // Shape: {...user fields...}
   if ("is_superuser" in outer) return outer as UserLike;
 
   return null;

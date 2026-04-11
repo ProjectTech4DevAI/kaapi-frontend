@@ -271,7 +271,10 @@ export default function ConfigLibraryPage() {
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-auto p-6">
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto overflow-x-hidden p-6"
+          >
             {isLoading ? (
               <LoaderBox message="Loading configurations..." size="md" />
             ) : error ? (
@@ -341,11 +344,13 @@ export default function ConfigLibraryPage() {
             ) : (
               <>
                 <div
-                  className="grid gap-4 items-start"
-                  style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+                  className="grid gap-4 items-start w-full"
+                  style={{
+                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                  }}
                 >
                   {columns.map((col, colIdx) => (
-                    <div key={colIdx} className="flex flex-col gap-4">
+                    <div key={colIdx} className="flex flex-col gap-4 min-w-0">
                       {col.map((config) => (
                         <ConfigCard
                           key={config.id}

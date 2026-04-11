@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Route protection:
- * - Unauthenticated users can only access PUBLIC_ROUTES.
+ * - Unauthenticated users can only access PUBLIC_ROUTES and GUEST_ONLY_ROUTES.
+ * - GUEST_ONLY_ROUTES (e.g. /keystore) are inaccessible to authenticated users.
  * - /settings/* requires superuser role.
  *
  * Auth is tracked via the `kaapi_role` cookie set in login API routes
@@ -19,6 +20,8 @@ const PUBLIC_ROUTES = new Set<string>([
   "/coming-soon/text-to-speech",
 ]);
 
+const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
+
 const HOME_ROUTE = "/evaluations";
 const PATHNAME_STARTS_WITH = ["/settings"];
 
@@ -27,6 +30,14 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get("kaapi_role")?.value;
   const isAuthenticated = role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
+
+  // Guest-only routes: allowed when unauthenticated, blocked otherwise
+  if (GUEST_ONLY_ROUTES.has(pathname)) {
+    if (isAuthenticated) {
+      return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
+    }
+    return NextResponse.next();
+  }
 
   // Allow public routes for everyone
   if (PUBLIC_ROUTES.has(pathname)) {

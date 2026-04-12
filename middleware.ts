@@ -1,14 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Route protection:
- * - Unauthenticated users can only access PUBLIC_ROUTES and GUEST_ONLY_ROUTES.
- * - GUEST_ONLY_ROUTES (e.g. /keystore) are inaccessible to authenticated users.
- * - /settings/* requires superuser role.
- *
- * Auth is tracked via the `kaapi_role` cookie set in login API routes
- * (values: "superuser" | "user"). Absence of cookie = unauthenticated.
- */
+/** Route protection via `kaapi_role` cookie. Settings requires superuser. */
 
 const PUBLIC_ROUTES = new Set<string>([
   "/evaluations",

@@ -13,7 +13,6 @@ interface UserLike {
 /**
  * Parse the backend response body and set the role cookie if a user is present.
  * Accepts both `{ data: { user } }` and `{ user }` shapes used across the auth
- * endpoints so callers don't need to reshape.
  */
 export function setRoleCookieFromBody(
   response: NextResponse,

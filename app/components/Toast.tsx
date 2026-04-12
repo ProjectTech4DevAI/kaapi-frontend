@@ -14,25 +14,10 @@ import {
   InfoIcon,
   CloseIcon,
 } from "@/app/components/icons";
+import type { Toast, ToastType, ToastContextType } from "@/app/lib/types/toast";
+import { TOAST_CONFIG } from "@/app/lib/constants";
 
-export type ToastType = "success" | "error" | "info" | "warning";
-
-export interface Toast {
-  id: string;
-  message: string;
-  type: ToastType;
-  duration?: number;
-}
-
-interface ToastContextType {
-  toasts: Toast[];
-  addToast: (message: string, type?: ToastType, duration?: number) => void;
-  removeToast: (id: string) => void;
-  success: (message: string, duration?: number) => void;
-  error: (message: string, duration?: number) => void;
-  info: (message: string, duration?: number) => void;
-  warning: (message: string, duration?: number) => void;
-}
+export type { ToastType, Toast, ToastContextType };
 
 export const ToastContext = createContext<ToastContextType | undefined>(
   undefined,
@@ -115,41 +100,6 @@ function ToastContainer({
   );
 }
 
-const TOAST_CONFIG: Record<
-  ToastType,
-  {
-    accent: string;
-    bg: string;
-    icon: string;
-    progressBg: string;
-  }
-> = {
-  success: {
-    accent: "#07bc0c",
-    bg: "#ffffff",
-    icon: "#07bc0c",
-    progressBg: "#07bc0c",
-  },
-  error: {
-    accent: "#e74c3c",
-    bg: "#ffffff",
-    icon: "#e74c3c",
-    progressBg: "#e74c3c",
-  },
-  warning: {
-    accent: "#f1c40f",
-    bg: "#ffffff",
-    icon: "#f1c40f",
-    progressBg: "#f1c40f",
-  },
-  info: {
-    accent: "#3498db",
-    bg: "#ffffff",
-    icon: "#3498db",
-    progressBg: "#3498db",
-  },
-};
-
 function ToastIcon({ type }: { type: ToastType }) {
   const config = TOAST_CONFIG[type];
   const style = { color: config.icon };
@@ -210,28 +160,27 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         />
 
         <div className="flex items-center gap-3 px-4 py-3 pl-5 flex-1 min-w-0">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <ToastIcon type={toast.type} />
           </div>
-          <p className="text-sm text-[#757575] flex-1 min-w-0 break-words leading-snug">
+          <p className="text-sm text-[#757575] flex-1 min-w-0 wrap-break-word leading-snug">
             {toast.message}
           </p>
         </div>
 
         <button
           onClick={() => setExiting(true)}
-          className="flex-shrink-0 self-start p-2 opacity-50 hover:opacity-100 transition-opacity"
+          className="shrink-0 self-start p-2 opacity-50 hover:opacity-100 transition-opacity"
         >
           <CloseIcon className="w-3.5 h-3.5 text-[#757575]" />
         </button>
 
-        <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-transparent">
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-transparent">
           <div
-            className="h-full opacity-70"
+            className={`h-full opacity-70 animate-[toastProgress_linear_forwards] ${paused ? "[animation-play-state:paused]" : "[animation-play-state:running]"}`}
             style={{
               backgroundColor: config.progressBg,
-              animation: `toastProgress ${duration}ms linear`,
-              animationPlayState: paused ? "paused" : "running",
+              animationDuration: `${duration}ms`,
             }}
           />
         </div>

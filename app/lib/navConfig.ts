@@ -5,7 +5,7 @@ export const SETTINGS_NAV: SettingsNavSection[] = [
     label: "Settings",
     items: [
       { name: "Credentials", route: "/settings/credentials", icon: "key" },
-      { name: "Onboarding", route: "/settings/onboarding", icon: "sliders" },
+      { name: "Organizations", route: "/settings/onboarding", icon: "sliders" },
     ],
   },
 ];

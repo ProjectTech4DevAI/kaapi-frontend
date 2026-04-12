@@ -21,7 +21,6 @@ import {
   OnboardResponseData,
 } from "@/app/lib/types/onboarding";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import TabNavigation from "@/app/components/TabNavigation";
@@ -166,17 +165,14 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
-            title="Onboarding"
-            subtitle="Manage organizations and set up new projects"
+            title="Organizations"
+            subtitle="Manage organizations, projects, users, and credentials"
           />
 
           <div className="flex-1 overflow-y-auto">

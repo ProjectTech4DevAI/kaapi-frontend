@@ -1,19 +1,13 @@
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 
-/**
- * Shared name for the non-httpOnly role cookie that middleware uses
- * to gate routes. Values: "superuser" | "user". Absence = unauthenticated.
- */
+/** Cookie name used by middleware to gate routes. */
 export const ROLE_COOKIE = "kaapi_role";
 
 interface UserLike {
   is_superuser?: boolean;
 }
 
-/**
- * Parse the backend response body and set the role cookie if a user is present.
- * Accepts both `{ data: { user } }` and `{ user }` shapes used across the auth
- */
+/** Set the role cookie by appending a raw Set-Cookie header (won't overwrite existing cookies). */
 export function setRoleCookieFromBody(
   response: NextResponse,
   body: unknown,
@@ -23,23 +17,18 @@ export function setRoleCookieFromBody(
   const user = extractUser(body);
   if (!user) return;
 
-  response.cookies.set(ROLE_COOKIE, user.is_superuser ? "superuser" : "user", {
-    httpOnly: false,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
+  const value = user.is_superuser ? "superuser" : "user";
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const cookie = `${ROLE_COOKIE}=${value}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+
+  response.headers.append("Set-Cookie", cookie);
 }
 
 export function clearRoleCookie(response: NextResponse): void {
-  response.cookies.set(ROLE_COOKIE, "", {
-    httpOnly: false,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 0,
-  });
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const cookie = `${ROLE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+
+  response.headers.append("Set-Cookie", cookie);
 }
 
 function extractUser(body: unknown): UserLike | null {

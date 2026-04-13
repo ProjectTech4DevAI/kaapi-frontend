@@ -3,7 +3,6 @@ import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://0.0.0.0:8000";
 const GUARDRAILS_URL = process.env.GUARDRAILS_URL || "http://localhost:8001";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export type UploadPhase = "uploading" | "processing" | "done";
 
 /** Coalesces concurrent refresh calls into a single request. */

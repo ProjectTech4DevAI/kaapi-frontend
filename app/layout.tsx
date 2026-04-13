@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ToastProvider } from "@/app/components/Toast";
-import { AuthProvider } from "@/app/lib/context/AuthContext";
-import { AppProvider } from "@/app/lib/context/AppContext";
+import { Providers } from "@/app/components/providers";
 
-const jakarta = Plus_Jakarta_Sans({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
@@ -30,13 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${jakarta.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <AuthProvider>
-            <AppProvider>{children}</AppProvider>
-          </AuthProvider>
-        </ToastProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

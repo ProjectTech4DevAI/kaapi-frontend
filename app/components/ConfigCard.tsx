@@ -99,7 +99,7 @@ export default function ConfigCard({
 
   return (
     <div
-      className="border rounded-lg overflow-hidden transition-all"
+      className="border rounded-lg overflow-hidden transition-all min-w-0"
       style={{
         backgroundColor: colors.bg.primary,
         borderColor: expanded ? colors.accent.primary : colors.border,
@@ -119,7 +119,7 @@ export default function ConfigCard({
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3
-              className="text-base font-semibold truncate"
+              className="text-sm font-semibold truncate"
               style={{ color: colors.text.primary }}
             >
               {config.name}

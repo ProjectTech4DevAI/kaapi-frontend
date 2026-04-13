@@ -49,8 +49,8 @@ export function usePaginatedList<T>(options: {
     limit = DEFAULT_PAGE_LIMIT,
     extraParams,
   } = options;
-  const { activeKey, isHydrated } = useAuth();
-  const apiKey = activeKey?.key;
+  const { activeKey, isHydrated, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
 
   const [items, setItems] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,8 +63,8 @@ export function usePaginatedList<T>(options: {
 
   const fetchPage = useCallback(
     async (skip: number, replace: boolean) => {
-      if (!apiKey) {
-        setError("No API key found. Please add an API key in the Keystore.");
+      if (!isAuthenticated) {
+        setError("Please log in to continue.");
         return;
       }
 
@@ -91,13 +91,13 @@ export function usePaginatedList<T>(options: {
       setHasMore(data.metadata?.has_more ?? false);
       skipRef.current = skip + newItems.length;
     },
-    [apiKey, endpoint, query, limit, extraParams],
+    [apiKey, isAuthenticated, endpoint, query, limit, extraParams],
   );
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (!apiKey) {
-      setError("No API key found. Please add an API key in the Keystore.");
+    if (!isAuthenticated) {
+      setError("Please log in to continue.");
       setIsLoading(false);
       return;
     }
@@ -121,7 +121,7 @@ export function usePaginatedList<T>(options: {
     return () => {
       cancelled = true;
     };
-  }, [fetchPage, isHydrated, apiKey]);
+  }, [fetchPage, isHydrated, apiKey, isAuthenticated]);
 
   const loadMore = useCallback(() => {
     if (loadingMoreRef.current || !hasMore || isLoading) return;

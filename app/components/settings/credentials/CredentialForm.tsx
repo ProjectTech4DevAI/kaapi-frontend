@@ -227,7 +227,7 @@ export default function CredentialForm({
               <button
                 onClick={onDelete}
                 disabled={isSaving || isDeleting}
-                className={`ml-auto px-4 py-2 rounded-full text-sm font-medium border transition-colors bg-transparent border-[#ef444440] text-[#ef4444] hover:bg-[#ef444415] hover:border-[#ef4444] ${isDeleting ? "opacity-70" : ""}`}
+                className={`ml-auto px-4 py-2 rounded-full text-sm font-medium border transition-colors bg-transparent border-[#ef444440] text-[#ef4444] hover:bg-[#ef444415] hover:border-[#ef4444] disabled:cursor-not-allowed ${isDeleting ? "opacity-70" : ""}`}
               >
                 {isDeleting ? "Removing…" : "Remove"}
               </button>

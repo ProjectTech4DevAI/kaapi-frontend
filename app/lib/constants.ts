@@ -4,16 +4,36 @@
 
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 
+// localStorage keys
+export const STORAGE_KEYS = {
+  API_KEYS: "kaapi_api_keys",
+  SESSION: "kaapi_session",
+  CONFIGS_CACHE: "kaapi_configs_cache",
+  COLLECTION_CACHE: "collection_job_cache",
+  DOCUMENT_SIZES: "document_file_sizes",
+  SIDEBAR_MENUS: "sidebar-expanded-menus",
+} as const;
+
 /** localStorage key for the config cache */
-export const CACHE_KEY = "kaapi_configs_cache";
+export const CACHE_KEY = STORAGE_KEYS.CONFIGS_CACHE;
 
 /** Cache is considered stale after 5 minutes */
 export const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
 
 export const DEFAULT_PAGE_LIMIT = 10;
 
+export const ACCEPTED_DOCUMENT_TYPES =
+  ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.webp";
+
+/** Maximum document upload size in bytes (25 MB) */
+export const MAX_DOCUMENT_SIZE_MB = 25;
+export const MAX_DOCUMENT_SIZE_BYTES = MAX_DOCUMENT_SIZE_MB * 1024 * 1024;
+
 /** Custom event dispatched when background validation invalidates the in-memory cache */
 export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
+
+/** Dispatched when the user's session is no longer valid (expired or revoked). */
+export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
 
 export const PROVIDES_OPTIONS = [
   { value: "openai", label: "OpenAI" },

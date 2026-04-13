@@ -43,4 +43,15 @@ export const NAV_ITEMS: NavItemConfig[] = [
     ],
     gateDescription: "Log in to manage prompts and model configurations.",
   },
+  {
+    name: "Guardrails",
+    route: "/guardrails",
+    icon: "shield",
+    gateDescription: "Log in to manage guardrails and validators.",
+  },
+  {
+    name: "Settings",
+    route: "/settings/credentials",
+    icon: "sliders",
+  },
 ];

@@ -76,45 +76,6 @@ export default function Sidebar({
     localStorage.setItem("sidebar-expanded-menus", JSON.stringify(newState));
   };
 
-  const navItems: MenuItem[] = [
-    {
-      name: "Evaluations",
-      icon: <ClipboardIcon />,
-      submenu: [
-        { name: "Text", route: "/evaluations" },
-        { name: "Speech-to-Text", route: "/speech-to-text" },
-        { name: "Text-to-Speech", route: "/text-to-speech" },
-      ],
-    },
-    {
-      name: "Documents",
-      route: "/document",
-      icon: <DocumentFileIcon />,
-    },
-    {
-      name: "Knowledge Base",
-      route: "/knowledge-base",
-      icon: <BookOpenIcon />,
-    },
-    {
-      name: "Configurations",
-      icon: <GearIcon className="w-5 h-5" />,
-      submenu: [
-        { name: "Library", route: "/configurations" },
-        { name: "Prompt Editor", route: "/configurations/prompt-editor" },
-      ],
-    },
-    {
-      name: "Guardrails",
-      route: "/guardrails",
-      icon: <ShieldCheckIcon />,
-    },
-    {
-      name: "Settings",
-      route: "/settings/credentials",
-      icon: <SlidersIcon />,
-    },
-  ];
   const handleGateEnter = useCallback((name: string, el: HTMLElement) => {
     if (gateTimeoutRef.current) clearTimeout(gateTimeoutRef.current);
     setHoveredGate(name);
@@ -152,6 +113,8 @@ export default function Sidebar({
     document: <DocumentFileIcon />,
     book: <BookOpenIcon />,
     gear: <GearIcon className="w-5 h-5" />,
+    shield: <ShieldCheckIcon />,
+    sliders: <SlidersIcon />,
   };
 
   const navItems: MenuItem[] = NAV_ITEMS.filter(

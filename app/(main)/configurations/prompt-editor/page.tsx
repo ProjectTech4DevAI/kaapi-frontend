@@ -108,6 +108,12 @@ function PromptEditorContent() {
             tools: config.tools || [],
           },
         },
+        ...(config.input_guardrails?.length && {
+          input_guardrails: config.input_guardrails,
+        }),
+        ...(config.output_guardrails?.length && {
+          output_guardrails: config.output_guardrails,
+        }),
       });
       setProvider(config.provider);
       setTemperature(config.temperature);

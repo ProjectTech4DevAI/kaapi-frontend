@@ -1,10 +1,5 @@
-import { guardrailsClient } from "@/app/lib/apiClient";
+import { guardrailsClient, getAuthHeader } from "@/app/lib/guardrailsClient";
 import { NextResponse, NextRequest } from "next/server";
-
-function getAuthHeader(): string | undefined {
-  const token = process.env.GUARDRAILS_TOKEN;
-  return token ? `Bearer ${token}` : undefined;
-}
 
 export async function GET(request: NextRequest) {
   const authHeader = getAuthHeader();

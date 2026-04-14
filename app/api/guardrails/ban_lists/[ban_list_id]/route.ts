@@ -1,4 +1,4 @@
-import { guardrailsClient } from "@/app/lib/apiClient";
+import { guardrailsClient } from "@/app/lib/guardrailsClient";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(

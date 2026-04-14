@@ -1,3 +1,9 @@
+export interface ValidatorMeta {
+  validator_type: string;
+  validator_name: string;
+  description: string;
+}
+
 export interface ValidatorConfigSchema {
   title: string;
   type: string;
@@ -47,4 +53,9 @@ export function formatValidatorName(type: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+export interface OrgContext {
+  organization_id: number;
+  project_id: number;
 }

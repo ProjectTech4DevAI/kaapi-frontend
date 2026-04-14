@@ -19,6 +19,8 @@ export interface SavedConfig {
   vectorStoreIds: string;
   tools?: Tool[];
   commit_message?: string | null;
+  input_guardrails?: GuardrailRef[];
+  output_guardrails?: GuardrailRef[];
 }
 
 export interface ConfigGroup {

@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { colors } from "@/app/lib/colors";
-import { Validator, ValidatorConfigSchema, formatValidatorName } from "./types";
+import {
+  Validator,
+  ValidatorConfigSchema,
+  ValidatorMeta,
+  formatValidatorName,
+} from "@/app/lib/types/guardrails";
 import BanListModal from "./BanListModal";
 import MultiSelect from "../MultiSelect";
 import InfoTooltip from "@/app/components/InfoTooltip";
 import validatorMeta from "./validators.json";
-
-interface ValidatorMeta {
-  validator_type: string;
-  validator_name: string;
-  description: string;
-}
+import Button from "@/app/components/Button";
+import Field from "@/app/components/Field";
+import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 
 const metaMap: Record<string, ValidatorMeta> = (
   validatorMeta as ValidatorMeta[]
@@ -36,7 +37,6 @@ const KNOWN_ARRAY_OPTIONS: Record<string, string[]> = {
     "IN_VOTER",
   ],
   languages: ["en", "hi"],
-  language: ["en", "hi"],
 };
 
 // Single-select overrides for fields that are technically arrays but only one value makes sense
@@ -51,6 +51,9 @@ const FIELD_TOOLTIPS: Record<string, string> = {
     '"fix" attempts to auto-remediate the violation, "exception" raises an error and blocks the response, "rephrase" asks the model to rewrite the output.',
 };
 
+const inputClass =
+  "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1";
+
 interface BanList {
   id: string;
   name: string;
@@ -59,11 +62,9 @@ interface BanList {
 function BanListField({
   value,
   onChange,
-  apiKey,
 }: {
   value: string | null;
   onChange: (id: string | null) => void;
-  apiKey: string;
 }) {
   const [banLists, setBanLists] = useState<BanList[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,20 +74,22 @@ function BanListField({
 
   const fetchBanLists = () => {
     setLoading(true);
-    fetch("/api/guardrails/ban_lists", {
-      headers: { "X-API-KEY": apiKey },
-    })
-      .then((r) => r.json())
+
+    guardrailsFetch<{
+      data?: { ban_lists?: BanList[] } | BanList[];
+      ban_lists?: BanList[];
+    }>("/api/guardrails/ban_lists")
       .then((data) => {
-        const list: BanList[] = Array.isArray(data?.data?.ban_lists)
-          ? data.data.ban_lists
-          : Array.isArray(data?.data)
-            ? data.data
+        const nested = data?.data;
+        const list: BanList[] = Array.isArray(
+          (nested as { ban_lists?: BanList[] })?.ban_lists,
+        )
+          ? (nested as { ban_lists: BanList[] }).ban_lists
+          : Array.isArray(nested)
+            ? (nested as BanList[])
             : Array.isArray(data?.ban_lists)
-              ? data.ban_lists
-              : Array.isArray(data)
-                ? data
-                : [];
+              ? data.ban_lists!
+              : [];
         setBanLists(list);
       })
       .catch(() => setBanLists([]))
@@ -96,15 +99,16 @@ function BanListField({
   const fetchBannedWords = (id: string) => {
     setWordsLoading(true);
     setBannedWords([]);
-    fetch(`/api/guardrails/ban_lists/${id}`, {
-      headers: { "X-API-KEY": apiKey },
-    })
-      .then((r) => r.json())
+
+    guardrailsFetch<{
+      banned_words?: string[];
+      data?: { banned_words?: string[] };
+    }>(`/api/guardrails/ban_lists/${id}`)
       .then((data) => {
         const words: string[] = Array.isArray(data?.banned_words)
-          ? data.banned_words
+          ? data.banned_words!
           : Array.isArray(data?.data?.banned_words)
-            ? data.data.banned_words
+            ? data.data!.banned_words!
             : [];
         setBannedWords(words);
       })
@@ -135,27 +139,16 @@ function BanListField({
   return (
     <>
       <div>
-        <label
-          className="block text-xs font-medium mb-1"
-          style={{ color: colors.text.primary }}
-        >
+        <label className="block text-xs font-medium mb-1 text-text-primary">
           Ban List
         </label>
         {loading ? (
-          <div
-            className="h-8 rounded-md animate-pulse"
-            style={{ backgroundColor: colors.bg.secondary }}
-          />
+          <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
         ) : (
           <select
             value={value ?? ""}
             onChange={handleChange}
-            className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.primary,
-            }}
+            className={inputClass}
           >
             {banLists.length === 0 ? (
               <>
@@ -181,27 +174,20 @@ function BanListField({
         {value && (
           <div className="mt-2">
             {wordsLoading ? (
-              <div
-                className="h-6 rounded animate-pulse"
-                style={{ backgroundColor: colors.bg.secondary }}
-              />
+              <div className="h-6 rounded animate-pulse bg-bg-secondary" />
             ) : bannedWords.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {bannedWords.map((word) => (
                   <span
                     key={word}
-                    className="inline-block text-xs px-2 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.secondary,
-                    }}
+                    className="inline-block text-xs px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary"
                   >
                     {word}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-xs" style={{ color: colors.text.secondary }}>
+              <p className="text-xs text-text-secondary">
                 No words in this ban list.
               </p>
             )}
@@ -217,7 +203,6 @@ function BanListField({
             fetchBanLists();
             onChange(bl.id);
           }}
-          apiKey={apiKey}
         />
       )}
     </>
@@ -282,10 +267,7 @@ function SchemaField({ name, schema, defs, value, onChange }: FieldProps) {
       schema.anyOf.some((item: { type?: string }) => item.type === "array"));
 
   const labelEl = (
-    <label
-      className="block text-xs font-medium mb-1"
-      style={{ color: colors.text.primary }}
-    >
+    <label className="block text-xs font-medium mb-1 text-text-primary">
       {label}
       {tooltip && <InfoTooltip text={tooltip} />}
     </label>
@@ -299,12 +281,7 @@ function SchemaField({ name, schema, defs, value, onChange }: FieldProps) {
         <select
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value || null)}
-          className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-            color: colors.text.primary,
-          }}
+          className={inputClass}
         >
           <option value="">Select…</option>
           {singleOptions.map((v) => (
@@ -324,12 +301,7 @@ function SchemaField({ name, schema, defs, value, onChange }: FieldProps) {
         <select
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value)}
-          className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-            color: colors.text.primary,
-          }}
+          className={inputClass}
         >
           {enumValues.map((v) => (
             <option key={v} value={v}>
@@ -361,45 +333,27 @@ function SchemaField({ name, schema, defs, value, onChange }: FieldProps) {
 
     const displayValue = selected.join(", ");
     return (
-      <div>
-        {labelEl}
-        <input
-          type="text"
-          value={displayValue}
-          onChange={(e) => {
-            const arr = e.target.value
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            onChange(name, arr.length > 0 ? arr : null);
-          }}
-          placeholder="e.g. value1, value2"
-          className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-            color: colors.text.primary,
-          }}
-        />
-      </div>
+      <Field
+        label={label}
+        value={displayValue}
+        onChange={(v) => {
+          const arr = v
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          onChange(name, arr.length > 0 ? arr : null);
+        }}
+        placeholder="e.g. value1, value2"
+      />
     );
   }
 
   return (
-    <div>
-      {labelEl}
-      <input
-        type="text"
-        value={(value as string) ?? ""}
-        onChange={(e) => onChange(name, e.target.value || null)}
-        className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-        style={{
-          borderColor: colors.border,
-          backgroundColor: colors.bg.primary,
-          color: colors.text.primary,
-        }}
-      />
-    </div>
+    <Field
+      label={label}
+      value={(value as string) ?? ""}
+      onChange={(v) => onChange(name, v || null)}
+    />
   );
 }
 
@@ -411,7 +365,6 @@ interface ValidatorConfigPanelProps {
   existingValues?: Record<string, unknown> | null;
   existingName?: string;
   isSaving: boolean;
-  apiKey: string;
   onSave: (name: string, configValues: Record<string, unknown>) => void;
   onClear: () => void;
 }
@@ -424,7 +377,6 @@ export default function ValidatorConfigPanel({
   existingValues,
   existingName,
   isSaving,
-  apiKey,
   onSave,
   onClear,
 }: ValidatorConfigPanelProps) {
@@ -517,26 +469,16 @@ export default function ValidatorConfigPanel({
   const hasContent = selectedType || configName;
 
   return (
-    <div
-      className="flex flex-col h-full overflow-hidden"
-      style={{ backgroundColor: colors.bg.primary }}
-    >
-      {/* Header */}
-      <div
-        className="flex items-center justify-between border-b px-4 py-3 shrink-0"
-        style={{ borderColor: colors.border }}
-      >
+    <div className="flex flex-col h-full overflow-hidden bg-bg-primary">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
         <div>
-          <div
-            className="text-sm font-semibold"
-            style={{ color: colors.text.primary }}
-          >
+          <div className="text-sm font-semibold text-text-primary">
             {existingName
               ? `View / Edit: ${existingName}`
               : "New Validator Config"}
           </div>
           {!existingName && (
-            <div className="text-xs" style={{ color: colors.text.secondary }}>
+            <div className="text-xs text-text-secondary">
               Configure and save a validator
             </div>
           )}
@@ -544,92 +486,45 @@ export default function ValidatorConfigPanel({
         {hasContent && !existingName && (
           <button
             onClick={onClear}
-            className="text-xs px-2.5 py-1 rounded border transition-colors"
-            style={{
-              borderColor: colors.border,
-              color: colors.text.secondary,
-              backgroundColor: colors.bg.primary,
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = colors.bg.primary)
-            }
+            className="text-xs px-2.5 py-1 rounded border border-border text-text-secondary bg-bg-primary hover:bg-bg-secondary transition-colors"
           >
             Clear
           </button>
         )}
       </div>
 
-      {/* Form body */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* ── Static fields — always visible ── */}
+        <Field
+          label="Config Name"
+          value={configName}
+          onChange={setConfigName}
+          placeholder="e.g. my-pii-remover-config"
+        />
 
-        {/* Config Name */}
         <div>
-          <label
-            className="block text-xs font-medium mb-1"
-            style={{ color: colors.text.primary }}
-          >
-            Config Name
-          </label>
-          <input
-            type="text"
-            value={configName}
-            onChange={(e) => setConfigName(e.target.value)}
-            placeholder="e.g. my-pii-remover-config"
-            className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.primary,
-            }}
-          />
-        </div>
-
-        {/* Stage */}
-        <div>
-          <label
-            className="block text-xs font-medium mb-1"
-            style={{ color: colors.text.primary }}
-          >
+          <label className="block text-xs font-medium mb-1 text-text-primary">
             Stage
             <InfoTooltip text={FIELD_TOOLTIPS.stage} />
           </label>
           <select
             value={stage}
             onChange={(e) => setStage(e.target.value as "input" | "output")}
-            className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.primary,
-            }}
+            className={inputClass}
           >
             <option value="input">Input</option>
             <option value="output">Output</option>
           </select>
         </div>
 
-        {/* On Fail Action */}
         <div>
-          <label
-            className="block text-xs font-medium mb-1"
-            style={{ color: colors.text.primary }}
-          >
+          <label className="block text-xs font-medium mb-1 text-text-primary">
             On Fail Action
             <InfoTooltip text={FIELD_TOOLTIPS.on_fail_action} />
           </label>
           <select
             value={onFailAction}
             onChange={(e) => setOnFailAction(e.target.value)}
-            className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.primary,
-            }}
+            className={inputClass}
           >
             <option value="fix">Fix</option>
             <option value="exception">Exception</option>
@@ -637,7 +532,6 @@ export default function ValidatorConfigPanel({
           </select>
         </div>
 
-        {/* Enabled */}
         <label className="flex items-center gap-2.5 cursor-pointer">
           <input
             type="checkbox"
@@ -645,34 +539,20 @@ export default function ValidatorConfigPanel({
             onChange={(e) => setIsEnabled(e.target.checked)}
             className="w-4 h-4 rounded"
           />
-          <span className="text-sm" style={{ color: colors.text.primary }}>
-            Enabled
-          </span>
+          <span className="text-sm text-text-primary">Enabled</span>
         </label>
 
-        {/* ── Validator Type — divider then type selector ── */}
-        <div className="border-t pt-3" style={{ borderColor: colors.border }}>
-          <label
-            className="block text-xs font-medium mb-1"
-            style={{ color: colors.text.primary }}
-          >
+        <div className="border-t border-border pt-3">
+          <label className="block text-xs font-medium mb-1 text-text-primary">
             Validator Type
           </label>
           {validatorsLoading ? (
-            <div
-              className="h-8 rounded-md animate-pulse"
-              style={{ backgroundColor: colors.bg.secondary }}
-            />
+            <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
           ) : (
             <select
               value={selectedType ?? ""}
               onChange={(e) => onTypeChange(e.target.value || null)}
-              className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-                color: colors.text.primary,
-              }}
+              className={inputClass}
             >
               <option value="">Select a validator type…</option>
               {validators.map((v) => (
@@ -684,38 +564,25 @@ export default function ValidatorConfigPanel({
             </select>
           )}
           {typeDescription && (
-            <p
-              className="text-xs mt-1.5"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="text-xs mt-1.5 text-text-secondary">
               {typeDescription}
             </p>
           )}
         </div>
 
-        {/* ── Dynamic fields — only when a type is selected ── */}
         {validator && (
           <>
-            {/* Ban list */}
             {isBanList && (
-              <div
-                className="border-t pt-3"
-                style={{ borderColor: colors.border }}
-              >
+              <div className="border-t border-border pt-3">
                 <BanListField
                   value={(fieldValues["ban_list_id"] as string | null) ?? null}
                   onChange={(id) => handleFieldChange("ban_list_id", id)}
-                  apiKey={apiKey}
                 />
               </div>
             )}
 
-            {/* Dynamic schema fields */}
             {editableProperties.length > 0 && (
-              <div
-                className="border-t pt-3"
-                style={{ borderColor: colors.border }}
-              >
+              <div className="border-t border-border pt-3">
                 <div className="space-y-4">
                   {editableProperties.map(([key, prop]) => (
                     <SchemaField
@@ -734,19 +601,14 @@ export default function ValidatorConfigPanel({
         )}
       </div>
 
-      {/* Save button — always visible once there's a name and type */}
-      <div
-        className="px-4 py-3 border-t shrink-0"
-        style={{ borderColor: colors.border }}
-      >
-        <button
+      <div className="px-4 py-3 border-t border-border shrink-0">
+        <Button
           onClick={handleSave}
           disabled={isSaving || !configName.trim() || !selectedType}
-          className="w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: colors.accent.primary, color: "#ffffff" }}
+          fullWidth
         >
           {isSaving ? "Saving…" : "Save Config"}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -49,9 +49,4 @@ export const NAV_ITEMS: NavItemConfig[] = [
     icon: "shield",
     gateDescription: "Log in to manage guardrails and validators.",
   },
-  {
-    name: "Settings",
-    route: "/settings/credentials",
-    icon: "sliders",
-  },
 ];

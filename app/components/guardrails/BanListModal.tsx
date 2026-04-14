@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { colors } from "@/app/lib/colors";
+import { guardrailsFetch } from "@/app/lib/guardrailsClient";
+import Button from "@/app/components/Button";
+import { CloseIcon } from "@/app/components/icons";
+import Field from "@/app/components/Field";
 
 interface BanListModalProps {
   onClose: () => void;
   onCreated: (banList: { id: string; name: string }) => void;
-  apiKey: string;
 }
 
 export default function BanListModal({
   onClose,
   onCreated,
-  apiKey,
 }: BanListModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -18,21 +19,27 @@ export default function BanListModal({
   const [domain, setDomain] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [wordsError, setWordsError] = useState("");
 
   const handleCreate = async () => {
+    let hasError = false;
     if (!name.trim()) {
-      setError("Name is required");
-      return;
+      setNameError("Name is required");
+      hasError = true;
+    } else {
+      setNameError("");
     }
     if (!bannedWords.trim()) {
-      setError("At least one banned word is required");
-      return;
+      setWordsError("At least one banned word is required");
+      hasError = true;
+    } else {
+      setWordsError("");
     }
+    if (hasError) return;
 
-    setError("");
-    setIsSaving(true);
     try {
+      setIsSaving(true);
       const body = {
         name: name.trim(),
         description: description.trim(),
@@ -43,111 +50,54 @@ export default function BanListModal({
         domain: domain.trim(),
         is_public: isPublic,
       };
-      const res = await fetch("/api/guardrails/ban_lists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-API-KEY": apiKey },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error ?? "Failed to create ban list");
-      }
-      const data = await res.json();
+      const data = await guardrailsFetch<{ id: string; name?: string }>(
+        "/api/guardrails/ban_lists",
+        { method: "POST", body: JSON.stringify(body) },
+      );
       onCreated({ id: data.id, name: data.name ?? name.trim() });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      setNameError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const textareaClass =
+    "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 resize-none";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
 
-      {/* Modal */}
-      <div
-        className="relative w-full max-w-md rounded-xl shadow-xl flex flex-col"
-        style={{
-          backgroundColor: colors.bg.primary,
-          border: `1px solid ${colors.border}`,
-        }}
-      >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: colors.border }}
-        >
+      <div className="relative w-full max-w-md rounded-xl shadow-xl flex flex-col bg-bg-primary border border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h2
-              className="text-sm font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <h2 className="text-sm font-semibold text-text-primary">
               Create Ban List
             </h2>
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="text-xs mt-0.5 text-text-secondary">
               Define a list of words to ban from outputs
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-neutral-100 transition-colors"
+            className="p-1 rounded hover:bg-neutral-100 transition-colors text-text-secondary"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              style={{ color: colors.text.secondary }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <CloseIcon className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-5 py-4 space-y-4 overflow-y-auto max-h-[70vh]">
-          {error && (
-            <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
-              {error}
-            </p>
-          )}
+          <Field
+            label="Name *"
+            value={name}
+            onChange={setName}
+            placeholder="e.g. profanity-list"
+            error={nameError}
+          />
 
           <div>
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{ color: colors.text.primary }}
-            >
-              Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. profanity-list"
-              className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-                color: colors.text.primary,
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{ color: colors.text.primary }}
-            >
+            <label className="block text-xs font-medium mb-1 text-text-secondary">
               Description
             </label>
             <textarea
@@ -155,62 +105,33 @@ export default function BanListModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this ban list covers…"
               rows={2}
-              className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1 resize-none"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-                color: colors.text.primary,
-              }}
+              className={textareaClass}
             />
           </div>
 
           <div>
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{ color: colors.text.primary }}
-            >
-              Banned Words <span className="text-red-500">*</span>
-              <span
-                className="ml-1 font-normal"
-                style={{ color: colors.text.secondary }}
-              >
-                (comma-separated)
-              </span>
+            <label className="block text-xs font-medium mb-1 text-text-secondary">
+              Banned Words *
+              <span className="ml-1 font-normal">(comma-separated)</span>
             </label>
             <textarea
               value={bannedWords}
               onChange={(e) => setBannedWords(e.target.value)}
               placeholder="word1, word2, word3"
               rows={3}
-              className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1 resize-none"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-                color: colors.text.primary,
-              }}
+              className={`${textareaClass} ${wordsError ? "border-red-400" : ""}`}
             />
+            {wordsError && (
+              <p className="text-xs text-red-500 mt-1">{wordsError}</p>
+            )}
           </div>
 
-          <div>
-            <label
-              className="block text-xs font-medium mb-1"
-              style={{ color: colors.text.primary }}
-            >
-              Domain
-            </label>
-            <input
-              type="text"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              placeholder="e.g. healthcare, finance"
-              className="w-full text-sm rounded-md border px-2.5 py-1.5 outline-none focus:ring-1"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-                color: colors.text.primary,
-              }}
-            />
-          </div>
+          <Field
+            label="Domain"
+            value={domain}
+            onChange={setDomain}
+            placeholder="e.g. healthcare, finance"
+          />
 
           <label className="flex items-center gap-2.5 cursor-pointer">
             <input
@@ -219,32 +140,19 @@ export default function BanListModal({
               onChange={(e) => setIsPublic(e.target.checked)}
               className="w-4 h-4 rounded"
             />
-            <span className="text-sm" style={{ color: colors.text.primary }}>
+            <span className="text-sm text-text-primary">
               Make this ban list public
             </span>
           </label>
         </div>
 
-        {/* Footer */}
-        <div
-          className="flex items-center justify-end gap-2 px-5 py-4 border-t"
-          style={{ borderColor: colors.border }}
-        >
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 text-sm rounded-lg border transition-colors hover:bg-neutral-50"
-            style={{ borderColor: colors.border, color: colors.text.primary }}
-          >
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
+          <Button variant="outline" size="sm" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={isSaving}
-            className="px-4 py-1.5 text-sm rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: colors.accent.primary, color: "#ffffff" }}
-          >
+          </Button>
+          <Button size="sm" onClick={handleCreate} disabled={isSaving}>
             {isSaving ? "Creating…" : "Create Ban List"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -28,6 +28,9 @@ export { default as WarningIcon } from "./document/WarningIcon";
 export { default as CloseIcon } from "./document/CloseIcon";
 export { default as CloudUploadIcon } from "./document/CloudUploadIcon";
 
+// Guardrails Icons
+export { default as GuardrailsShieldCheckIcon } from "./guardrails/ShieldCheckIcon";
+
 // Sidebar Icons
 export { default as ClipboardIcon } from "./sidebar/ClipboardIcon";
 export { default as BookOpenIcon } from "./sidebar/BookOpenIcon";

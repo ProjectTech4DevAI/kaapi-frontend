@@ -269,7 +269,6 @@ export default function ConfigEditorPane({
         }
       })
       .catch(() => {});
-     
   }, []);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

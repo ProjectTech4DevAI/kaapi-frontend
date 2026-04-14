@@ -2,31 +2,29 @@ import { NextRequest } from "next/server";
 
 const GUARDRAILS_URL = process.env.GUARDRAILS_URL || "http://localhost:8001";
 
-export function getAuthHeader(): string | undefined {
-  const token = process.env.GUARDRAILS_TOKEN;
-  return token ? `Bearer ${token}` : undefined;
-}
-
 /**
  * Server-side passthrough proxy to the Guardrails backend.
  * Used by Next.js route handlers (/api/guardrails/*).
- * Forwards the Cookie from the incoming request (contains org/project context).
- * Pass `authHeader` to override auth (e.g. "Bearer <token>" from env).
+ * Auth priority: GUARDRAILS_TOKEN env var → X-API-KEY + Cookie from request.
  */
 export async function guardrailsClient(
   request: NextRequest | Request,
   endpoint: string,
-  options: RequestInit & { authHeader?: string } = {},
+  options: RequestInit & { skipEnvToken?: boolean } = {},
 ) {
-  const { authHeader, ...fetchOptions } = options;
+  const { skipEnvToken, ...fetchOptions } = options;
   const headers = new Headers(fetchOptions.headers);
   if (!(fetchOptions.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
-  if (authHeader) {
-    headers.set("Authorization", authHeader);
+
+  const token = !skipEnvToken && process.env.GUARDRAILS_TOKEN;
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
   } else {
+    const apiKey = request.headers.get("X-API-KEY") || "";
     const cookie = request.headers.get("Cookie") || "";
+    if (apiKey) headers.set("X-API-KEY", apiKey);
     if (cookie) headers.set("Cookie", cookie);
   }
 
@@ -54,7 +52,11 @@ export async function guardrailsFetch<T>(
     if (options.body) headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(path, { ...options, headers });
+  const res = await fetch(path, {
+    ...options,
+    headers,
+    credentials: "include",
+  });
 
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as Record<

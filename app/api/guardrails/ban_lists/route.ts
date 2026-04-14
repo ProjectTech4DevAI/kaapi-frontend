@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     const { status, data } = await guardrailsClient(
       request,
       "/api/v1/guardrails/ban_lists",
+      { skipEnvToken: true },
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
       {
         method: "POST",
         body: JSON.stringify(body),
+        skipEnvToken: true,
       },
     );
     return NextResponse.json(data, { status });

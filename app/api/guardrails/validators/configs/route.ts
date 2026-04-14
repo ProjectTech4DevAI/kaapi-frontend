@@ -1,20 +1,12 @@
-import { guardrailsClient, getAuthHeader } from "@/app/lib/guardrailsClient";
+import { guardrailsClient } from "@/app/lib/guardrailsClient";
 import { buildValidatorConfigEndpoint } from "@/app/lib/utils/guardrails";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const authHeader = getAuthHeader();
-  if (!authHeader) {
-    return NextResponse.json(
-      { error: "Missing GUARDRAILS_TOKEN environment variable" },
-      { status: 500 },
-    );
-  }
   try {
     const { status, data } = await guardrailsClient(
       request,
       buildValidatorConfigEndpoint(request),
-      { authHeader },
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
@@ -26,13 +18,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authHeader = getAuthHeader();
-  if (!authHeader) {
-    return NextResponse.json(
-      { error: "Missing GUARDRAILS_TOKEN environment variable" },
-      { status: 500 },
-    );
-  }
   try {
     const body = await request.json();
     const { status, data } = await guardrailsClient(
@@ -41,7 +26,6 @@ export async function POST(request: NextRequest) {
       {
         method: "POST",
         body: JSON.stringify(body),
-        authHeader,
       },
     );
     return NextResponse.json(data, { status });

@@ -10,6 +10,7 @@ export async function GET(
     const { status, data } = await guardrailsClient(
       request,
       `/api/v1/guardrails/ban_lists/${ban_list_id}`,
+      { skipEnvToken: true },
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
@@ -33,6 +34,7 @@ export async function PUT(
       {
         method: "PUT",
         body: JSON.stringify(body),
+        skipEnvToken: true,
       },
     );
     return NextResponse.json(data, { status });
@@ -55,6 +57,7 @@ export async function DELETE(
       `/api/v1/guardrails/ban_lists/${ban_list_id}`,
       {
         method: "DELETE",
+        skipEnvToken: true,
       },
     );
     return NextResponse.json(data, { status });

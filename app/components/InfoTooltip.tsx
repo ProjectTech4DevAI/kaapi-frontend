@@ -13,7 +13,10 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
       >
         i
       </button>
-      <div className="absolute z-50 left-5 top-0 w-64 text-xs rounded-lg p-2.5 shadow-lg bg-bg-primary border border-border text-text-secondary leading-relaxed hidden group-hover:block">
+      <div
+        role="tooltip"
+        className="absolute z-50 left-5 top-0 w-64 text-xs rounded-lg p-2.5 shadow-lg bg-bg-primary border border-border text-text-secondary leading-relaxed hidden group-hover:block group-focus-within:block"
+      >
         {text}
       </div>
     </span>

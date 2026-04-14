@@ -68,12 +68,15 @@ function BanListField({
 }) {
   const [banLists, setBanLists] = useState<BanList[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [bannedWords, setBannedWords] = useState<string[]>([]);
   const [wordsLoading, setWordsLoading] = useState(false);
+  const [wordsError, setWordsError] = useState<string | null>(null);
 
   const fetchBanLists = () => {
     setLoading(true);
+    setFetchError(null);
 
     guardrailsFetch<{
       data?: { ban_lists?: BanList[] } | BanList[];
@@ -92,13 +95,16 @@ function BanListField({
               : [];
         setBanLists(list);
       })
-      .catch(() => setBanLists([]))
+      .catch((e: Error) =>
+        setFetchError(e.message || "Failed to load ban lists"),
+      )
       .finally(() => setLoading(false));
   };
 
   const fetchBannedWords = (id: string) => {
     setWordsLoading(true);
     setBannedWords([]);
+    setWordsError(null);
 
     guardrailsFetch<{
       banned_words?: string[];
@@ -112,7 +118,9 @@ function BanListField({
             : [];
         setBannedWords(words);
       })
-      .catch(() => setBannedWords([]))
+      .catch((e: Error) =>
+        setWordsError(e.message || "Failed to load banned words"),
+      )
       .finally(() => setWordsLoading(false));
   };
 
@@ -142,7 +150,11 @@ function BanListField({
         <label className="block text-xs font-medium mb-1 text-text-primary">
           Ban List
         </label>
-        {loading ? (
+        {fetchError ? (
+          <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+            {fetchError}
+          </p>
+        ) : loading ? (
           <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
         ) : (
           <select
@@ -175,6 +187,10 @@ function BanListField({
           <div className="mt-2">
             {wordsLoading ? (
               <div className="h-6 rounded animate-pulse bg-bg-secondary" />
+            ) : wordsError ? (
+              <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+                {wordsError}
+              </p>
             ) : bannedWords.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {bannedWords.map((word) => (
@@ -421,7 +437,7 @@ export default function ValidatorConfigPanel({
       setIsEnabled(true);
       setFieldValues({});
     }
-  }, [selectedType, existingValues, existingName]);
+  }, [selectedType, existingValues, existingName, validator]);
 
   const typeDescription = selectedType
     ? (metaMap[selectedType]?.description ?? null)
@@ -473,9 +489,7 @@ export default function ValidatorConfigPanel({
       <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
         <div>
           <div className="text-sm font-semibold text-text-primary">
-            {existingName
-              ? `View / Edit: ${existingName}`
-              : "New Validator Config"}
+            {existingName ? `${existingName}` : "New Validator Config"}
           </div>
           {!existingName && (
             <div className="text-xs text-text-secondary">

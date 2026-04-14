@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { colors } from "@/app/lib/colors";
 
 interface MultiSelectProps {
   options: string[];
@@ -18,6 +17,8 @@ export default function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -40,65 +41,106 @@ export default function MultiSelect({
     }
   };
 
-  const remove = (opt: string, e: React.MouseEvent) => {
+  const remove = (opt: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     onChange(value.filter((v) => v !== opt));
+  };
+
+  const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      setOpen((v) => !v);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    } else if (e.key === "ArrowDown" && !open) {
+      e.preventDefault();
+      setOpen(true);
+    } else if (e.key === "ArrowDown" && open) {
+      e.preventDefault();
+      const first = listRef.current?.querySelector<HTMLButtonElement>("button");
+      first?.focus();
+    }
+  };
+
+  const handleOptionKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    opt: string,
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggle(opt);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      triggerRef.current?.focus();
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      (e.currentTarget.nextElementSibling as HTMLButtonElement | null)?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = e.currentTarget
+        .previousElementSibling as HTMLButtonElement | null;
+      if (prev) {
+        prev.focus();
+      } else {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
   };
 
   const unselected = options.filter((o) => !value.includes(o));
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Input box with tags */}
-      <div
-        className="min-h-[36px] w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-text"
-        style={{
-          borderColor: open ? colors.accent.primary : colors.border,
-          backgroundColor: colors.bg.primary,
-          outline: open ? `1px solid ${colors.accent.primary}` : "none",
-        }}
+      <button
+        ref={triggerRef}
+        type="button"
+        role="combobox"
+        aria-expanded={open}
+        aria-haspopup="listbox"
         onClick={() => setOpen((v) => !v)}
+        onKeyDown={handleTriggerKeyDown}
+        className={`min-h-[36px] w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-pointer text-left bg-bg-primary transition-colors ${
+          open
+            ? "border-accent-primary ring-1 ring-accent-primary"
+            : "border-border"
+        }`}
       >
-        {/* Selected tags */}
         {value.map((v) => (
           <span
             key={v}
-            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded"
-            style={{
-              backgroundColor: colors.bg.secondary,
-              color: colors.text.primary,
-              border: `1px solid ${colors.border}`,
-            }}
+            className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-bg-secondary text-text-primary border border-border"
             onClick={(e) => e.stopPropagation()}
           >
             {v}
-            <button
-              type="button"
+            <span
+              role="button"
+              tabIndex={0}
               onClick={(e) => remove(v, e)}
-              className="leading-none opacity-60 hover:opacity-100"
-              style={{ color: colors.text.primary }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") remove(v, e);
+              }}
+              className="leading-none opacity-60 hover:opacity-100 text-text-primary cursor-pointer"
               aria-label={`Remove ${v}`}
             >
               ×
-            </button>
+            </span>
           </span>
         ))}
 
-        {/* Placeholder when nothing selected */}
         {value.length === 0 && (
-          <span className="text-sm" style={{ color: colors.text.secondary }}>
+          <span className="text-sm text-text-secondary">
             {placeholder ?? "Select options…"}
           </span>
         )}
 
-        {/* Chevron */}
         <svg
-          className="w-4 h-4 flex-shrink-0 ml-auto"
+          className="w-4 h-4 flex-shrink-0 ml-auto text-text-secondary"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={2}
-          style={{ color: colors.text.secondary }}
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -106,22 +148,17 @@ export default function MultiSelect({
             d={open ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
           />
         </svg>
-      </div>
+      </button>
 
-      {/* Dropdown list */}
       {open && (
         <div
-          className="absolute z-50 mt-1 w-full rounded-md shadow-md overflow-auto max-h-52"
-          style={{
-            backgroundColor: colors.bg.primary,
-            border: `1px solid ${colors.border}`,
-          }}
+          ref={listRef}
+          role="listbox"
+          aria-multiselectable="true"
+          className="absolute z-50 mt-1 w-full rounded-md shadow-md overflow-auto max-h-52 bg-bg-primary border border-border"
         >
           {unselected.length === 0 ? (
-            <p
-              className="px-3 py-2 text-xs"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="px-3 py-2 text-xs text-text-secondary">
               All options selected
             </p>
           ) : (
@@ -129,15 +166,11 @@ export default function MultiSelect({
               <button
                 key={opt}
                 type="button"
+                role="option"
+                aria-selected={false}
                 onClick={() => toggle(opt)}
-                className="w-full text-left px-3 py-2 text-sm transition-colors"
-                style={{ color: colors.text.primary }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
+                onKeyDown={(e) => handleOptionKeyDown(e, opt)}
+                className="w-full text-left px-3 py-2 text-sm text-text-primary transition-colors hover:bg-bg-secondary focus:bg-bg-secondary focus:outline-none"
               >
                 {opt}
               </button>

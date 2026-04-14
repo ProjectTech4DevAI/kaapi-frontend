@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { colors } from "@/app/lib/colors";
 import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
 import {
@@ -46,10 +47,13 @@ function GuardrailsSection({
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
+    setValidators([]);
     if (!queryString) return;
+    const controller = new AbortController();
     setLoading(true);
     fetch(`/api/guardrails/validators/configs${queryString}`, {
       headers: apiKey ? { "X-API-KEY": apiKey } : {},
+      signal: controller.signal,
     })
       .then((r) => r.json())
       .then((data) => {
@@ -66,8 +70,11 @@ function GuardrailsSection({
                 : [];
         setValidators(items);
       })
-      .catch(() => setValidators([]))
+      .catch((e) => {
+        if (e.name !== "AbortError") setValidators([]);
+      })
       .finally(() => setLoading(false));
+    return () => controller.abort();
   }, [queryString, apiKey]);
 
   const addedIds = new Set(guardrails.map((g) => g.validator_config_id));
@@ -249,9 +256,9 @@ export default function ConfigEditorPane({
   >(null);
 
   useEffect(() => {
-    if (!apiKey) return;
-    fetch("/api/apikeys/verify", { headers: { "X-API-KEY": apiKey } })
-      .then((r) => r.json())
+    guardrailsFetch<{ data?: { organization_id: number; project_id: number } }>(
+      "/api/apikeys/verify",
+    )
       .then((data) => {
         const org_id = data?.data?.organization_id;
         const proj_id = data?.data?.project_id;
@@ -262,7 +269,8 @@ export default function ConfigEditorPane({
         }
       })
       .catch(() => {});
-  }, [apiKey]);
+     
+  }, []);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null); // config group is expanded in the Load dropdown

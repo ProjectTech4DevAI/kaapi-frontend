@@ -31,5 +31,5 @@ jobs:
           aws ssm send-command \
             --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["export HOME=/home/ubuntu && export PM2_HOME=/home/ubuntu/.pm2 && export PATH=/data/.nvm/versions/node/v24.11.0/bin:$PATH && git config --global --add safe.directory ${{ secrets.BUILD_DIRECTORY }} && set -e && cd ${{ secrets.BUILD_DIRECTORY }} && git pull origin release && npm ci && npm run build && pm2 restart ${{ secrets.PM2_APP_NAME }} || pm2 start npm --name ${{ secrets.PM2_APP_NAME }} -- start"]' \
+            --parameters 'commands=["export HOME=/home/ubuntu && export PATH=/data/.nvm/versions/node/v24.11.0/bin:$PATH && git config --global --add safe.directory ${{ secrets.BUILD_DIRECTORY }} && set -e && cd ${{ secrets.BUILD_DIRECTORY }} && git pull origin main && npm ci && npm run build && sudo -u ubuntu PM2_HOME=/home/ubuntu/.pm2 /data/.nvm/versions/node/v24.11.0/bin/pm2 restart ${{ secrets.PM2_APP_NAME }}"]' \
             --region ${{ secrets.AWS_REGION }}

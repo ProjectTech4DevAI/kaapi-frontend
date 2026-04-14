@@ -19,10 +19,10 @@ import {
   normalizeToIndividualScores,
   GroupedTraceItem,
   isGroupedFormat,
-} from "@/app/components/types";
+} from "@/app/lib/components/evaluations/types";
 import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
-import DetailedResultsTable from "@/app/components/DetailedResultsTable";
+import DetailedResultsTable from "@/app/lib/components/evaluations/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
@@ -132,7 +132,7 @@ export default function EvaluationReport() {
     try {
       const maxAnswers = Math.max(...traces.map((g) => g.llm_answers.length));
       const scoreNames = traces[0]?.scores[0]?.map((s) => s.name) || [];
-      let csvContent = "Question ID,Question,Ground Truth";
+      let csvContent = "Question ID,Question,Expected Answer";
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
         scoreNames.forEach((name) => {
@@ -193,7 +193,7 @@ export default function EvaluationReport() {
       const scoreNames = firstItem?.trace_scores?.map((s) => s.name) || [];
       csvContent +=
         "Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,";
-      csvContent += "Question,Answer,Ground Truth,";
+      csvContent += "Question,Answer,Expected Answer,";
       csvContent +=
         scoreNames.map((name) => `${name},${name} (comment)`).join(",") + "\n";
       let rowCount = 0;

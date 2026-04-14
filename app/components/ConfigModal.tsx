@@ -7,7 +7,10 @@
 
 import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
-import { EvalJob, AssistantConfig } from "./types";
+import {
+  EvalJob,
+  AssistantConfig,
+} from "@/app/lib/components/evaluations/types";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import {

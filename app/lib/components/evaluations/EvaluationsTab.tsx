@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { Dataset } from "@/app/lib/types/dataset";
-import { EvalJob, AssistantConfig } from "@/app/components/types";
+import {
+  EvalJob,
+  AssistantConfig,
+} from "@/app/lib/components/evaluations/types";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";

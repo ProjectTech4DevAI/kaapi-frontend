@@ -10,6 +10,7 @@ import {
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import { isGpt5Model } from "@/app/lib/models";
 import { STORAGE_KEYS } from "@/app/lib/constants";
+import { TraceScore } from "@/app/lib/components/evaluations/types";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -190,4 +191,53 @@ export const sanitizeCSVCell = (
     sanitized = " " + sanitized;
   }
   return `"${sanitized}"`;
+};
+
+export const formatScoreValue = (score: TraceScore | undefined) => {
+  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
+
+  if (score.data_type === "CATEGORICAL") {
+    const catValue = String(score.value);
+    let color = "#171717";
+    let bg = "#fafafa";
+
+    if (catValue === "CORRECT") {
+      color = "#15803d";
+      bg = "#dcfce7";
+    } else if (catValue === "PARTIAL") {
+      color = "#92400e";
+      bg = "#fef3c7";
+    } else if (catValue === "INCORRECT") {
+      color = "#dc2626";
+      bg = "#fee2e2";
+    }
+
+    return { value: catValue, color, bg };
+  }
+
+  const numValue = Number(score.value);
+  const formattedValue = numValue.toFixed(2);
+  let color = "#171717";
+  let bg = "transparent";
+
+  if (numValue >= 0.7) {
+    color = "#15803d";
+    bg = "#dcfce7";
+  } else if (numValue >= 0.5) {
+    color = "#92400e";
+    bg = "#fef3c7";
+  } else {
+    color = "#dc2626";
+    bg = "#fee2e2";
+  }
+
+  return { value: formattedValue, color, bg };
+};
+
+export const getScoreByName = (
+  scores: TraceScore[],
+  name: string,
+): TraceScore | undefined => {
+  if (!scores || !Array.isArray(scores)) return undefined;
+  return scores.find((s) => s?.name === name);
 };

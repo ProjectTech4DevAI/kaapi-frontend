@@ -7,11 +7,11 @@ import {
   EvalJob,
   AssistantConfig,
   getScoreObject,
-} from "@/app/components/types";
+} from "@/app/lib/components/evaluations/types";
 import { getStatusColor } from "@/app/components/utils";
 import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";
-import ScoreDisplay from "@/app/components/ScoreDisplay";
+import ScoreDisplay from "@/app/lib/components/evaluations/ScoreDisplay";
 
 export interface EvalRunCardProps {
   job: EvalJob;

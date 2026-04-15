@@ -129,6 +129,8 @@ export const flattenConfigVersion = (
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,
+    input_guardrails: blob.input_guardrails,
+    output_guardrails: blob.output_guardrails,
   };
 };
 

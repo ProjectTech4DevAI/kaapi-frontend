@@ -39,7 +39,7 @@ export default function GuardrailsPage() {
   useEffect(() => {
     if (!isHydrated) return;
     guardrailsFetch<{ data?: { organization_id: number; project_id: number } }>(
-      "/api/apikeys/verify",
+      "/api/apikeys/verify", //need to change this in backend to /auth/verify
     )
       .then((data) => {
         const org_id = data?.data?.organization_id;
@@ -147,10 +147,7 @@ export default function GuardrailsPage() {
         ? `${base}/${selectedSavedConfig!.id}${configsQueryString}`
         : `${base}${configsQueryString}`;
 
-      const { name, type, stage, on_fail_action, is_enabled } = configValues;
-      const body = isUpdate
-        ? { name, type, stage, on_fail_action, is_enabled }
-        : configValues;
+      const body = configValues;
 
       await guardrailsFetch(url, {
         method: isUpdate ? "PATCH" : "POST",
@@ -169,12 +166,21 @@ export default function GuardrailsPage() {
   };
 
   const existingValues = selectedSavedConfig
-    ? {
-        ...(selectedSavedConfig.config ?? {}),
-        stage: selectedSavedConfig.stage,
-        on_fail_action: selectedSavedConfig.on_fail_action,
-        is_enabled: selectedSavedConfig.is_enabled,
-      }
+    ? (() => {
+        const {
+          id: _id,
+          name: _name,
+          type: _type,
+          config: _config,
+          created_at: _ca,
+          updated_at: _ua,
+          organization_id: _oid,
+          project_id: _pid,
+          ...rest
+        } = selectedSavedConfig as SavedValidatorConfig &
+          Record<string, unknown>;
+        return rest;
+      })()
     : null;
 
   return (
@@ -188,7 +194,7 @@ export default function GuardrailsPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="shrink-0 border-r border-border overflow-hidden w-[420px]">
+          <div className="shrink-0 border-r border-border overflow-hidden w-[450px]">
             <ValidatorConfigPanel
               validators={validators}
               validatorsLoading={validatorsLoading}

@@ -55,6 +55,8 @@ export const VALIDATOR_META_BY_TYPE: Record<string, ValidatorMeta> =
   Object.fromEntries(VALIDATOR_META.map((v) => [v.validator_type, v]));
 
 export const GUARDRAILS_FIELD_TOOLTIPS: Record<string, string> = {
+  validator_type:
+    "Choose the validator you want to configure. Each validator enforces a specific rule on the input or output.",
   stage:
     'Where this validator runs — "input" checks the user\'s message before it reaches the LLM, "output" checks the LLM\'s response before it is returned.',
   on_fail_action:

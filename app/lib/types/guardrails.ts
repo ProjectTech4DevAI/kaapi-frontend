@@ -40,12 +40,15 @@ export interface SavedValidatorConfig {
   id: string;
   name: string;
   type: string;
-  config: Record<string, unknown>;
+  config?: Record<string, unknown>;
   stage?: string;
   on_fail_action?: string;
   is_enabled?: boolean;
   created_at?: string;
   updated_at?: string;
+  organization_id?: number;
+  project_id?: number;
+  [key: string]: unknown;
 }
 
 export function formatValidatorName(type: string): string {

@@ -254,11 +254,19 @@ export default function ValidatorConfigPanel({
         )}
       </div>
 
-      <div className="px-4 py-3 border-t border-border shrink-0">
+      <div className="px-4 py-3 border-t border-border shrink-0 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClear}
+          className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
+        >
+          Cancel
+        </button>
         <Button
           onClick={handleSave}
           disabled={isSaving || !configName.trim() || !selectedType}
-          fullWidth
+          variant="outline"
+          className="!rounded-lg !bg-bg-secondary !border-border"
         >
           {isSaving ? "Saving…" : "Save Config"}
         </Button>

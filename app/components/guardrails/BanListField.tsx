@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BanListModal from "./BanListModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
+import Select from "@/app/components/Select";
 
 interface BanList {
   id: string;
@@ -11,9 +12,6 @@ interface BanListFieldProps {
   value: string | null;
   onChange: (id: string | null) => void;
 }
-
-const inputClass =
-  "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1";
 
 export default function BanListField({ value, onChange }: BanListFieldProps) {
   const [banLists, setBanLists] = useState<BanList[]>([]);
@@ -94,30 +92,6 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
     }
   };
 
-  function renderOptions() {
-    if (banLists.length === 0) {
-      return (
-        <>
-          <option value="" disabled>
-            No ban lists yet
-          </option>
-          <option value="__create__">+ Create Ban List</option>
-        </>
-      );
-    }
-    return (
-      <>
-        <option value="">Select a ban list…</option>
-        <option value="__create__">+ Create Ban List</option>
-        {banLists.map((bl) => (
-          <option key={bl.id} value={bl.id}>
-            {bl.name}
-          </option>
-        ))}
-      </>
-    );
-  }
-
   function renderSelect() {
     if (fetchError) {
       return (
@@ -129,14 +103,15 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
     if (loading) {
       return <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />;
     }
+    const options = [
+      ...(banLists.length === 0
+        ? [{ value: "", label: "No ban lists yet" }]
+        : [{ value: "", label: "Select a ban list…" }]),
+      { value: "__create__", label: "+ Create Ban List" },
+      ...banLists.map((bl) => ({ value: bl.id, label: bl.name })),
+    ];
     return (
-      <select
-        value={value ?? ""}
-        onChange={handleChange}
-        className={inputClass}
-      >
-        {renderOptions()}
-      </select>
+      <Select value={value ?? ""} onChange={handleChange} options={options} />
     );
   }
 

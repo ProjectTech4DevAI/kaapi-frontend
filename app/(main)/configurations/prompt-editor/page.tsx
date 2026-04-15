@@ -108,6 +108,12 @@ function PromptEditorContent() {
             tools: config.tools || [],
           },
         },
+        ...(config.input_guardrails?.length && {
+          input_guardrails: config.input_guardrails,
+        }),
+        ...(config.output_guardrails?.length && {
+          output_guardrails: config.output_guardrails,
+        }),
       });
       setProvider(config.provider);
       setTemperature(config.temperature);
@@ -294,6 +300,12 @@ function PromptEditorContent() {
             }),
           },
         },
+        ...(currentConfigBlob.input_guardrails?.length && {
+          input_guardrails: currentConfigBlob.input_guardrails,
+        }),
+        ...(currentConfigBlob.output_guardrails?.length && {
+          output_guardrails: currentConfigBlob.output_guardrails,
+        }),
       };
 
       const existingConfigMeta = allConfigMeta.find(
@@ -491,6 +503,7 @@ function PromptEditorContent() {
                         isSaving={isSaving}
                         collapsed={!showConfigPane}
                         onToggle={() => setShowConfigPane(!showConfigPane)}
+                        apiKey={activeKey?.key ?? ""}
                       />
                     </div>
                   </div>

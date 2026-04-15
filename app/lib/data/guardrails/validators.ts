@@ -51,8 +51,30 @@ export const VALIDATOR_META: readonly ValidatorMeta[] = [
   },
 ] as const;
 
-export const VALIDATOR_META_BY_TYPE: Record<string, ValidatorMeta> =
-  Object.fromEntries(VALIDATOR_META.map((v) => [v.validator_type, v]));
+export const KNOWN_ARRAY_OPTIONS: Record<string, string[]> = {
+  entity_types: [
+    "CREDIT_CARD",
+    "EMAIL_ADDRESS",
+    "IBAN_CODE",
+    "IP_ADDRESS",
+    "LOCATION",
+    "MEDICAL_LICENSE",
+    "NRP",
+    "PERSON",
+    "PHONE_NUMBER",
+    "URL",
+    "IN_AADHAAR",
+    "IN_PAN",
+    "IN_PASSPORT",
+    "IN_VEHICLE_REGISTRATION",
+    "IN_VOTER",
+  ],
+  languages: ["en", "hi"],
+};
+
+export const KNOWN_SINGLE_OPTIONS: Record<string, string[]> = {
+  categories: ["generic", "healthcare", "education", "all"],
+};
 
 export const GUARDRAILS_FIELD_TOOLTIPS: Record<string, string> = {
   validator_type:

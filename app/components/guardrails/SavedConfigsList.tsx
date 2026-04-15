@@ -8,7 +8,7 @@ import {
   EditIcon,
 } from "@/app/components/icons";
 import Button from "@/app/components/Button";
-import { VALIDATOR_META_BY_TYPE } from "@/app/lib/data/guardrails/validators";
+import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
 
 interface SavedConfigsListProps {
   configs: SavedValidatorConfig[];
@@ -40,7 +40,7 @@ export default function SavedConfigsList({
             </div>
           )}
         </div>
-        <Button onClick={onNewConfig} size="sm">
+        <Button onClick={onNewConfig} size="sm" className="!rounded-lg">
           + New Config
         </Button>
       </div>

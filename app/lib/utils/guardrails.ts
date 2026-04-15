@@ -1,5 +1,12 @@
 import { NextRequest } from "next/server";
-import type { ValidatorConfigSchema } from "@/app/lib/types/guardrails";
+import type {
+  ValidatorConfigSchema,
+  ValidatorMeta,
+} from "@/app/lib/types/guardrails";
+import { VALIDATOR_META } from "@/app/lib/data/guardrails/validators";
+
+export const VALIDATOR_META_BY_TYPE: Record<string, ValidatorMeta> =
+  Object.fromEntries(VALIDATOR_META.map((v) => [v.validator_type, v]));
 
 /**
  * Builds the backend endpoint for validator configs, forwarding

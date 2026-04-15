@@ -2,36 +2,13 @@ import { ValidatorConfigSchema } from "@/app/lib/types/guardrails";
 import InfoTooltip from "@/app/components/InfoTooltip";
 import MultiSelect from "../MultiSelect";
 import Field from "@/app/components/Field";
+import Select from "@/app/components/Select";
 import { resolveRef } from "@/app/lib/utils/guardrails";
-import { GUARDRAILS_FIELD_TOOLTIPS } from "@/app/lib/data/guardrails/validators";
-
-const inputClass =
-  "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1";
-
-const KNOWN_ARRAY_OPTIONS: Record<string, string[]> = {
-  entity_types: [
-    "CREDIT_CARD",
-    "EMAIL_ADDRESS",
-    "IBAN_CODE",
-    "IP_ADDRESS",
-    "LOCATION",
-    "MEDICAL_LICENSE",
-    "NRP",
-    "PERSON",
-    "PHONE_NUMBER",
-    "URL",
-    "IN_AADHAAR",
-    "IN_PAN",
-    "IN_PASSPORT",
-    "IN_VEHICLE_REGISTRATION",
-    "IN_VOTER",
-  ],
-  languages: ["en", "hi"],
-};
-
-const KNOWN_SINGLE_OPTIONS: Record<string, string[]> = {
-  categories: ["generic", "healthcare", "education", "all"],
-};
+import {
+  GUARDRAILS_FIELD_TOOLTIPS,
+  KNOWN_ARRAY_OPTIONS,
+  KNOWN_SINGLE_OPTIONS,
+} from "@/app/lib/data/guardrails/validators";
 
 type SchemaProp = ValidatorConfigSchema["properties"][string];
 type AnyOfMember = { $ref?: string; enum?: string[]; type?: string };
@@ -85,18 +62,12 @@ export default function SchemaField({
     return (
       <div>
         {labelEl}
-        <select
+        <Select
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value || null)}
-          className={inputClass}
-        >
-          <option value="">Select…</option>
-          {singleOptions.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
+          placeholder="Select…"
+          options={singleOptions.map((v) => ({ value: v, label: v }))}
+        />
       </div>
     );
   }
@@ -105,17 +76,11 @@ export default function SchemaField({
     return (
       <div>
         {labelEl}
-        <select
+        <Select
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value)}
-          className={inputClass}
-        >
-          {enumValues.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
+          options={enumValues.map((v) => ({ value: v, label: v }))}
+        />
       </div>
     );
   }

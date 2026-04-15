@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
 import { Validator, formatValidatorName } from "@/app/lib/types/guardrails";
 import InfoTooltip from "@/app/components/InfoTooltip";
-import {
-  VALIDATOR_META_BY_TYPE,
-  GUARDRAILS_FIELD_TOOLTIPS,
-} from "@/app/lib/data/guardrails/validators";
+import { GUARDRAILS_FIELD_TOOLTIPS } from "@/app/lib/data/guardrails/validators";
 import Button from "@/app/components/Button";
 import Field from "@/app/components/Field";
-import { buildDefaultValues } from "@/app/lib/utils/guardrails";
+import Select from "@/app/components/Select";
+import {
+  buildDefaultValues,
+  VALIDATOR_META_BY_TYPE,
+} from "@/app/lib/utils/guardrails";
 import BanListField from "@/app/components/guardrails/BanListField";
 import SchemaField from "@/app/components/guardrails/SchemaField";
-
-const inputClass =
-  "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1";
 
 interface ValidatorConfigPanelProps {
   validators: Validator[];
@@ -120,8 +118,6 @@ export default function ValidatorConfigPanel({
     onSave(configName, payload);
   };
 
-  const hasContent = selectedType || configName;
-
   return (
     <div className="flex flex-col h-full overflow-hidden bg-bg-primary">
       <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
@@ -135,19 +131,11 @@ export default function ValidatorConfigPanel({
             </div>
           )}
         </div>
-        {hasContent && !existingName && (
-          <button
-            onClick={onClear}
-            className="text-xs px-2.5 py-1 rounded border border-border text-text-secondary bg-bg-primary hover:bg-bg-secondary transition-colors"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         <Field
-          label="Config Name"
+          label="Config Name *"
           value={configName}
           onChange={setConfigName}
           placeholder="e.g. my-pii-remover-config"
@@ -158,14 +146,14 @@ export default function ValidatorConfigPanel({
             Stage
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.stage} />
           </label>
-          <select
+          <Select
             value={stage}
             onChange={(e) => setStage(e.target.value as "input" | "output")}
-            className={inputClass}
-          >
-            <option value="input">Input</option>
-            <option value="output">Output</option>
-          </select>
+            options={[
+              { value: "input", label: "Input" },
+              { value: "output", label: "Output" },
+            ]}
+          />
         </div>
 
         <div>
@@ -173,15 +161,15 @@ export default function ValidatorConfigPanel({
             On Fail Action
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.on_fail_action} />
           </label>
-          <select
+          <Select
             value={onFailAction}
             onChange={(e) => setOnFailAction(e.target.value)}
-            className={inputClass}
-          >
-            <option value="fix">Fix</option>
-            <option value="exception">Exception</option>
-            <option value="rephrase">Rephrase</option>
-          </select>
+            options={[
+              { value: "fix", label: "Fix" },
+              { value: "exception", label: "Exception" },
+              { value: "rephrase", label: "Rephrase" },
+            ]}
+          />
         </div>
 
         <label className="flex items-center gap-2.5 cursor-pointer">
@@ -196,25 +184,23 @@ export default function ValidatorConfigPanel({
 
         <div className="border-t border-border pt-3">
           <label className="block text-xs font-medium mb-1 text-text-primary">
-            Validator Type
+            Validator Type *
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.validator_type} />
           </label>
           {validatorsLoading ? (
             <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
           ) : (
-            <select
+            <Select
               value={selectedType ?? ""}
               onChange={(e) => onTypeChange(e.target.value || null)}
-              className={inputClass}
-            >
-              <option value="">Select a validator type…</option>
-              {validators.map((v) => (
-                <option key={v.type} value={v.type}>
-                  {VALIDATOR_META_BY_TYPE[v.type]?.validator_name ??
-                    formatValidatorName(v.type)}
-                </option>
-              ))}
-            </select>
+              placeholder="Select a validator type…"
+              options={validators.map((v) => ({
+                value: v.type,
+                label:
+                  VALIDATOR_META_BY_TYPE[v.type]?.validator_name ??
+                  formatValidatorName(v.type),
+              }))}
+            />
           )}
           {typeDescription && (
             <p className="text-xs mt-1.5 text-text-secondary">
@@ -265,8 +251,7 @@ export default function ValidatorConfigPanel({
         <Button
           onClick={handleSave}
           disabled={isSaving || !configName.trim() || !selectedType}
-          variant="outline"
-          className="!rounded-lg !bg-bg-secondary !border-border"
+          className="!rounded-lg"
         >
           {isSaving ? "Saving…" : "Save Config"}
         </Button>

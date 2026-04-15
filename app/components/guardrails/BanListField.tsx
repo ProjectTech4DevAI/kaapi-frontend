@@ -94,71 +94,91 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
     }
   };
 
+  function renderOptions() {
+    if (banLists.length === 0) {
+      return (
+        <>
+          <option value="" disabled>
+            No ban lists yet
+          </option>
+          <option value="__create__">+ Create Ban List</option>
+        </>
+      );
+    }
+    return (
+      <>
+        <option value="">Select a ban list…</option>
+        <option value="__create__">+ Create Ban List</option>
+        {banLists.map((bl) => (
+          <option key={bl.id} value={bl.id}>
+            {bl.name}
+          </option>
+        ))}
+      </>
+    );
+  }
+
+  function renderSelect() {
+    if (fetchError) {
+      return (
+        <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+          {fetchError}
+        </p>
+      );
+    }
+    if (loading) {
+      return <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />;
+    }
+    return (
+      <select
+        value={value ?? ""}
+        onChange={handleChange}
+        className={inputClass}
+      >
+        {renderOptions()}
+      </select>
+    );
+  }
+
+  function renderBannedWords() {
+    if (!value) return null;
+    if (wordsLoading) {
+      return <div className="h-6 rounded animate-pulse bg-bg-secondary" />;
+    }
+    if (wordsError) {
+      return (
+        <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+          {wordsError}
+        </p>
+      );
+    }
+    if (bannedWords.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {bannedWords.map((word) => (
+            <span
+              key={word}
+              className="inline-block text-xs px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary"
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <p className="text-xs text-text-secondary">No words in this ban list.</p>
+    );
+  }
+
   return (
     <>
       <div>
         <label className="block text-xs font-medium mb-1 text-text-primary">
           Ban List
         </label>
-        {fetchError ? (
-          <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
-            {fetchError}
-          </p>
-        ) : loading ? (
-          <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
-        ) : (
-          <select
-            value={value ?? ""}
-            onChange={handleChange}
-            className={inputClass}
-          >
-            {banLists.length === 0 ? (
-              <>
-                <option value="" disabled>
-                  No ban lists yet
-                </option>
-                <option value="__create__">+ Create Ban List</option>
-              </>
-            ) : (
-              <>
-                <option value="">Select a ban list…</option>
-                <option value="__create__">+ Create Ban List</option>
-                {banLists.map((bl) => (
-                  <option key={bl.id} value={bl.id}>
-                    {bl.name}
-                  </option>
-                ))}
-              </>
-            )}
-          </select>
-        )}
-
-        {value && (
-          <div className="mt-2">
-            {wordsLoading ? (
-              <div className="h-6 rounded animate-pulse bg-bg-secondary" />
-            ) : wordsError ? (
-              <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
-                {wordsError}
-              </p>
-            ) : bannedWords.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {bannedWords.map((word) => (
-                  <span
-                    key={word}
-                    className="inline-block text-xs px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary"
-                  >
-                    {word}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-text-secondary">
-                No words in this ban list.
-              </p>
-            )}
-          </div>
-        )}
+        {renderSelect()}
+        {value && <div className="mt-2">{renderBannedWords()}</div>}
       </div>
 
       {showModal && (

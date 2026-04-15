@@ -40,6 +40,22 @@ export async function guardrailsClient(
 }
 
 /**
+ * Variant of guardrailsClient that always forwards the caller's API key/cookie
+ * and never falls back to GUARDRAILS_TOKEN. Use for routes that must act on
+ * behalf of the end user (e.g. ban_lists).
+ */
+export function guardrailsUserClient(
+  request: NextRequest | Request,
+  endpoint: string,
+  options: RequestInit = {},
+) {
+  return guardrailsClient(request, endpoint, {
+    ...options,
+    skipEnvToken: true,
+  });
+}
+
+/**
  * Client-side fetch helper for guardrails Next.js route handlers (/api/guardrails/*).
  * Parses JSON and throws on non-OK responses.
  */

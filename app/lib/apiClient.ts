@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://0.0.0.0:8000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export type UploadPhase = "uploading" | "processing" | "done";
 
 /** Coalesces concurrent refresh calls into a single request. */

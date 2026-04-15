@@ -1,4 +1,4 @@
-import { guardrailsClient } from "@/app/lib/guardrailsClient";
+import { guardrailsUserClient } from "@/app/lib/guardrailsClient";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(
@@ -7,10 +7,9 @@ export async function GET(
 ) {
   try {
     const { ban_list_id } = await params;
-    const { status, data } = await guardrailsClient(
+    const { status, data } = await guardrailsUserClient(
       request,
       `/api/v1/guardrails/ban_lists/${ban_list_id}`,
-      { skipEnvToken: true },
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
@@ -28,13 +27,12 @@ export async function PUT(
   try {
     const { ban_list_id } = await params;
     const body = await request.json();
-    const { status, data } = await guardrailsClient(
+    const { status, data } = await guardrailsUserClient(
       request,
       `/api/v1/guardrails/ban_lists/${ban_list_id}`,
       {
         method: "PUT",
         body: JSON.stringify(body),
-        skipEnvToken: true,
       },
     );
     return NextResponse.json(data, { status });
@@ -52,12 +50,11 @@ export async function DELETE(
 ) {
   try {
     const { ban_list_id } = await params;
-    const { status, data } = await guardrailsClient(
+    const { status, data } = await guardrailsUserClient(
       request,
       `/api/v1/guardrails/ban_lists/${ban_list_id}`,
       {
         method: "DELETE",
-        skipEnvToken: true,
       },
     );
     return NextResponse.json(data, { status });

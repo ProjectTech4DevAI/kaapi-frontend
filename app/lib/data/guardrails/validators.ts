@@ -1,0 +1,62 @@
+import type { ValidatorMeta } from "@/app/lib/types/guardrails";
+
+export const VALIDATOR_META: readonly ValidatorMeta[] = [
+  {
+    validator_type: "ban_list",
+    validator_name: "Ban List",
+    description:
+      "Validates that the output does not contain banned words using fuzzy search.",
+  },
+  {
+    validator_type: "gender_assumption_bias",
+    validator_name: "Gender Assumption Bias",
+    description:
+      "Detects gender assumption biases across different domains like healthcare and education.",
+  },
+  {
+    validator_type: "uli_slur_match",
+    validator_name: "Lexical Slur Match",
+    description:
+      "Detects and filters offensive slurs in multiple languages using lexical matching.",
+  },
+  {
+    validator_type: "llm_critic",
+    validator_name: "LLM Critic",
+    description:
+      "Uses an LLM to critique and evaluate the quality and safety of generated text.",
+  },
+  {
+    validator_type: "pii_remover",
+    validator_name: "PII Remover",
+    description:
+      "Detects and removes personally identifiable information (PII) from text.",
+  },
+  {
+    validator_type: "llamaguard_7b",
+    validator_name: "Llamaguard 7B",
+    description:
+      "Uses Meta's Llamaguard 7B model to detect unsafe or harmful content in text.",
+  },
+  {
+    validator_type: "profanity_free",
+    validator_name: "Profanity Free",
+    description:
+      "Detects and filters profane or offensive language from generated text.",
+  },
+  {
+    validator_type: "topic_relevance",
+    validator_name: "Topic Relevance",
+    description:
+      "Validates that the generated text stays on topic and is relevant to the given context.",
+  },
+] as const;
+
+export const VALIDATOR_META_BY_TYPE: Record<string, ValidatorMeta> =
+  Object.fromEntries(VALIDATOR_META.map((v) => [v.validator_type, v]));
+
+export const GUARDRAILS_FIELD_TOOLTIPS: Record<string, string> = {
+  stage:
+    'Where this validator runs — "input" checks the user\'s message before it reaches the LLM, "output" checks the LLM\'s response before it is returned.',
+  on_fail_action:
+    '"fix" attempts to auto-remediate the violation, "exception" raises an error and blocks the response, "rephrase" asks the model to rewrite the output.',
+};

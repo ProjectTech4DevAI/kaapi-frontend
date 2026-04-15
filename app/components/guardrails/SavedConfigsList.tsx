@@ -1,15 +1,14 @@
 import {
   SavedValidatorConfig,
-  ValidatorMeta,
   formatValidatorName,
 } from "@/app/lib/types/guardrails";
-import { TrashIcon, GuardrailsShieldCheckIcon } from "@/app/components/icons";
+import {
+  TrashIcon,
+  GuardrailsShieldCheckIcon,
+  EditIcon,
+} from "@/app/components/icons";
 import Button from "@/app/components/Button";
-import validatorMeta from "./validators.json";
-
-const metaMap: Record<string, ValidatorMeta> = (
-  validatorMeta as ValidatorMeta[]
-).reduce((acc, v) => ({ ...acc, [v.validator_type]: v }), {});
+import { VALIDATOR_META_BY_TYPE } from "@/app/lib/data/guardrails/validators";
 
 interface SavedConfigsListProps {
   configs: SavedValidatorConfig[];
@@ -71,7 +70,7 @@ export default function SavedConfigsList({
             {configs.map((cfg) => {
               const isSelected = selectedConfigId === cfg.id;
               const displayName =
-                metaMap[cfg.type]?.validator_name ??
+                VALIDATOR_META_BY_TYPE[cfg.type]?.validator_name ??
                 formatValidatorName(cfg.type);
               return (
                 <div
@@ -110,7 +109,7 @@ export default function SavedConfigsList({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -118,19 +117,7 @@ export default function SavedConfigsList({
                         }}
                         className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-bg-secondary text-text-primary transition-colors font-medium hover:bg-neutral-200"
                       >
-                        <svg
-                          className="w-3 h-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
+                        <EditIcon className="w-3 h-3" />
                         Edit
                       </button>
                       <button

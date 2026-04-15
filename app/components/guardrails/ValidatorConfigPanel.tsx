@@ -1,377 +1,18 @@
-import React, { useEffect, useState } from "react";
-import {
-  Validator,
-  ValidatorConfigSchema,
-  ValidatorMeta,
-  formatValidatorName,
-} from "@/app/lib/types/guardrails";
-import BanListModal from "./BanListModal";
-import MultiSelect from "../MultiSelect";
+import { useEffect, useState } from "react";
+import { Validator, formatValidatorName } from "@/app/lib/types/guardrails";
 import InfoTooltip from "@/app/components/InfoTooltip";
-import validatorMeta from "./validators.json";
+import {
+  VALIDATOR_META_BY_TYPE,
+  GUARDRAILS_FIELD_TOOLTIPS,
+} from "@/app/lib/data/guardrails/validators";
 import Button from "@/app/components/Button";
 import Field from "@/app/components/Field";
-import { guardrailsFetch } from "@/app/lib/guardrailsClient";
-
-const metaMap: Record<string, ValidatorMeta> = (
-  validatorMeta as ValidatorMeta[]
-).reduce((acc, v) => ({ ...acc, [v.validator_type]: v }), {});
-
-// Known multi-select options keyed by field name
-const KNOWN_ARRAY_OPTIONS: Record<string, string[]> = {
-  entity_types: [
-    "CREDIT_CARD",
-    "EMAIL_ADDRESS",
-    "IBAN_CODE",
-    "IP_ADDRESS",
-    "LOCATION",
-    "MEDICAL_LICENSE",
-    "NRP",
-    "PERSON",
-    "PHONE_NUMBER",
-    "URL",
-    "IN_AADHAAR",
-    "IN_PAN",
-    "IN_PASSPORT",
-    "IN_VEHICLE_REGISTRATION",
-    "IN_VOTER",
-  ],
-  languages: ["en", "hi"],
-};
-
-// Single-select overrides for fields that are technically arrays but only one value makes sense
-const KNOWN_SINGLE_OPTIONS: Record<string, string[]> = {
-  categories: ["generic", "healthcare", "education", "all"],
-};
-
-const FIELD_TOOLTIPS: Record<string, string> = {
-  stage:
-    'Where this validator runs — "input" checks the user\'s message before it reaches the LLM, "output" checks the LLM\'s response before it is returned.',
-  on_fail_action:
-    '"fix" attempts to auto-remediate the violation, "exception" raises an error and blocks the response, "rephrase" asks the model to rewrite the output.',
-};
+import { buildDefaultValues } from "@/app/lib/utils/guardrails";
+import BanListField from "@/app/components/guardrails/BanListField";
+import SchemaField from "@/app/components/guardrails/SchemaField";
 
 const inputClass =
   "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1";
-
-interface BanList {
-  id: string;
-  name: string;
-}
-
-function BanListField({
-  value,
-  onChange,
-}: {
-  value: string | null;
-  onChange: (id: string | null) => void;
-}) {
-  const [banLists, setBanLists] = useState<BanList[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [bannedWords, setBannedWords] = useState<string[]>([]);
-  const [wordsLoading, setWordsLoading] = useState(false);
-  const [wordsError, setWordsError] = useState<string | null>(null);
-
-  const fetchBanLists = () => {
-    setLoading(true);
-    setFetchError(null);
-
-    guardrailsFetch<{
-      data?: { ban_lists?: BanList[] } | BanList[];
-      ban_lists?: BanList[];
-    }>("/api/guardrails/ban_lists")
-      .then((data) => {
-        const nested = data?.data;
-        const list: BanList[] = Array.isArray(
-          (nested as { ban_lists?: BanList[] })?.ban_lists,
-        )
-          ? (nested as { ban_lists: BanList[] }).ban_lists
-          : Array.isArray(nested)
-            ? (nested as BanList[])
-            : Array.isArray(data?.ban_lists)
-              ? data.ban_lists!
-              : [];
-        setBanLists(list);
-      })
-      .catch((e: Error) =>
-        setFetchError(e.message || "Failed to load ban lists"),
-      )
-      .finally(() => setLoading(false));
-  };
-
-  const fetchBannedWords = (id: string) => {
-    setWordsLoading(true);
-    setBannedWords([]);
-    setWordsError(null);
-
-    guardrailsFetch<{
-      banned_words?: string[];
-      data?: { banned_words?: string[] };
-    }>(`/api/guardrails/ban_lists/${id}`)
-      .then((data) => {
-        const words: string[] = Array.isArray(data?.banned_words)
-          ? data.banned_words!
-          : Array.isArray(data?.data?.banned_words)
-            ? data.data!.banned_words!
-            : [];
-        setBannedWords(words);
-      })
-      .catch((e: Error) =>
-        setWordsError(e.message || "Failed to load banned words"),
-      )
-      .finally(() => setWordsLoading(false));
-  };
-
-  useEffect(() => {
-    fetchBanLists();
-  }, []);
-
-  useEffect(() => {
-    if (value) {
-      fetchBannedWords(value);
-    } else {
-      setBannedWords([]);
-    }
-  }, [value]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (e.target.value === "__create__") {
-      setShowModal(true);
-    } else {
-      onChange(e.target.value || null);
-    }
-  };
-
-  return (
-    <>
-      <div>
-        <label className="block text-xs font-medium mb-1 text-text-primary">
-          Ban List
-        </label>
-        {fetchError ? (
-          <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
-            {fetchError}
-          </p>
-        ) : loading ? (
-          <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
-        ) : (
-          <select
-            value={value ?? ""}
-            onChange={handleChange}
-            className={inputClass}
-          >
-            {banLists.length === 0 ? (
-              <>
-                <option value="" disabled>
-                  No ban lists yet
-                </option>
-                <option value="__create__">+ Create Ban List</option>
-              </>
-            ) : (
-              <>
-                <option value="">Select a ban list…</option>
-                <option value="__create__">+ Create Ban List</option>
-                {banLists.map((bl) => (
-                  <option key={bl.id} value={bl.id}>
-                    {bl.name}
-                  </option>
-                ))}
-              </>
-            )}
-          </select>
-        )}
-
-        {value && (
-          <div className="mt-2">
-            {wordsLoading ? (
-              <div className="h-6 rounded animate-pulse bg-bg-secondary" />
-            ) : wordsError ? (
-              <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
-                {wordsError}
-              </p>
-            ) : bannedWords.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {bannedWords.map((word) => (
-                  <span
-                    key={word}
-                    className="inline-block text-xs px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary"
-                  >
-                    {word}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-text-secondary">
-                No words in this ban list.
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showModal && (
-        <BanListModal
-          onClose={() => setShowModal(false)}
-          onCreated={(bl) => {
-            setShowModal(false);
-            fetchBanLists();
-            onChange(bl.id);
-          }}
-        />
-      )}
-    </>
-  );
-}
-
-// Resolve a $ref like "#/$defs/GuardrailOnFail" against the schema $defs
-function resolveRef(
-  ref: string,
-  defs: ValidatorConfigSchema["$defs"],
-): string[] {
-  const key = ref.replace("#/$defs/", "");
-  return defs?.[key]?.enum ?? [];
-}
-
-// Build the initial form values from a validator's config schema (using defaults)
-export function buildDefaultValues(
-  schema: ValidatorConfigSchema,
-): Record<string, unknown> {
-  const values: Record<string, unknown> = {};
-  for (const [key, prop] of Object.entries(schema.properties)) {
-    if (key === "type") continue;
-    if ("default" in prop) {
-      values[key] = prop.default;
-    }
-  }
-  return values;
-}
-
-interface FieldProps {
-  name: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schema: any;
-  defs: ValidatorConfigSchema["$defs"];
-  value: unknown;
-  onChange: (name: string, value: unknown) => void;
-}
-
-function SchemaField({ name, schema, defs, value, onChange }: FieldProps) {
-  const label =
-    schema.title ??
-    name.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
-  const tooltip = FIELD_TOOLTIPS[name];
-
-  const enumValues: string[] =
-    schema.enum ??
-    (schema.$ref ? resolveRef(schema.$ref, defs) : null) ??
-    (schema.anyOf
-      ? schema.anyOf.reduce(
-          (acc: string[], item: { $ref?: string; enum?: string[] }) => {
-            if (item.$ref) return [...acc, ...resolveRef(item.$ref, defs)];
-            if (item.enum) return [...acc, ...item.enum];
-            return acc;
-          },
-          [],
-        )
-      : null);
-
-  const isArray =
-    schema.type === "array" ||
-    (schema.anyOf &&
-      schema.anyOf.some((item: { type?: string }) => item.type === "array"));
-
-  const labelEl = (
-    <label className="block text-xs font-medium mb-1 text-text-primary">
-      {label}
-      {tooltip && <InfoTooltip text={tooltip} />}
-    </label>
-  );
-
-  const singleOptions = KNOWN_SINGLE_OPTIONS[name];
-  if (singleOptions) {
-    return (
-      <div>
-        {labelEl}
-        <select
-          value={(value as string) ?? ""}
-          onChange={(e) => onChange(name, e.target.value || null)}
-          className={inputClass}
-        >
-          <option value="">Select…</option>
-          {singleOptions.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (enumValues && enumValues.length > 0 && !isArray) {
-    return (
-      <div>
-        {labelEl}
-        <select
-          value={(value as string) ?? ""}
-          onChange={(e) => onChange(name, e.target.value)}
-          className={inputClass}
-        >
-          {enumValues.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  if (isArray) {
-    const knownOptions = KNOWN_ARRAY_OPTIONS[name];
-    const selected = Array.isArray(value) ? (value as string[]) : [];
-
-    if (knownOptions) {
-      return (
-        <div>
-          {labelEl}
-          <MultiSelect
-            options={knownOptions}
-            value={selected}
-            onChange={(v) => onChange(name, v.length > 0 ? v : null)}
-            placeholder={`Select ${label.toLowerCase()}…`}
-          />
-        </div>
-      );
-    }
-
-    const displayValue = selected.join(", ");
-    return (
-      <Field
-        label={label}
-        value={displayValue}
-        onChange={(v) => {
-          const arr = v
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-          onChange(name, arr.length > 0 ? arr : null);
-        }}
-        placeholder="e.g. value1, value2"
-      />
-    );
-  }
-
-  return (
-    <Field
-      label={label}
-      value={(value as string) ?? ""}
-      onChange={(v) => onChange(name, v || null)}
-    />
-  );
-}
 
 interface ValidatorConfigPanelProps {
   validators: Validator[];
@@ -408,7 +49,6 @@ export default function ValidatorConfigPanel({
 
   useEffect(() => {
     if (existingValues != null) {
-      // Loading a saved config — populate everything
       setConfigName(existingName ?? "");
       setStage((existingValues.stage as "input" | "output") ?? "output");
       setOnFailAction((existingValues.on_fail_action as string) ?? "fix");
@@ -430,7 +70,6 @@ export default function ValidatorConfigPanel({
       // Type changed with no saved config — only reset dynamic fields, leave static fields alone
       setFieldValues(buildDefaultValues(validator.config));
     } else {
-      // Cleared — reset everything
       setConfigName("");
       setStage("output");
       setOnFailAction("fix");
@@ -440,7 +79,7 @@ export default function ValidatorConfigPanel({
   }, [selectedType, existingValues, existingName, validator]);
 
   const typeDescription = selectedType
-    ? (metaMap[selectedType]?.description ?? null)
+    ? (VALIDATOR_META_BY_TYPE[selectedType]?.description ?? null)
     : null;
   const isBanList = selectedType === "ban_list";
 
@@ -460,7 +99,6 @@ export default function ValidatorConfigPanel({
   };
 
   const handleSave = () => {
-    // Strip fields the backend never accepts at the top level
     const EXCLUDED_KEYS = new Set([
       "on_fail",
       "validator_metadata",
@@ -518,7 +156,7 @@ export default function ValidatorConfigPanel({
         <div>
           <label className="block text-xs font-medium mb-1 text-text-primary">
             Stage
-            <InfoTooltip text={FIELD_TOOLTIPS.stage} />
+            <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.stage} />
           </label>
           <select
             value={stage}
@@ -533,7 +171,7 @@ export default function ValidatorConfigPanel({
         <div>
           <label className="block text-xs font-medium mb-1 text-text-primary">
             On Fail Action
-            <InfoTooltip text={FIELD_TOOLTIPS.on_fail_action} />
+            <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.on_fail_action} />
           </label>
           <select
             value={onFailAction}
@@ -559,6 +197,7 @@ export default function ValidatorConfigPanel({
         <div className="border-t border-border pt-3">
           <label className="block text-xs font-medium mb-1 text-text-primary">
             Validator Type
+            <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.validator_type} />
           </label>
           {validatorsLoading ? (
             <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
@@ -571,7 +210,7 @@ export default function ValidatorConfigPanel({
               <option value="">Select a validator type…</option>
               {validators.map((v) => (
                 <option key={v.type} value={v.type}>
-                  {metaMap[v.type]?.validator_name ??
+                  {VALIDATOR_META_BY_TYPE[v.type]?.validator_name ??
                     formatValidatorName(v.type)}
                 </option>
               ))}

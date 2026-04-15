@@ -24,19 +24,11 @@ export default function GuardrailsPage() {
   const { sidebarCollapsed } = useApp();
   const { isHydrated } = useAuth();
   const toast = useToast();
-
-  // Org/project context from API key verification
   const [orgContext, setOrgContext] = useState<OrgContext | null>(null);
-
-  // Available validators from API
   const [validators, setValidators] = useState<Validator[]>([]);
   const [validatorsLoading, setValidatorsLoading] = useState(true);
-
-  // Saved configs from API
   const [savedConfigs, setSavedConfigs] = useState<SavedValidatorConfig[]>([]);
   const [savedConfigsLoading, setSavedConfigsLoading] = useState(true);
-
-  // Form state
   const [selectedValidatorType, setSelectedValidatorType] = useState<
     string | null
   >(null);
@@ -150,18 +142,14 @@ export default function GuardrailsPage() {
     setIsSaving(true);
     try {
       const isUpdate = !!selectedSavedConfig;
+      const base = `/api/guardrails/validators/configs`;
       const url = isUpdate
-        ? `/api/guardrails/validators/configs/${selectedSavedConfig!.id}${configsQueryString}`
-        : `/api/guardrails/validators/configs${configsQueryString}`;
+        ? `${base}/${selectedSavedConfig!.id}${configsQueryString}`
+        : `${base}${configsQueryString}`;
 
+      const { name, type, stage, on_fail_action, is_enabled } = configValues;
       const body = isUpdate
-        ? {
-            name: configValues.name,
-            type: configValues.type,
-            stage: configValues.stage,
-            on_fail_action: configValues.on_fail_action,
-            is_enabled: configValues.is_enabled,
-          }
+        ? { name, type, stage, on_fail_action, is_enabled }
         : configValues;
 
       await guardrailsFetch(url, {
@@ -200,7 +188,7 @@ export default function GuardrailsPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-shrink-0 border-r border-border overflow-hidden w-[420px]">
+          <div className="shrink-0 border-r border-border overflow-hidden w-[420px]">
             <ValidatorConfigPanel
               validators={validators}
               validatorsLoading={validatorsLoading}

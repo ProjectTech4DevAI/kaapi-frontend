@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { ChevronDownIcon, ChevronUpIcon } from "@/app/components/icons";
 
 interface MultiSelectProps {
   options: string[];
@@ -15,6 +16,7 @@ export default function MultiSelect({
   onChange,
   placeholder,
 }: MultiSelectProps) {
+  const listboxId = useId();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -98,9 +100,10 @@ export default function MultiSelect({
         role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={listboxId}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={handleTriggerKeyDown}
-        className={`min-h-[36px] w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-pointer text-left bg-bg-primary transition-colors ${
+        className={`min-h-9 w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-pointer text-left bg-bg-primary transition-colors ${
           open
             ? "border-accent-primary ring-1 ring-accent-primary"
             : "border-border"
@@ -134,25 +137,23 @@ export default function MultiSelect({
           </span>
         )}
 
-        <svg
-          className="w-4 h-4 flex-shrink-0 ml-auto text-text-secondary"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d={open ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
+        {open ? (
+          <ChevronUpIcon
+            className="w-4 h-4 shrink-0 ml-auto text-text-secondary"
+            aria-hidden="true"
           />
-        </svg>
+        ) : (
+          <ChevronDownIcon
+            className="w-4 h-4 shrink-0 ml-auto text-text-secondary"
+            aria-hidden="true"
+          />
+        )}
       </button>
 
       {open && (
         <div
           ref={listRef}
+          id={listboxId}
           role="listbox"
           aria-multiselectable="true"
           className="absolute z-50 mt-1 w-full rounded-md shadow-md overflow-auto max-h-52 bg-bg-primary border border-border"

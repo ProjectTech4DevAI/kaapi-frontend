@@ -15,7 +15,7 @@ export default function EvalDatasetDescription({
 
   return (
     <div
-      className="mt-2 text-xs leading-relaxed break-words overflow-hidden"
+      className="mt-2 text-xs leading-relaxed wrap-break-word overflow-hidden"
       style={{ color: colors.text.secondary }}
     >
       <span>

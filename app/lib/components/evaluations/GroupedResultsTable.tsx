@@ -55,7 +55,6 @@ export default function GroupedResultsTable({
 
   return (
     <div className="border rounded-lg overflow-hidden bg-white border-border">
-      {/* Table Container - overflow-x-auto enables horizontal scroll when table exceeds viewport */}
       <div className="overflow-x-auto">
         <table
           className="w-full border-collapse table-fixed"
@@ -110,12 +109,10 @@ export default function GroupedResultsTable({
           <tbody>
             {traces.map((group, index) => (
               <React.Fragment key={group.question_id || index}>
-                {/* Text row */}
                 <tr
                   key={`${group.question_id || index}-text`}
                   className="bg-white"
                 >
-                  {/* Question ID */}
                   <td className="px-4 pt-3 pb-1 text-sm font-medium align-top text-text-secondary">
                     {group.question_id}
                   </td>
@@ -134,7 +131,7 @@ export default function GroupedResultsTable({
                     </div>
                   </td>
 
-                  {/* Answer text only */}
+                  {/* Answer */}
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
                     const answer = group.llm_answers[answerIndex];
                     return (
@@ -153,12 +150,10 @@ export default function GroupedResultsTable({
                     );
                   })}
                 </tr>
-                {/* Scores row */}
                 <tr
                   key={`${group.question_id || index}-scores`}
-                  className="border-b border-[#e5e5e5]"
+                  className="border-b border-border"
                 >
-                  {/* Empty cells for Q.ID, Question, Expected Answer */}
                   <td className="px-4 pt-1 pb-3" />
                   <td className="px-4 pt-1 pb-3 bg-bg-secondary" />
                   <td className="px-4 pt-1 pb-3 bg-bg-secondary" />
@@ -191,14 +186,12 @@ export default function GroupedResultsTable({
                                     </span>
                                     <div className="flex items-center gap-1 flex-shrink-0">
                                       <div
-                                        className="inline-block px-2 py-0.5 rounded text-xs font-medium"
-                                        style={{
-                                          color,
-                                          backgroundColor: bg,
-                                          borderWidth:
-                                            bg === "transparent" ? "1px" : "0",
-                                          borderColor: "#e5e5e5",
-                                        }}
+                                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                                          bg === "transparent"
+                                            ? "border border-border"
+                                            : ""
+                                        }`}
+                                        style={{ color, backgroundColor: bg }}
                                       >
                                         {value}
                                       </div>
@@ -208,17 +201,11 @@ export default function GroupedResultsTable({
                                           return (
                                             <>
                                               <div
-                                                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
-                                                style={{
-                                                  backgroundColor:
-                                                    openCommentId === commentId
-                                                      ? "#171717"
-                                                      : "#fafafa",
-                                                  color:
-                                                    openCommentId === commentId
-                                                      ? "#ffffff"
-                                                      : "#737373",
-                                                }}
+                                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal ${
+                                                  openCommentId === commentId
+                                                    ? "bg-[#171717] text-white"
+                                                    : "bg-bg-secondary text-text-secondary"
+                                                }`}
                                                 onMouseEnter={(e) => {
                                                   const rect =
                                                     e.currentTarget.getBoundingClientRect();
@@ -249,17 +236,10 @@ export default function GroupedResultsTable({
                                               </div>
                                               {openCommentId === commentId && (
                                                 <div
-                                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
+                                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none bg-[#171717] text-white w-[300px] shadow-[0_4px_6px_rgba(0,0,0,0.1)] -translate-y-full"
                                                   style={{
-                                                    backgroundColor: "#171717",
-                                                    color: "#ffffff",
-                                                    width: "300px",
-                                                    boxShadow:
-                                                      "0 4px 6px rgba(0, 0, 0, 0.1)",
                                                     top: commentPos.top,
                                                     left: commentPos.left,
-                                                    transform:
-                                                      "translateY(-100%)",
                                                   }}
                                                 >
                                                   {score.comment}

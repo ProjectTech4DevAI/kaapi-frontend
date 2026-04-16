@@ -59,7 +59,6 @@ export default function DetailedResultsTable({
     }
   }
 
-  // This handles NewScoreObjectV2 (with traces)
   const individual_scores = normalizeToIndividualScores(scoreObject);
 
   if (!individual_scores || individual_scores.length === 0) {
@@ -151,11 +150,10 @@ export default function DetailedResultsTable({
                       >
                         <div className="flex items-center justify-center gap-2">
                           <div
-                            className="inline-block px-2 py-1 rounded text-xs font-medium border-border"
+                            className={`inline-block px-2 py-1 rounded text-xs font-medium border-border ${bg === "transparent" ? "border" : ""}`}
                             style={{
                               color,
                               backgroundColor: bg,
-                              borderWidth: bg === "transparent" ? "1px" : "0",
                             }}
                           >
                             {value}
@@ -163,17 +161,7 @@ export default function DetailedResultsTable({
                           {score?.comment && (
                             <>
                               <div
-                                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal"
-                                style={{
-                                  backgroundColor:
-                                    openCommentId === `${index}-${scoreName}`
-                                      ? "#171717"
-                                      : "#fafafa",
-                                  color:
-                                    openCommentId === `${index}-${scoreName}`
-                                      ? "#ffffff"
-                                      : "#737373",
-                                }}
+                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal ${openCommentId === `${index}-${scoreName}` ? "bg-[#171717] text-bg-primary" : "bg-bg-secondary text-text-secondary"}`}
                                 onMouseEnter={(e) => {
                                   const rect =
                                     e.currentTarget.getBoundingClientRect();
@@ -195,15 +183,10 @@ export default function DetailedResultsTable({
                               </div>
                               {openCommentId === `${index}-${scoreName}` && (
                                 <div
-                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none"
+                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none bg-[#171717] text-white border border-gray-700 w-[300px] shadow-md -translate-y-full"
                                   style={{
-                                    backgroundColor: "#171717",
-                                    color: "#ffffff",
-                                    width: "300px",
-                                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                                     top: commentPos.top,
                                     left: commentPos.left,
-                                    transform: "translateY(-100%)",
                                   }}
                                 >
                                   {score.comment}

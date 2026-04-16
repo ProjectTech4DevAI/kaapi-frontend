@@ -1,7 +1,3 @@
-/**
- * Shared TypeScript types for evaluation components
- */
-
 export interface TraceScore {
   name: string;
   value: number | string;
@@ -9,7 +5,6 @@ export interface TraceScore {
   comment?: string;
 }
 
-// New trace format (from evaluation-sample-3.json)
 export interface TraceItem {
   trace_id: string;
   question: string;
@@ -27,7 +22,6 @@ export interface GroupedTraceItem {
   scores: TraceScore[][];
 }
 
-// Legacy individual score format (nested structure)
 export interface IndividualScore {
   trace_id: string;
   input?: {
@@ -53,13 +47,11 @@ export interface SummaryScore {
   distribution?: Record<string, number>; // For categorical data
 }
 
-// New score object with traces array
 export interface NewScoreObjectV2 {
   summary_scores: SummaryScore[];
   traces: TraceItem[] | GroupedTraceItem[];
 }
 
-// Legacy score structure (for backward compatibility)
 export interface PerItemScore {
   trace_id: string;
   cosine_similarity: number;
@@ -76,12 +68,10 @@ export interface LegacyScoreObject {
   cosine_similarity: CosineSimilarity;
 }
 
-// Basic score object with only summary scores (no individual scores or traces)
 export interface BasicScoreObject {
   summary_scores: SummaryScore[];
 }
 
-// Union type to support both old and new structures
 export type ScoreObject =
   | NewScoreObjectV2
   | BasicScoreObject

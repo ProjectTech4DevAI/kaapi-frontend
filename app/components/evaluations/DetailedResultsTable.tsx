@@ -14,9 +14,9 @@ import {
   isGroupedFormat,
   GroupedTraceItem,
   EvalJob,
-} from "@/app/lib/components/evaluations/types";
+} from "@/app/lib/evaluation";
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
-import GroupedResultsTable from "@/app/lib/components/evaluations/GroupedResultsTable";
+import GroupedResultsTable from "@/app/components/evaluations/GroupedResultsTable";
 
 interface DetailedResultsTableProps {
   job: EvalJob;
@@ -76,29 +76,56 @@ export default function DetailedResultsTable({
   const scoreNames =
     individual_scores[0]?.trace_scores?.map((s) => s.name) || [];
 
+  const COLUMN_WIDTHS = {
+    index: 50,
+    question: 250,
+    groundTruth: 250,
+    answer: 250,
+    score: 160,
+  };
+  const tableMinWidth =
+    COLUMN_WIDTHS.index +
+    COLUMN_WIDTHS.question +
+    COLUMN_WIDTHS.groundTruth +
+    COLUMN_WIDTHS.answer +
+    scoreNames.length * COLUMN_WIDTHS.score;
+
   return (
     <div className="border rounded-lg overflow-hidden bg-white border-gray-200">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse min-w-[800px] table-fixed">
+        <table
+          className="w-full border-collapse table-fixed"
+          style={{ minWidth: `${tableMinWidth}px` }}
+        >
           <thead>
             <tr className="bg-bg-secondary border-b border-border">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717] w-[5%]"></th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717] w-[25%]">
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                style={{ width: `${COLUMN_WIDTHS.index}px` }}
+              ></th>
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                style={{ width: `${COLUMN_WIDTHS.question}px` }}
+              >
                 Question
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717] w-[25%]">
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                style={{ width: `${COLUMN_WIDTHS.groundTruth}px` }}
+              >
                 Expected Answer
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717] w-[25%]">
+              <th
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                style={{ width: `${COLUMN_WIDTHS.answer}px` }}
+              >
                 Answer
               </th>
               {scoreNames.map((scoreName) => (
                 <th
                   key={scoreName}
-                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-[#171717]"
-                  style={{
-                    width: `${20 / scoreNames.length}%`,
-                  }}
+                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-[#171717] whitespace-normal wrap-break-word"
+                  style={{ width: `${COLUMN_WIDTHS.score}px` }}
                 >
                   {scoreName}
                 </th>

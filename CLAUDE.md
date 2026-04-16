@@ -30,10 +30,9 @@ npm run format           # Format TS/tsx with Prettier
 | `app/(auth)/`              | Authentication-related routes (e.g., invite, verify flows)                                    |
 | `app/(main)/`              | Main application routes (dashboard-level features like datasets, evaluations, settings, etc.) |
 | `app/api/`                 | Backend API route handlers (Next.js route handlers acting as BFF layer)                       |
-| `app/components/`          | App-scoped UI components used within routes                                                   |
+| `app/components/`          | App-scoped components used within routes/Pages                                                |
 | `app/hooks/`               | Custom React hooks specific to app features                                                   |
 | `lib/`                     | Core shared logic and utilities across the application                                        |
-| `lib/components/`          | Reusable shared components (not tightly coupled to app routes)                                |
 | `lib/context/`             | React context providers (global state handling)                                               |
 | `lib/store/`               | State management logic (if using custom/global store)                                         |
 | `lib/types/`               | TypeScript type definitions (shared across modules)                                           |

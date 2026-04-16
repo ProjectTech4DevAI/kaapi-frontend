@@ -5,10 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import {
-  TraceScore,
-  GroupedTraceItem,
-} from "@/app/lib/components/evaluations/types";
+import { TraceScore, GroupedTraceItem } from "@/app/lib/evaluation";
 import { formatScoreValue } from "@/app/lib/utils";
 
 export default function GroupedResultsTable({

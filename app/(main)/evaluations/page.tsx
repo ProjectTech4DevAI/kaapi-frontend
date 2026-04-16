@@ -20,8 +20,8 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import Loader from "@/app/components/Loader";
-import DatasetsTab from "@/app/lib/components/evaluations/DatasetsTab";
-import EvaluationsTab from "@/app/lib/components/evaluations/EvaluationsTab";
+import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
+import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
 
 type Tab = "datasets" | "evaluations";
 

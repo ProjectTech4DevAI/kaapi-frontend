@@ -3,15 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
-import {
-  EvalJob,
-  AssistantConfig,
-  getScoreObject,
-} from "@/app/lib/components/evaluations/types";
+import { EvalJob, AssistantConfig, getScoreObject } from "@/app/lib/evaluation";
 import { getStatusColor } from "@/app/components/utils";
 import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";
-import ScoreDisplay from "@/app/lib/components/evaluations/ScoreDisplay";
+import ScoreDisplay from "@/app/components/evaluations/ScoreDisplay";
 
 export interface EvalRunCardProps {
   job: EvalJob;

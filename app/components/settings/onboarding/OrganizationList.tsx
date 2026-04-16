@@ -9,7 +9,6 @@ export default function OrganizationList({
   isLoadingMore,
   onNewOrg,
   onSelectOrg,
-  scrollRef,
 }: OrganizationListProps) {
   const { currentUser } = useAuth();
   return (
@@ -31,7 +30,7 @@ export default function OrganizationList({
         )}
       </div>
 
-      <div ref={scrollRef} className="space-y-2">
+      <div className="space-y-2">
         {organizations.map((org) => (
           <button
             key={org.id}

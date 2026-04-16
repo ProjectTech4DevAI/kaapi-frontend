@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface Organization {
   id: number;
   name: string;
@@ -78,7 +76,6 @@ export interface OrganizationListProps {
   isLoadingMore: boolean;
   onNewOrg: () => void;
   onSelectOrg: (org: Organization) => void;
-  scrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface ProjectListProps {

@@ -3,10 +3,10 @@ interface IconProps {
   style?: React.CSSProperties;
 }
 
-export default function CheckCircleIcon({ className, style }: IconProps) {
+export default function ErrorCircleIcon({ className, style }: IconProps) {
   return (
     <svg
-      className={`w-3 h-3 ${className ?? ""}`}
+      className={`w-5 h-5 ${className ?? ""}`}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -16,7 +16,7 @@ export default function CheckCircleIcon({ className, style }: IconProps) {
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
-        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
   );

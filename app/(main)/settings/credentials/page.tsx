@@ -1,7 +1,7 @@
 /**
  * Credentials Settings Page — orchestrator
  * State management and API calls only. UI split into:
- *   ProviderList  — left sidebar nav
+ *   ProviderSidebar  — left sidebar nav
  *   CredentialForm — right form with fields and actions
  */
 
@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from "react";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
-import { colors } from "@/app/lib/colors";
+import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
@@ -18,7 +18,7 @@ import {
   ProviderDef,
 } from "@/app/lib/types/credentials";
 import { getExistingForProvider } from "@/app/lib/utils";
-import ProviderList from "@/app/components/settings/credentials/ProviderList";
+import ProviderSidebar from "@/app/components/settings/ProviderSidebar";
 import CredentialForm from "@/app/components/settings/credentials/CredentialForm";
 import { apiFetch } from "@/app/lib/apiClient";
 
@@ -34,15 +34,14 @@ export default function CredentialsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isActive, setIsActive] = useState(true);
-  const [visibleFields, setVisibleFields] = useState<Set<string>>(new Set());
   const [existingCredential, setExistingCredential] =
     useState<Credential | null>(null);
 
-  // Load credentials once we have an API key
+  // Load credentials once authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
     loadCredentials();
-  }, [apiKeys]);
+  }, [isAuthenticated, apiKeys]);
 
   // Re-populate form when provider or credentials change
   useEffect(() => {
@@ -64,7 +63,6 @@ export default function CredentialsPage() {
       });
       setFormValues(blank);
     }
-    setVisibleFields(new Set());
   }, [selectedProvider, credentials]);
 
   const loadCredentials = async () => {
@@ -151,7 +149,6 @@ export default function CredentialsPage() {
       setFormValues(blank);
       setIsActive(true);
     }
-    setVisibleFields(new Set());
   };
 
   const handleDelete = async () => {
@@ -178,68 +175,29 @@ export default function CredentialsPage() {
     setFormValues((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleToggleVisibility = (key: string) => {
-    setVisibleFields((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div
-            className="border-b px-4 py-3 flex items-center justify-between shrink-0"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
-            <div>
-              <h1
-                className="text-base font-semibold"
-                style={{
-                  color: colors.text.primary,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                Credentials
-              </h1>
-              <p className="text-xs" style={{ color: colors.text.secondary }}>
-                Manage provider credentials
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            title="Credentials"
+            subtitle="Manage provider credentials"
+          />
 
           <div className="flex flex-1 overflow-hidden">
-            <ProviderList
+            <ProviderSidebar
               providers={PROVIDERS}
               selectedProvider={selectedProvider}
               credentials={credentials}
               onSelect={setSelectedProvider}
+              className="w-56 border-r border-border overflow-y-auto bg-bg-secondary"
             />
 
             <div className="flex-1 overflow-y-auto p-8">
               {!isAuthenticated ? (
-                <div
-                  className="max-w-lg rounded-lg border p-6 text-sm"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: colors.bg.primary,
-                    color: colors.text.secondary,
-                  }}
-                >
+                <div className="max-w-lg rounded-lg border border-border p-6 text-sm bg-bg-primary text-text-secondary">
                   Please log in to manage credentials.
                 </div>
               ) : (
@@ -251,10 +209,8 @@ export default function CredentialsPage() {
                   isLoading={isLoading}
                   isSaving={isSaving}
                   isDeleting={isDeleting}
-                  visibleFields={visibleFields}
                   onChange={handleFieldChange}
                   onActiveChange={setIsActive}
-                  onToggleVisibility={handleToggleVisibility}
                   onSave={handleSave}
                   onCancel={handleCancel}
                   onDelete={handleDelete}

@@ -1,31 +1,31 @@
 "use client";
 
-import Loader from "@/app/components/Loader";
-import Field from "@/app/components/Field";
-import Button from "@/app/components/Button";
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
+import { Button, Field } from "@/app/components";
 
-interface Props {
+interface CredentialFormPanelProps {
   provider: ProviderDef;
   existingCredential: Credential | null;
   formValues: Record<string, string>;
   isActive: boolean;
+  hasChanges: boolean;
   isLoading: boolean;
   isSaving: boolean;
-  isDeleting?: boolean;
+  isDeleting: boolean;
   onChange: (key: string, value: string) => void;
   onActiveChange: (active: boolean) => void;
   onSave: () => void;
   onCancel: () => void;
-  onDelete?: () => void;
+  onDelete: () => void;
 }
 
-export default function CredentialForm({
+export default function CredentialFormPanel({
   provider,
   existingCredential,
   formValues,
   isActive,
+  hasChanges,
   isLoading,
   isSaving,
   isDeleting,
@@ -34,18 +34,29 @@ export default function CredentialForm({
   onSave,
   onCancel,
   onDelete,
-}: Props) {
-  return (
-    <div className="max-w-lg">
-      <h2 className="text-xl font-semibold mb-1 text-text-primary">
-        {provider.name}
-      </h2>
-      <p className="text-sm mb-6 text-text-secondary">{provider.description}</p>
+}: CredentialFormPanelProps) {
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="w-6 h-6 border-2 border-border border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-text-secondary">Loading credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
-      {isLoading ? (
-        <Loader size="sm" message="Loading credentials…" />
-      ) : (
-        <div className="space-y-5">
+  return (
+    <div className="flex-1">
+      <div className="max-w-md">
+        <h3 className="text-base font-semibold mb-0.5 text-text-primary">
+          {provider.name}
+        </h3>
+        <p className="text-sm mb-5 text-text-secondary">
+          {provider.description}
+        </p>
+
+        <div className="space-y-4">
           <label className="flex items-center gap-2.5 cursor-pointer select-none w-fit">
             <input
               type="checkbox"
@@ -53,7 +64,7 @@ export default function CredentialForm({
               onChange={(e) => onActiveChange(e.target.checked)}
               className="w-4 h-4 rounded accent-status-success"
             />
-            <span className="text-sm text-text-primary">Active?</span>
+            <span className="text-sm text-text-primary">Active</span>
           </label>
 
           {provider.fields.map((field) => (
@@ -67,18 +78,18 @@ export default function CredentialForm({
             />
           ))}
 
-          {existingCredential && (
+          {existingCredential?.updated_at && (
             <p className="text-xs text-text-secondary">
-              Last updated:{" "}
-              {existingCredential.updated_at
-                ? timeAgo(existingCredential.updated_at)
-                : "—"}
+              Last updated: {timeAgo(existingCredential.updated_at)}
             </p>
           )}
 
-          <div className="flex items-center gap-3 pt-1">
-            <Button onClick={onSave} disabled={isSaving || isDeleting}>
-              {isSaving ? "Saving…" : existingCredential ? "Update" : "Save"}
+          <div className="flex items-center gap-2.5 pt-1">
+            <Button
+              onClick={onSave}
+              disabled={isSaving || isDeleting || !hasChanges}
+            >
+              {isSaving ? "Saving..." : existingCredential ? "Update" : "Save"}
             </Button>
             <Button
               variant="outline"
@@ -87,19 +98,19 @@ export default function CredentialForm({
             >
               Cancel
             </Button>
-            {existingCredential && onDelete && (
+            {existingCredential && (
               <Button
                 variant="danger"
                 onClick={onDelete}
                 disabled={isSaving || isDeleting}
                 className="ml-auto"
               >
-                {isDeleting ? "Removing…" : "Remove"}
+                {isDeleting ? "Removing..." : "Remove"}
               </Button>
             )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

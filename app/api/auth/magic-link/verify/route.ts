@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
+import { setRoleCookieFromBody } from "@/app/lib/authCookie";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,6 +24,10 @@ export async function GET(request: NextRequest) {
     const setCookies = headers.getSetCookie?.() ?? [];
     for (const cookie of setCookies) {
       res.headers.append("Set-Cookie", cookie);
+    }
+
+    if (status >= 200 && status < 300) {
+      setRoleCookieFromBody(res, data);
     }
 
     return res;

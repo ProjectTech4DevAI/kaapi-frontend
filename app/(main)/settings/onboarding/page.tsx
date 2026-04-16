@@ -175,7 +175,7 @@ export default function OnboardingPage() {
             subtitle="Manage organizations, projects, users, and credentials"
           />
 
-          <div className="flex-1 overflow-y-auto">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto">
             <div className="max-w-2xl py-5 px-8">
               {view === "loading" && <OrganizationListSkeleton />}
 
@@ -185,7 +185,6 @@ export default function OnboardingPage() {
                   isLoadingMore={isLoadingMore}
                   onNewOrg={() => setView("form")}
                   onSelectOrg={fetchProjects}
-                  scrollRef={scrollRef}
                 />
               )}
 

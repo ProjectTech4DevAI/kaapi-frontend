@@ -14,6 +14,8 @@ import {
   DocumentFileIcon,
   BookOpenIcon,
   GearIcon,
+  SlidersIcon,
+  ShieldCheckIcon,
   ChevronRightIcon,
 } from "@/app/components/icons";
 import { LoginModal } from "@/app/components/auth";
@@ -111,6 +113,8 @@ export default function Sidebar({
     document: <DocumentFileIcon />,
     book: <BookOpenIcon />,
     gear: <GearIcon className="w-5 h-5" />,
+    shield: <ShieldCheckIcon />,
+    sliders: <SlidersIcon />,
   };
 
   const navItems: MenuItem[] = NAV_ITEMS.filter(

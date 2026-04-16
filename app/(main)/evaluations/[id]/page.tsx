@@ -10,16 +10,18 @@ import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import {
+import type {
   EvalJob,
   AssistantConfig,
+  GroupedTraceItem,
+} from "@/app/lib/types/evaluation";
+import {
   hasSummaryScores,
   isNewScoreObjectV2,
   getScoreObject,
   normalizeToIndividualScores,
-  GroupedTraceItem,
   isGroupedFormat,
-} from "@/app/lib/evaluation";
+} from "@/app/lib/utils/evaluation";
 import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";

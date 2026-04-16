@@ -6,15 +6,14 @@
  */
 
 import { useState, useEffect } from "react";
+import type { GroupedTraceItem, EvalJob } from "@/app/lib/types/evaluation";
 import {
   getScoreObject,
   normalizeToIndividualScores,
   hasSummaryScores,
   isNewScoreObjectV2,
   isGroupedFormat,
-  GroupedTraceItem,
-  EvalJob,
-} from "@/app/lib/evaluation";
+} from "@/app/lib/utils/evaluation";
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
 import GroupedResultsTable from "@/app/components/evaluations/GroupedResultsTable";
 

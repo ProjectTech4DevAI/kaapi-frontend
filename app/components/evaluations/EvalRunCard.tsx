@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
-import { EvalJob, AssistantConfig, getScoreObject } from "@/app/lib/evaluation";
+import type { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
+import { getScoreObject } from "@/app/lib/utils/evaluation";
 import { getStatusColor } from "@/app/components/utils";
 import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";

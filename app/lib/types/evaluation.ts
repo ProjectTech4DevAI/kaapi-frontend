@@ -1,3 +1,7 @@
+/**
+ * Shared TypeScript types for evaluation components
+ */
+
 export interface TraceScore {
   name: string;
   value: number | string;
@@ -128,85 +132,4 @@ export interface EvalJob {
   project_id: number;
   inserted_at: string;
   updated_at: string;
-}
-
-// Shared guard: Check if score has summary_scores and intelligently narrow to NewScoreObjectV2 or BasicScoreObject
-// Priority: If it has traces → NewScoreObjectV2, otherwise → BasicScoreObject
-export function hasSummaryScores(
-  score: ScoreObject | null | undefined,
-): score is NewScoreObjectV2 | BasicScoreObject {
-  if (!score) return false;
-  if (!("summary_scores" in score)) return false;
-
-  // Prioritize traces format if available
-  if ("traces" in score) {
-    return true;
-  }
-
-  // Otherwise, it's BasicScoreObject (summary_scores only, no traces, no individual_scores)
-  return true;
-}
-
-export function isNewScoreObjectV2(
-  score: ScoreObject | null | undefined,
-): score is NewScoreObjectV2 {
-  if (!score) return false;
-  return "summary_scores" in score && "traces" in score;
-}
-
-export function isBasicScoreObject(
-  score: ScoreObject | null | undefined,
-): score is BasicScoreObject {
-  if (!score) return false;
-  return "summary_scores" in score && !("traces" in score);
-}
-
-export function isLegacyScoreObject(
-  score: ScoreObject | null | undefined,
-): score is LegacyScoreObject {
-  if (!score) return false;
-  return "cosine_similarity" in score;
-}
-
-// Helper to get score object from job
-export function getScoreObject(job: EvalJob): ScoreObject | null {
-  return job.scores || job.score || null;
-}
-
-export function isGroupedFormat(
-  traces: TraceItem[] | GroupedTraceItem[],
-): traces is GroupedTraceItem[] {
-  if (!traces || traces.length === 0) return false;
-  return "llm_answers" in traces[0] && Array.isArray(traces[0].llm_answers);
-}
-
-// Normalize traces to IndividualScore format for table display
-export function normalizeToIndividualScores(
-  score: ScoreObject | null | undefined,
-): IndividualScore[] {
-  if (!score) return [];
-
-  if (isNewScoreObjectV2(score)) {
-    // Convert TraceItem[] to IndividualScore[] for table display
-    // Note: Grouped traces should be detected earlier and handled separately
-    return score.traces.map((trace: TraceItem | GroupedTraceItem) => {
-      // Handle regular TraceItem format
-      if ("llm_answer" in trace) {
-        return {
-          trace_id: trace.trace_id,
-          input: { question: trace.question },
-          output: { answer: trace.llm_answer },
-          metadata: { ground_truth: trace.ground_truth_answer },
-          trace_scores: trace.scores,
-        };
-      }
-      // Should not reach here if grouped format is handled properly
-      return {
-        trace_id: "",
-        trace_scores: [],
-      };
-    });
-  }
-
-  return [];
 }

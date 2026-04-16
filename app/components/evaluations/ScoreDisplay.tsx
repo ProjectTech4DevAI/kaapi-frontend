@@ -5,7 +5,8 @@
 
 "use client";
 
-import { ScoreObject, hasSummaryScores } from "@/app/lib/evaluation";
+import type { ScoreObject } from "@/app/lib/types/evaluation";
+import { hasSummaryScores } from "@/app/lib/utils/evaluation";
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;

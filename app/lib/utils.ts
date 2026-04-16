@@ -10,7 +10,7 @@ import {
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import { isGpt5Model } from "@/app/lib/models";
 import { STORAGE_KEYS } from "@/app/lib/constants";
-import { TraceScore } from "@/app/lib/evaluation";
+import { TraceScore } from "@/app/lib/types/evaluation";
 
 export function timeAgo(dateStr: string): string {
   const date =

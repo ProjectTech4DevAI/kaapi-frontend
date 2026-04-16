@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
-import { EvalJob, AssistantConfig } from "@/app/lib/evaluation";
+import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import {

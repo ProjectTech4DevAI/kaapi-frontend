@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
+import { setRoleCookieFromBody } from "@/app/lib/authCookie";
 
 /** Proxy Google login token to backend. Forwards Set-Cookie headers back to the browser. */
 export async function POST(request: Request) {
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
       setCookie.forEach((cookie: string) => {
         response.headers.append("Set-Cookie", cookie);
       });
+    }
+
+    if (status >= 200 && status < 300) {
+      setRoleCookieFromBody(response, data);
     }
 
     return response;

@@ -2,6 +2,7 @@
 export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
+export { default as CopyIcon } from "./common/CopyIcon";
 export { default as EyeIcon } from "./common/EyeIcon";
 export { default as EyeOffIcon } from "./common/EyeOffIcon";
 export { default as RefreshIcon } from "./common/RefreshIcon";
@@ -10,6 +11,8 @@ export { default as WarningTriangleIcon } from "./common/WarningTriangleIcon";
 export { default as PlusIcon } from "./common/PlusIcon";
 export { default as SearchIcon } from "./common/SearchIcon";
 export { default as SidebarToggleIcon } from "./common/SidebarToggleIcon";
+export { default as MailIcon } from "./common/MailIcon";
+export { default as ErrorCircleIcon } from "./common/ErrorCircleIcon";
 
 // Evaluations Icons
 export { default as ChevronUpIcon } from "./evaluations/ChevronUpIcon";

@@ -42,6 +42,7 @@ export default function UserList({
   organization,
   project,
   onBack,
+  hideHeader,
 }: UserListProps) {
   const toast = useToast();
   const { activeKey, currentUser } = useAuth();
@@ -91,31 +92,50 @@ export default function UserList({
 
   return (
     <div>
-      <button
-        onClick={onBack}
-        className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
-      >
-        <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
-      </button>
+      {!hideHeader && (
+        <>
+          <button
+            onClick={onBack}
+            className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
+          </button>
 
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-text-primary">
-            {project.name}
-          </h2>
-          <p className="text-xs text-text-secondary mt-0.5">
-            {organization.name} &middot;{" "}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary">
+                {project.name}
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                {organization.name} &middot;{" "}
+                {isLoading
+                  ? "Loading users..."
+                  : `${users.length} user${users.length !== 1 ? "s" : ""}`}
+              </p>
+            </div>
+            {currentUser?.is_superuser && (
+              <Button size="sm" onClick={() => setShowAddModal(true)}>
+                + Add User
+              </Button>
+            )}
+          </div>
+        </>
+      )}
+
+      {hideHeader && (
+        <div className="flex items-center justify-between my-4">
+          <p className="text-xs text-text-secondary">
             {isLoading
               ? "Loading users..."
               : `${users.length} user${users.length !== 1 ? "s" : ""}`}
           </p>
+          {currentUser?.is_superuser && (
+            <Button size="sm" onClick={() => setShowAddModal(true)}>
+              + Add User
+            </Button>
+          )}
         </div>
-        {currentUser?.is_superuser && (
-          <Button size="sm" onClick={() => setShowAddModal(true)}>
-            + Add User
-          </Button>
-        )}
-      </div>
+      )}
 
       {isLoading ? (
         <UserListSkeleton />

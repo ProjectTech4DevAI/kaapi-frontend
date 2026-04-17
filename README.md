@@ -137,17 +137,24 @@ Deployments are automated via a GitHub Actions CD pipeline that SSHes into the E
 
 ### Branch Strategy
 
-| Branch    | Environment |
-| --------- | ----------- |
-| `main`    | Staging     |
-| `release` | Production  |
+| Trigger                               | Environment |
+| ------------------------------------- | ----------- |
+| Push to `main`                        | Staging     |
+| Tag matching `v*.*.*` (e.g. `v1.0.0`) | Production  |
 
 ### Pipeline Steps
 
-On every push to `main` or `release`, the pipeline automatically:
+**Staging** — on every push to `main`, the pipeline automatically:
 
 1. SSHes into the EC2 instance
 2. Runs `git pull` to fetch the latest code
+3. Runs `npm run build` to create an optimized production build
+4. Restarts the server to apply the new build
+
+**Production** — on every version tag (e.g. `v1.0.0`, `v2.1.0`), the pipeline automatically:
+
+1. SSHes into the EC2 instance
+2. Runs `git fetch --tags` and checks out the tag
 3. Runs `npm run build` to create an optimized production build
 4. Restarts the server to apply the new build
 

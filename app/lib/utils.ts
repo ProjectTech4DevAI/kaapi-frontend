@@ -8,7 +8,8 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
-import { isGpt5Model } from "./models";
+import { isGpt5Model } from "@/app/lib/models";
+import { STORAGE_KEYS } from "@/app/lib/constants";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -56,6 +57,11 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   return new Date(date).toLocaleDateString();
 };
 
+/** Clear all app-related localStorage */
+export function clearAllStorage() {
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+}
+
 export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
@@ -64,7 +70,7 @@ export const invalidateConfigCache = (): void => {
 export const getApiKey = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem("kaapi_api_keys");
+    const stored = localStorage.getItem(STORAGE_KEYS.API_KEYS);
     if (stored) {
       const keys = JSON.parse(stored);
       return keys.length > 0 ? keys[0].key : null;
@@ -123,6 +129,8 @@ export const flattenConfigVersion = (
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,
+    input_guardrails: blob.input_guardrails,
+    output_guardrails: blob.output_guardrails,
   };
 };
 
@@ -160,6 +168,16 @@ export const groupConfigs = (
     };
   });
 };
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
+export const isValidEmail = (email: string): boolean => EMAIL_REGEX.test(email);
+
+export const isValidPassword = (password: string): boolean =>
+  password.length >= MIN_PASSWORD_LENGTH;
+
+export const isNonEmpty = (value: string): boolean => value.trim().length > 0;
 
 export const escapeCSVValue = (value: string): string => {
   return value.replace(/"/g, '""').replace(/\n/g, " ");

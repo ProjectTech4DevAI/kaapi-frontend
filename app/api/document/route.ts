@@ -51,6 +51,13 @@ export async function POST(request: NextRequest) {
         pull(controller) {
           if (offset >= totalSize) {
             controller.close();
+
+            // All bytes forwarded — notify "processing" phase before backend responds
+            writer
+              .write(
+                encoder.encode(JSON.stringify({ phase: "processing" }) + "\n"),
+              )
+              .catch(() => {});
             return;
           }
           const end = Math.min(offset + CHUNK_SIZE, totalSize);
@@ -79,10 +86,6 @@ export async function POST(request: NextRequest) {
         // @ts-expect-error -- Node fetch supports duplex for streaming request bodies
         duplex: "half",
       });
-
-      await writer.write(
-        encoder.encode(JSON.stringify({ phase: "processing" }) + "\n"),
-      );
 
       await writer.write(
         encoder.encode(JSON.stringify({ done: true, status, data }) + "\n"),

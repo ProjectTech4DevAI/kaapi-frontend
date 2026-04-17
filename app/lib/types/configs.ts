@@ -19,6 +19,8 @@ export interface SavedConfig {
   vectorStoreIds: string;
   tools?: Tool[];
   commit_message?: string | null;
+  input_guardrails?: GuardrailRef[];
+  output_guardrails?: GuardrailRef[];
 }
 
 export interface ConfigGroup {
@@ -80,8 +82,17 @@ export interface CompletionConfig {
   params: CompletionParams;
 }
 
+export interface GuardrailRef {
+  validator_config_id: string;
+}
+
 export interface ConfigBlob {
   completion: CompletionConfig;
+  prompt_template?: {
+    template: string;
+  };
+  input_guardrails?: GuardrailRef[];
+  output_guardrails?: GuardrailRef[];
 }
 
 // Request Types

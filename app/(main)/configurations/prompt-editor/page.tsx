@@ -19,7 +19,7 @@ import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useConfigs } from "@/app/hooks/useConfigs";
+import { useConfigs } from "@/app/hooks";
 import {
   SavedConfig,
   ConfigCreate,
@@ -36,7 +36,7 @@ function PromptEditorContent() {
   const toast = useToast();
   const searchParams = useSearchParams();
   const { sidebarCollapsed } = useApp();
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
   const urlConfigId = searchParams.get("config");
   const urlVersion = searchParams.get("version");
   const showHistory = searchParams.get("history") === "true";
@@ -108,6 +108,12 @@ function PromptEditorContent() {
             tools: config.tools || [],
           },
         },
+        ...(config.input_guardrails?.length && {
+          input_guardrails: config.input_guardrails,
+        }),
+        ...(config.output_guardrails?.length && {
+          output_guardrails: config.output_guardrails,
+        }),
       });
       setProvider(config.provider);
       setTemperature(config.temperature);
@@ -253,9 +259,9 @@ function PromptEditorContent() {
       return;
     }
 
-    const apiKey = activeKey?.key;
-    if (!apiKey) {
-      toast.error("No API key found. Please add an API key in the Keystore.");
+    const apiKey = activeKey?.key ?? "";
+    if (!isAuthenticated) {
+      toast.error("Please log in to save configurations.");
       return;
     }
 
@@ -294,6 +300,12 @@ function PromptEditorContent() {
             }),
           },
         },
+        ...(currentConfigBlob.input_guardrails?.length && {
+          input_guardrails: currentConfigBlob.input_guardrails,
+        }),
+        ...(currentConfigBlob.output_guardrails?.length && {
+          output_guardrails: currentConfigBlob.output_guardrails,
+        }),
       };
 
       const existingConfigMeta = allConfigMeta.find(
@@ -396,19 +408,8 @@ function PromptEditorContent() {
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 <div className="flex flex-col items-center gap-3">
-                  <div
-                    className="animate-spin rounded-full border-4 border-solid"
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      borderColor: colors.bg.primary,
-                      borderTopColor: colors.accent.primary,
-                    }}
-                  />
-                  <p
-                    className="text-sm"
-                    style={{ color: colors.text.secondary }}
-                  >
+                  <div className="animate-spin rounded-full border-4 border-solid w-9 h-9 border-bg-primary border-t-accent-primary" />
+                  <p className="text-sm text-text-secondary">
                     Loading configuration...
                   </p>
                 </div>
@@ -502,6 +503,7 @@ function PromptEditorContent() {
                         isSaving={isSaving}
                         collapsed={!showConfigPane}
                         onToggle={() => setShowConfigPane(!showConfigPane)}
+                        apiKey={activeKey?.key ?? ""}
                       />
                     </div>
                   </div>

@@ -94,6 +94,21 @@ export interface AssistantConfig {
   is_deleted: boolean;
 }
 
+export interface EvalCostEntry {
+  model: string;
+  cost_usd: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  prompt_tokens?: number;
+  total_tokens: number;
+}
+
+export interface EvalCost {
+  response?: EvalCostEntry;
+  embedding?: EvalCostEntry;
+  total_cost_usd: number;
+}
+
 export interface EvalJob {
   id: number;
   run_name: string;
@@ -120,6 +135,7 @@ export interface EvalJob {
   assistant_id?: string;
   organization_id: number;
   project_id: number;
+  cost?: EvalCost | null;
   inserted_at: string;
   updated_at: string;
 }

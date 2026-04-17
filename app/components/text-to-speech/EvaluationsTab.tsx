@@ -1134,39 +1134,24 @@ export default function EvaluationsTab({
                       return (
                         <div
                           key={run.id}
-                          className="rounded-lg overflow-hidden"
-                          style={{
-                            backgroundColor: colors.bg.primary,
-                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
-                            borderLeft: `3px solid ${statusColor.border}`,
-                          }}
+                          className={`rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-3 ${statusColor.border}`}
                         >
                           <div className="px-5 py-4">
                             {/* Row 1: Run Name + Status */}
                             <div className="flex items-start justify-between gap-4">
                               <div className="min-w-0 flex-1">
-                                <div
-                                  className="text-sm font-semibold truncate"
-                                  style={{ color: colors.text.primary }}
-                                >
+                                <div className="text-sm font-semibold truncate text-text-primary">
                                   {run.run_name}
                                 </div>
                                 {/* Error message */}
                                 {run.error_message && (
-                                  <div
-                                    className="mt-2 text-xs break-words overflow-hidden"
-                                    style={{ color: "hsl(8, 86%, 40%)" }}
-                                  >
+                                  <div className="mt-2 text-xs wrap-break-word overflow-hidden text-status-error-text">
                                     {run.error_message}
                                   </div>
                                 )}
                               </div>
                               <span
-                                className="px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide flex-shrink-0"
-                                style={{
-                                  backgroundColor: statusColor.bg,
-                                  color: statusColor.text,
-                                }}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
                               >
                                 {run.status}
                               </span>

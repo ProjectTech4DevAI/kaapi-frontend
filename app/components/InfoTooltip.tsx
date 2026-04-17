@@ -1,7 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface InfoTooltipProps {
-  text: string;
+  text: ReactNode;
 }
 
 export default function InfoTooltip({ text }: InfoTooltipProps) {
@@ -15,9 +17,10 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
       </button>
       <div
         role="tooltip"
-        className="absolute z-50 left-5 top-0 w-64 text-xs rounded-lg p-2.5 shadow-lg bg-bg-primary border border-border text-text-secondary leading-relaxed hidden group-hover:block group-focus-within:block"
+        className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 text-xs rounded-lg p-3 shadow-lg bg-neutral-900 text-neutral-100 leading-relaxed hidden group-hover:block group-focus-within:block"
       >
         {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-neutral-900" />
       </div>
     </span>
   );

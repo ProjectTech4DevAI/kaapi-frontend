@@ -243,3 +243,18 @@ export const getScoreByName = (
   if (!scores || !Array.isArray(scores)) return undefined;
   return scores.find((s) => s?.name === name);
 };
+
+/**
+ * Formats a USD cost value for display
+ * @param cost - Cost in USD
+ * @returns Formatted cost string (e.g., "$0.0013", "$1.25")
+ */
+export const formatCostUSD = (cost: number): string => {
+  if (!Number.isFinite(cost)) {
+    return "N/A";
+  }
+  if (cost < 0.01) {
+    return `$${cost.toFixed(4)}`;
+  }
+  return `$${cost.toFixed(2)}`;
+};

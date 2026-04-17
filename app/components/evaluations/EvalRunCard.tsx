@@ -12,6 +12,7 @@ import { getStatusColor, formatCostUSD } from "@/app/components/utils";
 import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";
 import ScoreDisplay from "@/app/components/ScoreDisplay";
+import CostIcon from "@/app/components/icons/evaluations/CostIcon";
 
 export interface EvalRunCardProps {
   job: EvalJob;
@@ -124,26 +125,10 @@ export default function EvalRunCard({
             )}
             {job.cost?.total_cost_usd != null && (
               <span className="flex items-center gap-1.5">
-                <svg
-                  className="w-3.5 h-3.5 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
-                </svg>
+                <CostIcon className="flex-shrink-0" />
                 {formatCostUSD(job.cost.total_cost_usd)}
                 <div
-                  className="inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal cursor-help"
-                  style={{
-                    backgroundColor: isCostTooltipOpen ? "#171717" : "#fafafa",
-                    color: isCostTooltipOpen ? "#ffffff" : "#737373",
-                  }}
+                  className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal cursor-help ${isCostTooltipOpen ? "bg-[#171717] text-white" : "text-[#737373]"}`}
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const tooltipWidth = 280;
@@ -164,20 +149,15 @@ export default function EvalRunCard({
                 </div>
                 {isCostTooltipOpen && (
                   <div
-                    className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none space-y-1"
+                    className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none space-y-1 bg-[#171717] text-white w-[260px] shadow-md -translate-y-full"
                     style={{
-                      backgroundColor: "#171717",
-                      color: "#ffffff",
-                      width: "260px",
-                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                       top: costTooltipPos.top,
                       left: costTooltipPos.left,
-                      transform: "translateY(-100%)",
                     }}
                   >
                     {job.cost.response && (
                       <div className="flex justify-between gap-3">
-                        <span style={{ color: "#a3a3a3" }}>
+                        <span className="text-[#a3a3a3]">
                           Response generation
                         </span>
                         <span>{formatCostUSD(job.cost.response.cost_usd)}</span>
@@ -185,7 +165,7 @@ export default function EvalRunCard({
                     )}
                     {job.cost.embedding && (
                       <div className="flex justify-between gap-3">
-                        <span style={{ color: "#a3a3a3" }}>
+                        <span className="text-[#a3a3a3]">
                           Cosine similarity calculation
                         </span>
                         <span>

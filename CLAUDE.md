@@ -17,7 +17,7 @@ npm run format           # Format TS/tsx with Prettier
 
 - **Framework**: Next.js 16.0.7 (App Router)
 - **React 19.2.0** + **TypeScript** (strict mode)
-- **Routing**: Next.js App Router + React Router DOM 7.9.5 (dual system)
+- **Routing**: Next.js App Router (react-router-dom is listed as a dependency but currently unused)
 - **Styling**: Tailwind CSS 4.x + custom color system and styles defined in `/app/globals.css` for cases not supported by Tailwind
 - **Data Fetching**: Native Fetch API + SWR 2.3.6 (used selectively where required)
 - **Date/Time**: date-fns 4.1.0, date-fns-tz 3.2.0
@@ -25,26 +25,30 @@ npm run format           # Format TS/tsx with Prettier
 
 ### Directory Structure
 
-| Path                       | Purpose                                                                                       |
-| -------------------------- | --------------------------------------------------------------------------------------------- |
-| `app/(auth)/`              | Authentication-related routes (e.g., invite, verify flows)                                    |
-| `app/(main)/`              | Main application routes (dashboard-level features like datasets, evaluations, settings, etc.) |
-| `app/api/`                 | Backend API route handlers (Next.js route handlers acting as BFF layer)                       |
-| `app/components/`          | App-scoped components used within routes/Pages                                                |
-| `app/hooks/`               | Custom React hooks specific to app features                                                   |
-| `lib/`                     | Core shared logic and utilities across the application                                        |
-| `lib/context/`             | React context providers (global state handling)                                               |
-| `lib/store/`               | State management logic (if using custom/global store)                                         |
-| `lib/types/`               | TypeScript type definitions (shared across modules)                                           |
-| `lib/apiClient.ts`         | Centralized API client for handling backend requests                                          |
-| `lib/authCookie.ts`        | Authentication cookie utilities (get/set/remove tokens)                                       |
-| `lib/configFetchers.ts`    | API fetchers related to configuration modules                                                 |
-| `lib/constants.ts`         | Global constants used across the app                                                          |
-| `lib/models.ts`            | Data models/interfaces for structured data handling                                           |
-| `lib/navConfig.ts`         | Navigation configuration (sidebar/menu structure)                                             |
-| `lib/promptEditorUtils.ts` | Utility functions for prompt editor logic                                                     |
-| `lib/utils.ts`             | General utility/helper functions                                                              |
-| `public/favicon.ico`       | Application favicon                                                                           |
+| Path                           | Purpose                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `app/(auth)/`                  | Authentication-related routes (e.g., invite, verify flows)                                    |
+| `app/(main)/`                  | Main application routes (dashboard-level features like datasets, evaluations, settings, etc.) |
+| `app/api/`                     | Backend API route handlers (Next.js route handlers acting as BFF layer)                       |
+| `app/components/`              | App-scoped components used within routes/Pages                                                |
+| `app/components/icons/`        | Hand-authored React icon components                                                           |
+| `app/hooks/`                   | Custom React hooks specific to app features                                                   |
+| `app/lib/`                     | Core shared logic and utilities across the application                                        |
+| `app/lib/context/`             | React context providers (global state handling)                                               |
+| `app/lib/store/`               | State management logic (custom/global store)                                                  |
+| `app/lib/types/`               | TypeScript type definitions (shared across modules)                                           |
+| `app/lib/utils/`               | Domain-specific utility modules (e.g., evaluation, guardrails)                                |
+| `app/lib/data/`                | Static data and validators (e.g., guardrails validators)                                      |
+| `app/lib/apiClient.ts`         | Centralized API client for forwarding requests to the backend                                 |
+| `app/lib/authCookie.ts`        | Authentication cookie utilities (get/set/remove tokens)                                       |
+| `app/lib/configFetchers.ts`    | API fetchers related to configuration modules                                                 |
+| `app/lib/constants.ts`         | Global constants used across the app                                                          |
+| `app/lib/guardrailsClient.ts`  | Client-side API helpers for guardrails features                                               |
+| `app/lib/models.ts`            | Data models/interfaces for structured data handling                                           |
+| `app/lib/navConfig.ts`         | Navigation configuration (sidebar/menu structure)                                             |
+| `app/lib/promptEditorUtils.ts` | Utility functions for prompt editor logic                                                     |
+| `app/lib/utils.ts`             | General utility/helper functions                                                              |
+| `public/favicon.ico`           | Application favicon                                                                           |
 
 ## Import Aliases
 
@@ -56,11 +60,11 @@ import { Providers } from '@/app/components/providers';
 import { APP_NAME } from '@/app/lib/constants';
 ```
 
-SVGs follow Next.js defaults (imported as static assets via next/image or referenced from /public). Most in-app icons are hand-authored React components under `app/components/icons` rather than SVG imports.
+SVGs follow Next.js defaults (imported as static assets via next/image or referenced from /public).
 
 ## Routing & Role-Based Access
 
-Routing uses the **Next.js App Router** exclusively (no React Router trees). Routes are organized via route groups:
+Routing uses the **Next.js App Router** exclusively. Routes are organized via route groups:
 
 - `app/(auth)/` - unauthenticated flows (`/invite`, `/verify`)
 - `app/(main)/` — authenticated app surface (`/evaluations`, `/datasets`, `/configurations`, `/guardrails`, `/knowledge-base`, `/settings`, etc.)
@@ -81,7 +85,7 @@ There is no dynamic/custom role system; only the two static roles above.
 
 ## Toast Notifications
 
-Toasts are managed via a React Context provider ([Toast.tsx](app/components/Toast.tsx)), mounted once in [Providers.tsx](app/components/providers/Providers.tsx). Consume them from any client com
+Toasts are managed via a React Context provider ([Toast.tsx](app/components/Toast.tsx)), mounted once in [Providers.tsx](app/components/providers/Providers.tsx). Consume them from any client component:
 
 ```
 import { useToast } from '@/app/components/Toast';
@@ -119,3 +123,22 @@ function MyComponent() {
   } = useAuth();
 }
 ```
+
+## App Context [AppContext.tsx](app/lib/context/AppContext.tsx)
+
+Sidebar state is managed via `AppProvider`, consumed with `useApp()`:
+
+```
+import { useApp } from '@/app/lib/context/AppContext';
+
+const { sidebarCollapsed, setSidebarCollapsed, toggleSidebar } = useApp();
+```
+
+## API Client & Error Handling
+
+The BFF layer uses [apiClient.ts](app/lib/apiClient.ts) which forwards requests from Next.js route handlers to the backend at `BACKEND_URL` (defaults to `http://localhost:8000`). Key patterns:
+
+- **Server-side (route handlers)**: Use `apiClient(request, endpoint, options)` — it relays `X-API-KEY` and `Cookie` headers automatically and returns `{ status, data, headers }`.
+- **Client-side**: Use `clientFetch(endpoint, options)` — handles token refresh on 401, dispatches `AUTH_EXPIRED_EVENT` when refresh fails, and throws with a message extracted from `error`, `message`, or `detail` fields in the response body.
+- **Error extraction**: `extractErrorMessage(body, fallback)` reads `body.error || body.message || body.detail` — follow this pattern when adding new API routes.
+- **Auth expiry**: On 401 with failed refresh, a `CustomEvent(AUTH_EXPIRED_EVENT)` is dispatched on `window`, which `AuthContext` listens to for automatic logout.

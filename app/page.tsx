@@ -7,7 +7,6 @@ import { RefreshIcon } from "@/app/components/icons";
 export default function Home() {
   const router = useRouter();
 
-  // Auto-redirect to evaluations page
   useEffect(() => {
     router.push("/evaluations");
   }, [router]);

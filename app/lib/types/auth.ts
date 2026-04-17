@@ -44,6 +44,16 @@ export interface AuthTokenResponse {
   error?: string;
 }
 
+export interface InviteVerifyResponse {
+  success: boolean;
+  data?: {
+    access_token: string;
+    token_type: string;
+    user: User;
+  };
+  error?: string;
+}
+
 export interface Session {
   accessToken: string;
   user: User | null;
@@ -61,7 +71,7 @@ export interface AuthContextValue {
   addKey: (key: APIKey) => void;
   removeKey: (id: string) => void;
   setKeys: (keys: APIKey[]) => void;
-  loginWithGoogle: (
+  loginWithToken: (
     accessToken: string,
     user?: User,
     googleProfile?: GoogleProfile,

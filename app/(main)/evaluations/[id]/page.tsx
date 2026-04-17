@@ -10,19 +10,21 @@ import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import {
+import type {
   EvalJob,
   AssistantConfig,
+  GroupedTraceItem,
+} from "@/app/lib/types/evaluation";
+import {
   hasSummaryScores,
   isNewScoreObjectV2,
   getScoreObject,
   normalizeToIndividualScores,
-  GroupedTraceItem,
   isGroupedFormat,
-} from "@/app/components/types";
+} from "@/app/lib/utils/evaluation";
 import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
-import DetailedResultsTable from "@/app/components/DetailedResultsTable";
+import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
@@ -126,7 +128,6 @@ export default function EvaluationReport() {
     if (isAuthenticated && jobId) fetchJobDetails();
   }, [isAuthenticated, jobId, fetchJobDetails]);
 
-  // Export grouped format CSV
   const exportGroupedCSV = (traces: GroupedTraceItem[]) => {
     if (!job) return;
     try {
@@ -391,9 +392,9 @@ export default function EvaluationReport() {
               >
                 <ChevronLeftIcon />
               </button>
-              <div className="min-w-0 flex items-center gap-3">
+              <div className="min-w-0 flex-1 flex items-center gap-3 overflow-hidden">
                 <h1
-                  className="text-base font-semibold truncate"
+                  className="text-base font-semibold truncate min-w-0"
                   style={{
                     color: colors.text.primary,
                     letterSpacing: "-0.01em",
@@ -411,99 +412,33 @@ export default function EvaluationReport() {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0 relative z-10">
               <div
                 className="inline-flex rounded-lg p-0.5"
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 <button
+                  type="button"
                   onClick={() => setExportFormat("row")}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-                  style={{
-                    backgroundColor:
-                      exportFormat === "row"
-                        ? colors.bg.primary
-                        : "transparent",
-                    color:
-                      exportFormat === "row"
-                        ? colors.text.primary
-                        : colors.text.primary,
-                    boxShadow:
-                      exportFormat === "row"
-                        ? "0 1px 2px rgba(0,0,0,0.08)"
-                        : "none",
-                    border:
-                      exportFormat === "row"
-                        ? `1px solid ${colors.border}`
-                        : "1px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (exportFormat !== "row") {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(0,0,0,0.04)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 0 1px rgba(0,0,0,0.06)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (exportFormat !== "row") {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.boxShadow = "none";
-                    }
-                  }}
+                  data-selected={exportFormat === "row"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                 >
-                  <MenuIcon className="w-3.5 h-3.5" />
+                  <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
                   Individual Rows
                 </button>
                 <button
+                  type="button"
                   onClick={() => setExportFormat("grouped")}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-                  style={{
-                    backgroundColor:
-                      exportFormat === "grouped"
-                        ? colors.bg.primary
-                        : "transparent",
-                    color:
-                      exportFormat === "grouped"
-                        ? colors.text.primary
-                        : colors.text.primary,
-                    boxShadow:
-                      exportFormat === "grouped"
-                        ? "0 1px 2px rgba(0,0,0,0.08)"
-                        : "none",
-                    border:
-                      exportFormat === "grouped"
-                        ? `1px solid ${colors.border}`
-                        : "1px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (exportFormat !== "grouped") {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(0,0,0,0.04)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 0 1px rgba(0,0,0,0.06)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (exportFormat !== "grouped") {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.boxShadow = "none";
-                    }
-                  }}
+                  data-selected={exportFormat === "grouped"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                 >
-                  <GroupIcon />
+                  <GroupIcon className="pointer-events-none" />
                   Group by Questions
                 </button>
               </div>
               <button
                 onClick={() => setIsConfigModalOpen(true)}
-                className="px-3 py-1.5 rounded-md text-xs font-medium border"
-                style={{
-                  backgroundColor: "transparent",
-                  borderColor: colors.border,
-                  color: colors.text.primary,
-                }}
+                className="px-3 py-1.5 rounded-md text-xs font-medium border bg-transparent border-border text-text-primary"
               >
                 View Config
               </button>

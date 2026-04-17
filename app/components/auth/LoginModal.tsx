@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import Modal from "@/app/components/Modal";
+import { Button, Field } from "@/app/components";
+import { MailIcon } from "@/app/components/icons";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { GoogleAuthResponse } from "@/app/lib/types/auth";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
+import { isValidEmail } from "@/app/lib/utils";
 
 interface LoginModalProps {
   open: boolean;
@@ -16,9 +19,13 @@ interface LoginModalProps {
 
 export default function LoginModal({ open, onClose }: LoginModalProps) {
   const router = useRouter();
-  const { loginWithGoogle } = useAuth();
+  const { loginWithToken } = useAuth();
   const toast = useToast();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [isSendingLink, setIsSendingLink] = useState(false);
+  const [linkSent, setLinkSent] = useState(false);
 
   const handleGoogleSuccess = async (
     credentialResponse: CredentialResponse,
@@ -38,7 +45,7 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
       });
 
       const { access_token, user, google_profile } = res.data;
-      loginWithGoogle(access_token, user, google_profile);
+      loginWithToken(access_token, user, google_profile);
       onClose();
     } catch (err) {
       toast.error(
@@ -49,9 +56,51 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
     }
   };
 
+  const handleSendMagicLink = async () => {
+    if (!email.trim()) {
+      setEmailError("Please enter your email address");
+      return;
+    }
+    if (!isValidEmail(email.trim())) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+
+    setEmailError("");
+    setIsSendingLink(true);
+
+    try {
+      const res = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setEmailError(data.error || "Failed to send login link.");
+        return;
+      }
+
+      setLinkSent(true);
+    } catch {
+      toast.error("Failed to connect to server. Please try again.");
+    } finally {
+      setIsSendingLink(false);
+    }
+  };
+
+  const handleClose = () => {
+    setEmail("");
+    setEmailError("");
+    setLinkSent(false);
+    onClose();
+  };
+
   return (
-    <Modal open={open} onClose={onClose} maxWidth="max-w-md">
-      <div className="px-6 pb-6 text-center">
+    <Modal open={open} onClose={handleClose} maxWidth="max-w-md">
+      <div className="px-6 pb-4 text-center">
         <h2 className="text-2xl font-medium text-text-primary">
           Log in or connect
         </h2>
@@ -81,18 +130,75 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
           )}
         </div>
 
-        <p className="text-center text-[13px] text-text-secondary">
-          Want to use an X-API key instead?{" "}
-          <button
-            onClick={() => {
-              onClose();
-              router.push("/keystore");
-            }}
-            className="text-accent-primary hover:underline font-medium cursor-pointer"
-          >
-            Go to Keystore
-          </button>
-        </p>
+        <div className="flex items-center gap-3 py-1">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-xs text-text-secondary font-medium">OR</span>
+          <div className="flex-1 h-px bg-border" />
+        </div>
+
+        {linkSent ? (
+          <div className="text-center py-3">
+            <div className="w-12 h-12 rounded-full bg-green-50 border border-green-200 flex items-center justify-center mx-auto mb-3">
+              <MailIcon className="w-6 h-6 text-green-600" />
+            </div>
+            <p className="text-sm font-medium text-text-primary">
+              Check your email
+            </p>
+            <p className="text-xs text-text-secondary mt-1 leading-relaxed max-w-xs mx-auto">
+              We sent a login link to{" "}
+              <span className="font-medium text-text-primary">{email}</span>.
+              Click the link in the email to sign in.
+            </p>
+            <button
+              onClick={() => {
+                setLinkSent(false);
+                setEmail("");
+              }}
+              className="text-xs text-text-secondary hover:text-text-primary mt-3 transition-colors cursor-pointer"
+            >
+              Use a different email
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Field
+              label=""
+              type="email"
+              value={email}
+              onChange={(val) => {
+                setEmail(val);
+                if (emailError) setEmailError("");
+              }}
+              placeholder="Email address"
+              error={emailError}
+              className="rounded-full! px-5! py-3!"
+            />
+            <Button
+              fullWidth
+              size="lg"
+              onClick={handleSendMagicLink}
+              disabled={isSendingLink}
+              className="py-3!"
+            >
+              {isSendingLink ? "Sending..." : "Send login link"}
+            </Button>
+          </div>
+        )}
+
+        {!linkSent && (
+          <p className="text-center text-[13px] text-text-secondary">
+            Want to use an X-API key instead?{" "}
+            <button
+              onClick={() => {
+                handleClose();
+                router.push("/keystore");
+              }}
+              className="text-accent-primary hover:underline font-medium cursor-pointer"
+            >
+              Go to Keystore
+            </button>
+          </p>
+        )}
       </div>
     </Modal>
   );

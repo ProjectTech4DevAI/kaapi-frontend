@@ -3,8 +3,10 @@
  */
 
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
+import { ToastType } from "@/app/components/Toast";
 
-// localStorage keys
+export const APP_NAME = "Kaapi Konsole";
+
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",
   SESSION: "kaapi_session",
@@ -55,17 +57,6 @@ export const MODEL_OPTIONS = {
     { value: "gpt-4", label: "GPT-4" },
     { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
   ],
-  // anthropic: [
-  //   { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-  //   { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-  //   { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-  //   { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-  // ],
-  // google: [
-  //   { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
-  //   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  //   { value: 'gemini-pro', label: 'Gemini Pro' },
-  // ],
 };
 
 export const DEFAULT_CONFIG: ConfigBlob = {
@@ -78,5 +69,40 @@ export const DEFAULT_CONFIG: ConfigBlob = {
       temperature: 0.7,
       tools: [],
     },
+  },
+};
+
+export const TOAST_CONFIG: Record<
+  ToastType,
+  {
+    accent: string;
+    bg: string;
+    icon: string;
+    progressBg: string;
+  }
+> = {
+  success: {
+    accent: "#07bc0c",
+    bg: "#ffffff",
+    icon: "#07bc0c",
+    progressBg: "#07bc0c",
+  },
+  error: {
+    accent: "#e74c3c",
+    bg: "#ffffff",
+    icon: "#e74c3c",
+    progressBg: "#e74c3c",
+  },
+  warning: {
+    accent: "#f1c40f",
+    bg: "#ffffff",
+    icon: "#f1c40f",
+    progressBg: "#f1c40f",
+  },
+  info: {
+    accent: "#3498db",
+    bg: "#ffffff",
+    icon: "#3498db",
+    progressBg: "#3498db",
   },
 };

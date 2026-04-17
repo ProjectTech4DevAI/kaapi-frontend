@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -13,6 +12,7 @@ import {
   ProjectList,
   StepIndicator,
   UserList,
+  OnboardingCredentials,
 } from "@/app/components/settings/onboarding";
 import {
   Organization,
@@ -21,9 +21,14 @@ import {
   OnboardResponseData,
 } from "@/app/lib/types/onboarding";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
+import TabNavigation from "@/app/components/TabNavigation";
+
+const PROJECT_TABS = [
+  { id: "users", label: "Users" },
+  { id: "credentials", label: "Credentials" },
+];
 
 type View = "loading" | "list" | "projects" | "users" | "form" | "success";
 
@@ -59,8 +64,7 @@ function OrganizationListSkeleton() {
 }
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { activeKey, currentUser, isHydrated, isAuthenticated } = useAuth();
+  const { activeKey } = useAuth();
   const [view, setView] = useState<View>("loading");
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -69,6 +73,7 @@ export default function OnboardingPage() {
   const [onboardData, setOnboardData] = useState<OnboardResponseData | null>(
     null,
   );
+  const [activeProjectTab, setActiveProjectTab] = useState("users");
 
   const {
     items: organizations,
@@ -96,18 +101,6 @@ export default function OnboardingPage() {
       setView(organizations.length > 0 ? "list" : "form");
     }
   }, [isLoadingOrgs, organizations.length]);
-
-  // Redirect if no API key or not a superuser
-  useEffect(() => {
-    if (!isHydrated) return;
-    if (!isAuthenticated) {
-      router.replace("/");
-      return;
-    }
-    if (currentUser && !currentUser.is_superuser) {
-      router.replace("/settings/credentials");
-    }
-  }, [isHydrated, activeKey, currentUser, router]);
 
   const fetchProjects = useCallback(
     async (org: Organization) => {
@@ -172,20 +165,17 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <SettingsSidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
-            title="Onboarding"
-            subtitle="Manage organizations and set up new projects"
+            title="Organizations"
+            subtitle="Manage organizations, projects, users, and credentials"
           />
 
-          <div className="flex-1 overflow-y-auto">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto">
             <div className="max-w-2xl py-5 px-8">
               {view === "loading" && <OrganizationListSkeleton />}
 
@@ -195,7 +185,6 @@ export default function OnboardingPage() {
                   isLoadingMore={isLoadingMore}
                   onNewOrg={() => setView("form")}
                   onSelectOrg={fetchProjects}
-                  scrollRef={scrollRef}
                 />
               )}
 
@@ -211,11 +200,47 @@ export default function OnboardingPage() {
               )}
 
               {view === "users" && selectedOrg && selectedProject && (
-                <UserList
-                  organization={selectedOrg}
-                  project={selectedProject}
-                  onBack={handleBackToProjects}
-                />
+                <div>
+                  <button
+                    onClick={handleBackToProjects}
+                    className="text-sm text-text-secondary hover:text-text-primary mb-4 flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to projects
+                  </button>
+
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-text-primary">
+                        {selectedProject.name}
+                      </h2>
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        {selectedOrg.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <TabNavigation
+                    tabs={PROJECT_TABS}
+                    activeTab={activeProjectTab}
+                    onTabChange={setActiveProjectTab}
+                  />
+
+                  {activeProjectTab === "users" && (
+                    <UserList
+                      organization={selectedOrg}
+                      project={selectedProject}
+                      onBack={handleBackToProjects}
+                      hideHeader
+                    />
+                  )}
+
+                  {activeProjectTab === "credentials" && (
+                    <OnboardingCredentials
+                      organizationId={selectedOrg.id}
+                      projectId={selectedProject.id}
+                    />
+                  )}
+                </div>
               )}
 
               {view === "form" && (

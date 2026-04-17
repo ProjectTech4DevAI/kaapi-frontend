@@ -8,10 +8,12 @@ import {
   AssistantConfig,
   getScoreObject,
 } from "@/app/components/types";
-import { getStatusColor } from "@/app/components/utils";
+import { getStatusColor, formatCostUSD } from "@/app/components/utils";
 import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";
 import ScoreDisplay from "@/app/components/ScoreDisplay";
+import CostIcon from "@/app/components/icons/evaluations/CostIcon";
+import InfoTooltip from "@/app/components/InfoTooltip";
 
 export interface EvalRunCardProps {
   job: EvalJob;
@@ -81,7 +83,7 @@ export default function EvalRunCard({
           </div>
         )}
 
-        {/* Row 3: Dataset + Config (left) | Actions (right) */}
+        {/* Row 3: Dataset + Config + Cost (left) | Actions (right) */}
         <div className="flex items-center justify-between gap-4 mt-3">
           <div
             className="flex items-center gap-3 text-xs"
@@ -111,6 +113,34 @@ export default function EvalRunCard({
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 {assistantConfig.name}
+              </span>
+            )}
+            {job.cost?.total_cost_usd != null && (
+              <span className="flex items-center gap-1.5">
+                <CostIcon className="flex-shrink-0" />
+                {formatCostUSD(job.cost.total_cost_usd)}
+                <InfoTooltip
+                  text={
+                    <div className="space-y-1">
+                      {job.cost.response && (
+                        <div className="flex justify-between gap-3">
+                          <span>Response generation</span>
+                          <span>
+                            {formatCostUSD(job.cost.response.cost_usd)}
+                          </span>
+                        </div>
+                      )}
+                      {job.cost.embedding && (
+                        <div className="flex justify-between gap-3">
+                          <span>Cosine similarity calculation</span>
+                          <span>
+                            {formatCostUSD(job.cost.embedding.cost_usd)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
               </span>
             )}
           </div>

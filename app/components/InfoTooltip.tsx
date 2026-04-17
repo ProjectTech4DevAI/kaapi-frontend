@@ -1,7 +1,9 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface InfoTooltipProps {
-  text: string;
+  text: ReactNode;
 }
 
 export default function InfoTooltip({ text }: InfoTooltipProps) {

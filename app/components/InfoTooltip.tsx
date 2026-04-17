@@ -4,7 +4,7 @@ import {
   type ReactNode,
   useState,
   useRef,
-  useEffect,
+  useLayoutEffect,
   useCallback,
 } from "react";
 import { createPortal } from "react-dom";
@@ -15,6 +15,7 @@ interface InfoTooltipProps {
 
 export default function InfoTooltip({ text }: InfoTooltipProps) {
   const [visible, setVisible] = useState(false);
+  const [positioned, setPositioned] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -40,10 +41,15 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
     }
 
     setPosition({ top, left });
+    setPositioned(true);
   }, []);
 
-  useEffect(() => {
-    if (!visible) return;
+  // useLayoutEffect to position before paint — prevents flash at (0,0)
+  useLayoutEffect(() => {
+    if (!visible) {
+      setPositioned(false);
+      return;
+    }
     updatePosition();
   }, [visible, updatePosition]);
 
@@ -65,7 +71,11 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
           <div
             ref={tooltipRef}
             role="tooltip"
-            style={{ top: position.top, left: position.left }}
+            style={{
+              top: position.top,
+              left: position.left,
+              visibility: positioned ? "visible" : "hidden",
+            }}
             className="fixed z-9999 w-64 text-xs rounded-lg p-3 shadow-lg bg-neutral-900 text-neutral-100 leading-relaxed pointer-events-none"
           >
             {text}

@@ -13,20 +13,14 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, size = "sm" }: StatusBadgeProps) {
-  const colors = getStatusColor(status);
+  const statusColor = getStatusColor(status);
 
   const sizeClasses =
     size === "md" ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-xs";
 
   return (
     <div
-      className={`inline-block ${sizeClasses} rounded font-semibold`}
-      style={{
-        backgroundColor: colors.bg,
-        borderWidth: "1px",
-        borderColor: colors.border,
-        color: colors.text,
-      }}
+      className={`inline-block ${sizeClasses} rounded font-semibold border ${statusColor.bg} ${statusColor.border} ${statusColor.text}`}
     >
       {status.toUpperCase()}
     </div>

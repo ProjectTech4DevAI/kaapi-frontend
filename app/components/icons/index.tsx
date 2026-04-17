@@ -2,6 +2,7 @@
 export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
+export { default as CopyIcon } from "./common/CopyIcon";
 export { default as EyeIcon } from "./common/EyeIcon";
 export { default as EyeOffIcon } from "./common/EyeOffIcon";
 export { default as RefreshIcon } from "./common/RefreshIcon";

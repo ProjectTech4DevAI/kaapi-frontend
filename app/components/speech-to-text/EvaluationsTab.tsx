@@ -10,7 +10,8 @@ import Loader, { LoaderBox } from "@/app/components/Loader";
 import StatusBadge from "@/app/components/StatusBadge";
 import { computeWordDiff } from "./TranscriptionDiffViewer";
 import { getStatusColor } from "@/app/components/utils";
-import AudioPlayerFromUrl from "./AudioPlayerFromUrl";
+import AudioPlayerFromUrl from "@/app/components/speech-to-text/AudioPlayerFromUrl";
+import { RefreshIcon } from "@/app/components/icons";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
@@ -442,22 +443,11 @@ export default function EvaluationsTab({
                 <button
                   onClick={loadRuns}
                   disabled={isLoadingRuns}
-                  className="p-1.5 rounded"
-                  style={{ color: colors.text.secondary }}
+                  className="p-1.5 rounded cursor-pointer text-text-secondary"
                 >
-                  <svg
-                    className={`w-4 h-4 ${isLoadingRuns ? "animate-spin" : ""}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  <RefreshIcon
+                    className={`w-4 h-4 -scale-x-100 ${isLoadingRuns ? "animate-spin" : ""}`}
+                  />
                 </button>
               </div>
             )}
@@ -1213,27 +1203,18 @@ export default function EvaluationsTab({
                       return (
                         <div
                           key={run.id}
-                          className="rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-3"
-                          style={{
-                            borderLeftColor: statusColor.border,
-                          }}
+                          className={`rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-3 ${statusColor.border}`}
                         >
                           <div className="px-5 py-4">
                             {/* Row 1: Run Name + Status */}
                             <div className="flex items-start justify-between gap-4">
                               <div className="min-w-0 flex-1">
-                                <div
-                                  className="text-sm font-semibold truncate"
-                                  style={{ color: colors.text.primary }}
-                                >
+                                <div className="text-sm font-semibold truncate text-text-primary">
                                   {run.run_name}
                                 </div>
                                 {/* Error message */}
                                 {run.error_message && (
-                                  <div
-                                    className="mt-2 text-xs break-words overflow-hidden"
-                                    style={{ color: "hsl(8, 86%, 40%)" }}
-                                  >
+                                  <div className="mt-2 text-xs wrap-break-word overflow-hidden text-status-error-text">
                                     {run.error_message}
                                   </div>
                                 )}

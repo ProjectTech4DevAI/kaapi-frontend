@@ -27,9 +27,11 @@ export const formatDate = (dateString?: string): string => {
 };
 
 /**
- * Returns color scheme based on job/evaluation status
+ * Returns Tailwind class names based on job/evaluation status.
+ * The colour tokens are defined in globals.css as @theme inline vars.
+ *
  * @param status - Status string (completed, processing, failed, etc.)
- * @returns Object with bg, border, and text HSL color values
+ * @returns Object with bg, border, and text Tailwind class names
  */
 export const getStatusColor = (
   status: string,
@@ -38,48 +40,33 @@ export const getStatusColor = (
     case "completed":
     case "success":
       return {
-        bg: "hsl(134, 61%, 95%)",
-        border: "hsl(134, 61%, 70%)",
-        text: "hsl(134, 61%, 25%)",
+        bg: "bg-status-success-bg",
+        border: "border-status-success-border",
+        text: "text-status-success-text",
       };
     case "processing":
     case "pending":
     case "queued":
     case "running":
       return {
-        bg: "hsl(46, 100%, 95%)",
-        border: "hsl(46, 100%, 80%)",
-        text: "hsl(46, 100%, 25%)",
+        bg: "bg-status-warning-bg",
+        border: "border-status-warning-border",
+        text: "text-status-warning-text",
       };
     case "failed":
     case "error":
       return {
-        bg: "hsl(8, 86%, 95%)",
-        border: "hsl(8, 86%, 80%)",
-        text: "hsl(8, 86%, 40%)",
+        bg: "bg-status-error-bg",
+        border: "border-status-error-border",
+        text: "text-status-error-text",
       };
     default:
       return {
-        bg: "hsl(0, 0%, 100%)",
-        border: "hsl(0, 0%, 85%)",
-        text: "hsl(330, 3%, 49%)",
+        bg: "bg-status-default-bg",
+        border: "border-status-default-border",
+        text: "text-status-default-text",
       };
   }
-};
-
-/**
- * Formats a USD cost value for display
- * @param cost - Cost in USD
- * @returns Formatted cost string (e.g., "$0.0013", "$1.25")
- */
-export const formatCostUSD = (cost: number): string => {
-  if (!Number.isFinite(cost)) {
-    return "N/A";
-  }
-  if (cost < 0.01) {
-    return `$${cost.toFixed(4)}`;
-  }
-  return `$${cost.toFixed(2)}`;
 };
 
 /**

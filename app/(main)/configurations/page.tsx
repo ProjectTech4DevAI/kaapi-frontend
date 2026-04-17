@@ -13,7 +13,7 @@ import { colors } from "@/app/lib/colors";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import ConfigCard from "@/app/components/ConfigCard";
 import Loader, { LoaderBox } from "@/app/components/Loader";
-import { EvalJob } from "@/app/components/types";
+import { EvalJob } from "@/app/lib/types/evaluation";
 import {
   ConfigPublic,
   ConfigVersionItems,

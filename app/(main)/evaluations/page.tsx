@@ -49,12 +49,8 @@ function SimplifiedEvalContent() {
   const [duplicationFactor, setDuplicationFactor] = useState("1");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Stored datasets
   const [storedDatasets, setStoredDatasets] = useState<Dataset[]>([]);
   const [isDatasetsLoading, setIsDatasetsLoading] = useState(false);
-
-  // Evaluation config state
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
     return searchParams.get("dataset") || "";
   });
@@ -235,6 +231,10 @@ function SimplifiedEvalContent() {
       });
 
       setIsEvaluating(false);
+      setExperimentName("");
+      setSelectedDatasetId("");
+      setSelectedConfigId("");
+      setSelectedConfigVersion(0);
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {

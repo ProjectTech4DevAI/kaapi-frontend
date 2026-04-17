@@ -49,6 +49,34 @@
   --color-status-warning: #f59e0b;
 }
 
+/* Status badge colors — success */
+@theme inline {
+  --color-status-success-bg: hsl(134, 61%, 95%);
+  --color-status-success-border: hsl(134, 61%, 70%);
+  --color-status-success-text: hsl(134, 61%, 25%);
+}
+
+/* Status badge colors — warning */
+@theme inline {
+  --color-status-warning-bg: hsl(46, 100%, 95%);
+  --color-status-warning-border: hsl(46, 100%, 80%);
+  --color-status-warning-text: hsl(46, 100%, 25%);
+}
+
+/* Status badge colors — error */
+@theme inline {
+  --color-status-error-bg: hsl(8, 86%, 95%);
+  --color-status-error-border: hsl(8, 86%, 80%);
+  --color-status-error-text: hsl(8, 86%, 40%);
+}
+
+/* Status badge colors — default */
+@theme inline {
+  --color-status-default-bg: hsl(0, 0%, 100%);
+  --color-status-default-border: hsl(0, 0%, 85%);
+  --color-status-default-text: hsl(330, 3%, 49%);
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #000000;

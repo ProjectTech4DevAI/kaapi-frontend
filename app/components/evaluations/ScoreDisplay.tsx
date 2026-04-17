@@ -5,7 +5,8 @@
 
 "use client";
 
-import { ScoreObject, hasSummaryScores } from "./types";
+import type { ScoreObject } from "@/app/lib/types/evaluation";
+import { hasSummaryScores } from "@/app/lib/utils/evaluation";
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;
@@ -16,7 +17,6 @@ export default function ScoreDisplay({
   score,
   errorMessage,
 }: ScoreDisplayProps) {
-  // No score available
   if (!score) {
     return (
       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]">
@@ -42,7 +42,6 @@ export default function ScoreDisplay({
       );
     }
 
-    // Separate numeric and categorical scores
     const numericScores = summaryScores.filter(
       (s) => s.data_type === "NUMERIC",
     );
@@ -83,7 +82,6 @@ export default function ScoreDisplay({
     );
   }
 
-  // Fallback for unsupported format
   return (
     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-[hsl(0,0%,95%)] border border-[hsl(0,0%,85%)] text-[hsl(330,3%,49%)]">
       <span className="font-medium">Score:</span>

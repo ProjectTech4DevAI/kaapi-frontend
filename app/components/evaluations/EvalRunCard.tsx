@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
 import {
@@ -13,6 +13,7 @@ import { timeAgo } from "@/app/lib/utils";
 import ConfigModal from "@/app/components/ConfigModal";
 import ScoreDisplay from "@/app/components/ScoreDisplay";
 import CostIcon from "@/app/components/icons/evaluations/CostIcon";
+import InfoTooltip from "@/app/components/InfoTooltip";
 
 export interface EvalRunCardProps {
   job: EvalJob;
@@ -25,19 +26,10 @@ export default function EvalRunCard({
 }: EvalRunCardProps) {
   const router = useRouter();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [isCostTooltipOpen, setIsCostTooltipOpen] = useState(false);
-  const [costTooltipPos, setCostTooltipPos] = useState({ top: 0, left: 0 });
 
   const isCompleted = job.status?.toLowerCase() === "completed";
   const scoreObj = getScoreObject(job);
   const statusColor = getStatusColor(job.status || "");
-
-  useEffect(() => {
-    if (!isCostTooltipOpen) return;
-    const handleScroll = () => setIsCostTooltipOpen(false);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
-  }, [isCostTooltipOpen]);
 
   return (
     <div
@@ -127,54 +119,28 @@ export default function EvalRunCard({
               <span className="flex items-center gap-1.5">
                 <CostIcon className="flex-shrink-0" />
                 {formatCostUSD(job.cost.total_cost_usd)}
-                <div
-                  className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal cursor-help ${isCostTooltipOpen ? "bg-[#171717] text-white" : "text-[#737373]"}`}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const tooltipWidth = 280;
-                    const centerX = rect.left + rect.width / 2;
-                    const clampedLeft = Math.min(
-                      Math.max(centerX - tooltipWidth / 2, 8),
-                      window.innerWidth - tooltipWidth - 8,
-                    );
-                    setCostTooltipPos({
-                      top: rect.top - 8,
-                      left: clampedLeft,
-                    });
-                    setIsCostTooltipOpen(true);
-                  }}
-                  onMouseLeave={() => setIsCostTooltipOpen(false)}
-                >
-                  i
-                </div>
-                {isCostTooltipOpen && (
-                  <div
-                    className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none space-y-1 bg-[#171717] text-white w-[260px] shadow-md -translate-y-full"
-                    style={{
-                      top: costTooltipPos.top,
-                      left: costTooltipPos.left,
-                    }}
-                  >
-                    {job.cost.response && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-[#a3a3a3]">
-                          Response generation
-                        </span>
-                        <span>{formatCostUSD(job.cost.response.cost_usd)}</span>
-                      </div>
-                    )}
-                    {job.cost.embedding && (
-                      <div className="flex justify-between gap-3">
-                        <span className="text-[#a3a3a3]">
-                          Cosine similarity calculation
-                        </span>
-                        <span>
-                          {formatCostUSD(job.cost.embedding.cost_usd)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <InfoTooltip
+                  text={
+                    <div className="space-y-1">
+                      {job.cost.response && (
+                        <div className="flex justify-between gap-3">
+                          <span>Response generation</span>
+                          <span>
+                            {formatCostUSD(job.cost.response.cost_usd)}
+                          </span>
+                        </div>
+                      )}
+                      {job.cost.embedding && (
+                        <div className="flex justify-between gap-3">
+                          <span>Cosine similarity calculation</span>
+                          <span>
+                            {formatCostUSD(job.cost.embedding.cost_usd)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
               </span>
             )}
           </div>

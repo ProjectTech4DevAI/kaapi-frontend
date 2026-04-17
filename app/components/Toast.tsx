@@ -88,7 +88,7 @@ function ToastContainer({
   removeToast: (id: string) => void;
 }) {
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+    <div className="fixed top-4 right-4 z-9999 flex flex-col gap-3 pointer-events-none">
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}
@@ -169,8 +169,8 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         </div>
 
         <button
-          onClick={() => setExiting(true)}
-          className="shrink-0 self-start p-2 opacity-50 hover:opacity-100 transition-opacity"
+          onClick={onClose}
+          className="shrink-0 self-start p-2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer"
         >
           <CloseIcon className="w-3.5 h-3.5 text-[#757575]" />
         </button>

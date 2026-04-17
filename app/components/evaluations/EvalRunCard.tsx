@@ -32,7 +32,6 @@ export default function EvalRunCard({
       className={`rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-3 ${statusColor.border}`}
     >
       <div className="px-5 py-4">
-        {/* Row 1: Run Name (left) | Status (right) */}
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold truncate text-text-primary">
@@ -57,14 +56,12 @@ export default function EvalRunCard({
           </span>
         </div>
 
-        {/* Row 2: Scores */}
         {scoreObj && (
           <div className="mt-3">
             <ScoreDisplay score={scoreObj} errorMessage={job.error_message} />
           </div>
         )}
 
-        {/* Row 3: Dataset + Config + Cost (left) | Actions (right) */}
         <div className="flex items-center justify-between gap-4 mt-3">
           <div className="flex items-center gap-3 text-xs text-text-secondary">
             {job.dataset_name && (

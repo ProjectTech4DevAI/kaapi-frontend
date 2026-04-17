@@ -7,6 +7,10 @@
 
 import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
+import CopyableCodeBlock from "@/app/components/CopyableCodeBlock";
+import CodeBlock from "@/app/components/CodeBlock";
+import Tag from "@/app/components/Tag";
+import { CloseIcon } from "@/app/components/icons";
 import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
@@ -34,6 +38,24 @@ interface ConfigVersionInfo {
   type?: "text" | "stt" | "tts";
   knowledge_base_ids?: string[];
 }
+
+const ConfigField = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div>
+    <div
+      className="text-xs font-medium mb-1.5"
+      style={{ color: colors.text.secondary }}
+    >
+      {label}
+    </div>
+    {children}
+  </div>
+);
 
 export default function ConfigModal({
   isOpen,
@@ -80,15 +102,14 @@ export default function ConfigModal({
           const params: CompletionParams =
             blob?.completion?.params || ({} as CompletionParams);
 
-          // Extract knowledge base IDs from multiple sources
           const knowledgeBaseIds: string[] = [];
 
-          // 1. Check direct params.knowledge_base_ids
+          // Check direct params.knowledge_base_ids
           if (Array.isArray(params.knowledge_base_ids)) {
             knowledgeBaseIds.push(...params.knowledge_base_ids);
           }
 
-          // 2. Check tools array for knowledge_base_ids
+          // Check tools array for knowledge_base_ids
           if (params.tools) {
             const toolKbIds = params.tools
               .filter(
@@ -100,7 +121,6 @@ export default function ConfigModal({
             knowledgeBaseIds.push(...toolKbIds);
           }
 
-          // Remove duplicates
           const uniqueKbIds = [...new Set(knowledgeBaseIds)];
 
           setConfigVersionInfo({
@@ -128,51 +148,9 @@ export default function ConfigModal({
 
   if (!isOpen) return null;
 
-  const ConfigField = ({
-    label,
-    children,
-  }: {
-    label: string;
-    children: React.ReactNode;
-  }) => (
-    <div>
-      <div
-        className="text-xs font-medium mb-1.5"
-        style={{ color: colors.text.secondary }}
-      >
-        {label}
-      </div>
-      {children}
-    </div>
-  );
-
-  const CodeBlock = ({ children }: { children: React.ReactNode }) => (
-    <div
-      className="text-sm font-mono px-3 py-2.5 rounded-md whitespace-pre-wrap max-h-[240px] overflow-y-auto leading-[1.6]"
-      style={{
-        backgroundColor: colors.bg.secondary,
-        color: colors.text.primary,
-      }}
-    >
-      {children}
-    </div>
-  );
-
-  const Tag = ({ children }: { children: React.ReactNode }) => (
-    <span
-      className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium"
-      style={{
-        backgroundColor: colors.bg.secondary,
-        color: colors.text.primary,
-      }}
-    >
-      {children}
-    </span>
-  );
-
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       <div
@@ -180,7 +158,6 @@ export default function ConfigModal({
         style={{ backgroundColor: colors.bg.primary, maxHeight: "80vh" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
           style={{ borderColor: colors.border }}
@@ -214,23 +191,10 @@ export default function ConfigModal({
             className="p-1.5 rounded"
             style={{ color: colors.text.secondary }}
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
           {isLoadingConfig ? (
             <div className="py-8 text-center">
@@ -295,9 +259,11 @@ export default function ConfigModal({
               {configVersionInfo?.knowledge_base_ids &&
                 configVersionInfo.knowledge_base_ids.length > 0 && (
                   <ConfigField label="Knowledge Base IDs">
-                    <CodeBlock>
+                    <CopyableCodeBlock
+                      copyText={configVersionInfo.knowledge_base_ids.join("\n")}
+                    >
                       {configVersionInfo.knowledge_base_ids.join("\n")}
-                    </CodeBlock>
+                    </CopyableCodeBlock>
                   </ConfigField>
                 )}
 
@@ -305,11 +271,17 @@ export default function ConfigModal({
                 assistantConfig?.instructions ||
                 job.config?.instructions) && (
                 <ConfigField label="Instructions">
-                  <CodeBlock>
+                  <CopyableCodeBlock
+                    copyText={
+                      (configVersionInfo?.instructions ||
+                        assistantConfig?.instructions ||
+                        job.config?.instructions) as string
+                    }
+                  >
                     {configVersionInfo?.instructions ||
                       assistantConfig?.instructions ||
                       job.config?.instructions}
-                  </CodeBlock>
+                  </CopyableCodeBlock>
                 </ConfigField>
               )}
 

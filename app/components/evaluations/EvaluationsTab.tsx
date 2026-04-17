@@ -390,8 +390,7 @@ export default function EvaluationsTab({
               <button
                 onClick={fetchEvaluations}
                 disabled={isLoading}
-                className="p-1.5 rounded"
-                style={{ color: colors.text.secondary }}
+                className="p-1.5 rounded text-text-secondary cursor-pointer"
                 aria-label="Refresh evaluations"
               >
                 <svg
@@ -418,14 +417,12 @@ export default function EvaluationsTab({
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
             }}
           >
-            {/* Loading */}
             {isLoading && evalJobs.length === 0 && (
               <div className="p-16">
                 <Loader size="md" message="Loading evaluation runs..." />
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div className="p-4">
                 <div
@@ -439,7 +436,6 @@ export default function EvaluationsTab({
               </div>
             )}
 
-            {/* Empty State */}
             {!isLoading && evalJobs.length === 0 && !error && (
               <div className="p-16 text-center">
                 <svg
@@ -469,7 +465,6 @@ export default function EvaluationsTab({
               </div>
             )}
 
-            {/* Runs List */}
             {evalJobs.length > 0 &&
               (() => {
                 const filteredJobs =

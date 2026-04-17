@@ -1,7 +1,10 @@
 export { default as Button } from "./Button";
+export { default as CodeBlock } from "./CodeBlock";
 export { default as ConfigModal } from "./ConfigModal";
+export { default as CopyableCodeBlock } from "./CopyableCodeBlock";
 export { default as Field } from "./Field";
 export { default as InfoTooltip } from "./InfoTooltip";
 export { default as Modal } from "./Modal";
 export { default as PageHeader } from "./PageHeader";
 export { default as Sidebar } from "./Sidebar";
+export { default as Tag } from "./Tag";

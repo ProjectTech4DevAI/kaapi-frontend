@@ -128,13 +128,12 @@ export default function EvaluationReport() {
     if (isAuthenticated && jobId) fetchJobDetails();
   }, [isAuthenticated, jobId, fetchJobDetails]);
 
-  // Export grouped format CSV
   const exportGroupedCSV = (traces: GroupedTraceItem[]) => {
     if (!job) return;
     try {
       const maxAnswers = Math.max(...traces.map((g) => g.llm_answers.length));
       const scoreNames = traces[0]?.scores[0]?.map((s) => s.name) || [];
-      let csvContent = "Question ID,Question,Expected Answer";
+      let csvContent = "Question ID,Question,Ground Truth";
       for (let i = 1; i <= maxAnswers; i++) {
         csvContent += `,LLM Answer ${i},Trace ID ${i}`;
         scoreNames.forEach((name) => {
@@ -195,7 +194,7 @@ export default function EvaluationReport() {
       const scoreNames = firstItem?.trace_scores?.map((s) => s.name) || [];
       csvContent +=
         "Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,";
-      csvContent += "Question,Answer,Expected Answer,";
+      csvContent += "Question,Answer,Ground Truth,";
       csvContent +=
         scoreNames.map((name) => `${name},${name} (comment)`).join(",") + "\n";
       let rowCount = 0;

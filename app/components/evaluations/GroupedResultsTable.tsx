@@ -4,7 +4,7 @@
  * Displays multiple LLM answers per question in a grouped table format
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
 import { formatScoreValue } from "@/app/lib/utils";
 
@@ -57,7 +57,6 @@ export default function GroupedResultsTable({
           className="w-full border-collapse table-fixed"
           style={{ minWidth: `${tableMinWidth}px` }}
         >
-          {/* Table Header - matching row format styling */}
           <thead>
             <tr className="bg-bg-secondary border-b border-border">
               <th
@@ -85,7 +84,7 @@ export default function GroupedResultsTable({
                   minWidth: `${COLUMN_WIDTHS.groundTruth}px`,
                 }}
               >
-                Expected Answer
+                Ground Truth
               </th>
               {Array.from({ length: maxAnswers }, (_, i) => (
                 <th
@@ -102,10 +101,9 @@ export default function GroupedResultsTable({
             </tr>
           </thead>
 
-          {/* Table Body */}
           <tbody>
             {traces.map((group, index) => (
-              <React.Fragment key={group.question_id || index}>
+              <Fragment key={group.question_id || index}>
                 <tr
                   key={`${group.question_id || index}-text`}
                   className="bg-white"
@@ -114,14 +112,12 @@ export default function GroupedResultsTable({
                     {group.question_id}
                   </td>
 
-                  {/* Question */}
                   <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
                     <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {group.question}
                     </div>
                   </td>
 
-                  {/* Expected Answer */}
                   <td className="px-4 pt-3 pb-1 align-top bg-bg-secondary">
                     <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
                       {group.ground_truth_answer}
@@ -155,7 +151,6 @@ export default function GroupedResultsTable({
                   <td className="px-4 pt-1 pb-3 bg-bg-secondary" />
                   <td className="px-4 pt-1 pb-3 bg-bg-secondary" />
 
-                  {/* Score cells */}
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
                     const answerScores: TraceScore[] =
                       group.scores?.[answerIndex] || [];
@@ -181,7 +176,7 @@ export default function GroupedResultsTable({
                                     <span className="text-xs truncate min-w-0 text-text-secondary">
                                       {score.name}:
                                     </span>
-                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                    <div className="flex items-center gap-1 shrink-0">
                                       <div
                                         className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
                                           bg === "transparent"
@@ -256,7 +251,7 @@ export default function GroupedResultsTable({
                     );
                   })}
                 </tr>
-              </React.Fragment>
+              </Fragment>
             ))}
           </tbody>
         </table>

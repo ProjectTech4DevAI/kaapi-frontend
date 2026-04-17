@@ -112,7 +112,7 @@ export default function DetailedResultsTable({
                 className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
                 style={{ width: `${COLUMN_WIDTHS.groundTruth}px` }}
               >
-                Expected Answer
+                Ground Truth
               </th>
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"

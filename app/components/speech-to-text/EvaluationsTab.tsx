@@ -10,7 +10,8 @@ import Loader, { LoaderBox } from "@/app/components/Loader";
 import StatusBadge from "@/app/components/StatusBadge";
 import { computeWordDiff } from "./TranscriptionDiffViewer";
 import { getStatusColor } from "@/app/components/utils";
-import AudioPlayerFromUrl from "./AudioPlayerFromUrl";
+import AudioPlayerFromUrl from "@/app/components/speech-to-text/AudioPlayerFromUrl";
+import { RefreshIcon } from "@/app/components/icons";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
@@ -445,19 +446,9 @@ export default function EvaluationsTab({
                   className="p-1.5 rounded"
                   style={{ color: colors.text.secondary }}
                 >
-                  <svg
-                    className={`w-4 h-4 ${isLoadingRuns ? "animate-spin" : ""}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  <RefreshIcon
+                    className={`w-4 h-4 -scale-x-100 ${isLoadingRuns ? "animate-spin" : ""}`}
+                  />
                 </button>
               </div>
             )}

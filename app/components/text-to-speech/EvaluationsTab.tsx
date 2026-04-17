@@ -15,6 +15,7 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import Loader, { LoaderBox } from "@/app/components/Loader";
 import { getStatusColor } from "@/app/components/utils";
+import { RefreshIcon } from "@/app/components/icons";
 import AudioPlayerFromUrl from "./AudioPlayerFromUrl";
 import { useToast } from "@/app/components/Toast";
 
@@ -442,22 +443,11 @@ export default function EvaluationsTab({
                 <button
                   onClick={loadRuns}
                   disabled={isLoadingRuns}
-                  className="p-1.5 rounded"
-                  style={{ color: colors.text.secondary }}
+                  className="p-1.5 rounded text-text-secondary"
                 >
-                  <svg
+                  <RefreshIcon
                     className={`w-4 h-4 ${isLoadingRuns ? "animate-spin" : ""}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  />
                 </button>
               </div>
             )}

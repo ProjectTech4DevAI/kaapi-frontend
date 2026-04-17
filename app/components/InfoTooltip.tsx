@@ -11,7 +11,7 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
     <span className="relative inline-flex items-center ml-1 align-text-bottom group">
       <button
         type="button"
-        className="w-3.5 h-3.5 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none bg-bg-secondary text-text-secondary border border-border"
+        className="w-3.5 h-3.5 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none bg-bg-secondary text-text-secondary border border-border cursor-pointer"
       >
         i
       </button>

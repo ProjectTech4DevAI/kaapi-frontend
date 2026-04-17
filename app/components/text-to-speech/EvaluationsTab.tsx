@@ -443,7 +443,7 @@ export default function EvaluationsTab({
                 <button
                   onClick={loadRuns}
                   disabled={isLoadingRuns}
-                  className="p-1.5 rounded text-text-secondary"
+                  className="p-1.5 rounded text-text-secondary cursor-pointer"
                 >
                   <RefreshIcon
                     className={`w-4 h-4 ${isLoadingRuns ? "animate-spin" : ""}`}

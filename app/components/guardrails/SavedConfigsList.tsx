@@ -74,7 +74,7 @@ export default function SavedConfigsList({
                   className={`rounded-xl border-l-2 bg-bg-primary shadow-sm cursor-pointer transition-shadow hover:shadow-md ${
                     isSelected
                       ? "border-l-status-success"
-                      : "border-l-amber-600"
+                      : "border-l-[rgb(220,207,195)]"
                   }`}
                   onClick={() => onSelectConfig(cfg)}
                 >

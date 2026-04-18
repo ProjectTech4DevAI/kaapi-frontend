@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import Button from "@/app/components/Button";
 import { CloseIcon } from "@/app/components/icons";
 import Field from "@/app/components/Field";
@@ -13,6 +14,8 @@ export default function BanListModal({
   onClose,
   onCreated,
 }: BanListModalProps) {
+  const { activeKey } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [bannedWords, setBannedWords] = useState("");
@@ -52,6 +55,7 @@ export default function BanListModal({
       };
       const data = await guardrailsFetch<{ id: string; name?: string }>(
         "/api/guardrails/ban_lists",
+        apiKey,
         { method: "POST", body: JSON.stringify(body) },
       );
       onCreated({ id: data.id, name: data.name ?? name.trim() });

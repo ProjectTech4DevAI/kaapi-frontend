@@ -8,6 +8,7 @@ import {
   EditIcon,
 } from "@/app/components/icons";
 import Button from "@/app/components/Button";
+import Loader from "@/app/components/Loader";
 import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
 
 interface SavedConfigsListProps {
@@ -47,13 +48,8 @@ export default function SavedConfigsList({
 
       <div className="flex-1 overflow-auto p-5">
         {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-24 rounded-lg animate-pulse border border-border bg-bg-secondary"
-              />
-            ))}
+          <div className="flex items-center justify-center py-16">
+            <Loader size="md" message="Loading saved configurations..." />
           </div>
         ) : configs.length === 0 ? (
           <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg py-16 text-center">
@@ -75,7 +71,7 @@ export default function SavedConfigsList({
               return (
                 <div
                   key={cfg.id}
-                  className={`rounded-xl border border-border border-l-4 bg-bg-primary shadow-sm cursor-pointer transition-shadow hover:shadow-md ${
+                  className={`rounded-xl border-l-2 bg-bg-primary shadow-sm cursor-pointer transition-shadow hover:shadow-md ${
                     isSelected
                       ? "border-l-status-success"
                       : "border-l-amber-600"

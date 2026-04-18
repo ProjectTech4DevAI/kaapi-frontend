@@ -22,7 +22,8 @@ import SavedConfigsList from "@/app/components/guardrails/SavedConfigsList";
 
 export default function GuardrailsPage() {
   const { sidebarCollapsed } = useApp();
-  const { isHydrated } = useAuth();
+  const { isHydrated, activeKey } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const toast = useToast();
   const [orgContext, setOrgContext] = useState<OrgContext | null>(null);
   const [validators, setValidators] = useState<Validator[]>([]);
@@ -40,6 +41,7 @@ export default function GuardrailsPage() {
     if (!isHydrated) return;
     guardrailsFetch<{ data?: { organization_id: number; project_id: number } }>(
       "/api/apikeys/verify", //need to change this in backend to /auth/verify
+      apiKey,
     )
       .then((data) => {
         const org_id = data?.data?.organization_id;
@@ -53,11 +55,11 @@ export default function GuardrailsPage() {
       .catch((e: Error) =>
         toast.error(e.message || "Session verification failed"),
       );
-  }, [isHydrated]);
+  }, [isHydrated, apiKey]);
 
   useEffect(() => {
     setValidatorsLoading(true);
-    guardrailsFetch<{ validators?: Validator[] }>("/api/guardrails")
+    guardrailsFetch<{ validators?: Validator[] }>("/api/guardrails", apiKey)
       .then((data) => {
         const list: Validator[] = Array.isArray(data?.validators)
           ? data.validators
@@ -66,7 +68,7 @@ export default function GuardrailsPage() {
       })
       .catch(() => toast.error("Failed to load validators"))
       .finally(() => setValidatorsLoading(false));
-  }, []);
+  }, [apiKey]);
 
   const configsQueryString = orgContext
     ? `?organization_id=${parseInt(String(orgContext.organization_id), 10)}&project_id=${parseInt(String(orgContext.project_id), 10)}`
@@ -78,7 +80,7 @@ export default function GuardrailsPage() {
     guardrailsFetch<{
       data?: { configs?: SavedValidatorConfig[] } | SavedValidatorConfig[];
       configs?: SavedValidatorConfig[];
-    }>(`/api/guardrails/validators/configs${configsQueryString}`)
+    }>(`/api/guardrails/validators/configs${configsQueryString}`, apiKey)
       .then((data) => {
         const nested = data?.data;
         const list: SavedValidatorConfig[] = Array.isArray(
@@ -94,7 +96,7 @@ export default function GuardrailsPage() {
       })
       .catch(() => toast.error("Failed to load saved configs"))
       .finally(() => setSavedConfigsLoading(false));
-  }, [configsQueryString]);
+  }, [configsQueryString, apiKey]);
 
   useEffect(() => {
     fetchSavedConfigs();
@@ -115,6 +117,7 @@ export default function GuardrailsPage() {
     try {
       await guardrailsFetch(
         `/api/guardrails/validators/configs/${configId}${configsQueryString}`,
+        apiKey,
         { method: "DELETE" },
       );
       toast.success("Config deleted");
@@ -149,7 +152,7 @@ export default function GuardrailsPage() {
 
       const body = configValues;
 
-      await guardrailsFetch(url, {
+      await guardrailsFetch(url, apiKey, {
         method: isUpdate ? "PATCH" : "POST",
         body: JSON.stringify(body),
       });

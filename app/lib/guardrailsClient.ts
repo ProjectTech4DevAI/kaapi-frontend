@@ -57,16 +57,19 @@ export function guardrailsUserClient(
 
 /**
  * Client-side fetch helper for guardrails Next.js route handlers (/api/guardrails/*).
+ * Attaches X-API-KEY header and `credentials: "include"` for cookie-based auth.
  * Parses JSON and throws on non-OK responses.
  */
 export async function guardrailsFetch<T>(
   path: string,
+  apiKey: string,
   options: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(options.headers);
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     if (options.body) headers.set("Content-Type", "application/json");
   }
+  if (apiKey) headers.set("X-API-KEY", apiKey);
 
   const res = await fetch(path, {
     ...options,

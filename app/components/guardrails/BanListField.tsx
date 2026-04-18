@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BanListModal from "./BanListModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import Select from "@/app/components/Select";
 
 interface BanList {
@@ -14,6 +15,8 @@ interface BanListFieldProps {
 }
 
 export default function BanListField({ value, onChange }: BanListFieldProps) {
+  const { activeKey } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const [banLists, setBanLists] = useState<BanList[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -29,7 +32,7 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
     guardrailsFetch<{
       data?: { ban_lists?: BanList[] } | BanList[];
       ban_lists?: BanList[];
-    }>("/api/guardrails/ban_lists")
+    }>("/api/guardrails/ban_lists", apiKey)
       .then((data) => {
         const nested = data?.data;
         const list: BanList[] = Array.isArray(
@@ -57,7 +60,7 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
     guardrailsFetch<{
       banned_words?: string[];
       data?: { banned_words?: string[] };
-    }>(`/api/guardrails/ban_lists/${id}`)
+    }>(`/api/guardrails/ban_lists/${id}`, apiKey)
       .then((data) => {
         const words: string[] = Array.isArray(data?.banned_words)
           ? data.banned_words!

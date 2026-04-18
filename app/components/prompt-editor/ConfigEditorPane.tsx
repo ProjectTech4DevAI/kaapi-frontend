@@ -74,6 +74,7 @@ export default function ConfigEditorPane({
   useEffect(() => {
     guardrailsFetch<{ data?: { organization_id: number; project_id: number } }>(
       "/api/apikeys/verify",
+      apiKey,
     )
       .then((data) => {
         const org_id = data?.data?.organization_id;
@@ -85,7 +86,7 @@ export default function ConfigEditorPane({
         }
       })
       .catch(() => {});
-  }, []);
+  }, [apiKey]);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);

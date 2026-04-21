@@ -1,3 +1,4 @@
+import { FeatureFlag } from "@/app/lib/constants/featureFlags";
 import { NavItemConfig, SettingsNavSection } from "@/app/lib/types/nav";
 
 export const SETTINGS_NAV: SettingsNavSection[] = [
@@ -33,6 +34,13 @@ export const NAV_ITEMS: NavItemConfig[] = [
     route: "/knowledge-base",
     icon: "book",
     gateDescription: "Log in to manage your knowledge bases for RAG.",
+  },
+  {
+    name: "Assessment",
+    route: "/assessment",
+    icon: "assessment",
+    featureFlag: FeatureFlag.ASSESSMENT,
+    gateDescription: "Log in to run assessments.",
   },
   {
     name: "Configurations",

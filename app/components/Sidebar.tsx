@@ -10,19 +10,21 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
+  AssessmentIcon,
+  BookOpenIcon,
+  ChevronRightIcon,
   ClipboardIcon,
   DocumentFileIcon,
-  BookOpenIcon,
   GearIcon,
-  SlidersIcon,
   ShieldCheckIcon,
-  ChevronRightIcon,
+  SlidersIcon,
 } from "@/app/components/icons";
+import { useFeatureFlags } from "@/app/lib/FeatureFlagProvider";
+import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 import { LoginModal } from "@/app/components/auth";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
 import GatePopover from "@/app/components/GatePopover";
 import { NAV_ITEMS } from "@/app/lib/navConfig";
-import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 
 /** Routes that are always accessible without auth */
 const PUBLIC_ROUTES = new Set(["/evaluations"]);
@@ -32,6 +34,8 @@ export default function Sidebar({
   activeRoute = "/evaluations",
 }: SidebarProps) {
   const router = useRouter();
+  const { isEnabled, isLoaded: flagsLoaded } = useFeatureFlags();
+  const [hasMounted, setHasMounted] = useState(false);
   const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     Evaluations: true,
@@ -43,6 +47,10 @@ export default function Sidebar({
   const [hoveredGate, setHoveredGate] = useState<string | null>(null);
   const [gateRect, setGateRect] = useState<DOMRect | null>(null);
   const gateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-expanded-menus");
@@ -115,16 +123,25 @@ export default function Sidebar({
     gear: <GearIcon className="w-5 h-5" />,
     shield: <ShieldCheckIcon />,
     sliders: <SlidersIcon />,
+    assessment: <AssessmentIcon />,
   };
 
-  const navItems: MenuItem[] = NAV_ITEMS.filter(
-    (item) => !item.superuserOnly || currentUser?.is_superuser,
-  ).map((item) => ({
+  // Feature-gated items are deferred until after mount so the sidebar
+  // structure is identical between SSR and the first client render.
+  const navItems: MenuItem[] = NAV_ITEMS.filter((item) => {
+    if (item.superuserOnly && !currentUser?.is_superuser) return false;
+    if (item.featureFlag) {
+      if (!hasMounted) return false;
+      if (flagsLoaded && !isEnabled(item.featureFlag)) return false;
+    }
+    return true;
+  }).map((item) => ({
     name: item.name,
     route: item.route,
     icon: iconMap[item.icon],
     submenu: item.submenu,
     gateDescription: item.gateDescription,
+    featureFlag: item.featureFlag,
   }));
 
   const getGateDescription = (name: string): string => {

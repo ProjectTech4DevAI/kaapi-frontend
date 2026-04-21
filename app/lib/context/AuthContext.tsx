@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       localStorage.removeItem(STORAGE_KEYS.API_KEYS);
     }
+    window.dispatchEvent(new Event("kaapi-auth-changed"));
   }, []);
 
   const addKey = useCallback(

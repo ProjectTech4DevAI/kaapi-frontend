@@ -10,11 +10,10 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { colors } from "@/app/lib/colors";
-import { usePaginatedList } from "@/app/hooks/usePaginatedList";
-import { useInfiniteScroll } from "@/app/hooks/useInfiniteScroll";
+import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import ConfigCard from "@/app/components/ConfigCard";
 import Loader, { LoaderBox } from "@/app/components/Loader";
-import { EvalJob } from "@/app/components/types";
+import { EvalJob } from "@/app/lib/types/evaluation";
 import {
   ConfigPublic,
   ConfigVersionItems,
@@ -46,8 +45,8 @@ export default function ConfigLibraryPage() {
     Record<string, number>
   >({});
   const { sidebarCollapsed } = useApp();
-  const { activeKey } = useAuth();
-  const apiKey = activeKey?.key;
+  const { activeKey, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [columnCount, setColumnCount] = useState(3);
@@ -101,11 +100,11 @@ export default function ConfigLibraryPage() {
 
   useEffect(() => {
     const fetchEvaluationCounts = async () => {
-      if (!activeKey) return;
+      if (!isAuthenticated) return;
       try {
         const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
           "/api/evaluations",
-          activeKey.key,
+          apiKey,
         );
         const jobs: EvalJob[] = Array.isArray(data) ? data : data.data || [];
         const counts: Record<string, number> = {};
@@ -130,7 +129,7 @@ export default function ConfigLibraryPage() {
         await existing;
         return;
       }
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
 
       const loadPromise = (async () => {
         const res = await apiFetch<{
@@ -145,7 +144,7 @@ export default function ConfigLibraryPage() {
       pendingVersionLoads.set(configId, loadPromise);
       await loadPromise;
     },
-    [apiKey],
+    [apiKey, isAuthenticated],
   );
 
   const loadSingleVersion = useCallback(
@@ -153,7 +152,7 @@ export default function ConfigLibraryPage() {
       const key = `${configId}:${version}`;
       const existing = pendingSingleVersionLoads.get(key);
       if (existing) return existing;
-      if (!apiKey) return null;
+      if (!isAuthenticated) return null;
 
       const configPublic =
         configs.find((c) => c.id === configId) ??
@@ -180,7 +179,7 @@ export default function ConfigLibraryPage() {
       pendingSingleVersionLoads.set(key, loadPromise);
       return loadPromise;
     },
-    [apiKey, configs],
+    [apiKey, configs, isAuthenticated],
   );
 
   const handleCreateNew = () => {
@@ -272,23 +271,16 @@ export default function ConfigLibraryPage() {
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-auto p-6">
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto overflow-x-hidden p-6"
+          >
             {isLoading ? (
               <LoaderBox message="Loading configurations..." size="md" />
             ) : error ? (
               <div className="rounded-lg p-6 text-center bg-[#fef2f2] border border-[#fecaca]">
                 <WarningTriangleIcon className="w-12 h-12 mx-auto mb-3 text-[#dc2626]" />
-                <p className="text-sm font-medium text-[#dc2626]">{error}</p>
-                <button
-                  onClick={() => router.push("/keystore")}
-                  className="mt-4 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: colors.bg.primary,
-                  }}
-                >
-                  Go to Keystore
-                </button>
+                <p className="text-sm font-medium text-status-error">{error}</p>
               </div>
             ) : configs.length === 0 ? (
               <div
@@ -352,11 +344,13 @@ export default function ConfigLibraryPage() {
             ) : (
               <>
                 <div
-                  className="grid gap-4 items-start"
-                  style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+                  className="grid gap-4 items-start w-full"
+                  style={{
+                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                  }}
                 >
                   {columns.map((col, colIdx) => (
-                    <div key={colIdx} className="flex flex-col gap-4">
+                    <div key={colIdx} className="flex flex-col gap-4 min-w-0">
                       {col.map((config) => (
                         <ConfigCard
                           key={config.id}

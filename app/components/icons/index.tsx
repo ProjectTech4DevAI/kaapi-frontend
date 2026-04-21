@@ -1,12 +1,18 @@
 // Common Icons (shared across multiple pages)
+export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
+export { default as CopyIcon } from "./common/CopyIcon";
+export { default as EyeIcon } from "./common/EyeIcon";
+export { default as EyeOffIcon } from "./common/EyeOffIcon";
 export { default as RefreshIcon } from "./common/RefreshIcon";
 export { default as GearIcon } from "./common/GearIcon";
 export { default as WarningTriangleIcon } from "./common/WarningTriangleIcon";
 export { default as PlusIcon } from "./common/PlusIcon";
 export { default as SearchIcon } from "./common/SearchIcon";
 export { default as SidebarToggleIcon } from "./common/SidebarToggleIcon";
+export { default as MailIcon } from "./common/MailIcon";
+export { default as ErrorCircleIcon } from "./common/ErrorCircleIcon";
 
 // Evaluations Icons
 export { default as ChevronUpIcon } from "./evaluations/ChevronUpIcon";
@@ -25,10 +31,16 @@ export { default as WarningIcon } from "./document/WarningIcon";
 export { default as CloseIcon } from "./document/CloseIcon";
 export { default as CloudUploadIcon } from "./document/CloudUploadIcon";
 
+// Guardrails Icons
+export { default as GuardrailsShieldCheckIcon } from "./guardrails/ShieldCheckIcon";
+
 // Sidebar Icons
 export { default as ClipboardIcon } from "./sidebar/ClipboardIcon";
 export { default as BookOpenIcon } from "./sidebar/BookOpenIcon";
 export { default as SlidersIcon } from "./sidebar/SlidersIcon";
+export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
+export { default as LogoutIcon } from "./sidebar/LogoutIcon";
+export { default as AssessmentIcon } from "./sidebar/AssessmentIcon";
 
 // Prompt Editor Icons
 export { default as ChevronRightIcon } from "./prompt-editor/ChevronRightIcon";

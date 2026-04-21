@@ -8,7 +8,9 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
-import { isGpt5Model } from "./models";
+import { isGpt5Model } from "@/app/lib/models";
+import { STORAGE_KEYS } from "@/app/lib/constants";
+import { TraceScore } from "@/app/lib/types/evaluation";
 
 export function timeAgo(dateStr: string): string {
   const date =
@@ -56,6 +58,11 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   return new Date(date).toLocaleDateString();
 };
 
+/** Clear all app-related localStorage */
+export function clearAllStorage() {
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+}
+
 export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
@@ -64,7 +71,7 @@ export const invalidateConfigCache = (): void => {
 export const getApiKey = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
-    const stored = localStorage.getItem("kaapi_api_keys");
+    const stored = localStorage.getItem(STORAGE_KEYS.API_KEYS);
     if (stored) {
       const keys = JSON.parse(stored);
       return keys.length > 0 ? keys[0].key : null;
@@ -123,6 +130,8 @@ export const flattenConfigVersion = (
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,
+    input_guardrails: blob.input_guardrails,
+    output_guardrails: blob.output_guardrails,
   };
 };
 
@@ -161,6 +170,16 @@ export const groupConfigs = (
   });
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
+export const isValidEmail = (email: string): boolean => EMAIL_REGEX.test(email);
+
+export const isValidPassword = (password: string): boolean =>
+  password.length >= MIN_PASSWORD_LENGTH;
+
+export const isNonEmpty = (value: string): boolean => value.trim().length > 0;
+
 export const escapeCSVValue = (value: string): string => {
   return value.replace(/"/g, '""').replace(/\n/g, " ");
 };
@@ -174,4 +193,68 @@ export const sanitizeCSVCell = (
     sanitized = " " + sanitized;
   }
   return `"${sanitized}"`;
+};
+
+export const formatScoreValue = (score: TraceScore | undefined) => {
+  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
+
+  if (score.data_type === "CATEGORICAL") {
+    const catValue = String(score.value);
+    let color = "#171717";
+    let bg = "#fafafa";
+
+    if (catValue === "CORRECT") {
+      color = "#15803d";
+      bg = "#dcfce7";
+    } else if (catValue === "PARTIAL") {
+      color = "#92400e";
+      bg = "#fef3c7";
+    } else if (catValue === "INCORRECT") {
+      color = "#dc2626";
+      bg = "#fee2e2";
+    }
+
+    return { value: catValue, color, bg };
+  }
+
+  const numValue = Number(score.value);
+  const formattedValue = numValue.toFixed(2);
+  let color = "#171717";
+  let bg = "transparent";
+
+  if (numValue >= 0.7) {
+    color = "#15803d";
+    bg = "#dcfce7";
+  } else if (numValue >= 0.5) {
+    color = "#92400e";
+    bg = "#fef3c7";
+  } else {
+    color = "#dc2626";
+    bg = "#fee2e2";
+  }
+
+  return { value: formattedValue, color, bg };
+};
+
+export const getScoreByName = (
+  scores: TraceScore[],
+  name: string,
+): TraceScore | undefined => {
+  if (!scores || !Array.isArray(scores)) return undefined;
+  return scores.find((s) => s?.name === name);
+};
+
+/**
+ * Formats a USD cost value for display
+ * @param cost - Cost in USD
+ * @returns Formatted cost string (e.g., "$0.0013", "$1.25")
+ */
+export const formatCostUSD = (cost: number): string => {
+  if (!Number.isFinite(cost)) {
+    return "N/A";
+  }
+  if (cost < 0.01) {
+    return `$${cost.toFixed(4)}`;
+  }
+  return `$${cost.toFixed(2)}`;
 };

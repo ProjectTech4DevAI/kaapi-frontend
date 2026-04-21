@@ -8,16 +8,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
+import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
-import { Dataset } from "@/app/lib/types/datasets";
+import { Dataset } from "@/app/lib/types/dataset";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import { apiFetch } from "@/app/lib/apiClient";
+import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import Loader from "@/app/components/Loader";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
@@ -38,7 +39,9 @@ function SimplifiedEvalContent() {
   });
 
   const { sidebarCollapsed } = useApp();
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   // Dataset creation state
   const [datasetName, setDatasetName] = useState("");
@@ -46,12 +49,8 @@ function SimplifiedEvalContent() {
   const [duplicationFactor, setDuplicationFactor] = useState("1");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Stored datasets
   const [storedDatasets, setStoredDatasets] = useState<Dataset[]>([]);
   const [isDatasetsLoading, setIsDatasetsLoading] = useState(false);
-
-  // Evaluation config state
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
     return searchParams.get("dataset") || "";
   });
@@ -74,15 +73,12 @@ function SimplifiedEvalContent() {
   }, []);
 
   const loadStoredDatasets = useCallback(async () => {
-    if (!activeKey?.key) {
-      console.error("No selected API key found for loading datasets");
-      return;
-    }
+    if (!isAuthenticated) return;
     setIsDatasetsLoading(true);
     try {
       const data = await apiFetch<Dataset[] | { data: Dataset[] }>(
         "/api/evaluations/datasets",
-        activeKey.key,
+        apiKey,
       );
       setStoredDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
@@ -90,11 +86,11 @@ function SimplifiedEvalContent() {
     } finally {
       setIsDatasetsLoading(false);
     }
-  }, [activeKey]);
+  }, [apiKey, isAuthenticated]);
 
   useEffect(() => {
-    if (activeKey?.key) loadStoredDatasets();
-  }, [activeKey, loadStoredDatasets]);
+    if (isAuthenticated) loadStoredDatasets();
+  }, [isAuthenticated, loadStoredDatasets]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -159,8 +155,8 @@ function SimplifiedEvalContent() {
       toast.error("Please enter a dataset name");
       return;
     }
-    if (!activeKey?.key) {
-      toast.error("No API key selected. Please select one in the Keystore.");
+    if (!isAuthenticated) {
+      toast.error("Please log in to create datasets.");
       return;
     }
 
@@ -178,7 +174,7 @@ function SimplifiedEvalContent() {
 
       const data = await apiFetch<{ dataset_id?: number }>(
         "/api/evaluations/datasets",
-        activeKey.key,
+        apiKey,
         { method: "POST", body: formData },
       );
       await loadStoredDatasets();
@@ -193,7 +189,7 @@ function SimplifiedEvalContent() {
       setDuplicationFactor("1");
 
       toast.success("Dataset created successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -203,8 +199,8 @@ function SimplifiedEvalContent() {
   };
 
   const handleRunEvaluation = async () => {
-    if (!activeKey?.key) {
-      toast.error("Please select an API key first");
+    if (!isAuthenticated) {
+      toast.error("Please log in to run evaluations.");
       return;
     }
     if (!selectedDatasetId) {
@@ -229,12 +225,16 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
       };
 
-      await apiFetch("/api/evaluations", activeKey.key, {
+      await apiFetch("/api/evaluations", apiKey, {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
       setIsEvaluating(false);
+      setExperimentName("");
+      setSelectedDatasetId("");
+      setSelectedConfigId("");
+      setSelectedConfigVersion(0);
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
@@ -271,51 +271,18 @@ function SimplifiedEvalContent() {
           />
 
           {/* Tab Content */}
-          {!mounted || !activeKey ? (
-            <div
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
-              <div className="text-center">
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  style={{ color: colors.border }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: colors.text.primary }}
-                >
-                  API key required
-                </p>
-                <p
-                  className="text-xs mb-4"
-                  style={{ color: colors.text.secondary }}
-                >
-                  Add an API key in the Keystore to start creating datasets and
-                  running evaluations
-                </p>
-                <a
-                  href="/keystore"
-                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#ffffff",
-                  }}
-                >
-                  Go to Keystore
-                </a>
-              </div>
-            </div>
+          {!mounted || !isAuthenticated ? (
+            <>
+              <FeatureGateModal
+                feature="Text Evaluation"
+                description="Log in to compare model response quality on your datasets across different configs."
+                onLogin={() => setShowLoginModal(true)}
+              />
+              <LoginModal
+                open={showLoginModal}
+                onClose={() => setShowLoginModal(false)}
+              />
+            </>
           ) : activeTab === "datasets" ? (
             <DatasetsTab
               leftPanelWidth={leftPanelWidth}
@@ -338,14 +305,14 @@ function SimplifiedEvalContent() {
               }}
               storedDatasets={storedDatasets}
               isDatasetsLoading={isDatasetsLoading}
-              activeKey={activeKey}
+              apiKey={apiKey}
               loadStoredDatasets={loadStoredDatasets}
               toast={toast}
             />
           ) : (
             <EvaluationsTab
               leftPanelWidth={leftPanelWidth}
-              activeKey={activeKey}
+              apiKey={apiKey}
               storedDatasets={storedDatasets}
               selectedDatasetId={selectedDatasetId}
               setSelectedDatasetId={setSelectedDatasetId}

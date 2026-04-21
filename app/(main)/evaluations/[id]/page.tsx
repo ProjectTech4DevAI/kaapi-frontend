@@ -10,19 +10,21 @@ import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import {
+import type {
   EvalJob,
   AssistantConfig,
+  GroupedTraceItem,
+} from "@/app/lib/types/evaluation";
+import {
   hasSummaryScores,
   isNewScoreObjectV2,
   getScoreObject,
   normalizeToIndividualScores,
-  GroupedTraceItem,
   isGroupedFormat,
-} from "@/app/components/types";
+} from "@/app/lib/utils/evaluation";
 import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
-import DetailedResultsTable from "@/app/components/DetailedResultsTable";
+import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import Loader from "@/app/components/Loader";
@@ -48,26 +50,16 @@ export default function EvaluationReport() {
   >(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { apiKeys } = useAuth();
+  const { apiKeys, isAuthenticated } = useAuth();
+  const apiKey = apiKeys[0]?.key ?? "";
   const { sidebarCollapsed, setSidebarCollapsed } = useApp();
-  const [selectedKeyId, setSelectedKeyId] = useState<string>("");
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
 
-  useEffect(() => {
-    if (apiKeys.length > 0 && !selectedKeyId) {
-      setSelectedKeyId(apiKeys[0].id);
-    }
-  }, [apiKeys, selectedKeyId]);
-
-  // Fetch job details
   const fetchJobDetails = useCallback(async () => {
-    if (!selectedKeyId || !jobId) return;
-
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) return;
+    if (!isAuthenticated || !jobId) return;
 
     setIsLoading(true);
     setError(null);
@@ -76,7 +68,7 @@ export default function EvaluationReport() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?export_format=${exportFormat}`,
-        selectedKey.key,
+        apiKey,
       );
 
       if (data.success === false && data.error) {
@@ -91,14 +83,10 @@ export default function EvaluationReport() {
       setJob(foundJob);
 
       if (foundJob.assistant_id) {
-        fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
+        fetchAssistantConfig(foundJob.assistant_id);
       }
       if (foundJob.config_id && foundJob.config_version) {
-        fetchConfigInfo(
-          foundJob.config_id,
-          foundJob.config_version,
-          selectedKey.key,
-        );
+        fetchConfigInfo(foundJob.config_id, foundJob.config_version);
       }
     } catch (err: unknown) {
       setError(
@@ -107,10 +95,9 @@ export default function EvaluationReport() {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKeys, selectedKeyId, jobId, exportFormat]);
+  }, [apiKey, isAuthenticated, jobId, exportFormat]);
 
-  const fetchAssistantConfig = async (assistantId: string, apiKey: string) => {
+  const fetchAssistantConfig = async (assistantId: string) => {
     try {
       const result = await apiFetch<{
         success: boolean;
@@ -125,11 +112,7 @@ export default function EvaluationReport() {
     }
   };
 
-  const fetchConfigInfo = async (
-    configId: string,
-    configVersion: number,
-    apiKey: string,
-  ) => {
+  const fetchConfigInfo = async (configId: string, configVersion: number) => {
     try {
       await apiFetch(`/api/configs/${configId}`, apiKey);
       await apiFetch(
@@ -142,10 +125,9 @@ export default function EvaluationReport() {
   };
 
   useEffect(() => {
-    if (selectedKeyId && jobId) fetchJobDetails();
-  }, [selectedKeyId, jobId, fetchJobDetails]);
+    if (isAuthenticated && jobId) fetchJobDetails();
+  }, [isAuthenticated, jobId, fetchJobDetails]);
 
-  // Export grouped format CSV
   const exportGroupedCSV = (traces: GroupedTraceItem[]) => {
     if (!job) return;
     try {
@@ -286,16 +268,14 @@ export default function EvaluationReport() {
   };
 
   const handleResync = async () => {
-    if (!selectedKeyId || !jobId) return;
-    const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
-    if (!selectedKey) return;
+    if (!isAuthenticated || !jobId) return;
 
     setIsResyncing(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = await apiFetch<any>(
         `/api/evaluations/${jobId}?get_trace_info=true&resync_score=true&export_format=${exportFormat}`,
-        selectedKey.key,
+        apiKey,
       );
       const foundJob = data.data || data;
       if (!foundJob) throw new Error("Evaluation job not found");
@@ -308,14 +288,9 @@ export default function EvaluationReport() {
       }
 
       setJob(foundJob);
-      if (foundJob.assistant_id)
-        fetchAssistantConfig(foundJob.assistant_id, selectedKey.key);
+      if (foundJob.assistant_id) fetchAssistantConfig(foundJob.assistant_id);
       if (foundJob.config_id && foundJob.config_version)
-        fetchConfigInfo(
-          foundJob.config_id,
-          foundJob.config_version,
-          selectedKey.key,
-        );
+        fetchConfigInfo(foundJob.config_id, foundJob.config_version);
       toast.success("Metrics resynced successfully");
     } catch (error: unknown) {
       toast.error(
@@ -417,9 +392,9 @@ export default function EvaluationReport() {
               >
                 <ChevronLeftIcon />
               </button>
-              <div className="min-w-0 flex items-center gap-3">
+              <div className="min-w-0 flex-1 flex items-center gap-3 overflow-hidden">
                 <h1
-                  className="text-base font-semibold truncate"
+                  className="text-base font-semibold truncate min-w-0"
                   style={{
                     color: colors.text.primary,
                     letterSpacing: "-0.01em",
@@ -437,99 +412,33 @@ export default function EvaluationReport() {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 flex-shrink-0 relative z-10">
               <div
                 className="inline-flex rounded-lg p-0.5"
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 <button
+                  type="button"
                   onClick={() => setExportFormat("row")}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-                  style={{
-                    backgroundColor:
-                      exportFormat === "row"
-                        ? colors.bg.primary
-                        : "transparent",
-                    color:
-                      exportFormat === "row"
-                        ? colors.text.primary
-                        : colors.text.primary,
-                    boxShadow:
-                      exportFormat === "row"
-                        ? "0 1px 2px rgba(0,0,0,0.08)"
-                        : "none",
-                    border:
-                      exportFormat === "row"
-                        ? `1px solid ${colors.border}`
-                        : "1px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (exportFormat !== "row") {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(0,0,0,0.04)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 0 1px rgba(0,0,0,0.06)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (exportFormat !== "row") {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.boxShadow = "none";
-                    }
-                  }}
+                  data-selected={exportFormat === "row"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                 >
-                  <MenuIcon className="w-3.5 h-3.5" />
+                  <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
                   Individual Rows
                 </button>
                 <button
+                  type="button"
                   onClick={() => setExportFormat("grouped")}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer"
-                  style={{
-                    backgroundColor:
-                      exportFormat === "grouped"
-                        ? colors.bg.primary
-                        : "transparent",
-                    color:
-                      exportFormat === "grouped"
-                        ? colors.text.primary
-                        : colors.text.primary,
-                    boxShadow:
-                      exportFormat === "grouped"
-                        ? "0 1px 2px rgba(0,0,0,0.08)"
-                        : "none",
-                    border:
-                      exportFormat === "grouped"
-                        ? `1px solid ${colors.border}`
-                        : "1px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (exportFormat !== "grouped") {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(0,0,0,0.04)";
-                      e.currentTarget.style.boxShadow =
-                        "0 0 0 1px rgba(0,0,0,0.06)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (exportFormat !== "grouped") {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.boxShadow = "none";
-                    }
-                  }}
+                  data-selected={exportFormat === "grouped"}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                 >
-                  <GroupIcon />
+                  <GroupIcon className="pointer-events-none" />
                   Group by Questions
                 </button>
               </div>
               <button
                 onClick={() => setIsConfigModalOpen(true)}
-                className="px-3 py-1.5 rounded-md text-xs font-medium border"
-                style={{
-                  backgroundColor: "transparent",
-                  borderColor: colors.border,
-                  color: colors.text.primary,
-                }}
+                className="px-3 py-1.5 rounded-md text-xs font-medium border bg-transparent border-border text-text-primary"
               >
                 View Config
               </button>

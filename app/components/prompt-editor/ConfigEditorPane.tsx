@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { colors } from "@/app/lib/colors";
+import { useState, useEffect } from "react";
+import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
 import {
   ConfigPublic,
   SavedConfig,
   ConfigVersionItems,
+  CompletionConfig,
 } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
 import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
@@ -17,6 +18,10 @@ import {
   InfoIcon,
 } from "@/app/components/icons";
 import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
+import GuardrailsSection from "./GuardrailsSection";
+
+const inputClass =
+  "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
 
 interface ConfigEditorPaneProps {
   configBlob: ConfigBlob;
@@ -39,6 +44,7 @@ interface ConfigEditorPaneProps {
     config_id: string,
     version: number,
   ) => Promise<SavedConfig | null>;
+  apiKey?: string;
 }
 
 export default function ConfigEditorPane({
@@ -59,16 +65,37 @@ export default function ConfigEditorPane({
   versionItemsMap = {},
   loadVersionsForConfig,
   loadSingleVersion,
+  apiKey = "",
 }: ConfigEditorPaneProps) {
+  const [guardrailsQueryString, setGuardrailsQueryString] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    guardrailsFetch<{ data?: { organization_id: number; project_id: number } }>(
+      "/api/apikeys/verify",
+      apiKey,
+    )
+      .then((data) => {
+        const org_id = data?.data?.organization_id;
+        const proj_id = data?.data?.project_id;
+        if (org_id != null && proj_id != null) {
+          setGuardrailsQueryString(
+            `?organization_id=${parseInt(String(org_id), 10)}&project_id=${parseInt(String(proj_id), 10)}`,
+          );
+        }
+      })
+      .catch(() => {});
+  }, [apiKey]);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null); // config group is expanded in the Load dropdown
+  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
   const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
     new Set(),
   );
 
   const handleOpenLoadDropdown = () => {
     if (!isDropdownOpen) {
-      // Auto-expand the currently selected config group, load its version list if needed
       if (selectedConfigId) {
         const selected = savedConfigs.find((c) => c.id === selectedConfigId);
         if (selected) {
@@ -119,10 +146,8 @@ export default function ConfigEditorPane({
   const isGpt5 = isGpt5Model(params.model);
   const tools = (params.tools || []) as Tool[];
 
-  // Find currently selected config from loaded set
   const selectedConfig = savedConfigs.find((c) => c.id === selectedConfigId);
 
-  // Config name hint text: use allConfigMeta for accurate new-vs-existing detection
   const existingConfigForHint = configName.trim()
     ? allConfigMeta.find((m) => m.name === configName.trim())
     : undefined;
@@ -132,8 +157,7 @@ export default function ConfigEditorPane({
       ...configBlob,
       completion: {
         ...configBlob.completion,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        provider: newProvider as any,
+        provider: newProvider as CompletionConfig["provider"],
         params: {
           ...params,
           model:
@@ -202,18 +226,14 @@ export default function ConfigEditorPane({
     });
   };
 
-  const handleUpdateTool = (
+  const handleUpdateTool = <K extends keyof Tool>(
     index: number,
-    field: keyof Tool,
-    value: unknown,
+    field: K,
+    value: Tool[K],
   ) => {
-    const newTools = [...tools];
-    if (field === "knowledge_base_ids") {
-      newTools[index][field] = [value as string];
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (newTools[index] as any)[field] = value;
-    }
+    const newTools = tools.map((t, i) =>
+      i === index ? { ...t, [field]: value } : t,
+    );
     onConfigChange({
       ...configBlob,
       completion: {
@@ -223,53 +243,30 @@ export default function ConfigEditorPane({
     });
   };
 
+  const saveDisabled = !configName.trim() || isSaving;
+
   return (
     <div
-      className="flex flex-col overflow-hidden flex-shrink-0 border-l"
-      style={{
-        width: collapsed ? "40px" : "100%",
-        flex: collapsed ? "0 0 40px" : "1 1 0%",
-        backgroundColor: colors.bg.primary,
-        borderColor: colors.border,
-        transition: "width 0.2s ease-in-out, flex 0.2s ease-in-out",
-      }}
+      className={`flex flex-col overflow-hidden shrink-0 border-l border-border bg-bg-primary ${
+        collapsed ? "w-10 flex-[0_0_40px]" : "w-full flex-1"
+      }`}
+      style={{ transition: "width 0.2s ease-in-out, flex 0.2s ease-in-out" }}
     >
       <div
-        className="border-b flex items-center flex-shrink-0"
-        style={{
-          borderColor: colors.border,
-          padding: collapsed ? "0" : "12px 16px",
-          justifyContent: collapsed ? "center" : "space-between",
-          height: collapsed ? "40px" : "auto",
-          transition: "padding 0.2s ease-in-out",
-        }}
+        className={`border-b border-border flex items-center shrink-0 ${
+          collapsed ? "justify-center h-10 p-0" : "justify-between px-4 py-3"
+        }`}
+        style={{ transition: "padding 0.2s ease-in-out" }}
       >
         {!collapsed && (
-          <h3
-            className="text-sm font-semibold flex-1"
-            style={{ color: colors.text.primary }}
-          >
+          <h3 className="text-sm font-semibold flex-1 text-text-primary">
             Configuration
           </h3>
         )}
         {onToggle && (
           <button
             onClick={onToggle}
-            className="rounded shrink-0 flex items-center justify-center w-7 h-7 border"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.secondary,
-              transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = colors.bg.secondary;
-              e.currentTarget.style.color = colors.text.primary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = colors.bg.primary;
-              e.currentTarget.style.color = colors.text.secondary;
-            }}
+            className="rounded shrink-0 flex items-center justify-center w-7 h-7 border border-border bg-bg-primary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-colors"
             title={collapsed ? "Show configuration" : "Hide configuration"}
           >
             <ChevronRightIcon
@@ -283,12 +280,10 @@ export default function ConfigEditorPane({
         )}
       </div>
 
-      {/* Vertical text when collapsed */}
       {collapsed && (
         <div
-          className="flex items-start justify-center pt-4 cursor-pointer"
+          className="flex items-start justify-center pt-4 cursor-pointer text-text-secondary"
           onClick={onToggle}
-          style={{ color: colors.text.secondary }}
           title="Show configuration"
         >
           <span
@@ -303,25 +298,18 @@ export default function ConfigEditorPane({
         </div>
       )}
 
-      {/* Content - hidden when collapsed */}
       {!collapsed && (
         <div className="flex-1 overflow-auto p-4">
           <div className="space-y-4">
             <div className="relative">
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
                 Load Configuration
               </label>
               <button
                 onClick={handleOpenLoadDropdown}
-                className="w-full px-3 py-2.5 rounded-md text-left flex items-center justify-between transition-colors"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  border: `1px solid ${selectedConfig ? colors.accent.primary : colors.border}`,
-                  color: colors.text.primary,
-                }}
+                className={`w-full px-3 py-2.5 rounded-md text-left flex items-center justify-between transition-colors bg-bg-primary text-text-primary border ${
+                  selectedConfig ? "border-accent-primary" : "border-border"
+                }`}
               >
                 {selectedConfig ? (
                   <div className="flex-1 min-w-0">
@@ -329,36 +317,23 @@ export default function ConfigEditorPane({
                       <span className="font-medium text-sm truncate">
                         {selectedConfig.name}
                       </span>
-                      <span
-                        className="text-xs px-1.5 py-0.5 rounded flex-shrink-0"
-                        style={{
-                          backgroundColor: colors.bg.secondary,
-                          color: colors.text.secondary,
-                        }}
-                      >
+                      <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-bg-secondary text-text-secondary">
                         v{selectedConfig.version}
                       </span>
                     </div>
-                    <div
-                      className="text-xs mt-0.5"
-                      style={{ color: colors.text.secondary }}
-                    >
+                    <div className="text-xs mt-0.5 text-text-secondary">
                       {selectedConfig.provider}/{selectedConfig.modelName} •{" "}
                       {selectedConfig.type}
                     </div>
                   </div>
                 ) : (
-                  <span
-                    className="text-sm"
-                    style={{ color: colors.text.secondary }}
-                  >
+                  <span className="text-sm text-text-secondary">
                     + New Configuration
                   </span>
                 )}
                 <ChevronDownIcon
-                  className="w-4 h-4 flex-shrink-0 ml-2 transition-transform"
+                  className="w-4 h-4 shrink-0 ml-2 transition-transform text-text-secondary"
                   style={{
-                    color: colors.text.secondary,
                     transform: isDropdownOpen
                       ? "rotate(180deg)"
                       : "rotate(0deg)",
@@ -366,50 +341,25 @@ export default function ConfigEditorPane({
                 />
               </button>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div
-                  className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    border: `1px solid ${colors.border}`,
-                  }}
-                >
+                <div className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto bg-bg-primary border border-border">
                   <button
                     onClick={() => {
                       onLoadConfig(null);
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full px-3 py-2.5 text-left flex items-center gap-2 transition-colors"
-                    style={{
-                      backgroundColor: !selectedConfigId
-                        ? colors.bg.secondary
-                        : colors.bg.primary,
-                      borderBottom: `1px solid ${colors.border}`,
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        colors.bg.secondary)
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = !selectedConfigId
-                        ? colors.bg.secondary
-                        : colors.bg.primary)
-                    }
+                    className={`w-full px-3 py-2.5 text-left flex items-center gap-2 transition-colors border-b border-border ${
+                      !selectedConfigId
+                        ? "bg-bg-secondary"
+                        : "bg-bg-primary hover:bg-bg-secondary"
+                    }`}
                   >
-                    <PlusIcon
-                      className="w-4 h-4"
-                      style={{ color: colors.accent.primary }}
-                    />
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: colors.text.primary }}
-                    >
+                    <PlusIcon className="w-4 h-4 text-accent-primary" />
+                    <span className="text-sm font-medium text-text-primary">
                       New Configuration
                     </span>
                   </button>
 
-                  {/* Grouped Configs — built from lightweight allConfigMeta */}
                   {allConfigMeta.map((meta) => {
                     const isExpanded = expandedConfigId === meta.id;
                     const isLoadingGroup = loadingVersionsFor.has(meta.id);
@@ -417,11 +367,7 @@ export default function ConfigEditorPane({
                     return (
                       <div key={meta.id}>
                         <button
-                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors"
-                          style={{
-                            backgroundColor: colors.bg.secondary,
-                            color: colors.text.secondary,
-                          }}
+                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors bg-bg-secondary text-text-secondary"
                           onClick={() => handleToggleGroup(meta.id)}
                         >
                           <span className="text-xs font-medium">
@@ -447,7 +393,6 @@ export default function ConfigEditorPane({
                             />
                           </span>
                         </button>
-                        {/* Version items — only when expanded */}
                         {isExpanded &&
                           !isLoadingGroup &&
                           items.map((item) => {
@@ -476,62 +421,33 @@ export default function ConfigEditorPane({
                                     setIsDropdownOpen(false);
                                   }
                                 }}
-                                className="w-full px-4 py-2 text-left flex items-center justify-between transition-colors"
-                                style={{
-                                  backgroundColor: isSelected
-                                    ? colors.bg.secondary
-                                    : colors.bg.primary,
-                                }}
-                                onMouseEnter={(e) =>
-                                  (e.currentTarget.style.backgroundColor =
-                                    colors.bg.secondary)
-                                }
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    isSelected
-                                      ? colors.bg.secondary
-                                      : colors.bg.primary;
-                                }}
+                                className={`w-full px-4 py-2 text-left flex items-center justify-between transition-colors ${
+                                  isSelected
+                                    ? "bg-bg-secondary"
+                                    : "bg-bg-primary hover:bg-bg-secondary"
+                                }`}
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span
-                                      className="text-xs px-1.5 py-0.5 rounded"
-                                      style={{
-                                        backgroundColor: colors.bg.secondary,
-                                        color: colors.text.secondary,
-                                      }}
-                                    >
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-bg-secondary text-text-secondary">
                                       v{item.version}
                                     </span>
-                                    <span
-                                      className="text-sm truncate"
-                                      style={{ color: colors.text.primary }}
-                                    >
+                                    <span className="text-sm truncate text-text-primary">
                                       {item.commit_message || "No message"}
                                     </span>
                                   </div>
-                                  <div
-                                    className="text-xs mt-0.5"
-                                    style={{ color: colors.text.secondary }}
-                                  >
+                                  <div className="text-xs mt-0.5 text-text-secondary">
                                     {formatRelativeTime(item.inserted_at)}
                                   </div>
                                 </div>
                                 {isSelected && (
-                                  <CheckIcon
-                                    className="w-4 h-4 flex-shrink-0"
-                                    style={{ color: colors.status.success }}
-                                  />
+                                  <CheckIcon className="w-4 h-4 shrink-0 text-status-success" />
                                 )}
                               </button>
                             );
                           })}
                         {isExpanded && isLoadingGroup && (
-                          <div
-                            className="px-4 py-3 text-xs"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <div className="px-4 py-3 text-xs text-text-secondary">
                             Loading versions…
                           </div>
                         )}
@@ -541,7 +457,6 @@ export default function ConfigEditorPane({
                 </div>
               )}
 
-              {/* Click outside to close dropdown */}
               {isDropdownOpen && (
                 <div
                   className="fixed inset-0 z-40"
@@ -550,12 +465,8 @@ export default function ConfigEditorPane({
               )}
             </div>
 
-            {/* Config Name */}
             <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
                 Configuration Name
               </label>
               <input
@@ -563,18 +474,10 @@ export default function ConfigEditorPane({
                 value={configName}
                 onChange={(e) => onConfigNameChange(e.target.value)}
                 placeholder="e.g., my-config"
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary,
-                }}
+                className={inputClass}
               />
               {configName.trim() && (
-                <p
-                  className="text-xs mt-1.5"
-                  style={{ color: colors.text.secondary }}
-                >
+                <p className="text-xs mt-1.5 text-text-secondary">
                   {existingConfigForHint
                     ? `💡 Will create a new version for "${configName}"`
                     : `✨ Will create a new config "${configName}"`}
@@ -582,23 +485,14 @@ export default function ConfigEditorPane({
               )}
             </div>
 
-            {/* Provider */}
             <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
                 Provider
               </label>
               <select
                 value={provider}
                 onChange={(e) => handleProviderChange(e.target.value)}
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary,
-                }}
+                className={inputClass}
               >
                 {PROVIDES_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -608,12 +502,8 @@ export default function ConfigEditorPane({
               </select>
             </div>
 
-            {/* Type */}
             <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
                 Type
               </label>
               <select
@@ -621,12 +511,7 @@ export default function ConfigEditorPane({
                 onChange={(e) =>
                   handleTypeChange(e.target.value as "text" | "stt" | "tts")
                 }
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary,
-                }}
+                className={inputClass}
               >
                 {PROVIDER_TYPES.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -634,31 +519,19 @@ export default function ConfigEditorPane({
                   </option>
                 ))}
               </select>
-              <p
-                className="text-xs mt-1.5"
-                style={{ color: colors.text.secondary }}
-              >
+              <p className="text-xs mt-1.5 text-text-secondary">
                 Standard text-based LLM completion
               </p>
             </div>
 
-            {/* Model */}
             <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
                 Model
               </label>
               <select
                 value={params.model}
                 onChange={(e) => handleModelChange(e.target.value)}
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary,
-                }}
+                className={inputClass}
               >
                 {(
                   MODEL_OPTIONS[provider as keyof typeof MODEL_OPTIONS] ??
@@ -673,10 +546,7 @@ export default function ConfigEditorPane({
 
             {!isGpt5 && (
               <div>
-                <label
-                  className="block text-xs font-semibold mb-2"
-                  style={{ color: colors.text.primary }}
-                >
+                <label className="block text-xs font-semibold mb-2 text-text-primary">
                   Temperature: {(params.temperature ?? 0.7).toFixed(2)}
                 </label>
                 <input
@@ -688,35 +558,23 @@ export default function ConfigEditorPane({
                   onChange={(e) =>
                     handleTemperatureChange(parseFloat(e.target.value))
                   }
-                  className="w-full"
-                  style={{ accentColor: colors.accent.primary }}
+                  className="w-full accent-accent-primary"
                 />
-                <div
-                  className="flex justify-between text-xs mt-1"
-                  style={{ color: colors.text.secondary }}
-                >
+                <div className="flex justify-between text-xs mt-1 text-text-secondary">
                   <span>0</span>
                   <span>2</span>
                 </div>
               </div>
             )}
 
-            {/* Tools */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label
-                  className="text-xs font-semibold"
-                  style={{ color: colors.text.primary }}
-                >
+                <label className="text-xs font-semibold text-text-primary">
                   Tools
                 </label>
                 <button
                   onClick={handleAddTool}
-                  className="px-2 py-1 rounded text-xs font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: colors.bg.primary,
-                  }}
+                  className="px-2 py-1 rounded text-xs font-medium bg-accent-primary text-bg-primary"
                 >
                   + Add Tool
                 </button>
@@ -724,82 +582,54 @@ export default function ConfigEditorPane({
               {tools.map((tool, index) => (
                 <div
                   key={index}
-                  className="p-3 rounded mb-2"
-                  style={{
-                    border: `1px solid ${colors.border}`,
-                    backgroundColor: colors.bg.secondary,
-                  }}
+                  className="p-3 rounded mb-2 border border-border bg-bg-secondary"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span
-                      className="text-xs font-semibold"
-                      style={{ color: colors.text.primary }}
-                    >
+                    <span className="text-xs font-semibold text-text-primary">
                       File Search
                     </span>
                     <button
                       onClick={() => handleRemoveTool(index)}
-                      className="text-xs"
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: colors.status.error,
-                        cursor: "pointer",
-                      }}
+                      className="text-xs bg-transparent border-0 text-status-error cursor-pointer"
                     >
                       Remove
                     </button>
                   </div>
                   <div className="mb-2">
-                    <label
-                      className="block text-xs mb-1"
-                      style={{ color: colors.text.primary }}
-                    >
+                    <label className="block text-xs mb-1 text-text-primary">
                       Knowledge Base ID
                     </label>
                     <input
                       type="text"
                       value={tool.knowledge_base_ids[0] || ""}
                       onChange={(e) =>
-                        handleUpdateTool(
-                          index,
-                          "knowledge_base_ids",
+                        handleUpdateTool(index, "knowledge_base_ids", [
                           e.target.value,
-                        )
+                        ])
                       }
                       placeholder="vs_abc123"
-                      className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-gray-300"
-                      style={{
-                        backgroundColor: colors.bg.primary,
-                        color: colors.text.primary,
-                      }}
+                      className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-gray-300 bg-bg-primary text-text-primary"
                     />
                   </div>
 
                   {!isGpt5 && (
                     <div>
                       <div className="flex items-center gap-1 mb-1">
-                        <label
-                          className="text-xs"
-                          style={{ color: colors.text.primary }}
-                        >
+                        <label className="text-xs text-text-primary">
                           Max Results
                         </label>
                         <div
-                          className="relative inline-flex items-center justify-center cursor-help w-[14px] h-[14px]"
+                          className="relative inline-flex items-center justify-center cursor-help w-3.5 h-3.5"
                           onMouseEnter={() => setShowTooltip(index)}
                           onMouseLeave={() => setShowTooltip(null)}
                         >
-                          <InfoIcon
-                            className="w-3.5 h-3.5"
-                            style={{ color: colors.text.secondary }}
-                          />
+                          <InfoIcon className="w-3.5 h-3.5 text-text-secondary" />
                           {showTooltip === index && (
                             <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-[#1f2937] text-white top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
                               Controls how many matching results are returned
                               <br />
                               from the search
-                              <div className="absolute right-[100%] top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#1f2937]" />
+                              <div className="absolute right-full top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#1f2937]" />
                             </div>
                           )}
                         </div>
@@ -814,12 +644,7 @@ export default function ConfigEditorPane({
                             parseInt(e.target.value) || 20,
                           )
                         }
-                        className="w-full px-2 py-1 rounded text-xs focus:outline-none"
-                        style={{
-                          border: `1px solid ${colors.border}`,
-                          backgroundColor: colors.bg.primary,
-                          color: colors.text.primary,
-                        }}
+                        className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-border bg-bg-primary text-text-primary"
                       />
                     </div>
                   )}
@@ -827,11 +652,30 @@ export default function ConfigEditorPane({
               ))}
             </div>
 
+            <GuardrailsSection
+              label="Input Guardrails"
+              guardrails={configBlob.input_guardrails ?? []}
+              onChange={(refs) =>
+                onConfigChange({ ...configBlob, input_guardrails: refs })
+              }
+              apiKey={apiKey}
+              queryString={guardrailsQueryString}
+              stage="input"
+            />
+
+            <GuardrailsSection
+              label="Output Guardrails"
+              guardrails={configBlob.output_guardrails ?? []}
+              onChange={(refs) =>
+                onConfigChange({ ...configBlob, output_guardrails: refs })
+              }
+              apiKey={apiKey}
+              queryString={guardrailsQueryString}
+              stage="output"
+            />
+
             <div>
-              <label
-                className="block text-xs font-semibold mb-2"
-                style={{ color: colors.text.primary }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
                 Commit Message (Optional)
               </label>
               <input
@@ -839,33 +683,18 @@ export default function ConfigEditorPane({
                 value={commitMessage}
                 onChange={(e) => onCommitMessageChange(e.target.value)}
                 placeholder="Describe your changes..."
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  backgroundColor: colors.bg.primary,
-                  color: colors.text.primary,
-                }}
+                className={inputClass}
               />
             </div>
 
             <button
               onClick={onSave}
-              disabled={!configName.trim() || isSaving}
-              className="w-full px-4 py-2 rounded-md text-sm font-semibold"
-              style={{
-                backgroundColor:
-                  !configName.trim() || isSaving
-                    ? colors.bg.secondary
-                    : colors.status.success,
-                color:
-                  !configName.trim() || isSaving
-                    ? colors.text.secondary
-                    : colors.bg.primary,
-                border: "none",
-                cursor:
-                  !configName.trim() || isSaving ? "not-allowed" : "pointer",
-                transition: "all 0.15s ease",
-              }}
+              disabled={saveDisabled}
+              className={`w-full px-4 py-2 rounded-md text-sm font-semibold border-0 transition-colors ${
+                saveDisabled
+                  ? "bg-bg-secondary text-text-secondary cursor-not-allowed"
+                  : "bg-status-success text-bg-primary cursor-pointer"
+              }`}
             >
               {isSaving ? "Saving..." : "Save Configuration"}
             </button>

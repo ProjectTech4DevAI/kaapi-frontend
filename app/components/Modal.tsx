@@ -47,7 +47,7 @@ export default function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showClose) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 shrink-0">
             {title ? (
               <h2 className="text-lg font-semibold text-text-primary">
                 {title}
@@ -58,7 +58,7 @@ export default function Modal({
             {showClose && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary"
+                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
               >
                 <CloseIcon className="w-5 h-5" />
               </button>

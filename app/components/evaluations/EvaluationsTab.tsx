@@ -1,21 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
-import { Dataset } from "@/app/lib/types/datasets";
-import { EvalJob, AssistantConfig } from "@/app/components/types";
+import { Dataset } from "@/app/lib/types/dataset";
+import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import Loader from "@/app/components/Loader";
 import EvalRunCard from "./EvalRunCard";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { APIKey } from "@/app/lib/types/credentials";
-import { apiFetch } from "@/app/lib/apiClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { RefreshIcon } from "@/app/components/icons";
 
 type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
-  activeKey: APIKey;
+  apiKey: string;
   storedDatasets: Dataset[];
   selectedDatasetId: string;
   setSelectedDatasetId: (id: string) => void;
@@ -31,7 +32,7 @@ export interface EvaluationsTabProps {
 
 export default function EvaluationsTab({
   leftPanelWidth,
-  activeKey,
+  apiKey,
   storedDatasets,
   selectedDatasetId,
   setSelectedDatasetId,
@@ -62,12 +63,10 @@ export default function EvaluationsTab({
     selectedConfigVersion &&
     !isEvaluating;
 
-  // Fetch evaluation jobs
+  const { isAuthenticated } = useAuth();
+
   const fetchEvaluations = useCallback(async () => {
-    if (!activeKey?.key) {
-      setError("Please select an API key first");
-      return;
-    }
+    if (!isAuthenticated) return;
 
     setIsLoading(true);
     setError(null);
@@ -75,7 +74,7 @@ export default function EvaluationsTab({
     try {
       const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
         "/api/evaluations",
-        activeKey.key,
+        apiKey,
       );
       setEvalJobs(Array.isArray(data) ? data : data.data || []);
     } catch (err: unknown) {
@@ -85,18 +84,17 @@ export default function EvaluationsTab({
     } finally {
       setIsLoading(false);
     }
-  }, [activeKey]);
+  }, [apiKey, isAuthenticated]);
 
-  // Fetch assistant config
   const fetchAssistantConfig = useCallback(
     async (assistantId: string) => {
-      if (!activeKey?.key) return;
+      if (!isAuthenticated) return;
 
       try {
         const result = await apiFetch<{
           success: boolean;
           data?: AssistantConfig;
-        }>(`/api/assistant/${assistantId}`, activeKey.key);
+        }>(`/api/assistant/${assistantId}`, apiKey);
         if (result.success && result.data) {
           setAssistantConfigs((prev) =>
             new Map(prev).set(assistantId, result.data!),
@@ -109,7 +107,7 @@ export default function EvaluationsTab({
         );
       }
     },
-    [activeKey],
+    [apiKey, isAuthenticated],
   );
 
   useEffect(() => {
@@ -121,8 +119,8 @@ export default function EvaluationsTab({
   }, [evalJobs, assistantConfigs, fetchAssistantConfig]);
 
   useEffect(() => {
-    if (activeKey?.key) fetchEvaluations();
-  }, [activeKey, fetchEvaluations]);
+    if (isAuthenticated) fetchEvaluations();
+  }, [isAuthenticated, fetchEvaluations]);
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -393,23 +391,12 @@ export default function EvaluationsTab({
               <button
                 onClick={fetchEvaluations}
                 disabled={isLoading}
-                className="p-1.5 rounded"
-                style={{ color: colors.text.secondary }}
+                className="p-1.5 rounded text-text-secondary cursor-pointer"
                 aria-label="Refresh evaluations"
               >
-                <svg
-                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
+                <RefreshIcon
+                  className={`w-4 h-4 -scale-x-100 ${isLoading ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
           </div>
@@ -421,14 +408,12 @@ export default function EvaluationsTab({
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
             }}
           >
-            {/* Loading */}
             {isLoading && evalJobs.length === 0 && (
               <div className="p-16">
                 <Loader size="md" message="Loading evaluation runs..." />
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div className="p-4">
                 <div
@@ -442,7 +427,6 @@ export default function EvaluationsTab({
               </div>
             )}
 
-            {/* Empty State */}
             {!isLoading && evalJobs.length === 0 && !error && (
               <div className="p-16 text-center">
                 <svg
@@ -472,7 +456,6 @@ export default function EvaluationsTab({
               </div>
             )}
 
-            {/* Runs List */}
             {evalJobs.length > 0 &&
               (() => {
                 const filteredJobs =

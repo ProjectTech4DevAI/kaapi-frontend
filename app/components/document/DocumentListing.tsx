@@ -1,14 +1,14 @@
 "use client";
 
-import { APIKey } from "@/app/lib/types/credentials";
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/(main)/document/page";
+import { Document } from "@/app/lib/types/document";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   RefreshIcon,
-  KeyIcon,
   DocumentFileIcon,
   TrashIcon,
 } from "@/app/components/icons";
+import { Button } from "@/app/components";
 
 interface DocumentListingProps {
   documents: Document[];
@@ -19,7 +19,6 @@ interface DocumentListingProps {
   isLoading: boolean;
   isLoadingMore: boolean;
   error: string | null;
-  apiKey: APIKey | null;
   scrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -32,9 +31,9 @@ export function DocumentListing({
   isLoading,
   isLoadingMore,
   error,
-  apiKey,
   scrollRef,
 }: DocumentListingProps) {
+  const { isAuthenticated } = useAuth();
   return (
     <div className="h-full flex flex-col">
       <div className="px-4 py-2.5 border-b bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
@@ -42,12 +41,9 @@ export function DocumentListing({
           <h2 className="text-lg font-semibold text-[hsl(330,3%,19%)]">
             Your Documents
           </h2>
-          <button
-            onClick={onUploadNew}
-            className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
-          >
+          <Button size="sm" onClick={onUploadNew}>
             + Upload
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -55,27 +51,17 @@ export function DocumentListing({
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-4 bg-[hsl(0,0%,98%)]"
       >
-        {/* Loading State */}
         {isLoading && documents.length === 0 ? (
           <div className="text-center py-12 text-[hsl(330,3%,49%)]">
             <RefreshIcon className="w-12 h-12 mx-auto mb-4 animate-spin" />
             <p className="text-sm">Loading documents...</p>
           </div>
-        ) : !apiKey ? (
+        ) : !isAuthenticated ? (
           <div className="text-center py-12 text-[hsl(330,3%,49%)]">
-            <KeyIcon className="mx-auto mb-4" />
             <p className="font-medium mb-2 text-[hsl(330,3%,19%)]">
-              No API key found
+              Login required
             </p>
-            <p className="text-sm mb-4">
-              Please add an API key in the Keystore
-            </p>
-            <a
-              href="/keystore"
-              className="inline-block px-6 py-2 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white"
-            >
-              Go to Keystore
-            </a>
+            <p className="text-sm">Please log in to manage documents</p>
           </div>
         ) : error ? (
           <div className="border rounded-lg p-6 bg-[hsl(8,86%,95%)] border-[hsl(8,86%,80%)]">
@@ -92,12 +78,7 @@ export function DocumentListing({
             <p className="text-sm mb-4">
               Upload your first document to get started
             </p>
-            <button
-              onClick={onUploadNew}
-              className="px-6 py-2 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
-            >
-              Upload Your First Document
-            </button>
+            <Button onClick={onUploadNew}>Upload Your First Document</Button>
           </div>
         ) : (
           <div className="space-y-2">
@@ -107,11 +88,11 @@ export function DocumentListing({
                 onClick={() => onSelect(doc)}
                 className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                   selectedDocument?.id === doc.id
-                    ? "ring-2 ring-offset-1 bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
+                    ? "bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
                     : "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <DocumentFileIcon className="w-5 h-5 shrink-0 text-[#171717]" />
@@ -128,7 +109,7 @@ export function DocumentListing({
                       e.stopPropagation();
                       onDelete(doc.id);
                     }}
-                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)]"
+                    className="p-1.5 rounded-md transition-colors shrink-0 border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)] hover:bg-[hsl(8,86%,95%)] cursor-pointer"
                     title="Delete Document"
                   >
                     <TrashIcon />

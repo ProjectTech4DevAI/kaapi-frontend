@@ -19,7 +19,6 @@ import {
   ShieldCheckIcon,
   SlidersIcon,
 } from "@/app/components/icons";
-import { useFeatureFlags } from "@/app/lib/FeatureFlagProvider";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 import { LoginModal } from "@/app/components/auth";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
@@ -34,9 +33,9 @@ export default function Sidebar({
   activeRoute = "/evaluations",
 }: SidebarProps) {
   const router = useRouter();
-  const { isEnabled, isLoaded: flagsLoaded } = useFeatureFlags();
   const [hasMounted, setHasMounted] = useState(false);
-  const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
+  const { currentUser, googleProfile, isAuthenticated, logout, hasFeature } =
+    useAuth();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     Evaluations: true,
     Configurations: false,
@@ -132,7 +131,7 @@ export default function Sidebar({
     if (item.superuserOnly && !currentUser?.is_superuser) return false;
     if (item.featureFlag) {
       if (!hasMounted) return false;
-      if (flagsLoaded && !isEnabled(item.featureFlag)) return false;
+      if (!hasFeature(item.featureFlag)) return false;
     }
     return true;
   }).map((item) => ({

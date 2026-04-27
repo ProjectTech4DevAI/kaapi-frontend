@@ -15,7 +15,11 @@ import {
   AuthContextValue,
 } from "@/app/lib/types/auth";
 import { apiFetch } from "@/app/lib/apiClient";
-import { AUTH_EXPIRED_EVENT, STORAGE_KEYS } from "@/app/lib/constants";
+import {
+  AUTH_EXPIRED_EVENT,
+  FEATURES_UPDATED_EVENT,
+  STORAGE_KEYS,
+} from "@/app/lib/constants";
 import { clearAllStorage } from "@/app/lib/utils";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
 
@@ -136,7 +140,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
     clearAllStorage();
     setApiKeys([]);
-  }, [persist]);
+    window.dispatchEvent(new Event("kaapi-auth-changed"));
+    window.location.replace("/evaluations");
+  }, []);
 
   // logout when both access + refresh tokens are expired
   useEffect(() => {
@@ -145,8 +151,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired);
   }, [logout]);
 
+  // keep auth state in sync when feature flags are updated client-side
+  useEffect(() => {
+    const handleFeaturesUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent<{ features?: string[] }>;
+      const features = customEvent.detail?.features;
+      if (!Array.isArray(features)) return;
+
+      setCurrentUser((prev) =>
+        prev ? { ...prev, features: [...features] } : prev,
+      );
+      setSession((prev) =>
+        prev?.user
+          ? {
+              ...prev,
+              user: { ...prev.user, features: [...features] },
+            }
+          : prev,
+      );
+    };
+
+    window.addEventListener(
+      FEATURES_UPDATED_EVENT,
+      handleFeaturesUpdated as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        FEATURES_UPDATED_EVENT,
+        handleFeaturesUpdated as EventListener,
+      );
+  }, []);
+
   const activeKey = apiKeys[0] ?? null;
   const isAuthenticated = !!activeKey || !!session;
+  const features = currentUser?.features ?? [];
+  const hasFeature = useCallback(
+    (flag: string) => features.includes(flag),
+    [features],
+  );
 
   return (
     <AuthContext.Provider
@@ -158,6 +200,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         googleProfile: session?.googleProfile ?? null,
         session,
         isAuthenticated,
+        features,
+        hasFeature,
         addKey,
         removeKey,
         setKeys,

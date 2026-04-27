@@ -6,6 +6,7 @@ export interface User {
   full_name: string;
   is_active: boolean;
   is_superuser: boolean;
+  features?: string[];
 }
 
 export interface GoogleProfile {
@@ -68,6 +69,8 @@ export interface AuthContextValue {
   googleProfile: GoogleProfile | null;
   session: Session | null;
   isAuthenticated: boolean;
+  features: string[];
+  hasFeature: (flag: string) => boolean;
   addKey: (key: APIKey) => void;
   removeKey: (id: string) => void;
   setKeys: (keys: APIKey[]) => void;

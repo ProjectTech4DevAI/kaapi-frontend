@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
 import { STORAGE_KEY } from "@/app/lib/constants/keystore";
+import { FeatureFlag } from "@/app/lib/constants/featureFlags";
+import { removeFeatureFromClient } from "@/app/lib/featureState";
 import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
 import Loader from "@/app/components/Loader";
@@ -50,6 +53,7 @@ function ShimmerDot({ color }: { color: string }) {
 type IndicatorState = "none" | "processing" | "failed" | "success";
 
 function AssessmentContent() {
+  const router = useRouter();
   const toast = useToast();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("datasets");
@@ -62,6 +66,7 @@ function AssessmentContent() {
   const [selectedKeyId, setSelectedKeyId] = useState("");
   const [evalIndicator, setEvalIndicator] = useState<IndicatorState>("none");
   const dismissedRef = useRef(false);
+  const featureRedirectingRef = useRef(false);
   const [assessmentRefreshToken, setAssessmentRefreshToken] = useState(0);
   const [experimentName, setExperimentName] = useState("");
   const {
@@ -92,12 +97,107 @@ function AssessmentContent() {
 
   const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
 
+  const redirectIfFeatureDisabled = useCallback(
+    async (
+      response: Response,
+      options?: { notify?: boolean },
+    ): Promise<boolean> => {
+      if (response.status !== 403) return false;
+
+      const errorData = await response
+        .clone()
+        .json()
+        .catch(() => ({}));
+      const message = String(
+        errorData?.error ?? errorData?.message ?? errorData?.detail ?? "",
+      ).toLowerCase();
+
+      if (
+        message.includes("feature") &&
+        message.includes("assessment") &&
+        message.includes("not enabled")
+      ) {
+        if (!featureRedirectingRef.current) {
+          featureRedirectingRef.current = true;
+          if (options?.notify) {
+            toast.error(
+              "Assessment feature is disabled for this organization/project.",
+            );
+          }
+          removeFeatureFromClient(FeatureFlag.ASSESSMENT);
+          // Trigger middleware redirect by navigating to the gated route.
+          window.setTimeout(
+            () => {
+              router.replace("/assessment");
+            },
+            options?.notify ? 300 : 0,
+          );
+        }
+        return true;
+      }
+
+      return false;
+    },
+    [router, toast],
+  );
+
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = async (...args: Parameters<typeof fetch>) => {
+      const response = await originalFetch(...args);
+      try {
+        const input = args[0];
+        const requestUrl =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (requestUrl.includes("/api/assessment/")) {
+          await redirectIfFeatureDisabled(response);
+        }
+      } catch {
+        // silently ignore
+      }
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [redirectIfFeatureDisabled]);
+
+  useEffect(() => {
+    if (!selectedKey?.key) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch("/api/assessment/evaluations?limit=1", {
+          headers: { "X-API-KEY": selectedKey.key },
+        });
+        if (cancelled) return;
+        await redirectIfFeatureDisabled(response, { notify: true });
+      } catch {
+        // silently ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [redirectIfFeatureDisabled, selectedKey?.key]);
+
   const pollEvalStatus = useCallback(async () => {
     if (!selectedKey) return;
     try {
-      const response = await fetch("/api/assessment/assessments?limit=10", {
+      const response = await fetch("/api/assessment/evaluations?limit=10", {
         headers: { "X-API-KEY": selectedKey.key },
       });
+      if (await redirectIfFeatureDisabled(response)) return;
       if (!response.ok) return;
       const data = await response.json();
       const runs = Array.isArray(data) ? data : data.data || [];
@@ -142,7 +242,7 @@ function AssessmentContent() {
     } catch {
       // silently fail
     }
-  }, [selectedKey]);
+  }, [redirectIfFeatureDisabled, selectedKey]);
 
   useEffect(() => {
     if (!selectedKey) return;
@@ -222,6 +322,8 @@ function AssessmentContent() {
         },
         body: JSON.stringify(payload),
       });
+
+      if (await redirectIfFeatureDisabled(response)) return;
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

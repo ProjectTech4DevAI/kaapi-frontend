@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-
-/** Route protection via `kaapi_role` cookie. Settings requires superuser. */
+import {
+  FeatureFlag,
+  type FeatureFlagKey,
+} from "@/app/lib/constants/featureFlags";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/evaluations",
@@ -12,18 +14,37 @@ const PUBLIC_ROUTES = new Set<string>([
   "/coming-soon/text-to-speech",
 ]);
 
+const FEATURE_GATED_PREFIXES: Array<{
+  prefix: string;
+  flag: FeatureFlagKey;
+}> = [{ prefix: "/assessment", flag: FeatureFlag.ASSESSMENT }];
+
 const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
 
 const HOME_ROUTE = "/evaluations";
 const PATHNAME_STARTS_WITH = ["/settings"];
+const FEATURES_COOKIE = "kaapi_features";
+
+function parseFeatures(raw: string | undefined): Set<string> {
+  if (!raw) return new Set();
+  try {
+    const parsed: unknown = JSON.parse(decodeURIComponent(raw));
+    if (Array.isArray(parsed)) {
+      return new Set(parsed.filter((f): f is string => typeof f === "string"));
+    }
+  } catch {
+    /* ignore malformed cookie */
+  }
+  return new Set();
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const role = request.cookies.get("kaapi_role")?.value;
+  const features = parseFeatures(request.cookies.get(FEATURES_COOKIE)?.value);
   const isAuthenticated = role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
 
-  // Guest-only routes: allowed when unauthenticated, blocked otherwise
   if (GUEST_ONLY_ROUTES.has(pathname)) {
     if (isAuthenticated) {
       return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
@@ -31,24 +52,25 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow public routes for everyone
   if (PUBLIC_ROUTES.has(pathname)) {
     return NextResponse.next();
   }
 
-  // /settings/* requires superuser
   if (PATHNAME_STARTS_WITH.some((prefix) => pathname.startsWith(prefix))) {
-    if (!isAuthenticated) {
-      return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
-    }
-    if (!isSuperuser) {
+    if (!isAuthenticated || !isSuperuser) {
       return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
     }
     return NextResponse.next();
   }
 
-  // Any other app route requires authentication
   if (!isAuthenticated) {
+    return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
+  }
+
+  const gated = FEATURE_GATED_PREFIXES.find(
+    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+  if (gated && !features.has(gated.flag)) {
     return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
   }
 

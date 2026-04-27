@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: AWS_PRODUCTION_ENV
+    environment: AWS_ENV
 
     permissions:
       packages: write

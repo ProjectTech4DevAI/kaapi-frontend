@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: AWS_STAGING_ENV
+    environment: AWS_ENV
 
     permissions:
       packages: write
@@ -31,7 +31,7 @@ jobs:
           BUILD_DIRECTORY: ${{ secrets.BUILD_DIRECTORY }}
           APP_NAME: ${{ secrets.PM2_APP_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+          INSTANCE_ID: ${{ secrets.EC2_STAGING_INSTANCE_ID }}
           ROOT_USER: ${{ secrets.USER }}
         run: |
           aws ssm send-command \

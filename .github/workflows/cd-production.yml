@@ -34,8 +34,9 @@ jobs:
           INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
           ROOT_USER: ${{ secrets.USER }}
         run: |
+          REMOTE_CMD="export HOME=/home/ubuntu && export PATH=/data/.nvm/versions/node/v24.11.0/bin:\$PATH && git config --global --add safe.directory ${BUILD_DIRECTORY} && set -e && cd ${BUILD_DIRECTORY} && git pull origin main && npm ci && npm run build && sudo -u ${ROOT_USER} pm2 restart ${APP_NAME}"
           aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["export HOME=/home/ubuntu && export PATH=/data/.nvm/versions/node/v24.11.0/bin:$PATH && git config --global --add safe.directory $BUILD_DIRECTORY && set -e && cd $BUILD_DIRECTORY && git pull origin main && npm ci && npm run build && $ROOT_USER && pm2 restart $APP_NAME"]' \
-            --region $AWS_REGION
+            --parameters commands="[\"$REMOTE_CMD\"]" \
+            --region "$AWS_REGION"

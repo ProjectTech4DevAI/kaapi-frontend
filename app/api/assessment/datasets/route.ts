@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/assessment/datasets
@@ -7,21 +7,21 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
   try {
-    const apiKey = request.headers.get('X-API-KEY');
+    const apiKey = request.headers.get("X-API-KEY");
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Missing X-API-KEY header' },
-        { status: 401 }
+        { error: "Missing X-API-KEY header" },
+        { status: 401 },
       );
     }
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
 
     const response = await fetch(`${backendUrl}/api/v1/assessment/datasets`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'X-API-KEY': apiKey,
+        "X-API-KEY": apiKey,
       },
     });
 
@@ -33,10 +33,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data, { status: 200 });
   } catch (error: unknown) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: "Failed to forward request to backend",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
@@ -49,24 +52,24 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = request.headers.get('X-API-KEY');
+    const apiKey = request.headers.get("X-API-KEY");
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Missing X-API-KEY header' },
-        { status: 401 }
+        { error: "Missing X-API-KEY header" },
+        { status: 401 },
       );
     }
 
     const formData = await request.formData();
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
 
     const response = await fetch(`${backendUrl}/api/v1/assessment/datasets`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
       headers: {
-        'X-API-KEY': apiKey,
+        "X-API-KEY": apiKey,
       },
     });
 
@@ -78,10 +81,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data, { status: 200 });
   } catch (error: unknown) {
-    console.error('Proxy error:', error);
+    console.error("Proxy error:", error);
     return NextResponse.json(
-      { error: 'Failed to forward request to backend', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: "Failed to forward request to backend",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

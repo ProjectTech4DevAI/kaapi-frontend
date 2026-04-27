@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * ModelComparisonCard Component
  *
@@ -71,7 +73,6 @@ export default function ModelComparisonCard({
   // Also reset when modelId changes (new model added)
   useEffect(() => {
     if (status === "pending") {
-       
       setIsExpanded(false);
     }
   }, [status, modelId]);

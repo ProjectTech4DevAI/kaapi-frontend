@@ -28,7 +28,13 @@ export default function Stepper({
       {steps.map((step, index) => {
         const isActive = currentStep === step.id;
         const isCompleted = completedSteps.has(step.id);
-        const isClickable = isCompleted || step.id <= currentStep;
+        const isSequentiallyUnlocked =
+          step.id > currentStep &&
+          steps
+            .filter((s) => s.id < step.id)
+            .every((s) => completedSteps.has(s.id));
+        const isClickable =
+          isCompleted || step.id <= currentStep || isSequentiallyUnlocked;
 
         return (
           <div key={step.id} className="flex items-center gap-2">

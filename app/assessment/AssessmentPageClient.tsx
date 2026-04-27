@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  Suspense,
+  useMemo,
+} from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
 import { STORAGE_KEY } from "@/app/lib/constants/keystore";
@@ -71,12 +78,15 @@ function AssessmentContent() {
   const [experimentName, setExperimentName] = useState("");
   const {
     datasetId,
+    datasetName,
     columns,
     sampleRow,
     columnMapping,
     setDatasetId,
+    setDatasetName,
     setDataset,
     setColumnMapping,
+    clearDataset,
   } = useAssessmentDatasetStore();
   const [promptTemplate, setPromptTemplate] = useState("");
   const [outputSchema, setOutputSchema] = useState<SchemaProperty[]>([]);
@@ -96,6 +106,38 @@ function AssessmentContent() {
   }, []);
 
   const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
+
+  // Backfill dataset name when old persisted state has only datasetId.
+  useEffect(() => {
+    if (!selectedKey?.key || !datasetId || datasetName) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch("/api/assessment/datasets", {
+          headers: { "X-API-KEY": selectedKey.key },
+        });
+        if (!response.ok || cancelled) return;
+
+        const data = await response.json();
+        const datasets = Array.isArray(data) ? data : data.data || [];
+        const selected = datasets.find(
+          (dataset: { dataset_id: number; dataset_name?: string }) =>
+            dataset.dataset_id.toString() === datasetId,
+        );
+        if (!cancelled && selected?.dataset_name) {
+          setDatasetName(selected.dataset_name);
+        }
+      } catch {
+        // ignore backfill failures; review will fallback gracefully
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId, datasetName, selectedKey?.key, setDatasetName]);
 
   const redirectIfFeatureDisabled = useCallback(
     async (
@@ -269,6 +311,29 @@ function AssessmentContent() {
     setActiveTab(tab);
   };
 
+  const hasDraftData =
+    !!datasetId ||
+    columnMapping.textColumns.length > 0 ||
+    columnMapping.attachments.length > 0 ||
+    columnMapping.groundTruthColumns.length > 0 ||
+    !!promptTemplate.trim() ||
+    configs.length > 0 ||
+    outputSchema.length > 0 ||
+    !!experimentName.trim();
+
+  const resetDraftState = () => {
+    dismissedRef.current = false;
+    setEvalIndicator("none");
+    clearDataset();
+    setPromptTemplate("");
+    setOutputSchema([]);
+    setConfigs([]);
+    setExperimentName("");
+    setConfigStep(1);
+    setCompletedConfigSteps(new Set());
+    setActiveTab("datasets");
+  };
+
   const markConfigCompleted = (step: number) => {
     setCompletedConfigSteps((prev) => new Set([...prev, step]));
   };
@@ -338,12 +403,7 @@ function AssessmentContent() {
       setConfigStep(1);
       setCompletedConfigSteps(new Set());
       setExperimentName("");
-      setDataset("", [], {});
-      setColumnMapping({
-        textColumns: [],
-        attachments: [],
-        groundTruthColumns: [],
-      });
+      clearDataset();
       setPromptTemplate("");
       setOutputSchema([]);
       setConfigs([]);
@@ -362,6 +422,7 @@ function AssessmentContent() {
   const formState: AssessmentFormState = {
     experimentName,
     datasetId,
+    datasetName,
     columns,
     columnMapping,
     promptTemplate,
@@ -370,6 +431,17 @@ function AssessmentContent() {
   };
 
   const hasDataset = !!datasetId && columns.length > 0;
+  const hasMapperSelection = columnMapping.textColumns.length > 0;
+  const hasConfiguredResponseFormat = outputSchema.some((field) =>
+    field.name.trim(),
+  );
+  const canReachReview = configs.length > 0 && hasConfiguredResponseFormat;
+  const effectiveCompletedConfigSteps = useMemo(() => {
+    const merged = new Set(completedConfigSteps);
+    if (hasMapperSelection) merged.add(1);
+    if (canReachReview) merged.add(2);
+    return merged;
+  }, [canReachReview, completedConfigSteps, hasMapperSelection]);
 
   const indicatorStyles: Record<
     IndicatorState,
@@ -493,44 +565,63 @@ function AssessmentContent() {
           ) : (
             <>
               <div
-                className="flex-shrink-0 border-b flex"
+                className="flex-shrink-0 border-b flex items-center justify-between pr-4"
                 style={{
                   backgroundColor: colors.bg.primary,
                   borderColor: colors.border,
                 }}
               >
-                {TABS.map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  const showIndicator =
-                    tab.id === "results" && evalIndicator !== "none";
-                  const tabColor = isActive
-                    ? colors.text.primary
-                    : colors.text.secondary;
+                <div className="flex">
+                  {TABS.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const showIndicator =
+                      tab.id === "results" && evalIndicator !== "none";
+                    const tabColor = isActive
+                      ? colors.text.primary
+                      : colors.text.secondary;
 
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabSwitch(tab.id)}
-                      className="cursor-pointer relative px-5 py-3 text-sm font-medium transition-colors flex items-center"
-                      style={{ color: tabColor }}
-                    >
-                      {tab.label}
-                      {showIndicator && (
-                        <ShimmerDot color={indicatorColor[evalIndicator]} />
-                      )}
-                      {isActive && (
-                        <div
-                          className="absolute bottom-0 left-0 right-0 h-0.5"
-                          style={{
-                            backgroundColor: showIndicator
-                              ? indicatorStyles[evalIndicator].underline
-                              : colors.text.primary,
-                          }}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabSwitch(tab.id)}
+                        className="cursor-pointer relative px-5 py-3 text-sm font-medium transition-colors flex items-center"
+                        style={{ color: tabColor }}
+                      >
+                        {tab.label}
+                        {showIndicator && (
+                          <ShimmerDot color={indicatorColor[evalIndicator]} />
+                        )}
+                        {isActive && (
+                          <div
+                            className="absolute bottom-0 left-0 right-0 h-0.5"
+                            style={{
+                              backgroundColor: showIndicator
+                                ? indicatorStyles[evalIndicator].underline
+                                : colors.text.primary,
+                            }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={resetDraftState}
+                  disabled={!hasDraftData}
+                  className="cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+                  style={{
+                    borderColor: colors.border,
+                    backgroundColor: hasDraftData
+                      ? colors.bg.primary
+                      : colors.bg.secondary,
+                    color: hasDraftData
+                      ? colors.text.primary
+                      : colors.text.secondary,
+                    cursor: hasDraftData ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Start New
+                </button>
               </div>
 
               {activeTab === "datasets" && (
@@ -539,6 +630,7 @@ function AssessmentContent() {
                     apiKey={selectedKey?.key || ""}
                     datasetId={datasetId}
                     setDatasetId={setDatasetId}
+                    setSelectedDatasetName={setDatasetName}
                     onColumnsLoaded={handleColumnsLoaded}
                     onNext={() => {
                       setActiveTab("config");
@@ -548,97 +640,99 @@ function AssessmentContent() {
                 </div>
               )}
 
-              {activeTab === "config" && (
-                <div className="flex-1 overflow-hidden flex flex-col">
-                  {!hasDataset ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="text-center">
-                        <svg
-                          className="mx-auto h-12 w-12 mb-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          style={{ color: colors.border }}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3"
-                          />
-                        </svg>
-                        <p
-                          className="text-sm font-medium mb-1"
-                          style={{ color: colors.text.primary }}
-                        >
-                          No dataset selected
-                        </p>
-                        <p
-                          className="text-xs mb-4"
-                          style={{ color: colors.text.secondary }}
-                        >
-                          Select a dataset first from the Datasets tab
-                        </p>
-                        <button
-                          onClick={() => setActiveTab("datasets")}
-                          className="cursor-pointer px-4 py-2 rounded-md text-sm font-medium"
-                          style={{
-                            backgroundColor: colors.accent.primary,
-                            color: "#ffffff",
-                          }}
-                        >
-                          Go to Datasets
-                        </button>
+              <div
+                className={`flex-1 overflow-hidden flex flex-col ${
+                  activeTab === "config" ? "" : "hidden"
+                }`}
+              >
+                {!hasDataset ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <svg
+                        className="mx-auto h-12 w-12 mb-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        style={{ color: colors.border }}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3"
+                        />
+                      </svg>
+                      <p
+                        className="text-sm font-medium mb-1"
+                        style={{ color: colors.text.primary }}
+                      >
+                        No dataset selected
+                      </p>
+                      <p
+                        className="text-xs mb-4"
+                        style={{ color: colors.text.secondary }}
+                      >
+                        Select a dataset first from the Datasets tab
+                      </p>
+                      <button
+                        onClick={() => setActiveTab("datasets")}
+                        className="cursor-pointer px-4 py-2 rounded-md text-sm font-medium"
+                        style={{
+                          backgroundColor: colors.accent.primary,
+                          color: "#ffffff",
+                        }}
+                      >
+                        Go to Datasets
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Stepper
+                      steps={CONFIG_STEPS}
+                      currentStep={configStep}
+                      onStepClick={setConfigStep}
+                      completedSteps={effectiveCompletedConfigSteps}
+                    />
+                    <div className="flex-1 overflow-auto px-6 pt-6">
+                      <div className={configStep === 1 ? "block" : "hidden"}>
+                        <ColumnMapperStep
+                          columns={columns}
+                          columnMapping={columnMapping}
+                          setColumnMapping={setColumnMapping}
+                          onNext={() => handleConfigNext(1)}
+                          onBack={() => setActiveTab("datasets")}
+                        />
+                      </div>
+                      <div className={configStep === 2 ? "block" : "hidden"}>
+                        <PromptAndConfigStep
+                          textColumns={columnMapping.textColumns}
+                          sampleRow={sampleRow}
+                          promptTemplate={promptTemplate}
+                          setPromptTemplate={setPromptTemplate}
+                          configs={configs}
+                          setConfigs={setConfigs}
+                          outputSchema={outputSchema}
+                          setOutputSchema={setOutputSchema}
+                          onNext={() => handleConfigNext(2)}
+                          onBack={() => setConfigStep(1)}
+                        />
+                      </div>
+                      <div className={configStep === 3 ? "block" : "hidden"}>
+                        <ReviewStep
+                          formState={formState}
+                          experimentName={experimentName}
+                          setExperimentName={setExperimentName}
+                          isSubmitting={isSubmitting}
+                          onSubmit={handleSubmit}
+                          onBack={() => setConfigStep(2)}
+                          onEditStep={setConfigStep}
+                        />
                       </div>
                     </div>
-                  ) : (
-                    <>
-                      <Stepper
-                        steps={CONFIG_STEPS}
-                        currentStep={configStep}
-                        onStepClick={setConfigStep}
-                        completedSteps={completedConfigSteps}
-                      />
-                      <div className="flex-1 overflow-auto px-6 pt-6">
-                        {configStep === 1 && (
-                          <ColumnMapperStep
-                            columns={columns}
-                            columnMapping={columnMapping}
-                            setColumnMapping={setColumnMapping}
-                            onNext={() => handleConfigNext(1)}
-                            onBack={() => setActiveTab("datasets")}
-                          />
-                        )}
-                        {configStep === 2 && (
-                          <PromptAndConfigStep
-                            textColumns={columnMapping.textColumns}
-                            sampleRow={sampleRow}
-                            promptTemplate={promptTemplate}
-                            setPromptTemplate={setPromptTemplate}
-                            configs={configs}
-                            setConfigs={setConfigs}
-                            outputSchema={outputSchema}
-                            setOutputSchema={setOutputSchema}
-                            onNext={() => handleConfigNext(2)}
-                            onBack={() => setConfigStep(1)}
-                          />
-                        )}
-                        {configStep === 3 && (
-                          <ReviewStep
-                            formState={formState}
-                            experimentName={experimentName}
-                            setExperimentName={setExperimentName}
-                            isSubmitting={isSubmitting}
-                            onSubmit={handleSubmit}
-                            onBack={() => setConfigStep(2)}
-                            onEditStep={setConfigStep}
-                          />
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
 
               {activeTab === "results" && (
                 <div className="flex-1 overflow-hidden flex flex-col">

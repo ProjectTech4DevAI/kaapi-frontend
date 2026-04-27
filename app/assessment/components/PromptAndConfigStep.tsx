@@ -593,13 +593,20 @@ export default function PromptAndConfigStep({
     );
   };
 
-  // Can proceed if at least one config is selected
-  const canProceed = configs.length > 0;
   const namedSchemaFields = outputSchema.filter((field) => field.name.trim());
+  const hasConfiguredResponseFormat = namedSchemaFields.length > 0;
+  // Response format is mandatory and at least one config must be selected.
+  const canProceed = configs.length > 0 && hasConfiguredResponseFormat;
+  const nextBlockerMessage =
+    configs.length === 0
+      ? "Select at least one configuration to continue"
+      : !hasConfiguredResponseFormat
+        ? "Set response format to continue"
+        : "";
   const responseSummary =
     namedSchemaFields.length > 0
       ? `${namedSchemaFields.length} fields`
-      : "Free text";
+      : "Not set";
   const promptStatus = promptTemplate.trim()
     ? `${usedColumns.length} placeholders`
     : "Empty";
@@ -662,7 +669,7 @@ export default function PromptAndConfigStep({
           </div>
         </div>
 
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.5fr)_minmax(420px,1.05fr)]">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(480px,1.35fr)]">
           <section className="min-w-0">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -895,7 +902,7 @@ export default function PromptAndConfigStep({
                     className="text-sm font-semibold"
                     style={{ color: colors.text.primary }}
                   >
-                    AI Behavior
+                    AI Configuration
                   </div>
                   <div
                     className="mt-1 text-xs"
@@ -903,7 +910,7 @@ export default function PromptAndConfigStep({
                   >
                     {configs.length > 0
                       ? `${configs.length} selected`
-                      : "Choose at least one behavior"}
+                      : "Choose at least one configuration"}
                   </div>
                 </div>
                 {configs.length > 0 && configs.length < MAX_CONFIGS && (
@@ -987,20 +994,18 @@ export default function PromptAndConfigStep({
                 style={{ borderColor: colors.border }}
               >
                 <div
-                  className="mb-4 flex items-center gap-1 rounded-xl p-1"
+                  className="mb-4 inline-flex items-center gap-0 rounded-full p-1"
                   style={{ backgroundColor: colors.bg.secondary }}
                 >
                   <button
                     onClick={() => setConfigMode("existing")}
-                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+                    className="cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all"
                     style={{
                       backgroundColor:
-                        configMode === "existing"
-                          ? colors.bg.primary
-                          : "transparent",
+                        configMode === "existing" ? "#171717" : "transparent",
                       color:
                         configMode === "existing"
-                          ? colors.text.primary
+                          ? "#ffffff"
                           : colors.text.secondary,
                     }}
                   >
@@ -1008,15 +1013,13 @@ export default function PromptAndConfigStep({
                   </button>
                   <button
                     onClick={() => setConfigMode("create")}
-                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+                    className="cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all"
                     style={{
                       backgroundColor:
-                        configMode === "create"
-                          ? colors.bg.primary
-                          : "transparent",
+                        configMode === "create" ? "#171717" : "transparent",
                       color:
                         configMode === "create"
-                          ? colors.text.primary
+                          ? "#ffffff"
                           : colors.text.secondary,
                     }}
                   >
@@ -1068,9 +1071,16 @@ export default function PromptAndConfigStep({
                             versionStateByConfig[config.id] ??
                             buildInitialVersionState();
                           const knownVersionCount = versions.items.length;
-                          const hasMultipleVersions =
-                            knownVersionCount > 1 || versions.hasMore;
+                          const hasVersionsPanel =
+                            knownVersionCount > 0 ||
+                            versions.hasMore ||
+                            versions.isLoading ||
+                            Boolean(versions.error);
                           const previewVersions = versions.items.slice(0, 3);
+                          const versionCountLabel =
+                            knownVersionCount > 0
+                              ? `${knownVersionCount}${versions.hasMore ? "+" : ""}`
+                              : "Check";
 
                           return (
                             <div
@@ -1154,7 +1164,7 @@ export default function PromptAndConfigStep({
                                       : "Use this behavior"}
                                 </button>
 
-                                {hasMultipleVersions && (
+                                {hasVersionsPanel && (
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -1195,12 +1205,22 @@ export default function PromptAndConfigStep({
                                         }}
                                       />
                                     </div>
-                                    <span>
-                                      {knownVersionCount}
-                                      {versions.hasMore ? "+" : ""}
+                                    <span className="font-semibold">
+                                      {isExpanded
+                                        ? "Hide versions"
+                                        : "View more versions"}
+                                    </span>
+                                    <span
+                                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                                      style={{
+                                        backgroundColor: colors.bg.secondary,
+                                        color: colors.text.secondary,
+                                      }}
+                                    >
+                                      {versionCountLabel}
                                     </span>
                                     <svg
-                                      className="h-3.5 w-3.5"
+                                      className="h-3.5 w-3.5 transition-transform duration-300 ease-in-out"
                                       fill="none"
                                       viewBox="0 0 24 24"
                                       stroke="currentColor"
@@ -1221,7 +1241,7 @@ export default function PromptAndConfigStep({
                                 )}
                               </div>
 
-                              {hasMultipleVersions && (
+                              {hasVersionsPanel && (
                                 <div
                                   className="mt-3 flex items-center gap-2 text-[11px]"
                                   style={{ color: colors.text.secondary }}
@@ -1242,136 +1262,137 @@ export default function PromptAndConfigStep({
                                             v{version.version}
                                           </span>
                                         ))
-                                      : [0, 1, 2].map((index) => (
-                                          <span
-                                            key={index}
-                                            className="inline-block h-2 w-2 rounded-full border"
-                                            style={{
-                                              borderColor: colors.border,
-                                              backgroundColor:
-                                                colors.bg.secondary,
-                                            }}
-                                          />
-                                        ))}
+                                      : null}
                                   </div>
-                                  <span>Saved versions</span>
+                                  <span>
+                                    {previewVersions.length > 0
+                                      ? "Saved versions"
+                                      : 'Tap "View versions" to load history'}
+                                  </span>
                                 </div>
                               )}
 
-                              {isExpanded && (
+                              {hasVersionsPanel && (
                                 <div
-                                  className="mt-3 rounded-xl border p-3"
+                                  className={`mt-3 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[26rem] opacity-100" : "max-h-0 opacity-0"}`}
                                   style={{
-                                    borderColor: colors.border,
-                                    backgroundColor: colors.bg.secondary,
+                                    pointerEvents: isExpanded ? "auto" : "none",
                                   }}
                                 >
                                   <div
-                                    className="mb-1 text-xs font-medium"
-                                    style={{ color: colors.text.secondary }}
+                                    className="rounded-xl border p-3"
+                                    style={{
+                                      borderColor: colors.border,
+                                      backgroundColor: colors.bg.secondary,
+                                    }}
                                   >
-                                    Saved versions
-                                  </div>
-                                  {versions.isLoading &&
-                                  versions.items.length === 0 ? (
                                     <div
-                                      className="py-2 text-center text-xs"
+                                      className="mb-1 text-xs font-medium"
                                       style={{ color: colors.text.secondary }}
                                     >
-                                      Loading versions...
+                                      Saved versions
                                     </div>
-                                  ) : (
-                                    <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
-                                      {versions.items.map((v) => {
-                                        const vSelected = isSelected(
-                                          config.id,
-                                          v.version,
-                                        );
-                                        const vLoading =
-                                          loadingSelectionKeys[
-                                            `${config.id}:${v.version}`
-                                          ];
+                                    {versions.isLoading &&
+                                    versions.items.length === 0 ? (
+                                      <div
+                                        className="py-2 text-center text-xs"
+                                        style={{ color: colors.text.secondary }}
+                                      >
+                                        Loading versions...
+                                      </div>
+                                    ) : (
+                                      <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                                        {versions.items.map((v) => {
+                                          const vSelected = isSelected(
+                                            config.id,
+                                            v.version,
+                                          );
+                                          const vLoading =
+                                            loadingSelectionKeys[
+                                              `${config.id}:${v.version}`
+                                            ];
 
-                                        return (
-                                          <div
-                                            key={v.id}
-                                            className="flex items-center justify-between rounded-xl border px-3 py-2.5"
-                                            style={{
-                                              backgroundColor:
-                                                colors.bg.primary,
-                                              borderColor: vSelected
-                                                ? colors.accent.primary
-                                                : colors.border,
-                                            }}
-                                          >
-                                            <div className="min-w-0">
-                                              <div
-                                                className="text-xs font-semibold"
-                                                style={{
-                                                  color: colors.text.primary,
-                                                }}
-                                              >
-                                                Version {v.version}
-                                              </div>
-                                              {v.commit_message && (
-                                                <div
-                                                  className="mt-0.5 truncate text-[11px]"
-                                                  style={{
-                                                    color:
-                                                      colors.text.secondary,
-                                                  }}
-                                                >
-                                                  {v.commit_message}
-                                                </div>
-                                              )}
-                                            </div>
-                                            <button
-                                              onClick={() =>
-                                                void toggleVersionSelection(
-                                                  config,
-                                                  v.version,
-                                                )
-                                              }
-                                              disabled={Boolean(vLoading)}
-                                              className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium"
+                                          return (
+                                            <div
+                                              key={v.id}
+                                              className="flex items-center justify-between rounded-xl border px-3 py-2.5"
                                               style={{
-                                                backgroundColor: vSelected
-                                                  ? colors.bg.secondary
-                                                  : colors.accent.primary,
-                                                color: vSelected
-                                                  ? colors.text.primary
-                                                  : "#fff",
-                                                border: `1px solid ${vSelected ? colors.border : colors.accent.primary}`,
+                                                backgroundColor:
+                                                  colors.bg.primary,
+                                                borderColor: vSelected
+                                                  ? colors.accent.primary
+                                                  : colors.border,
                                               }}
                                             >
-                                              {vLoading
-                                                ? "..."
-                                                : vSelected
-                                                  ? "Added"
-                                                  : "Use"}
+                                              <div className="min-w-0">
+                                                <div
+                                                  className="text-xs font-semibold"
+                                                  style={{
+                                                    color: colors.text.primary,
+                                                  }}
+                                                >
+                                                  Version {v.version}
+                                                </div>
+                                                {v.commit_message && (
+                                                  <div
+                                                    className="mt-0.5 truncate text-[11px]"
+                                                    style={{
+                                                      color:
+                                                        colors.text.secondary,
+                                                    }}
+                                                  >
+                                                    {v.commit_message}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <button
+                                                onClick={() =>
+                                                  void toggleVersionSelection(
+                                                    config,
+                                                    v.version,
+                                                  )
+                                                }
+                                                disabled={Boolean(vLoading)}
+                                                className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium"
+                                                style={{
+                                                  backgroundColor: vSelected
+                                                    ? colors.bg.secondary
+                                                    : colors.accent.primary,
+                                                  color: vSelected
+                                                    ? colors.text.primary
+                                                    : "#fff",
+                                                  border: `1px solid ${vSelected ? colors.border : colors.accent.primary}`,
+                                                }}
+                                              >
+                                                {vLoading
+                                                  ? "..."
+                                                  : vSelected
+                                                    ? "Added"
+                                                    : "Use"}
+                                              </button>
+                                            </div>
+                                          );
+                                        })}
+                                        {versions.hasMore &&
+                                          !versions.isLoading && (
+                                            <button
+                                              onClick={() =>
+                                                void loadVersions(
+                                                  config.id,
+                                                  versions.nextSkip,
+                                                )
+                                              }
+                                              className="cursor-pointer w-full py-1.5 text-xs font-medium"
+                                              style={{
+                                                color: colors.accent.primary,
+                                              }}
+                                            >
+                                              Load more
                                             </button>
-                                          </div>
-                                        );
-                                      })}
-                                      {versions.hasMore &&
-                                        !versions.isLoading && (
-                                          <button
-                                            onClick={() =>
-                                              void loadVersions(
-                                                config.id,
-                                                versions.nextSkip,
-                                              )
-                                            }
-                                            className="cursor-pointer w-full py-1.5 text-xs font-medium"
-                                            style={{
-                                              color: colors.accent.primary,
-                                            }}
-                                          >
-                                            Load more
-                                          </button>
-                                        )}
-                                    </div>
-                                  )}
+                                          )}
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1410,9 +1431,7 @@ export default function PromptAndConfigStep({
                         <select
                           value={draft.completion.provider}
                           onChange={(e) => {
-                            const provider = e.target.value as
-                              | "openai"
-                              | "google";
+                            const provider = e.target.value as "openai";
                             const defaultModel =
                               getDefaultModelForProvider(provider);
                             setDraft((prev) => ({
@@ -1777,7 +1796,7 @@ export default function PromptAndConfigStep({
         <div className="flex items-center gap-3">
           {!canProceed && (
             <span className="text-xs" style={{ color: colors.text.secondary }}>
-              Select at least one configuration to continue
+              {nextBlockerMessage}
             </span>
           )}
           <button

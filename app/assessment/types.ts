@@ -4,8 +4,8 @@
 
 export interface Attachment {
   column: string;
-  type: 'image' | 'pdf';
-  format: 'url' | 'base64';
+  type: "image" | "pdf";
+  format: "url" | "base64";
 }
 
 export interface ConfigSelection {
@@ -26,6 +26,7 @@ export interface ColumnMapping {
 export interface AssessmentFormState {
   experimentName: string;
   datasetId: string;
+  datasetName: string;
   columns: string[]; // all columns from the dataset CSV
   columnMapping: ColumnMapping;
   promptTemplate: string;
@@ -43,11 +44,17 @@ export interface AssessmentRequestBody {
 }
 
 export const ATTACHMENT_FORMATS: Record<string, string[]> = {
-  image: ['url', 'base64'],
-  pdf: ['url', 'base64'],
+  image: ["url", "base64"],
+  pdf: ["url", "base64"],
 };
 
-export type SchemaPropertyType = 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'enum';
+export type SchemaPropertyType =
+  | "string"
+  | "number"
+  | "integer"
+  | "boolean"
+  | "object"
+  | "enum";
 
 export interface SchemaProperty {
   id: string;
@@ -55,8 +62,8 @@ export interface SchemaProperty {
   type: SchemaPropertyType;
   isArray: boolean;
   isRequired: boolean;
-  children: SchemaProperty[];    // for object type
-  enumValues: string[];          // for enum type
+  children: SchemaProperty[]; // for object type
+  enumValues: string[]; // for enum type
 }
 
 export const MAX_CONFIGS = 4;

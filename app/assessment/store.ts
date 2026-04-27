@@ -1,41 +1,60 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { ColumnMapping } from './types';
+import { create } from "zustand";
+import { ColumnMapping } from "./types";
 
 interface AssessmentDatasetState {
   datasetId: string;
+  datasetName: string;
   columns: string[];
   sampleRow: Record<string, string>;
   columnMapping: ColumnMapping;
 
   setDatasetId: (id: string) => void;
-  setDataset: (datasetId: string, columns: string[], sampleRow: Record<string, string>) => void;
+  setDatasetName: (name: string) => void;
+  setDataset: (
+    datasetId: string,
+    columns: string[],
+    sampleRow: Record<string, string>,
+    datasetName?: string,
+  ) => void;
   setColumnMapping: (mapping: ColumnMapping) => void;
   clearDataset: () => void;
 }
 
-const DEFAULT_MAPPING: ColumnMapping = { textColumns: [], attachments: [], groundTruthColumns: [] };
+const DEFAULT_MAPPING: ColumnMapping = {
+  textColumns: [],
+  attachments: [],
+  groundTruthColumns: [],
+};
 
 export const useAssessmentDatasetStore = create<AssessmentDatasetState>()(
-  persist(
-    (set) => ({
-      datasetId: '',
-      columns: [],
-      sampleRow: {},
-      columnMapping: DEFAULT_MAPPING,
+  (set) => ({
+    datasetId: "",
+    datasetName: "",
+    columns: [],
+    sampleRow: {},
+    columnMapping: DEFAULT_MAPPING,
 
-      setDatasetId: (id) => set({ datasetId: id }),
+    setDatasetId: (id) => set({ datasetId: id }),
+    setDatasetName: (name) => set({ datasetName: name }),
 
-      setDataset: (datasetId, columns, sampleRow) =>
-        set({ datasetId, columns, sampleRow, columnMapping: DEFAULT_MAPPING }),
+    setDataset: (datasetId, columns, sampleRow, datasetName) =>
+      set((state) => ({
+        datasetId,
+        datasetName: datasetName ?? state.datasetName,
+        columns,
+        sampleRow,
+        columnMapping: DEFAULT_MAPPING,
+      })),
 
-      setColumnMapping: (mapping) => set({ columnMapping: mapping }),
+    setColumnMapping: (mapping) => set({ columnMapping: mapping }),
 
-      clearDataset: () =>
-        set({ datasetId: '', columns: [], sampleRow: {}, columnMapping: DEFAULT_MAPPING }),
-    }),
-    {
-      name: 'assessment-dataset', // persists to localStorage
-    }
-  )
+    clearDataset: () =>
+      set({
+        datasetId: "",
+        datasetName: "",
+        columns: [],
+        sampleRow: {},
+        columnMapping: DEFAULT_MAPPING,
+      }),
+  }),
 );

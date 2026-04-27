@@ -12,6 +12,7 @@ interface DatasetStepProps {
   apiKey: string;
   datasetId: string;
   setDatasetId: (id: string) => void;
+  setSelectedDatasetName: (name: string) => void;
   onColumnsLoaded: (
     columns: string[],
     sampleRow?: Record<string, string>,
@@ -25,6 +26,7 @@ export default function DatasetStep({
   apiKey,
   datasetId,
   setDatasetId,
+  setSelectedDatasetName,
   onColumnsLoaded,
   onNext,
 }: DatasetStepProps) {
@@ -113,6 +115,17 @@ export default function DatasetStep({
     loadDatasets();
   }, [loadDatasets]);
 
+  // Hydrate selected dataset name from the loaded dataset list.
+  useEffect(() => {
+    if (!datasetId || datasets.length === 0) return;
+    const selected = datasets.find(
+      (dataset) => dataset.dataset_id.toString() === datasetId,
+    );
+    if (selected?.dataset_name) {
+      setSelectedDatasetName(selected.dataset_name);
+    }
+  }, [datasetId, datasets, setSelectedDatasetName]);
+
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -165,7 +178,10 @@ export default function DatasetStep({
 
       // Auto-select the created dataset
       if (data.dataset_id) {
-        handleDatasetSelect(data.dataset_id.toString());
+        void handleDatasetSelect(
+          data.dataset_id.toString(),
+          data.dataset_name ?? datasetName.trim(),
+        );
       }
 
       // Reset form
@@ -185,9 +201,18 @@ export default function DatasetStep({
   };
 
   // Select dataset and fetch columns
-  const handleDatasetSelect = async (id: string) => {
+  const handleDatasetSelect = async (id: string, name?: string) => {
     setDatasetId(id);
-    if (!id) return;
+    if (!id) {
+      setSelectedDatasetName("");
+      return;
+    }
+    const resolvedName =
+      name ??
+      datasets.find((dataset) => dataset.dataset_id.toString() === id)
+        ?.dataset_name ??
+      "";
+    setSelectedDatasetName(resolvedName);
 
     setIsLoadingColumns(true);
     try {
@@ -243,7 +268,10 @@ export default function DatasetStep({
       });
       if (!response.ok) throw new Error("Failed to delete dataset");
       toast.success("Dataset deleted");
-      if (datasetId === id.toString()) setDatasetId("");
+      if (datasetId === id.toString()) {
+        setDatasetId("");
+        setSelectedDatasetName("");
+      }
       loadDatasets();
     } catch (err) {
       toast.error(
@@ -608,7 +636,10 @@ export default function DatasetStep({
                         : "3px solid #DCCFC3",
                     }}
                     onClick={() =>
-                      handleDatasetSelect(dataset.dataset_id.toString())
+                      handleDatasetSelect(
+                        dataset.dataset_id.toString(),
+                        dataset.dataset_name,
+                      )
                     }
                   >
                     <div className="px-5 py-4">

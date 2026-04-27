@@ -20,7 +20,7 @@ interface AccordionSectionProps {
   stepNumber: number;
   isOpen: boolean;
   onToggle: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
   badge?: string;
   children: React.ReactNode;
 }
@@ -95,19 +95,21 @@ function AccordionSection({
             </span>
           )}
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit();
-          }}
-          className="cursor-pointer text-xs font-medium px-2.5 py-1 rounded-md transition-colors"
-          style={{
-            color: colors.accent.primary,
-            backgroundColor: colors.bg.secondary,
-          }}
-        >
-          Edit
-        </button>
+        {onEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="cursor-pointer text-xs font-medium px-2.5 py-1 rounded-md transition-colors"
+            style={{
+              color: colors.accent.primary,
+              backgroundColor: colors.bg.secondary,
+            }}
+          >
+            Edit
+          </button>
+        )}
       </div>
 
       {isOpen && (
@@ -131,8 +133,14 @@ export default function ReviewStep({
   onBack,
   onEditStep,
 }: ReviewStepProps) {
-  const { datasetId, columnMapping, promptTemplate, outputSchema, configs } =
-    formState;
+  const {
+    datasetId,
+    datasetName,
+    columnMapping,
+    promptTemplate,
+    outputSchema,
+    configs,
+  } = formState;
   const [openSections, setOpenSections] = useState<Set<number>>(
     new Set([1, 2, 3, 4, 5]),
   );
@@ -208,20 +216,19 @@ export default function ReviewStep({
           stepNumber={1}
           isOpen={openSections.has(1)}
           onToggle={() => toggleSection(1)}
-          onEdit={() => onEditStep(1)}
         >
           <div className="pt-2">
             <div
               className="text-xs font-medium mb-1"
               style={{ color: colors.text.secondary }}
             >
-              Dataset ID
+              Dataset Name
             </div>
             <div
-              className="text-sm font-mono"
+              className="text-sm font-medium"
               style={{ color: colors.text.primary }}
             >
-              {datasetId}
+              {datasetName || "Unknown dataset"}
             </div>
           </div>
         </AccordionSection>
@@ -237,10 +244,13 @@ export default function ReviewStep({
         >
           <div className="space-y-3 pt-2">
             {columnMapping.textColumns.length > 0 && (
-              <div className="flex items-start gap-3">
+              <div className="space-y-1.5">
                 <span
-                  className="text-xs font-medium w-20 flex-shrink-0 pt-0.5"
-                  style={{ color: colors.text.secondary }}
+                  className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: "rgba(22, 163, 74, 0.14)",
+                    color: "#166534",
+                  }}
                 >
                   Text
                 </span>
@@ -248,10 +258,11 @@ export default function ReviewStep({
                   {columnMapping.textColumns.map((col) => (
                     <span
                       key={col}
-                      className="inline-flex px-2 py-0.5 rounded text-xs font-mono font-medium"
+                      className="inline-flex rounded px-2 py-0.5 text-xs font-mono font-medium"
                       style={{
-                        backgroundColor: "rgba(22, 163, 74, 0.1)",
-                        color: "#166534",
+                        backgroundColor: colors.bg.secondary,
+                        color: colors.text.primary,
+                        border: `1px solid ${colors.border}`,
                       }}
                     >
                       {col}
@@ -261,10 +272,13 @@ export default function ReviewStep({
               </div>
             )}
             {columnMapping.attachments.length > 0 && (
-              <div className="flex items-start gap-3">
+              <div className="space-y-1.5">
                 <span
-                  className="text-xs font-medium w-20 flex-shrink-0 pt-0.5"
-                  style={{ color: colors.text.secondary }}
+                  className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: "rgba(249, 115, 22, 0.14)",
+                    color: "#9a3412",
+                  }}
                 >
                   Attachments
                 </span>
@@ -272,14 +286,18 @@ export default function ReviewStep({
                   {columnMapping.attachments.map((a) => (
                     <span
                       key={a.column}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium"
+                      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-mono font-medium"
                       style={{
-                        backgroundColor: "rgba(249, 115, 22, 0.1)",
-                        color: "#9a3412",
+                        backgroundColor: colors.bg.secondary,
+                        color: colors.text.primary,
+                        border: `1px solid ${colors.border}`,
                       }}
                     >
                       {a.column}
-                      <span className="font-sans text-[10px] opacity-70">
+                      <span
+                        className="font-sans text-[10px]"
+                        style={{ color: colors.text.secondary }}
+                      >
                         ({a.type}, {a.format})
                       </span>
                     </span>
@@ -288,10 +306,13 @@ export default function ReviewStep({
               </div>
             )}
             {columnMapping.groundTruthColumns.length > 0 && (
-              <div className="flex items-start gap-3">
+              <div className="space-y-1.5">
                 <span
-                  className="text-xs font-medium w-20 flex-shrink-0 pt-0.5"
-                  style={{ color: colors.text.secondary }}
+                  className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold"
+                  style={{
+                    backgroundColor: "rgba(59, 130, 246, 0.14)",
+                    color: "#1e40af",
+                  }}
                 >
                   Ground Truth
                 </span>
@@ -299,10 +320,11 @@ export default function ReviewStep({
                   {columnMapping.groundTruthColumns.map((col) => (
                     <span
                       key={col}
-                      className="inline-flex px-2 py-0.5 rounded text-xs font-mono font-medium"
+                      className="inline-flex rounded px-2 py-0.5 text-xs font-mono font-medium"
                       style={{
-                        backgroundColor: "rgba(59, 130, 246, 0.1)",
-                        color: "#1e40af",
+                        backgroundColor: colors.bg.secondary,
+                        color: colors.text.primary,
+                        border: `1px solid ${colors.border}`,
                       }}
                     >
                       {col}

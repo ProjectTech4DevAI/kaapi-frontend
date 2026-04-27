@@ -453,7 +453,7 @@ export function OutputSchemaModal({
     if (open) {
       setDraftSchema(JSON.parse(JSON.stringify(schema)) as SchemaProperty[]);
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open) return null;
 
@@ -667,7 +667,7 @@ function OutputSchemaEditorInner({
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [codeValue, editorMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [codeValue, editorMode]);
 
   const switchToVisual = () => {
     const result = validateOpenApiSchema(codeValue);

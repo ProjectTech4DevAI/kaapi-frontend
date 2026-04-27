@@ -35,7 +35,7 @@ jobs:
           INSTANCE_ID: ${{ secrets.EC2_STAGING_INSTANCE_ID }}
           ROOT_USER: ${{ secrets.USER }}
         run: |
-          REMOTE_CMD="export HOME=/home/$ROOT_USER && export NVM_DIR="/home/$ROOT_USER/.nvm" && [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh" && git config --global --add safe.directory ${BUILD_DIRECTORY} && set -e && cd ${BUILD_DIRECTORY} && git pull origin main && npm ci && npm run build && sudo -u ${ROOT_USER} pm2 restart ${APP_NAME}"
+          REMOTE_CMD="export HOME=/home/$ROOT_USER && export NVM_DIR="/home/$ROOT_USER/.nvm" && [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh" && git config --global --add safe.directory ${BUILD_DIRECTORY} && set -e && cd ${BUILD_DIRECTORY} && git pull origin main && npm ci && npm run build && sudo - ${ROOT_USER} pm2 restart ${APP_NAME}"
           CMD_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \

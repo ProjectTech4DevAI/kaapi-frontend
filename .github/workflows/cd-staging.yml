@@ -27,9 +27,14 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy via SSM
+        env:
+          BUILD_DIRECTORY: ${{ secrets.BUILD_DIRECTORY }}
+          APP_NAME: ${{ secrets.PM2_APP_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
         run: |
           aws ssm send-command \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["export HOME=/home/ubuntu && export PATH=/data/.nvm/versions/node/v24.11.0/bin:$PATH && git config --global --add safe.directory ${{ secrets.BUILD_DIRECTORY }} && set -e && cd ${{ secrets.BUILD_DIRECTORY }} && git pull origin main && npm ci && npm run build && su - ec2-user && pm2 restart ${{ secrets.PM2_APP_NAME }}"]' \
-            --region ${{ secrets.AWS_REGION }}
+            --parameters 'commands=["export HOME=/home/ubuntu && export PATH=/data/.nvm/versions/node/v24.11.0/bin:$PATH && git config --global --add safe.directory $BUILD_DIRECTORY && set -e && cd $BUILD_DIRECTORY && git pull origin main && npm ci && npm run build && su - ec2-user && pm2 restart $APP_NAME"]' \
+            --region $AWS_REGION

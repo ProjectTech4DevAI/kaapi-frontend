@@ -17,6 +17,7 @@ import {
   SlidersIcon,
   ShieldCheckIcon,
   ChevronRightIcon,
+  ChatIcon,
 } from "@/app/components/icons";
 import { LoginModal } from "@/app/components/auth";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
@@ -25,11 +26,11 @@ import { NAV_ITEMS } from "@/app/lib/navConfig";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 
 /** Routes that are always accessible without auth */
-const PUBLIC_ROUTES = new Set(["/evaluations"]);
+const PUBLIC_ROUTES = new Set(["/", "/evaluations"]);
 
 export default function Sidebar({
   collapsed,
-  activeRoute = "/evaluations",
+  activeRoute = "/",
 }: SidebarProps) {
   const router = useRouter();
   const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
@@ -109,6 +110,7 @@ export default function Sidebar({
   };
 
   const iconMap: Record<string, React.ReactNode> = {
+    chat: <ChatIcon />,
     clipboard: <ClipboardIcon />,
     document: <DocumentFileIcon />,
     book: <BookOpenIcon />,

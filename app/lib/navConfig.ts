@@ -12,6 +12,13 @@ export const SETTINGS_NAV: SettingsNavSection[] = [
 
 export const NAV_ITEMS: NavItemConfig[] = [
   {
+    name: "Chat",
+    route: "/",
+    icon: "chat",
+    gateDescription:
+      "Log in to chat with your assistants and keep conversation history.",
+  },
+  {
     name: "Evaluations",
     icon: "clipboard",
     submenu: [

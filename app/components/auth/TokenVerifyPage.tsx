@@ -110,7 +110,7 @@ export default function TokenVerifyPage({
 
       if (elapsed >= duration) {
         clearInterval(timer);
-        router.push("/evaluations");
+        router.push("/");
       }
     }, interval);
 
@@ -213,7 +213,7 @@ export default function TokenVerifyPage({
 
             {status === "error" && (
               <div className="mt-8 space-y-3">
-                <Button fullWidth onClick={() => router.push("/evaluations")}>
+                <Button fullWidth onClick={() => router.push("/")}>
                   Go to Dashboard
                 </Button>
                 <button

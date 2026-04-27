@@ -50,7 +50,7 @@ export default function SettingsSidebar() {
 
       <div className="px-3 pt-3 pb-1">
         <button
-          onClick={() => router.push("/evaluations")}
+          onClick={() => router.push("/")}
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[14px] font-medium text-text-secondary hover:text-text-primary hover:bg-neutral-100 transition-all duration-150 w-full"
         >
           <ArrowLeftIcon className="w-4 h-4" />

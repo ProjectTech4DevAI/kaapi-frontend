@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 /** Route protection via `kaapi_role` cookie. Settings requires superuser. */
 
 const PUBLIC_ROUTES = new Set<string>([
+  "/",
   "/evaluations",
   "/invite",
   "/verify",
@@ -14,7 +15,7 @@ const PUBLIC_ROUTES = new Set<string>([
 
 const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
 
-const HOME_ROUTE = "/evaluations";
+const HOME_ROUTE = "/";
 const PATHNAME_STARTS_WITH = ["/settings"];
 
 export function middleware(request: NextRequest) {

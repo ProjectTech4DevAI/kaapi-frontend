@@ -5,7 +5,7 @@
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/Toast";
 
-export const APP_NAME = "Kaapi Konsole";
+export const APP_NAME = "Kaapi Konsole V1";
 
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",

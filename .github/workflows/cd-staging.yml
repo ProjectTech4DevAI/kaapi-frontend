@@ -3,7 +3,7 @@ name: Deploy Kaapi to EC2 Staging
 on:
   push:
     branches:
-      - main # Deploy only when changes are pushed to the main branch
+      - build/update-deployment-script # Deploy only when changes are pushed to the main branch
 
 jobs:
   deploy:

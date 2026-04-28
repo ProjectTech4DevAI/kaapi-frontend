@@ -109,7 +109,7 @@ export default function ChatConfigPicker({
         type="button"
         onClick={() => !disabled && setOpen((prev) => !prev)}
         disabled={disabled || isLoading}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-bg-primary text-[13px] font-medium text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-bg-primary text-[13px] font-medium text-text-primary hover:bg-neutral-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         <GearIcon className="w-3.5 h-3.5 text-text-secondary" />
         <span className="max-w-[220px] truncate">{label}</span>
@@ -131,7 +131,7 @@ export default function ChatConfigPicker({
                   setOpen(false);
                   router.push("/configurations/prompt-editor?new=true");
                 }}
-                className="mt-3 px-3 py-1.5 rounded-md text-xs font-medium bg-accent-primary text-white hover:bg-accent-hover"
+                className="mt-3 px-3 py-1.5 rounded-md text-xs font-medium bg-accent-primary text-white hover:bg-accent-hover cursor-pointer"
               >
                 Create Config
               </button>
@@ -149,7 +149,7 @@ export default function ChatConfigPicker({
                   <button
                     type="button"
                     onClick={() => toggleGroup(meta.id)}
-                    className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-neutral-50"
+                    className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-neutral-50 cursor-pointer"
                   >
                     <span className="text-sm font-medium text-text-primary truncate">
                       {meta.name}
@@ -190,7 +190,7 @@ export default function ChatConfigPicker({
                               onClick={() =>
                                 handlePick(item.config_id, item.version)
                               }
-                              className="w-full px-4 py-2 flex items-center justify-between text-left hover:bg-neutral-100 transition-colors"
+                              className="w-full px-4 py-2 flex items-center justify-between text-left hover:bg-neutral-100 transition-colors cursor-pointer"
                             >
                               <span className="flex items-center gap-2 min-w-0">
                                 <span className="text-xs px-1.5 py-0.5 rounded bg-bg-primary text-text-secondary border border-border">

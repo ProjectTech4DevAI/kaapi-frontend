@@ -321,7 +321,6 @@ export default function ChatPage() {
             onChange={setDraft}
             onSend={() => sendMessage(draft)}
             isPending={isPending}
-            disabled={isAuthenticated && !hasConfig}
             placeholder={
               !isAuthenticated
                 ? "Log in to start chatting…"

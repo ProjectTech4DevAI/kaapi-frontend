@@ -21,8 +21,8 @@ export const colors = {
 
   // Accent (used for primary actions, active states)
   accent: {
-    primary: "#171717",
-    hover: "#404040",
+    primary: "#1f4496",
+    hover: "#173574",
   },
 
   // Status colors

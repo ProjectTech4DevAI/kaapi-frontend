@@ -1,7 +1,7 @@
 /**
  * ChatEmptyState - Welcome surface shown when the conversation is empty.
  *
- * Mirrors the OpenAI-style "Ask anything" hero with optional starter prompts.
+ * Mirrors the Chat-style "Ask anything" hero with optional starter prompts.
  */
 
 "use client";
@@ -29,7 +29,7 @@ export default function ChatEmptyState({
   return (
     <div className="flex-1 flex items-center justify-center px-6 py-10">
       <div className="w-full max-w-2xl text-center">
-        <div className="w-12 h-12 mx-auto rounded-full bg-neutral-900 text-white flex items-center justify-center">
+        <div className="w-12 h-12 mx-auto rounded-full bg-accent-primary text-white flex items-center justify-center">
           <ChatIcon className="w-6 h-6" />
         </div>
         <h2 className="mt-5 text-2xl font-semibold tracking-tight text-text-primary">

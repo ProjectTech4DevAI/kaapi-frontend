@@ -12,24 +12,6 @@ export const SETTINGS_NAV: SettingsNavSection[] = [
 
 export const NAV_ITEMS: NavItemConfig[] = [
   {
-    name: "Chat",
-    route: "/",
-    icon: "chat",
-    gateDescription:
-      "Log in to chat with your assistants and keep conversation history.",
-  },
-  {
-    name: "Evaluations",
-    icon: "clipboard",
-    submenu: [
-      { name: "Text", route: "/evaluations" },
-      { name: "Speech-to-Text", route: "/speech-to-text" },
-      { name: "Text-to-Speech", route: "/text-to-speech" },
-    ],
-    gateDescription:
-      "Log in to compare model response quality across different configs.",
-  },
-  {
     name: "Documents",
     route: "/document",
     icon: "document",
@@ -55,5 +37,23 @@ export const NAV_ITEMS: NavItemConfig[] = [
     route: "/guardrails",
     icon: "shield",
     gateDescription: "Log in to manage guardrails and validators.",
+  },
+  {
+    name: "Chat",
+    route: "/",
+    icon: "chat",
+    gateDescription:
+      "Log in to chat with your assistants and keep conversation history.",
+  },
+  {
+    name: "Evaluations",
+    icon: "clipboard",
+    submenu: [
+      { name: "Text", route: "/evaluations" },
+      { name: "Speech-to-Text", route: "/speech-to-text" },
+      { name: "Text-to-Speech", route: "/text-to-speech" },
+    ],
+    gateDescription:
+      "Log in to compare model response quality across different configs.",
   },
 ];

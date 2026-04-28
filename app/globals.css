@@ -6,8 +6,8 @@
   --foreground: #171717;
   --muted: #737373;
   --border: #e5e5e5;
-  --accent: #0070f3;
-  --accent-hover: #0761d1;
+  --accent: #1f4496;
+  --accent-hover: #173574;
   --success: #16a34a;
   --error: #dc2626;
 }
@@ -38,8 +38,10 @@
 
 /* Accent colors */
 @theme inline {
-  --color-accent-primary: #171717;
-  --color-accent-hover: #404040;
+  --color-accent-primary: #1f4496;
+  --color-accent-hover: #173574;
+  --color-accent-secondary: #ffce00;
+  --color-accent-secondary-hover: #e6b800;
 }
 
 /* Status colors */

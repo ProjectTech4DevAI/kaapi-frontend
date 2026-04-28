@@ -5,10 +5,6 @@
  * path (set by /api/llm/call POST when it generated the callback_url), since
  * the upstream payload itself doesn't include a job_id we can correlate
  * against.
- *
- * We treat the entire `data` blob as the `llm_response` and store it under
- * the callback_id for the browser's polling to pick up.
- *
  */
 
 import { NextResponse } from "next/server";

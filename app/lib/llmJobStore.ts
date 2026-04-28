@@ -1,19 +1,13 @@
 /**
- * In-memory store of LLM call results delivered via webhook.
+ * In-memory store for LLM call results received via webhook.
  *
- * The backend is asynchronous: it acknowledges POST /api/v1/llm/call with a
- * job_id and later POSTs the actual response to the configured callback_url.
- * Since browsers can't receive webhooks directly, the BFF accepts the callback
- * here and parks the result keyed by job_id. The browser then polls
- * /api/llm/call/{job_id}/result against the BFF, which serves the parked entry.
+ * The backend returns a job_id for POST /api/v1/llm/call and later sends the
+ * actual response to the callback_url. Since browsers can't receive webhooks,
+ * the BFF stores the response here using the job_id, and the frontend polls
+ * /api/llm/call/{job_id}/result to fetch it.
  *
- * State is per-process — fine for single-instance deploys and local dev. For
- * multi-instance deploys (e.g. Vercel) replace this with Redis/Upstash so the
- * function that received the webhook and the function serving the poll can
- * share state. The public API of this module (`publish`, `getResult`) is
- * already shaped to make that swap straightforward.
- *
- * A globalThis cache ensures the store survives Next.js dev HMR module reloads.
+ * This works for single-instance/local setups. For multi-instance deployments,
+ * replace this with Redis/Upstash so webhook and polling requests can share state.
  */
 
 import "server-only";

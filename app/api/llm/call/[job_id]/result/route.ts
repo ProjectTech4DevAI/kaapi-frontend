@@ -21,9 +21,6 @@ export async function GET(
   if (!record) {
     return new NextResponse(null, { status: 204 });
   }
-
-  // One-shot delivery: drop the parked entry once the browser has picked it up
-  // so memory isn't held until TTL eviction for completed messages.
   clearResult(job_id);
 
   return NextResponse.json({

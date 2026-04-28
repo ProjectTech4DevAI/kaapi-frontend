@@ -1,7 +1,5 @@
 /**
- * Client-side helpers for the Chat feature.
- *
- * Flow: POST /api/llm/call kicks off an async job and returns a job_id. The
+ * POST /api/llm/call kicks off an async job and returns a job_id. The
  * upstream backend later POSTs the response to our /api/llm/webhook receiver,
  * which parks the result in an in-process store. We then poll
  * /api/llm/call/{job_id}/result against the BFF — 204 means "still waiting",
@@ -21,6 +19,7 @@ import {
   LLMCallStatusData,
   LLMCallStatusResponse,
   LLMResponseBody,
+  PollOptions,
 } from "@/app/lib/types/chat";
 
 const FAILURE_STATUSES = new Set(["failed", "error", "cancelled", "canceled"]);
@@ -95,12 +94,6 @@ async function fetchWebhookResult(
   }
 
   return body as unknown as LLMCallStatusResponse;
-}
-
-export interface PollOptions {
-  signal?: AbortSignal;
-  intervalMs?: number;
-  timeoutMs?: number;
 }
 
 /**
@@ -185,8 +178,6 @@ function findText(node: unknown, depth = 0): string | null {
     if (typeof v === "string" && v.length) return v;
   }
 
-  // `content` may be a string, an object (Kaapi: `{ format, value }`), or an
-  // array of content parts (OpenAI Responses).
   const content = obj.content;
   if (typeof content === "string" && content.length) return content;
   if (content && typeof content === "object") {
@@ -223,8 +214,6 @@ export function extractAssistantText(
 }
 
 /**
- * Builds the ad-hoc `ConfigBlob` payload from a fully-loaded SavedConfig.
- *
  * The UI keeps `tools` as an array; the backend wants the equivalent fields
  * flattened onto `params` (`knowledge_base_ids`, `max_num_results`). Mirrors
  * the conversion done by SimplifiedConfigEditor when creating new versions.

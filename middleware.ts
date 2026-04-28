@@ -24,6 +24,7 @@ export function middleware(request: NextRequest) {
   const isAuthenticated = role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
 
+  // Guest-only routes: allowed when unauthenticated, blocked otherwise
   if (GUEST_ONLY_ROUTES.has(pathname)) {
     if (isAuthenticated) {
       return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
@@ -31,6 +32,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow public routes for everyone
   if (PUBLIC_ROUTES.has(pathname)) {
     return NextResponse.next();
   }
@@ -46,6 +48,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Any other app route requires authentication
   if (!isAuthenticated) {
     return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
   }

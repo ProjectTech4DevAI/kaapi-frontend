@@ -50,7 +50,7 @@ export default function ChatEmptyState({
                 key={s}
                 type="button"
                 onClick={() => onSuggestion(s)}
-                className="text-left text-sm text-text-primary px-4 py-3 rounded-xl border border-border bg-bg-primary hover:bg-neutral-50 transition-colors"
+                className="text-left text-sm text-text-primary px-4 py-3 rounded-xl border border-border bg-bg-primary hover:bg-neutral-50 transition-colors cursor-pointer"
               >
                 {s}
               </button>

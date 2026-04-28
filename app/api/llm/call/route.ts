@@ -1,6 +1,4 @@
 /**
- * Thin proxy for the upstream POST /api/v1/llm/call.
- *
  * The browser is responsible for generating the `callback_id` and the full
  * `callback_url` (see chatClient.buildCallbackUrl) — the BFF only forwards.
  * The one server-side concern is `WEBHOOK_SECRET`: when set we append it to

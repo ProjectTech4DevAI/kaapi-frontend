@@ -5,7 +5,7 @@ const Branding = () => {
     <div className="h-16 px-3 flex items-top border-b border-border">
       <Image
         src="/kaapi-logo.png"
-        alt="Kaapi"
+        alt="Kaapi Konsole logo"
         width={801}
         height={311}
         className="h-12 w-auto"

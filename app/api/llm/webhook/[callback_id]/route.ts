@@ -6,20 +6,9 @@
  * the upstream payload itself doesn't include a job_id we can correlate
  * against.
  *
- * Payload shape from the backend:
- *   {
- *     "success": true,
- *     "data": { response: {...}, usage: {...}, provider_raw_response: {...} },
- *     "error": null,
- *     ...
- *   }
- *
  * We treat the entire `data` blob as the `llm_response` and store it under
  * the callback_id for the browser's polling to pick up.
  *
- * Auth: when WEBHOOK_SECRET is set we require a matching `secret` query param
- * (or X-Webhook-Secret header). The id in the URL is unguessable on its own,
- * but the secret adds a second layer for production deployments.
  */
 
 import { NextResponse } from "next/server";

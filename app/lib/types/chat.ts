@@ -87,3 +87,14 @@ export interface APIEnvelope<T> {
 
 export type LLMCallCreateResponse = APIEnvelope<LLMCallJobData>;
 export type LLMCallStatusResponse = APIEnvelope<LLMCallStatusData>;
+
+export interface PollOptions {
+  signal?: AbortSignal;
+  intervalMs?: number;
+  timeoutMs?: number;
+}
+
+export interface StoredSelection {
+  configId: string;
+  version: number;
+}

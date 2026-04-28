@@ -38,7 +38,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
   return (
     <div className="flex gap-3 px-4 sm:px-6">
-      <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center shrink-0 mt-1">
+      <div className="w-8 h-8 rounded-full bg-accent-primary text-white flex items-center justify-center shrink-0 mt-1">
         <ChatIcon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0 pt-1">

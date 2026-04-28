@@ -36,7 +36,7 @@
   --color-border: #e5e5e5;
 }
 
-/* Accent colors — brand palette */
+/* Accent colors */
 @theme inline {
   --color-accent-primary: #1f4496;
   --color-accent-hover: #173574;

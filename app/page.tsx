@@ -1,12 +1,3 @@
-/**
- * Chat - Landing page with an OpenAI-style conversational interface.
- *
- * Sends a message → POST /api/llm/call → polls GET /api/llm/call/{job_id}
- * until the job completes, then renders the assistant's response. Conversation
- * IDs returned by the backend are reused on follow-up sends so server-side
- * history is preserved within a session.
- */
-
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,14 +22,13 @@ import {
   generateCallbackId,
   pollLLMCall,
 } from "@/app/lib/chatClient";
-import { ChatMessage, LLMCallRequest } from "@/app/lib/types/chat";
+import {
+  ChatMessage,
+  LLMCallRequest,
+  StoredSelection,
+} from "@/app/lib/types/chat";
 
 const SELECTION_STORAGE_KEY = "kaapi_chat_selection";
-
-interface StoredSelection {
-  configId: string;
-  version: number;
-}
 
 function loadStoredSelection(): StoredSelection | null {
   if (typeof window === "undefined") return null;
@@ -126,8 +116,6 @@ export default function ChatPage() {
         newConfigId !== configId || newVersion !== configVersion;
       setConfigId(newConfigId);
       setConfigVersion(newVersion);
-      // Switching configs starts a fresh conversation context — old IDs
-      // belong to the previous assistant.
       if (isDifferent) {
         setConversationId(null);
         setMessages([]);
@@ -174,9 +162,6 @@ export default function ChatPage() {
       abortRef.current = controller;
 
       try {
-        // Reuse the cached SavedConfig if we already have it; otherwise fetch
-        // the version blob once. `loadSingleVersion` is itself cached in
-        // useConfigs, so subsequent sends with the same config are zero-cost.
         const cached = configs.find(
           (c) => c.config_id === configId && c.version === configVersion,
         );
@@ -188,9 +173,6 @@ export default function ChatPage() {
           );
         }
 
-        // We generate the correlation id ourselves and embed it in
-        // callback_url, then poll for the same id — so the upstream's job_id
-        // doesn't need to round-trip back to us. Visible in the network tab.
         const callbackId = generateCallbackId();
         const payload: LLMCallRequest = {
           query: {

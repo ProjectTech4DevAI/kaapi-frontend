@@ -1,9 +1,9 @@
 /**
- * POST /api/llm/call kicks off an async job and returns a job_id. The
- * upstream backend later POSTs the response to our /api/llm/webhook receiver,
- * which parks the result in an in-process store. We then poll
- * /api/llm/call/{job_id}/result against the BFF — 204 means "still waiting",
- * 200 means the webhook has fired and the body carries the LLM response.
+ * POST /api/llm/call returns a job_id for an async job.
+ * The backend later sends the result to /api/llm/webhook,
+ * where it is stored temporarily. The frontend polls
+ * /api/llm/call/{job_id}/result — 204 means waiting,
+ * 200 means the LLM response is ready.
  */
 
 import { apiFetch } from "@/app/lib/apiClient";
@@ -40,7 +40,6 @@ export async function createLLMCall(
 /**
  * Generates a UUID used both as the `callback_id` segment in `callback_url`
  * and as the polling key. Falls back to a timestamp+random string on browsers
- * without `crypto.randomUUID` (which exists on https/localhost only).
  */
 export function generateCallbackId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -51,11 +50,6 @@ export function generateCallbackId(): string {
 
 /**
  * Public origin of this app, as seen by the upstream backend.
- *
- * Reads NEXT_PUBLIC_APP_URL when set (point this at your ngrok / cloudflared
- * HTTPS URL in dev), otherwise falls back to `window.location.origin`. In dev
- * with an http://localhost origin the upstream rejects the call with
- * "Only HTTPS URLs are allowed" — set NEXT_PUBLIC_APP_URL to fix.
  */
 export function getPublicAppUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -154,9 +148,9 @@ export async function pollLLMCall(
 }
 
 /**
- * Walks an arbitrary value looking for the first string that looks like
- * assistant prose. Handles the Kaapi shape (`output.content.value`), OpenAI
- * Responses (`output_text` / nested `content[]`), and Chat Completions
+ * Finds the first assistant response text from different API shapes,
+ * including Kaapi (`output.content.value`), OpenAI Responses
+ * (`output_text`, `content[]`), and Chat Completions
  * (`choices[].message.content`).
  */
 function findText(node: unknown, depth = 0): string | null {

@@ -2,14 +2,23 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
+import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { Dataset } from "@/app/lib/types/datasets";
 import { useToast } from "@/app/components/Toast";
+import {
+  CloseIcon,
+  CloudUploadIcon,
+  DatabaseIcon,
+  WarningIcon,
+} from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import DataViewModal from "./DataViewModal";
+import { handleForbiddenApiError } from "../errorUtils";
 
 interface DatasetStepProps {
   apiKey: string;
+  onForbidden?: () => void;
   datasetId: string;
   setDatasetId: (id: string) => void;
   setSelectedDatasetName: (name: string) => void;
@@ -20,10 +29,17 @@ interface DatasetStepProps {
   onNext: () => void;
 }
 
+type DatasetResponse = Dataset[] | { data?: Dataset[] };
+type CreateDatasetResponse =
+  | { dataset_id?: number; dataset_name?: string }
+  | { data?: { dataset_id?: number; dataset_name?: string } };
+type DatasetFileResponse = { file_content?: string };
+
 const LEFT_PANEL_CLASSES = "w-[40%] min-w-[360px] max-w-[500px]";
 
 export default function DatasetStep({
   apiKey,
+  onForbidden,
   datasetId,
   setDatasetId,
   setSelectedDatasetName,
@@ -61,15 +77,10 @@ export default function DatasetStep({
   const fetchAndParseFile = async (
     id: string | number,
   ): Promise<{ headers: string[]; rows: string[][] } | null> => {
-    // Proxy downloads from S3 server-side and returns base64
-    const res = await fetch(
+    const json = await apiFetch<DatasetFileResponse>(
       `/api/assessment/datasets/${id}?fetch_content=true`,
-      {
-        headers: { "X-API-KEY": apiKey },
-      },
+      apiKey,
     );
-    if (!res.ok) return null;
-    const json = await res.json();
     const base64 = json?.file_content;
     if (!base64) return null;
 
@@ -98,18 +109,18 @@ export default function DatasetStep({
     if (!apiKey) return;
     setIsLoading(true);
     try {
-      const response = await fetch("/api/assessment/datasets", {
-        headers: { "X-API-KEY": apiKey },
-      });
-      if (!response.ok) return;
-      const data = await response.json();
+      const data = await apiFetch<DatasetResponse>(
+        "/api/assessment/datasets",
+        apiKey,
+      );
       setDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
+      if (handleForbiddenApiError(e, onForbidden)) return;
       console.error("Failed to load datasets:", e);
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey]);
+  }, [apiKey, onForbidden]);
 
   useEffect(() => {
     loadDatasets();
@@ -158,29 +169,24 @@ export default function DatasetStep({
         formData.append("description", datasetDescription.trim());
       }
 
-      const response = await fetch("/api/assessment/datasets", {
-        method: "POST",
-        body: formData,
-        headers: { "X-API-KEY": apiKey },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Upload failed with status ${response.status}`,
-        );
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<CreateDatasetResponse>(
+        "/api/assessment/datasets",
+        apiKey,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       await loadDatasets();
 
       // Auto-select the created dataset
-      if (data.dataset_id) {
+      const created =
+        (data as { data?: { dataset_id?: number; dataset_name?: string } })
+          .data ?? (data as { dataset_id?: number; dataset_name?: string });
+      if (created?.dataset_id) {
         void handleDatasetSelect(
-          data.dataset_id.toString(),
-          data.dataset_name ?? datasetName.trim(),
+          created.dataset_id.toString(),
+          created.dataset_name ?? datasetName.trim(),
         );
       }
 
@@ -192,6 +198,7 @@ export default function DatasetStep({
 
       toast.success("Dataset created successfully!");
     } catch (error) {
+      if (handleForbiddenApiError(error, onForbidden)) return;
       toast.error(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -228,6 +235,7 @@ export default function DatasetStep({
         onColumnsLoaded(parsed.headers, sampleRow);
       }
     } catch (e) {
+      if (handleForbiddenApiError(e, onForbidden)) return;
       console.error("Failed to fetch dataset columns:", e);
     } finally {
       setIsLoadingColumns(false);
@@ -250,6 +258,7 @@ export default function DatasetStep({
         rows: parsed.rows,
       });
     } catch (err) {
+      if (handleForbiddenApiError(err, onForbidden)) return;
       toast.error(
         err instanceof Error ? err.message : "Failed to view dataset",
       );
@@ -262,18 +271,17 @@ export default function DatasetStep({
   const handleDeleteDataset = async (id: number) => {
     setDeletingId(id);
     try {
-      const response = await fetch(`/api/assessment/datasets/${id}`, {
+      await apiFetch(`/api/assessment/datasets/${id}`, apiKey, {
         method: "DELETE",
-        headers: { "X-API-KEY": apiKey },
       });
-      if (!response.ok) throw new Error("Failed to delete dataset");
       toast.success("Dataset deleted");
       if (datasetId === id.toString()) {
         setDatasetId("");
         setSelectedDatasetName("");
       }
-      loadDatasets();
+      void loadDatasets();
     } catch (err) {
+      if (handleForbiddenApiError(err, onForbidden)) return;
       toast.error(
         err instanceof Error ? err.message : "Failed to delete dataset",
       );
@@ -342,12 +350,14 @@ export default function DatasetStep({
           {/* Name */}
           <div>
             <label
+              htmlFor="dataset-name"
               className="block text-xs font-medium mb-1.5"
               style={{ color: colors.text.secondary }}
             >
               Name *
             </label>
             <input
+              id="dataset-name"
               type="text"
               value={datasetName}
               onChange={(e) => setDatasetName(e.target.value)}
@@ -364,12 +374,14 @@ export default function DatasetStep({
           {/* Description */}
           <div>
             <label
+              htmlFor="dataset-description"
               className="block text-xs font-medium mb-1.5"
               style={{ color: colors.text.secondary }}
             >
               Description
             </label>
             <input
+              id="dataset-description"
               type="text"
               value={datasetDescription}
               onChange={(e) => setDatasetDescription(e.target.value)}
@@ -441,22 +453,11 @@ export default function DatasetStep({
                       setUploadedFile(null);
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
+                    aria-label="Remove file"
                     className="p-1 rounded"
                     style={{ color: colors.text.secondary }}
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <CloseIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -476,20 +477,12 @@ export default function DatasetStep({
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
               >
-                <svg
-                  className="mx-auto h-8 w-8 mb-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <span
+                  className="block mx-auto mb-2"
                   style={{ color: colors.border }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
+                  <CloudUploadIcon className="h-8 w-8" />
+                </span>
                 <p
                   className="text-sm font-medium mb-1"
                   style={{ color: colors.text.primary }}
@@ -594,20 +587,10 @@ export default function DatasetStep({
             </div>
           ) : datasets.length === 0 ? (
             <div className="p-16 text-center">
-              <svg
+              <DatabaseIcon
                 className="w-12 h-12 mx-auto mb-3"
                 style={{ color: colors.border }}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3M4 12c0 2 3.6 3 8 3s8-1 8-3"
-                />
-              </svg>
+              />
               <p
                 className="text-sm font-medium mb-1"
                 style={{ color: colors.text.primary }}
@@ -719,6 +702,7 @@ export default function DatasetStep({
                               e.stopPropagation();
                               setConfirmDeleteId(dataset.dataset_id);
                             }}
+                            aria-label={`Delete ${dataset.dataset_name}`}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium border"
                             style={{
                               backgroundColor: "transparent",
@@ -796,20 +780,9 @@ export default function DatasetStep({
                       className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: "rgba(220, 38, 38, 0.1)" }}
                     >
-                      <svg
-                        className="w-5 h-5"
-                        style={{ color: "hsl(8, 86%, 40%)" }}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"
-                        />
-                      </svg>
+                      <span style={{ color: "hsl(8, 86%, 40%)" }}>
+                        <WarningIcon className="w-5 h-5" />
+                      </span>
                     </div>
                     <div>
                       <h3

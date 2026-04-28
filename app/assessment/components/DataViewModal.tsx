@@ -1,6 +1,7 @@
 "use client";
 
 import { colors } from "@/app/lib/colors";
+import CloseIcon from "@/app/components/icons/document/CloseIcon";
 
 export interface DataViewModalProps {
   title: string;
@@ -59,19 +60,7 @@ export default function DataViewModal({
             className="p-1.5 rounded"
             style={{ color: colors.text.secondary }}
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <CloseIcon className="w-5 h-5" />
           </button>
         </div>
         <div className="flex-1 overflow-auto">

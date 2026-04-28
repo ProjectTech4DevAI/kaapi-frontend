@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useId } from "react";
 import { colors } from "@/app/lib/colors";
 
 interface JsonEditorProps {
@@ -80,6 +80,8 @@ export default function JsonEditor({
 }: JsonEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const textareaId = useId();
+  const errorId = `${textareaId}-error`;
 
   const syncScroll = useCallback(() => {
     if (textareaRef.current && preRef.current) {
@@ -166,6 +168,9 @@ export default function JsonEditor({
         <div className="flex items-center gap-3">
           {error && (
             <span
+              id={errorId}
+              role="alert"
+              aria-live="polite"
               className="text-[11px] truncate max-w-xs"
               style={{ color: "#ef4444" }}
             >
@@ -174,6 +179,7 @@ export default function JsonEditor({
           )}
           {value.trim() && (
             <button
+              type="button"
               onClick={() => onChange("")}
               className="cursor-pointer text-xs"
               style={{ color: colors.text.secondary }}
@@ -230,6 +236,7 @@ export default function JsonEditor({
 
         {/* Editable layer */}
         <textarea
+          id={textareaId}
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -239,6 +246,9 @@ export default function JsonEditor({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
+          aria-label="JSON editor"
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : undefined}
           className="relative w-full resize-none outline-none"
           style={{
             ...FONT,

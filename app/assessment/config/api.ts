@@ -11,6 +11,7 @@ import {
   ConfigVersionResponse,
   ConfigWithVersionResponse,
 } from "@/app/lib/configTypes";
+import { apiFetch } from "@/app/lib/apiClient";
 import { STORAGE_KEY } from "@/app/lib/constants/keystore";
 import { ConfigSelection } from "../types";
 import { CACHE_INVALIDATED_EVENT } from "./constants";
@@ -75,21 +76,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
     throw new Error("No API key found. Please add one in the Keystore.");
   }
 
-  const response = await fetch(url, {
-    ...init,
-    headers: {
-      "X-API-KEY": apiKey,
-      ...(init?.headers || {}),
-    },
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data?.error || "Request failed");
-  }
-
-  return data as T;
+  return apiFetch<T>(url, apiKey, init);
 }
 
 export function invalidateAssessmentConfigCache(): void {

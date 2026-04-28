@@ -10,12 +10,14 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
+import { apiFetch } from "@/app/lib/apiClient";
 import { STORAGE_KEY } from "@/app/lib/constants/keystore";
 import { FeatureFlag } from "@/app/lib/constants/featureFlags";
 import { removeFeatureFromClient } from "@/app/lib/featureState";
 import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
 import Loader from "@/app/components/Loader";
+import { MenuIcon, KeyIcon, DatabaseIcon } from "@/app/components/icons";
 import { useToast } from "@/app/components/Toast";
 import Stepper, { Step } from "./components/Stepper";
 import DatasetStep from "./components/DatasetStep";
@@ -27,6 +29,7 @@ import { useAssessmentEvents } from "./useAssessmentEvents";
 import { ConfigSelection, SchemaProperty, AssessmentFormState } from "./types";
 import { useAssessmentDatasetStore } from "./store";
 import { schemaToJsonSchema } from "./schemaUtils";
+import { handleForbiddenApiError } from "./errorUtils";
 
 type TabId = "datasets" | "config" | "results";
 
@@ -41,6 +44,12 @@ const CONFIG_STEPS: Step[] = [
   { id: 2, label: "Prompt & Config" },
   { id: 3, label: "Review" },
 ];
+
+declare global {
+  interface Window {
+    __assessmentForbiddenNavLock?: boolean;
+  }
+}
 
 function ShimmerDot({ color }: { color: string }) {
   return (
@@ -58,6 +67,8 @@ function ShimmerDot({ color }: { color: string }) {
 }
 
 type IndicatorState = "none" | "processing" | "failed" | "success";
+type DatasetSummary = { dataset_id: number; dataset_name?: string };
+type EvaluationStatusRun = { status: string; updated_at: string };
 
 function AssessmentContent() {
   const router = useRouter();
@@ -107,6 +118,43 @@ function AssessmentContent() {
 
   const selectedKey = apiKeys.find((k) => k.id === selectedKeyId);
 
+  const handleAssessmentForbidden = useCallback(
+    (options?: { notify?: boolean }) => {
+      if (
+        typeof window !== "undefined" &&
+        window.__assessmentForbiddenNavLock
+      ) {
+        return;
+      }
+      if (featureRedirectingRef.current) {
+        return;
+      }
+
+      if (typeof window !== "undefined") {
+        window.__assessmentForbiddenNavLock = true;
+      }
+      featureRedirectingRef.current = true;
+
+      if (options?.notify) {
+        toast.error(
+          "Assessment feature is disabled for this organization/project.",
+        );
+      }
+      removeFeatureFromClient(FeatureFlag.ASSESSMENT);
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/evaluations"
+      ) {
+        router.replace("/");
+      }
+    },
+    [router, toast],
+  );
+
+  const handleAssessmentForbiddenWithNotify = useCallback(() => {
+    handleAssessmentForbidden({ notify: true });
+  }, [handleAssessmentForbidden]);
+
   // Backfill dataset name when old persisted state has only datasetId.
   useEffect(() => {
     if (!selectedKey?.key || !datasetId || datasetName) return;
@@ -115,13 +163,14 @@ function AssessmentContent() {
 
     (async () => {
       try {
-        const response = await fetch("/api/assessment/datasets", {
-          headers: { "X-API-KEY": selectedKey.key },
-        });
-        if (!response.ok || cancelled) return;
+        const data = await apiFetch<
+          { data?: DatasetSummary[] } | DatasetSummary[]
+        >("/api/assessment/datasets", selectedKey.key);
+        if (cancelled) return;
 
-        const data = await response.json();
-        const datasets = Array.isArray(data) ? data : data.data || [];
+        const datasets: DatasetSummary[] = Array.isArray(data)
+          ? data
+          : data.data || [];
         const selected = datasets.find(
           (dataset: { dataset_id: number; dataset_name?: string }) =>
             dataset.dataset_id.toString() === datasetId,
@@ -129,87 +178,23 @@ function AssessmentContent() {
         if (!cancelled && selected?.dataset_name) {
           setDatasetName(selected.dataset_name);
         }
-      } catch {
-        // ignore backfill failures; review will fallback gracefully
+      } catch (error) {
+        if (handleForbiddenApiError(error, handleAssessmentForbiddenWithNotify))
+          return;
+        // ignore non-forbidden backfill failures; review will fallback gracefully
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [datasetId, datasetName, selectedKey?.key, setDatasetName]);
-
-  const redirectIfFeatureDisabled = useCallback(
-    async (
-      response: Response,
-      options?: { notify?: boolean },
-    ): Promise<boolean> => {
-      if (response.status !== 403) return false;
-
-      const errorData = await response
-        .clone()
-        .json()
-        .catch(() => ({}));
-      const message = String(
-        errorData?.error ?? errorData?.message ?? errorData?.detail ?? "",
-      ).toLowerCase();
-
-      if (
-        message.includes("feature") &&
-        message.includes("assessment") &&
-        message.includes("not enabled")
-      ) {
-        if (!featureRedirectingRef.current) {
-          featureRedirectingRef.current = true;
-          if (options?.notify) {
-            toast.error(
-              "Assessment feature is disabled for this organization/project.",
-            );
-          }
-          removeFeatureFromClient(FeatureFlag.ASSESSMENT);
-          // Trigger middleware redirect by navigating to the gated route.
-          window.setTimeout(
-            () => {
-              router.replace("/assessment");
-            },
-            options?.notify ? 300 : 0,
-          );
-        }
-        return true;
-      }
-
-      return false;
-    },
-    [router, toast],
-  );
-
-  useEffect(() => {
-    const originalFetch = window.fetch.bind(window);
-
-    window.fetch = async (...args: Parameters<typeof fetch>) => {
-      const response = await originalFetch(...args);
-      try {
-        const input = args[0];
-        const requestUrl =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
-
-        if (requestUrl.includes("/api/assessment/")) {
-          await redirectIfFeatureDisabled(response);
-        }
-      } catch {
-        // silently ignore
-      }
-      return response;
-    };
-
-    return () => {
-      window.fetch = originalFetch;
-    };
-  }, [redirectIfFeatureDisabled]);
+  }, [
+    datasetId,
+    datasetName,
+    selectedKey?.key,
+    setDatasetName,
+    handleAssessmentForbiddenWithNotify,
+  ]);
 
   useEffect(() => {
     if (!selectedKey?.key) return;
@@ -218,12 +203,12 @@ function AssessmentContent() {
 
     (async () => {
       try {
-        const response = await fetch("/api/assessment/evaluations?limit=1", {
-          headers: { "X-API-KEY": selectedKey.key },
-        });
         if (cancelled) return;
-        await redirectIfFeatureDisabled(response, { notify: true });
-      } catch {
+        await apiFetch("/api/assessment/evaluations?limit=1", selectedKey.key);
+      } catch (error) {
+        if (handleForbiddenApiError(error, handleAssessmentForbiddenWithNotify))
+          return;
+        console.error("Assessment feature check failed:", error);
         // silently ignore
       }
     })();
@@ -231,18 +216,17 @@ function AssessmentContent() {
     return () => {
       cancelled = true;
     };
-  }, [redirectIfFeatureDisabled, selectedKey?.key]);
+  }, [handleAssessmentForbiddenWithNotify, selectedKey?.key]);
 
   const pollEvalStatus = useCallback(async () => {
     if (!selectedKey) return;
     try {
-      const response = await fetch("/api/assessment/evaluations?limit=10", {
-        headers: { "X-API-KEY": selectedKey.key },
-      });
-      if (await redirectIfFeatureDisabled(response)) return;
-      if (!response.ok) return;
-      const data = await response.json();
-      const runs = Array.isArray(data) ? data : data.data || [];
+      const data = await apiFetch<
+        { data?: EvaluationStatusRun[] } | EvaluationStatusRun[]
+      >("/api/assessment/evaluations?limit=10", selectedKey.key);
+      const runs: EvaluationStatusRun[] = Array.isArray(data)
+        ? data
+        : data.data || [];
 
       const hasProcessing = runs.some(
         (r: { status: string }) =>
@@ -281,10 +265,12 @@ function AssessmentContent() {
       }
 
       setEvalIndicator("none");
-    } catch {
+    } catch (error) {
+      if (handleForbiddenApiError(error, handleAssessmentForbiddenWithNotify))
+        return;
       // silently fail
     }
-  }, [redirectIfFeatureDisabled, selectedKey]);
+  }, [handleAssessmentForbiddenWithNotify, selectedKey]);
 
   useEffect(() => {
     if (!selectedKey) return;
@@ -298,6 +284,7 @@ function AssessmentContent() {
       void pollEvalStatus();
     },
     activeTab === "results",
+    handleAssessmentForbiddenWithNotify,
   );
 
   const handleTabSwitch = (tab: TabId) => {
@@ -352,7 +339,7 @@ function AssessmentContent() {
     [setDataset],
   );
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!selectedKey) {
       toast.error("No API key selected");
       return;
@@ -379,25 +366,10 @@ function AssessmentContent() {
         })),
       };
 
-      const response = await fetch("/api/assessment/evaluations", {
+      await apiFetch("/api/assessment/evaluations", selectedKey.key, {
         method: "POST",
-        headers: {
-          "X-API-KEY": selectedKey.key,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(payload),
       });
-
-      if (await redirectIfFeatureDisabled(response)) return;
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Failed with status ${response.status}`,
-        );
-      }
 
       toast.success("Assessment evaluation submitted!");
       setConfigStep(1);
@@ -411,13 +383,27 @@ function AssessmentContent() {
       setActiveTab("results");
       pollEvalStatus();
     } catch (error) {
+      if (handleForbiddenApiError(error, handleAssessmentForbiddenWithNotify))
+        return;
       toast.error(
         `Failed to submit: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [
+    clearDataset,
+    columnMapping,
+    configs,
+    datasetId,
+    experimentName,
+    handleAssessmentForbiddenWithNotify,
+    outputSchema,
+    pollEvalStatus,
+    promptTemplate,
+    selectedKey,
+    toast,
+  ]);
 
   const formState: AssessmentFormState = {
     experimentName,
@@ -490,22 +476,14 @@ function AssessmentContent() {
           >
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              aria-label="Toggle sidebar"
               className="cursor-pointer p-1.5 rounded-md"
               style={{ color: colors.text.secondary }}
             >
-              <svg
+              <MenuIcon
                 className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+                style={{ color: colors.text.secondary }}
+              />
             </button>
             <div>
               <h1
@@ -524,20 +502,12 @@ function AssessmentContent() {
           {apiKeys.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <svg
-                  className="mx-auto h-12 w-12 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <span
+                  className="block mx-auto mb-4"
                   style={{ color: colors.border }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                  />
-                </svg>
+                  <KeyIcon className="h-12 w-12" />
+                </span>
                 <p
                   className="text-sm font-medium mb-1"
                   style={{ color: colors.text.primary }}
@@ -628,6 +598,7 @@ function AssessmentContent() {
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <DatasetStep
                     apiKey={selectedKey?.key || ""}
+                    onForbidden={handleAssessmentForbiddenWithNotify}
                     datasetId={datasetId}
                     setDatasetId={setDatasetId}
                     setSelectedDatasetName={setDatasetName}
@@ -648,20 +619,10 @@ function AssessmentContent() {
                 {!hasDataset ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                      <svg
+                      <DatabaseIcon
                         className="mx-auto h-12 w-12 mb-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
                         style={{ color: colors.border }}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3"
-                        />
-                      </svg>
+                      />
                       <p
                         className="text-sm font-medium mb-1"
                         style={{ color: colors.text.primary }}
@@ -739,6 +700,7 @@ function AssessmentContent() {
                   <EvaluationsTab
                     apiKey={selectedKey?.key || ""}
                     refreshToken={assessmentRefreshToken}
+                    onForbidden={handleAssessmentForbiddenWithNotify}
                   />
                 </div>
               )}

@@ -1,14 +1,24 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { apiFetch } from "@/app/lib/apiClient";
 import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
+import {
+  RefreshIcon,
+  DatabaseIcon,
+  ClipboardIcon,
+  ChevronDownIcon,
+  EyeIcon,
+} from "@/app/components/icons";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
 import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/configTypes";
+import { handleForbiddenApiError } from "../errorUtils";
 
 interface EvaluationsTabProps {
   apiKey: string;
   refreshToken: number;
+  onForbidden?: () => void;
 }
 
 interface AssessmentRun {
@@ -66,6 +76,8 @@ interface ConfigRunDetail {
 
 type StatusFilter = "all" | "processing" | "completed" | "failed";
 type ExportFormat = "csv" | "xlsx";
+type AssessmentListResponse = AssessmentRun[] | { data?: AssessmentRun[] };
+type EvaluationListResponse = EvaluationRun[] | { data?: EvaluationRun[] };
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   pending: { bg: "rgba(202, 138, 4, 0.1)", text: "#92400e" },
@@ -126,7 +138,8 @@ function DownloadDropdown({
           backgroundColor: "transparent",
           opacity: disabled || loading ? 0.5 : 1,
         }}
-        title="Download results"
+        aria-label="Download results"
+        aria-expanded={open}
       >
         {loading ? (
           <div
@@ -152,19 +165,7 @@ function DownloadDropdown({
           </svg>
         )}
         Export
-        <svg
-          className="w-3 h-3"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <ChevronDownIcon className="w-3 h-3" />
       </button>
       {open && (
         <div
@@ -201,6 +202,7 @@ function DownloadDropdown({
 export default function EvaluationsTab({
   apiKey,
   refreshToken,
+  onForbidden,
 }: EvaluationsTabProps) {
   const toast = useToast();
   const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
@@ -231,43 +233,46 @@ export default function EvaluationsTab({
     rows: string[][];
   } | null>(null);
 
+  const buildAuthHeaders = useCallback(() => {
+    const headers = new Headers();
+    if (apiKey) headers.set("X-API-KEY", apiKey);
+    return headers;
+  }, [apiKey]);
+
   const loadAssessments = useCallback(async () => {
     if (!apiKey) return;
     setIsLoading(true);
     try {
-      const response = await fetch("/api/assessment/assessments", {
-        headers: { "X-API-KEY": apiKey },
-      });
-      if (!response.ok) return;
-      const data = await response.json();
+      const data = await apiFetch<AssessmentListResponse>(
+        "/api/assessment/assessments",
+        apiKey,
+      );
       const list = Array.isArray(data) ? data : data.data || [];
       setAssessments(list);
     } catch (e) {
+      if (handleForbiddenApiError(e, onForbidden)) return;
       console.error("Failed to load assessments:", e);
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey]);
+  }, [apiKey, onForbidden]);
 
   const loadChildRuns = useCallback(
     async (assessmentId: number) => {
       if (!apiKey) return;
       try {
-        const response = await fetch(
+        const data = await apiFetch<EvaluationListResponse>(
           `/api/assessment/evaluations?assessment_id=${assessmentId}`,
-          {
-            headers: { "X-API-KEY": apiKey },
-          },
+          apiKey,
         );
-        if (!response.ok) return;
-        const data = await response.json();
         const list = Array.isArray(data) ? data : data.data || [];
         setChildRunsByAssessment((prev) => ({ ...prev, [assessmentId]: list }));
       } catch (e) {
+        if (handleForbiddenApiError(e, onForbidden)) return;
         console.error("Failed to load child runs:", e);
       }
     },
-    [apiKey],
+    [apiKey, onForbidden],
   );
 
   const loadConfigDetail = useCallback(
@@ -286,20 +291,14 @@ export default function EvaluationsTab({
 
       try {
         const [configResponse, versionResponse] = await Promise.all([
-          fetch(`/api/configs/${configId}`, {
-            headers: { "X-API-KEY": apiKey },
-          }),
-          fetch(`/api/configs/${configId}/versions/${version}`, {
-            headers: { "X-API-KEY": apiKey },
-          }),
+          apiFetch<ConfigResponse>(`/api/configs/${configId}`, apiKey),
+          apiFetch<ConfigVersionResponse>(
+            `/api/configs/${configId}/versions/${version}`,
+            apiKey,
+          ),
         ]);
-
-        if (!configResponse.ok || !versionResponse.ok) {
-          throw new Error("Failed to load configuration details");
-        }
-
-        const configJson: ConfigResponse = await configResponse.json();
-        const versionJson: ConfigVersionResponse = await versionResponse.json();
+        const configJson = configResponse;
+        const versionJson = versionResponse;
 
         if (
           !configJson.success ||
@@ -397,12 +396,20 @@ export default function EvaluationsTab({
       setDownloadingId(key);
       try {
         const response = await fetch(`${url}?export_format=${format}`, {
-          headers: { "X-API-KEY": apiKey },
+          headers: buildAuthHeaders(),
+          credentials: "include",
         });
+        if (response.status === 403) {
+          onForbidden?.();
+          return;
+        }
         if (!response.ok) {
           const err = await response.json().catch(() => ({}));
           throw new Error(
-            err.detail || err.error || `Export failed (${response.status})`,
+            err.error ||
+              err.message ||
+              err.detail ||
+              `Export failed (${response.status})`,
           );
         }
         const blob = await response.blob();
@@ -426,7 +433,7 @@ export default function EvaluationsTab({
         setDownloadingId(null);
       }
     },
-    [apiKey, toast],
+    [apiKey, buildAuthHeaders, onForbidden, toast],
   );
 
   const handleRerun = useCallback(
@@ -438,22 +445,9 @@ export default function EvaluationsTab({
 
       setRerunningId(run.id);
       try {
-        const response = await fetch(
-          `/api/assessment/evaluations/${run.id}/retry`,
-          {
-            method: "POST",
-            headers: { "X-API-KEY": apiKey },
-          },
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error ||
-              errorData.message ||
-              `Failed with status ${response.status}`,
-          );
-        }
+        await apiFetch(`/api/assessment/evaluations/${run.id}/retry`, apiKey, {
+          method: "POST",
+        });
 
         toast.success("Evaluation re-submitted successfully!");
         loadAssessments();
@@ -461,6 +455,7 @@ export default function EvaluationsTab({
           loadChildRuns(run.assessment_id);
         }
       } catch (error) {
+        if (handleForbiddenApiError(error, onForbidden)) return;
         toast.error(
           `Re-run failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
@@ -468,7 +463,7 @@ export default function EvaluationsTab({
         setRerunningId(null);
       }
     },
-    [apiKey, loadAssessments, loadChildRuns, toast],
+    [apiKey, loadAssessments, loadChildRuns, onForbidden, toast],
   );
 
   const handleRetryAssessment = useCallback(
@@ -480,22 +475,11 @@ export default function EvaluationsTab({
 
       setRetryingAssessmentId(assessmentId);
       try {
-        const response = await fetch(
+        await apiFetch(
           `/api/assessment/assessments/${assessmentId}/retry`,
-          {
-            method: "POST",
-            headers: { "X-API-KEY": apiKey },
-          },
+          apiKey,
+          { method: "POST" },
         );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error ||
-              errorData.message ||
-              `Failed with status ${response.status}`,
-          );
-        }
 
         toast.success("Assessment re-submitted successfully!");
         void loadAssessments();
@@ -503,6 +487,7 @@ export default function EvaluationsTab({
           void loadChildRuns(expandedId);
         }
       } catch (error) {
+        if (handleForbiddenApiError(error, onForbidden)) return;
         toast.error(
           `Retry failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
@@ -510,7 +495,7 @@ export default function EvaluationsTab({
         setRetryingAssessmentId(null);
       }
     },
-    [apiKey, expandedId, loadAssessments, loadChildRuns, toast],
+    [apiKey, expandedId, loadAssessments, loadChildRuns, onForbidden, toast],
   );
 
   const handleExpand = useCallback(
@@ -529,20 +514,19 @@ export default function EvaluationsTab({
       if (!apiKey) return;
       setPreviewLoading(runId);
       try {
-        const response = await fetch(
+        const json = await apiFetch<
+          { data?: Record<string, unknown>[] } | Record<string, unknown>[]
+        >(
           `/api/assessment/evaluations/${runId}/results?export_format=json`,
-          {
-            headers: { "X-API-KEY": apiKey },
-          },
+          apiKey,
         );
-        if (!response.ok) throw new Error("Failed to load preview");
-        const json = await response.json();
         const results: Record<string, unknown>[] = Array.isArray(json)
           ? json
           : json.data || [];
         const { headers, rows } = jsonResultsToTableData(results);
         setPreviewModal({ title: label, headers, rows });
       } catch (error) {
+        if (handleForbiddenApiError(error, onForbidden)) return;
         toast.error(
           `Preview failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
@@ -550,7 +534,7 @@ export default function EvaluationsTab({
         setPreviewLoading(null);
       }
     },
-    [apiKey, toast],
+    [apiKey, onForbidden, toast],
   );
 
   const formatStatusLabel = (status: string) => status.replace(/_/g, " ");
@@ -605,6 +589,7 @@ export default function EvaluationsTab({
 
         <div className="flex items-center gap-3">
           <select
+            aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             className="px-3 py-1.5 border rounded-md text-sm cursor-pointer"
@@ -625,21 +610,11 @@ export default function EvaluationsTab({
             disabled={isLoading}
             className="cursor-pointer p-2 rounded-md border transition-colors"
             style={{ borderColor: colors.border, color: colors.text.secondary }}
-            title="Refresh"
+            aria-label="Refresh assessments"
           >
-            <svg
+            <RefreshIcon
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            />
           </button>
         </div>
       </div>
@@ -660,20 +635,12 @@ export default function EvaluationsTab({
           </div>
         ) : filteredRuns.length === 0 ? (
           <div className="py-16 text-center">
-            <svg
-              className="w-12 h-12 mx-auto mb-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <span
+              className="block mx-auto mb-3 w-12 h-12"
               style={{ color: colors.border }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
+              <ClipboardIcon className="w-12 h-12" />
+            </span>
             <p
               className="text-sm font-medium mb-1"
               style={{ color: colors.text.primary }}
@@ -757,19 +724,7 @@ export default function EvaluationsTab({
                                 color: colors.text.secondary,
                               }}
                             >
-                              <svg
-                                className="w-3.5 h-3.5 flex-shrink-0"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M4 7v10c0 2 3.6 3 8 3s8-1 8-3V7M4 7c0 2 3.6 3 8 3s8-1 8-3M4 7c0-2 3.6-3 8-3s8 1 8 3"
-                                />
-                              </svg>
+                              <DatabaseIcon className="w-3.5 h-3.5 flex-shrink-0" />
                               {run.dataset_name}
                             </span>
                           )}
@@ -1083,24 +1038,7 @@ export default function EvaluationsTab({
                                             }}
                                           />
                                         ) : (
-                                          <svg
-                                            className="w-3.5 h-3.5"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth={2}
-                                          >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                            />
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                            />
-                                          </svg>
+                                          <EyeIcon className="w-3.5 h-3.5" />
                                         )}
                                         Preview
                                       </button>
@@ -1153,7 +1091,6 @@ export default function EvaluationsTab({
         )}
       </div>
 
-      {/* Preview Modal */}
       {previewModal && (
         <DataViewModal
           title={previewModal.title}

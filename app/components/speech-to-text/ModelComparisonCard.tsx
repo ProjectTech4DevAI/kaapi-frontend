@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
+import { ChevronDownIcon, ChevronRightIcon } from "@/app/components/icons";
 
 interface WerMetrics {
   wer: number;
@@ -66,20 +67,25 @@ export default function ModelComparisonCard({
   onClick,
 }: ModelComparisonCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const detailsId = `model-card-details-${modelId}`;
   const werPercent = strictMetrics ? strictMetrics.wer * 100 : null;
   const lenientWerPercent = lenientMetrics ? lenientMetrics.wer * 100 : null;
 
-  // Reset expanded state when status changes to pending
-  // Also reset when modelId changes (new model added)
+  // Reset expanded state when model changes.
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [modelId]);
+
+  // Reset expanded state while pending.
   useEffect(() => {
     if (status === "pending") {
       setIsExpanded(false);
     }
-  }, [status, modelId]);
+  }, [status]);
 
   const handleExpandToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
+    setIsExpanded((prev) => !prev);
   };
 
   // Check if we have enough data to show expanded content
@@ -149,27 +155,21 @@ export default function ModelComparisonCard({
             {/* Expand Button - only show if there's content to expand */}
             {hasExpandedContent && (
               <button
+                type="button"
                 onClick={handleExpandToggle}
                 className="p-1 rounded hover:bg-gray-100"
                 style={{ color: colors.text.secondary }}
+                aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                aria-expanded={isExpanded}
+                aria-controls={detailsId}
               >
-                <svg
+                <ChevronDownIcon
                   className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
                   style={{
                     transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
                     transition: "transform 0.2s ease",
                   }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
             )}
           </div>
@@ -189,6 +189,7 @@ export default function ModelComparisonCard({
       {/* Expanded Details - only render if expanded AND has content */}
       {isExpanded && hasExpandedContent && (
         <div
+          id={detailsId}
           className="border-t px-3 pb-3 pt-2 space-y-3"
           style={{
             borderColor: colors.border,
@@ -366,6 +367,7 @@ export default function ModelComparisonCard({
           {/* View Diff Button */}
           {onClick && (
             <button
+              type="button"
               onClick={onClick}
               className="w-full py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1"
               style={{
@@ -374,19 +376,7 @@ export default function ModelComparisonCard({
                 border: `1px solid ${colors.border}`,
               }}
             >
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <ChevronRightIcon className="w-3 h-3" />
               View Diff Comparison
             </button>
           )}

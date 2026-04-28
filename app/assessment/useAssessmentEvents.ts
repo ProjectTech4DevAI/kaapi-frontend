@@ -21,6 +21,7 @@ export function useAssessmentEvents(
   apiKey: string,
   onEvent: () => void,
   enabled: boolean = true,
+  onForbidden?: () => void,
 ) {
   const onEventRef = useRef(onEvent);
 
@@ -29,7 +30,7 @@ export function useAssessmentEvents(
   }, [onEvent]);
 
   useEffect(() => {
-    if (!apiKey || !enabled) return;
+    if (!enabled) return;
 
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     let cancelled = false;
@@ -64,9 +65,15 @@ export function useAssessmentEvents(
       let response: Response;
 
       try {
+        const headers = new Headers();
+        if (apiKey) {
+          headers.set("X-API-KEY", apiKey);
+        }
+
         response = await fetch("/api/assessment/events", {
-          headers: { "X-API-KEY": apiKey },
+          headers,
           cache: "no-store",
+          credentials: "include",
           signal: abortController.signal,
         });
       } catch (error) {
@@ -81,6 +88,9 @@ export function useAssessmentEvents(
       }
 
       if (!response.ok || !response.body) {
+        if (response.status === 403 && onForbidden) {
+          onForbidden();
+        }
         throw new Error(`SSE connection failed: ${response.status}`);
       }
 
@@ -190,5 +200,5 @@ export function useAssessmentEvents(
       void reader?.cancel().catch(() => {});
       abortController.abort();
     };
-  }, [apiKey, enabled]);
+  }, [apiKey, enabled, onForbidden]);
 }

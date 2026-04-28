@@ -182,12 +182,12 @@ export default function Sidebar({
                     router.push(item.route);
                   }
                 }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border cursor-pointer ${
                   isActive
-                    ? "bg-neutral-100 text-text-primary font-semibold border-border"
+                    ? "bg-accent-primary/10 text-accent-primary font-semibold border-transparent"
                     : hasActiveChild
                       ? "bg-transparent text-text-primary font-semibold border-transparent"
-                      : "bg-transparent text-black font-medium border-transparent hover:bg-neutral-100"
+                      : "bg-transparent text-text-primary font-medium border-transparent hover:bg-neutral-100"
                 }`}
               >
                 <span
@@ -237,12 +237,12 @@ export default function Sidebar({
                               router.push(subItem.route);
                             }
                           }}
-                          className={`w-full text-left px-3 py-1.5 rounded-md text-[13px] flex items-center justify-between gap-2 transition-all duration-150 border ${
+                          className={`w-full text-left px-3 py-1.5 rounded-md text-[13px] flex items-center justify-between gap-2 transition-all duration-150 border cursor-pointer ${
                             isSubActive
-                              ? "bg-neutral-100 text-text-primary font-medium border-border"
+                              ? "bg-accent-primary/10 text-accent-primary font-medium border-transparent"
                               : hasActiveNestedChild
                                 ? "bg-transparent text-text-primary font-medium border-transparent"
-                                : "bg-transparent text-black font-normal border-transparent hover:bg-neutral-100"
+                                : "bg-transparent text-text-primary font-normal border-transparent hover:bg-neutral-100"
                           }`}
                         >
                           <span className="flex-1">{subItem.name}</span>
@@ -272,10 +272,10 @@ export default function Sidebar({
                                     nestedItem.route &&
                                     router.push(nestedItem.route)
                                   }
-                                  className={`w-full text-left px-2.5 py-1 rounded-md text-[13px] flex items-center justify-between gap-2 transition-all duration-150 border ${
+                                  className={`w-full text-left px-2.5 py-1 rounded-md text-[13px] flex items-center justify-between gap-2 transition-all duration-150 border cursor-pointer ${
                                     isNestedActive
-                                      ? "bg-neutral-100 text-text-primary font-medium border-border"
-                                      : "bg-transparent text-black font-normal border-transparent hover:bg-neutral-100"
+                                      ? "bg-accent-primary/10 text-accent-primary font-medium border-transparent"
+                                      : "bg-transparent text-text-primary font-normal border-transparent hover:bg-neutral-100"
                                   }`}
                                 >
                                   <span>{nestedItem.name}</span>
@@ -359,7 +359,7 @@ export default function Sidebar({
               </p>
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="mt-3 w-full py-2 rounded-full border border-border bg-white text-sm font-medium text-text-primary hover:bg-neutral-50 transition-colors"
+                className="mt-3 w-full py-2 rounded-full bg-accent-primary text-white text-sm font-medium hover:bg-accent-hover transition-colors cursor-pointer"
               >
                 Log in
               </button>

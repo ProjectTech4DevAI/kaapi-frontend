@@ -1,12 +1,16 @@
-import { APP_NAME } from "@/app/lib/constants";
+import Image from "next/image";
 
 const Branding = () => {
   return (
-    <div className="px-5 py-[13px] border-b border-border">
-      <h2 className="text-sm font-semibold text-text-primary tracking-tight">
-        {APP_NAME}
-      </h2>
-      <p className="text-xs mt-0.5 text-text-secondary">Tech4Dev</p>
+    <div className="h-16 px-6 flex items-center border-b border-border">
+      <Image
+        src="/kaapi-logo.png"
+        alt="Kaapi"
+        width={801}
+        height={311}
+        className="h-10 w-auto"
+        priority
+      />
     </div>
   );
 };

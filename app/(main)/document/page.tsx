@@ -191,7 +191,7 @@ export default function DocumentPage() {
           />
 
           <div className="flex-1 overflow-hidden flex bg-bg-secondary">
-            <div className="w-1/3 border-r overflow-hidden border-[hsl(0,0%,85%)]">
+            <div className="w-1/3 border-r border-r-status-default-border overflow-hidden">
               <DocumentListing
                 documents={documents}
                 selectedDocument={selectedDocument}

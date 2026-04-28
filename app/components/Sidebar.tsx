@@ -198,7 +198,7 @@ export default function Sidebar({
                   isActive
                     ? "bg-accent-primary/15 text-accent-primary font-semibold border-transparent"
                     : hasActiveChild
-                      ? "bg-transparent text-text-primary font-semibold border-transparent"
+                      ? "bg-transparent text-accent-primary font-semibold border-transparent"
                       : "bg-transparent text-text-secondary font-medium border-transparent hover:bg-neutral-100 hover:text-text-primary"
                 }`}
               >
@@ -253,7 +253,7 @@ export default function Sidebar({
                             isSubActive
                               ? "bg-accent-primary/15 text-accent-primary font-medium border-transparent"
                               : hasActiveNestedChild
-                                ? "bg-transparent text-text-primary font-medium border-transparent"
+                                ? "bg-transparent text-accent-primary font-medium border-transparent"
                                 : "bg-transparent text-text-secondary font-normal border-transparent hover:bg-neutral-100 hover:text-text-primary"
                           }`}
                         >

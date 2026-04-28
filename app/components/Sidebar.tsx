@@ -27,8 +27,7 @@ import GatePopover from "@/app/components/GatePopover";
 import { NAV_ITEMS } from "@/app/lib/navConfig";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 
-/** Routes that are always accessible without auth */
-const PUBLIC_ROUTES = new Set(["/", "/evaluations"]);
+const PUBLIC_ROUTES = new Set(["/"]);
 
 export default function Sidebar({
   collapsed,
@@ -362,7 +361,7 @@ export default function Sidebar({
           </div>
         ) : !isAuthenticated ? (
           <div className="px-4 py-4 w-60 border-t border-border">
-            <div className="rounded-lg bg-accent-subtle/40 px-3 py-3">
+            <div className="p-2">
               <p className="text-sm font-bold text-text-primary">
                 Get full access
               </p>

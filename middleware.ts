@@ -4,7 +4,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
-  "/evaluations",
   "/invite",
   "/verify",
   "/coming-soon/guardrails",

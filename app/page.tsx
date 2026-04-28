@@ -270,12 +270,14 @@ export default function ChatPage() {
                     New chat
                   </button>
                 )}
-                <ChatConfigPicker
-                  configId={configId}
-                  version={configVersion}
-                  onSelect={handleConfigSelect}
-                  disabled={!isAuthenticated || isPending}
-                />
+                {isAuthenticated && (
+                  <ChatConfigPicker
+                    configId={configId}
+                    version={configVersion}
+                    onSelect={handleConfigSelect}
+                    disabled={isPending}
+                  />
+                )}
               </div>
             }
           />

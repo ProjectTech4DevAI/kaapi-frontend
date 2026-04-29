@@ -1,6 +1,4 @@
 /**
- * Thin proxy for the upstream POST /api/v1/llm/call.
- *
  * The browser polls the resulting job via GET /api/llm/call/{job_id} until it
  * completes.
  */

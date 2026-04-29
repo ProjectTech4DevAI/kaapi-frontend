@@ -3,7 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeftIcon, KeyIcon, SlidersIcon } from "@/app/components/icons";
+import {
+  ArrowLeftIcon,
+  ChevronLeftIcon,
+  KeyIcon,
+  SlidersIcon,
+} from "@/app/components/icons";
 import { SETTINGS_NAV } from "@/app/lib/navConfig";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
@@ -17,8 +22,9 @@ const iconMap: Record<string, React.ReactNode> = {
 export default function SettingsSidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
-  const { sidebarCollapsed } = useApp();
+  const { currentUser, googleProfile, isAuthenticated, isHydrated, logout } =
+    useAuth();
+  const { sidebarCollapsed, setSidebarCollapsed } = useApp();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -44,14 +50,23 @@ export default function SettingsSidebar() {
 
   return (
     <aside
-      className={`h-full border-r border-border bg-bg-secondary flex flex-col shrink-0 transition-all duration-300 ease-in-out ${sidebarCollapsed ? "w-0 overflow-hidden" : "w-60"}`}
+      className={`h-full border-r border-border bg-bg-primary flex flex-col shrink-0 transition-all duration-300 ease-in-out ${sidebarCollapsed ? "w-0 overflow-hidden" : "w-60"}`}
     >
-      <Branding />
+      <div className="relative">
+        <Branding />
+        <button
+          onClick={() => setSidebarCollapsed(true)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors cursor-pointer"
+          aria-label="Collapse sidebar"
+        >
+          <ChevronLeftIcon className="w-4 h-4" />
+        </button>
+      </div>
 
       <div className="px-3 pt-3 pb-1">
         <button
           onClick={() => router.push("/")}
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[14px] font-medium text-text-secondary hover:text-text-primary hover:bg-neutral-100 transition-all duration-150 w-full"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[14px] font-medium text-text-secondary hover:text-text-primary hover:bg-neutral-100 transition-all duration-150 w-full cursor-pointer"
         >
           <ArrowLeftIcon className="w-4 h-4" />
           Dashboard
@@ -73,10 +88,10 @@ export default function SettingsSidebar() {
                   <button
                     key={item.route}
                     onClick={() => router.push(item.route)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border cursor-pointer ${
                       isActive
-                        ? "bg-neutral-100 text-text-primary font-semibold border-border"
-                        : "bg-transparent text-black font-medium border-transparent hover:bg-neutral-100"
+                        ? "bg-accent-primary/15 text-accent-primary font-semibold border-transparent"
+                        : "bg-transparent text-text-secondary font-medium border-transparent hover:bg-neutral-100 hover:text-text-primary"
                     }`}
                   >
                     {item.icon && (
@@ -93,7 +108,11 @@ export default function SettingsSidebar() {
         ))}
       </nav>
 
-      {isAuthenticated && (currentUser || googleProfile) && (
+      {!isHydrated ? (
+        <div className="px-3 pt-1 pb-3 border-t border-border">
+          <div className="h-12 rounded-lg bg-neutral-100 animate-pulse" />
+        </div>
+      ) : isAuthenticated && (currentUser || googleProfile) ? (
         <div
           className="px-3 pb-3 pt-1 border-t border-border relative"
           ref={userMenuRef}
@@ -121,7 +140,7 @@ export default function SettingsSidebar() {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-accent-primary flex items-center justify-center shrink-0">
                 <span className="text-xs font-semibold text-white">
                   {initials}
                 </span>
@@ -137,7 +156,7 @@ export default function SettingsSidebar() {
             </div>
           </button>
         </div>
-      )}
+      ) : null}
     </aside>
   );
 }

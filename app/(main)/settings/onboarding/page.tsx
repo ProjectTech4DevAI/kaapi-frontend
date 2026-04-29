@@ -165,7 +165,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-bg-secondary">
+    <div className="w-full h-screen flex flex-col bg-bg-primary">
       <div className="flex flex-1 overflow-hidden">
         <SettingsSidebar />
 

@@ -22,6 +22,10 @@ interface ChatConfigPickerProps {
   version: number;
   onSelect: (configId: string, version: number) => void;
   disabled?: boolean;
+  /** Open the dropdown above the trigger (default: below). */
+  openUp?: boolean;
+  /** Anchor the dropdown to the trigger's left edge (default: right edge). */
+  alignLeft?: boolean;
 }
 
 export default function ChatConfigPicker({
@@ -29,6 +33,8 @@ export default function ChatConfigPicker({
   version,
   onSelect,
   disabled = false,
+  openUp = false,
+  alignLeft = false,
 }: ChatConfigPickerProps) {
   const router = useRouter();
   const {
@@ -117,7 +123,9 @@ export default function ChatConfigPicker({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[320px] rounded-lg border border-border bg-bg-primary shadow-lg z-50 max-h-80 overflow-y-auto">
+        <div
+          className={`absolute ${alignLeft ? "left-0" : "right-0"} ${openUp ? "bottom-full mb-2" : "top-full mt-2"} w-[320px] rounded-lg border border-border bg-bg-primary shadow-lg z-50 max-h-80 overflow-y-auto`}
+        >
           {allConfigMeta.length === 0 ? (
             <div className="px-4 py-6 text-center">
               <p className="text-sm font-medium text-text-primary">

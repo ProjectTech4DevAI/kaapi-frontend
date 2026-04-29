@@ -35,7 +35,7 @@ export default function OrganizationList({
           <button
             key={org.id}
             onClick={() => onSelectOrg(org)}
-            className="w-full flex items-center justify-between p-4 rounded-lg border border-border bg-white text-left transition-colors hover:bg-neutral-50"
+            className="w-full flex items-center justify-between p-4 rounded-lg border border-border bg-white text-left transition-colors hover:bg-neutral-50 cursor-pointer"
           >
             <div>
               <p className="text-sm font-medium text-text-primary">

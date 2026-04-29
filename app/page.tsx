@@ -260,25 +260,15 @@ export default function ChatPage() {
             title="Chat"
             subtitle="Ask anything - answers come from your selected configuration"
             actions={
-              <div className="flex items-center gap-2">
-                {hasConversation && (
-                  <button
-                    type="button"
-                    onClick={handleNewChat}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-bg-primary text-text-primary hover:bg-neutral-50 transition-colors cursor-pointer"
-                  >
-                    New chat
-                  </button>
-                )}
-                {isAuthenticated && (
-                  <ChatConfigPicker
-                    configId={configId}
-                    version={configVersion}
-                    onSelect={handleConfigSelect}
-                    disabled={isPending}
-                  />
-                )}
-              </div>
+              hasConversation ? (
+                <button
+                  type="button"
+                  onClick={handleNewChat}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-bg-primary text-text-primary hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  New chat
+                </button>
+              ) : null
             }
           />
 
@@ -311,6 +301,18 @@ export default function ChatPage() {
                 : !hasConfig
                   ? "Select a configuration to start chatting…"
                   : "Message your assistant…"
+            }
+            leftAccessory={
+              isAuthenticated ? (
+                <ChatConfigPicker
+                  configId={configId}
+                  version={configVersion}
+                  onSelect={handleConfigSelect}
+                  disabled={isPending}
+                  openUp
+                  alignLeft
+                />
+              ) : null
             }
           />
         </div>

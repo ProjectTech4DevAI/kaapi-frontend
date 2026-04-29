@@ -1,13 +1,14 @@
 /**
  * ChatInput - Auto-growing textarea with a send button.
  *
- * Enter sends; Shift+Enter inserts a newline. Disabled while a response is
- * pending so users can't fire-and-forget multiple messages at once.
+ * Layout: textarea on top, controls row beneath with the parent-supplied
+ * `leftAccessory` (e.g. config picker) on the left and the send button on
+ * the right. Enter sends; Shift+Enter inserts a newline.
  */
 
 "use client";
 
-import { KeyboardEvent, useEffect, useRef } from "react";
+import { KeyboardEvent, ReactNode, useEffect, useRef } from "react";
 import { SendIcon } from "@/app/components/icons";
 
 interface ChatInputProps {
@@ -18,6 +19,8 @@ interface ChatInputProps {
   isPending?: boolean;
   placeholder?: string;
   helperText?: string;
+  /** Slot rendered on the left of the controls row (e.g. config picker). */
+  leftAccessory?: ReactNode;
 }
 
 const MAX_HEIGHT_PX = 200;
@@ -30,6 +33,7 @@ export default function ChatInput({
   isPending = false,
   placeholder = "Message…",
   helperText,
+  leftAccessory,
 }: ChatInputProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -52,19 +56,22 @@ export default function ChatInput({
   return (
     <div className="px-4 sm:px-6 pb-6 pt-2 bg-bg-primary">
       <div className="max-w-3xl mx-auto">
-        <div className="rounded-3xl border border-border bg-bg-primary shadow-[0_2px_12px_rgba(0,0,0,0.04)] focus-within:border-text-primary transition-colors">
-          <div className="flex items-end gap-2 px-3 py-2">
-            <textarea
-              ref={ref}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              disabled={disabled}
-              rows={1}
-              className="flex-1 resize-none bg-transparent text-[15px] leading-6 px-2 py-1.5 outline-none placeholder:text-text-secondary disabled:opacity-60"
-              style={{ maxHeight: MAX_HEIGHT_PX }}
-            />
+        <div className="rounded-3xl border border-border bg-bg-primary shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-colors">
+          <textarea
+            ref={ref}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            rows={1}
+            className="block w-full resize-none bg-transparent text-[15px] leading-6 px-5 pt-3 pb-1 outline-none placeholder:text-text-secondary disabled:opacity-60"
+            style={{ maxHeight: MAX_HEIGHT_PX }}
+          />
+          <div className="flex items-center gap-2 px-3 pb-2 pt-1">
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+              {leftAccessory}
+            </div>
             <button
               type="button"
               onClick={onSend}
@@ -72,7 +79,7 @@ export default function ChatInput({
               aria-label="Send message"
               className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                 canSend
-                  ? "bg-accent-primary text-white hover:bg-accent-hover"
+                  ? "bg-accent-primary text-white hover:bg-accent-hover cursor-pointer"
                   : "bg-neutral-200 text-text-secondary cursor-not-allowed"
               }`}
             >

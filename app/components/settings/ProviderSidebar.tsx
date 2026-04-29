@@ -29,10 +29,10 @@ export default function ProviderSidebar({
               <button
                 key={provider.id}
                 onClick={() => onSelect(provider)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between gap-2 transition-all duration-150 border cursor-pointer ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center justify-between gap-2 transition-all duration-150 border cursor-pointer ${
                   isSelected
-                    ? "bg-bg-primary text-text-primary font-semibold border-border"
-                    : "bg-transparent text-text-secondary font-normal border-transparent hover:bg-bg-primary hover:text-text-primary"
+                    ? "bg-accent-primary/15 text-accent-primary font-semibold border-transparent"
+                    : "bg-transparent text-text-secondary font-medium border-transparent hover:bg-neutral-100 hover:text-text-primary"
                 }`}
               >
                 <span>{provider.name}</span>

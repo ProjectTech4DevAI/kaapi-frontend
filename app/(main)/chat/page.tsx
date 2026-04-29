@@ -19,11 +19,9 @@ import {
 } from "@/app/components/chat";
 import { useConfigs } from "@/app/hooks";
 import {
-  buildCallbackUrl,
   configToBlob,
   createLLMCall,
   extractAssistantText,
-  generateCallbackId,
   pollLLMCall,
 } from "@/app/lib/chatClient";
 import {
@@ -59,7 +57,9 @@ export default function ChatPage() {
   const { isAuthenticated, activeKey, isHydrated } = useAuth();
   const apiKey = activeKey?.key ?? "";
   const toast = useToast();
-  const { configs, loadSingleVersion } = useConfigs({ pageSize: 0 });
+  const { configs, loadSingleVersion, allConfigMeta } = useConfigs({
+    pageSize: 0,
+  });
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -137,7 +137,13 @@ export default function ChatPage() {
         return;
       }
       if (!configId || !configVersion) {
-        toast.error("Select a configuration before sending a message.");
+        if (allConfigMeta.length === 0) {
+          toast.error(
+            "No configurations yet — create one in Configurations → Prompt Editor first.",
+          );
+        } else {
+          toast.error("Select a configuration before sending a message.");
+        }
         return;
       }
 
@@ -176,7 +182,6 @@ export default function ChatPage() {
           );
         }
 
-        const callbackId = generateCallbackId();
         const payload: LLMCallRequest = {
           query: {
             input: trimmed,
@@ -185,18 +190,17 @@ export default function ChatPage() {
               : { auto_create: true },
           },
           config: { blob: configToBlob(fullConfig) },
-          callback_url: buildCallbackUrl(callbackId),
           include_provider_raw_response: true,
         };
 
-        updateMessage(assistantMessage.id, { jobId: callbackId });
-
         const created = await createLLMCall(payload, apiKey);
-        if (!created.success) {
+        if (!created.success || !created.data?.job_id) {
           throw new Error(created.error || "Failed to start the request");
         }
+        const jobId = created.data.job_id;
+        updateMessage(assistantMessage.id, { jobId });
 
-        const result = await pollLLMCall(callbackId, apiKey, {
+        const result = await pollLLMCall(jobId, apiKey, {
           signal: controller.signal,
         });
 
@@ -238,6 +242,7 @@ export default function ChatPage() {
       }
     },
     [
+      allConfigMeta,
       apiKey,
       configId,
       configVersion,

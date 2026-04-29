@@ -1,9 +1,9 @@
 /**
- * POST /api/llm/call returns a job_id for an async job.
- * The backend later sends the result to /api/llm/webhook,
- * where it is stored temporarily. The frontend polls
- * /api/llm/call/{job_id}/result — 204 means waiting,
- * 200 means the LLM response is ready.
+ * Flow: POST /api/llm/call kicks off an async job and returns a job_id. The
+ * browser then polls GET /api/llm/call/{job_id} (a thin BFF proxy over the
+ * upstream's status endpoint) until `status === completed` or terminal
+ * failure. No webhooks involved — the upstream's status endpoint returns the
+ * full LLM response once the job is done.
  */
 
 import { apiFetch } from "@/app/lib/apiClient";
@@ -22,6 +22,13 @@ import {
   PollOptions,
 } from "@/app/lib/types/chat";
 
+const SUCCESS_STATUSES = new Set([
+  "completed",
+  "complete",
+  "succeeded",
+  "success",
+  "done",
+]);
 const FAILURE_STATUSES = new Set(["failed", "error", "cancelled", "canceled"]);
 
 const POLL_INTERVAL_MS = 1500;
@@ -37,48 +44,16 @@ export async function createLLMCall(
   });
 }
 
-/**
- * Generates a UUID used both as the `callback_id` segment in `callback_url`
- * and as the polling key. Falls back to a timestamp+random string on browsers
- */
-export function generateCallbackId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-/**
- * Public origin of this app, as seen by the upstream backend.
- */
-export function getPublicAppUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/$/, "");
-  if (typeof window !== "undefined") return window.location.origin;
-  return "";
-}
-
-export function buildCallbackUrl(callbackId: string): string {
-  return `${getPublicAppUrl()}/api/llm/webhook/${callbackId}`;
-}
-
-/**
- * Fetches the parked webhook result from the BFF. Returns null when the
- * webhook hasn't arrived yet (HTTP 204), throws on transport / shape errors.
- */
-async function fetchWebhookResult(
+/** Fetches the latest job status from the upstream via the BFF proxy. */
+async function fetchJobStatus(
   jobId: string,
   apiKey: string,
-): Promise<LLMCallStatusResponse | null> {
-  return apiFetch<LLMCallStatusResponse>(
-    `/api/llm/call/${jobId}/result`,
-    apiKey,
-    { acceptEmpty: true },
-  );
+): Promise<LLMCallStatusResponse> {
+  return apiFetch<LLMCallStatusResponse>(`/api/llm/call/${jobId}`, apiKey);
 }
 
 /**
- * Polls the BFF for a webhook-delivered result until it arrives, the signal
+ * Polls the upstream job status until it reaches a terminal state, the signal
  * aborts, or the timeout elapses.
  */
 export async function pollLLMCall(
@@ -99,26 +74,25 @@ export async function pollLLMCall(
       throw new DOMException("Polling aborted", "AbortError");
     }
 
-    const res = await fetchWebhookResult(jobId, apiKey);
-    if (res) {
-      if (!res.data) {
-        throw new Error(res.error || "Empty response from webhook.");
-      }
-      const status = (res.data.status || "").toLowerCase();
-      if (FAILURE_STATUSES.has(status) || res.success === false) {
-        throw new Error(
-          res.data.error_message ||
-            res.error ||
-            `Job ${status || "failed"}. Please try again.`,
-        );
-      }
+    const res = await fetchJobStatus(jobId, apiKey);
+    if (!res.success || !res.data) {
+      throw new Error(res.error || "Failed to retrieve job status.");
+    }
+
+    const status = (res.data.status || "").toLowerCase();
+    if (SUCCESS_STATUSES.has(status)) {
       return res.data;
+    }
+    if (FAILURE_STATUSES.has(status)) {
+      throw new Error(
+        res.data.error_message ||
+          res.error ||
+          `Job ${status}. Please try again.`,
+      );
     }
 
     if (Date.now() - start > timeoutMs) {
-      throw new Error(
-        "Timed out waiting for the assistant's response. Verify the webhook URL is reachable.",
-      );
+      throw new Error("Timed out waiting for the assistant's response.");
     }
 
     await new Promise<void>((resolve, reject) => {

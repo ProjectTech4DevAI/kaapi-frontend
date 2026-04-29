@@ -17,8 +17,8 @@ import { handleForbiddenApiError } from "../errorUtils";
 
 interface EvaluationsTabProps {
   apiKey: string;
-  refreshToken: number;
   onForbidden?: () => void;
+  onStatusIndicatorChange?: (state: "none" | "processing") => void;
 }
 
 interface AssessmentRun {
@@ -78,6 +78,7 @@ type StatusFilter = "all" | "processing" | "completed" | "failed";
 type ExportFormat = "csv" | "xlsx";
 type AssessmentListResponse = AssessmentRun[] | { data?: AssessmentRun[] };
 type EvaluationListResponse = EvaluationRun[] | { data?: EvaluationRun[] };
+const RESULTS_POLL_INTERVAL_MS = 60_000;
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   pending: { bg: "rgba(202, 138, 4, 0.1)", text: "#92400e" },
@@ -201,8 +202,8 @@ function DownloadDropdown({
 
 export default function EvaluationsTab({
   apiKey,
-  refreshToken,
   onForbidden,
+  onStatusIndicatorChange,
 }: EvaluationsTabProps) {
   const toast = useToast();
   const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
@@ -249,13 +250,17 @@ export default function EvaluationsTab({
       );
       const list = Array.isArray(data) ? data : data.data || [];
       setAssessments(list);
+      const hasActive = list.some(
+        (run) => run.status === "processing" || run.status === "pending",
+      );
+      onStatusIndicatorChange?.(hasActive ? "processing" : "none");
     } catch (e) {
       if (handleForbiddenApiError(e, onForbidden)) return;
       console.error("Failed to load assessments:", e);
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, onForbidden]);
+  }, [apiKey, onForbidden, onStatusIndicatorChange]);
 
   const loadChildRuns = useCallback(
     async (assessmentId: number) => {
@@ -349,12 +354,16 @@ export default function EvaluationsTab({
   }, [loadAssessments]);
 
   useEffect(() => {
-    if (!apiKey || refreshToken === 0) return;
-    void loadAssessments();
-    if (expandedId !== null) {
-      void loadChildRuns(expandedId);
-    }
-  }, [apiKey, expandedId, loadAssessments, loadChildRuns, refreshToken]);
+    if (!apiKey) return;
+    const timer = setInterval(() => {
+      void loadAssessments();
+      if (expandedId !== null) {
+        void loadChildRuns(expandedId);
+      }
+    }, RESULTS_POLL_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [apiKey, expandedId, loadAssessments, loadChildRuns]);
 
   useEffect(() => {
     if (expandedId === null) return;

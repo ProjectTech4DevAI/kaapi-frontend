@@ -4,20 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import JsonEditor from "./JsonEditor";
 import { colors } from "@/app/lib/colors";
 import { SchemaProperty, SchemaPropertyType } from "../types";
-
-/* ── Lazy-load Material Symbols ── */
-const MATERIAL_SYMBOLS_HREF =
-  "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=asterisk";
-
-function useMaterialSymbols() {
-  useEffect(() => {
-    if (document.querySelector(`link[href="${MATERIAL_SYMBOLS_HREF}"]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = MATERIAL_SYMBOLS_HREF;
-    document.head.appendChild(link);
-  }, []);
-}
+import CompactToggleSwitch from "./CompactToggleSwitch";
 
 interface OutputSchemaStepProps {
   schema: SchemaProperty[];
@@ -196,33 +183,6 @@ function validateOpenApiSchema(raw: string): {
   return { valid: true, schema: obj, error: null };
 }
 
-/* ── ActionBtn ── */
-function ActionBtn({
-  active,
-  onClick,
-  title,
-  children,
-}: {
-  active?: boolean;
-  onClick: () => void;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="w-9 h-9 flex items-center justify-center rounded-full transition-colors flex-shrink-0 cursor-pointer"
-      style={{
-        backgroundColor: active ? colors.accent.primary : colors.bg.secondary,
-        color: active ? "#ffffff" : colors.text.secondary,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
 /* ── PropertyRow ── */
 interface PropertyRowProps {
   property: SchemaProperty;
@@ -250,7 +210,7 @@ function PropertyRow({
 }: PropertyRowProps) {
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_196px_56px_56px_36px] items-center gap-3">
         <input
           type="text"
           value={property.name}
@@ -265,7 +225,7 @@ function PropertyRow({
             color: colors.text.primary,
           }}
         />
-        <div className="relative flex-shrink-0">
+        <div className="relative min-w-0">
           <select
             value={property.type}
             onChange={(e) => {
@@ -282,12 +242,11 @@ function PropertyRow({
                     : [],
               }));
             }}
-            className="appearance-none h-9 pl-3 pr-7 border rounded-md text-sm cursor-pointer"
+            className="appearance-none w-full h-9 pl-3 pr-10 border rounded-md text-sm cursor-pointer"
             style={{
               backgroundColor: colors.bg.primary,
               borderColor: colors.border,
               color: colors.text.primary,
-              minWidth: "110px",
             }}
           >
             {TYPE_OPTIONS.map((option) => (
@@ -297,7 +256,7 @@ function PropertyRow({
             ))}
           </select>
           <svg
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -311,32 +270,23 @@ function PropertyRow({
             />
           </svg>
         </div>
-        <ActionBtn
-          active={property.isArray}
-          onClick={() =>
+        <CompactToggleSwitch
+          checked={property.isArray}
+          onChange={() =>
             onUpdate(property.id, (p) => ({ ...p, isArray: !p.isArray }))
           }
           title={property.isArray ? "Remove array wrapper" : "Make array"}
-        >
-          <span className="text-xs font-mono font-bold leading-none">[]</span>
-        </ActionBtn>
-        <ActionBtn
-          active={property.isRequired}
-          onClick={() =>
+        />
+        <CompactToggleSwitch
+          checked={property.isRequired}
+          onChange={() =>
             onUpdate(property.id, (p) => ({ ...p, isRequired: !p.isRequired }))
           }
           title={property.isRequired ? "Mark optional" : "Mark required"}
-        >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: "18px" }}
-          >
-            asterisk
-          </span>
-        </ActionBtn>
+        />
         <button
           onClick={() => onRemove(property.id)}
-          className="w-8 h-8 flex items-center justify-center rounded-md transition-colors flex-shrink-0 cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-md transition-colors flex-shrink-0 cursor-pointer justify-self-center"
           style={{ color: colors.text.secondary }}
           title="Delete"
         >
@@ -558,8 +508,6 @@ function OutputSchemaEditorInner({
   schema: SchemaProperty[];
   setSchema: (schema: SchemaProperty[]) => void;
 }) {
-  useMaterialSymbols();
-
   const [editorMode, setEditorMode] = useState<"visual" | "code">("visual");
   const [codeValue, setCodeValue] = useState(() => {
     const json = toJsonSchema(schema);
@@ -736,6 +684,16 @@ function OutputSchemaEditorInner({
 
       {editorMode === "visual" && (
         <div className="space-y-3">
+          <div
+            className="grid grid-cols-[minmax(0,1fr)_196px_56px_56px_36px] items-center gap-3 rounded-md px-1 text-[11px] font-semibold uppercase tracking-wide"
+            style={{ color: colors.text.secondary }}
+          >
+            <span>Output Field</span>
+            <span>Type</span>
+            <span>Array</span>
+            <span>Required</span>
+            <span />
+          </div>
           {schema.map((prop) => (
             <PropertyRow
               key={prop.id}

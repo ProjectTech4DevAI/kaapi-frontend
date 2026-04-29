@@ -687,8 +687,11 @@ export default function PromptAndConfigStep({
                 </div>
               </div>
               <div
-                className="flex items-center gap-1 rounded-xl p-1"
-                style={{ backgroundColor: colors.bg.primary }}
+                className="flex items-center gap-1 rounded-xl border p-1"
+                style={{
+                  backgroundColor: colors.bg.secondary,
+                  borderColor: colors.border,
+                }}
               >
                 <button
                   onClick={() => setPreviewMode(false)}
@@ -877,7 +880,7 @@ export default function PromptAndConfigStep({
                     event.preventDefault();
                     setSchemaModalOpen(true);
                   }}
-                  className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium"
+                  className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold min-w-[64px]"
                   style={{
                     backgroundColor: colors.accent.primary,
                     color: "#fff",
@@ -920,7 +923,7 @@ export default function PromptAndConfigStep({
                       event.preventDefault();
                       setConfigMode("existing");
                     }}
-                    className="cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium"
+                    className="cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold min-w-[64px]"
                     style={{
                       borderColor: colors.border,
                       color: colors.text.primary,
@@ -994,15 +997,20 @@ export default function PromptAndConfigStep({
                 style={{ borderColor: colors.border }}
               >
                 <div
-                  className="mb-4 inline-flex items-center gap-0 rounded-full p-1"
-                  style={{ backgroundColor: colors.bg.secondary }}
+                  className="mb-4 inline-flex items-center gap-1 rounded-xl border p-1"
+                  style={{
+                    backgroundColor: colors.bg.secondary,
+                    borderColor: colors.border,
+                  }}
                 >
                   <button
                     onClick={() => setConfigMode("existing")}
-                    className="cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
                     style={{
                       backgroundColor:
-                        configMode === "existing" ? "#171717" : "transparent",
+                        configMode === "existing"
+                          ? colors.accent.primary
+                          : "transparent",
                       color:
                         configMode === "existing"
                           ? "#ffffff"
@@ -1013,10 +1021,12 @@ export default function PromptAndConfigStep({
                   </button>
                   <button
                     onClick={() => setConfigMode("create")}
-                    className="cursor-pointer rounded-full px-4 py-1.5 text-xs font-medium transition-all"
+                    className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
                     style={{
                       backgroundColor:
-                        configMode === "create" ? "#171717" : "transparent",
+                        configMode === "create"
+                          ? colors.accent.primary
+                          : "transparent",
                       color:
                         configMode === "create"
                           ? "#ffffff"
@@ -1513,7 +1523,7 @@ export default function PromptAndConfigStep({
                       <button
                         type="button"
                         onClick={() => setSystemInstructionSheetOpen(true)}
-                        className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium"
+                        className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold min-w-[64px]"
                         style={{
                           backgroundColor: colors.accent.primary,
                           color: "#fff",
@@ -1584,7 +1594,7 @@ export default function PromptAndConfigStep({
                           className="mb-2 block text-xs font-semibold"
                           style={{ color: colors.text.primary }}
                         >
-                          Behavior name
+                          Ai Configuration name
                         </label>
                         <input
                           value={configName}
@@ -1806,9 +1816,10 @@ export default function PromptAndConfigStep({
             style={{
               backgroundColor: canProceed
                 ? colors.accent.primary
-                : colors.bg.secondary,
+                : colors.bg.primary,
               color: canProceed ? "#fff" : colors.text.secondary,
               cursor: canProceed ? "pointer" : "not-allowed",
+              border: `1px solid ${canProceed ? colors.accent.primary : colors.border}`,
             }}
           >
             Next: Review

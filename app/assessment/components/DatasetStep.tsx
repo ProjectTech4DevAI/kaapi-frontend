@@ -722,18 +722,22 @@ export default function DatasetStep({
           )}
         </div>
 
-        {/* Next Button */}
         <div
-          className="flex-shrink-0 border-t px-6 py-3 flex items-center justify-end"
+          className="flex-shrink-0 border-t px-6 py-3 flex items-center justify-between"
           style={{
             borderColor: colors.border,
             backgroundColor: colors.bg.primary,
           }}
         >
+          <span className="text-xs" style={{ color: colors.text.secondary }}>
+            {canProceed
+              ? "Dataset selected. Continue to AI configuration."
+              : "Select a dataset to continue."}
+          </span>
           <button
             onClick={onNext}
             disabled={!canProceed}
-            className="px-6 py-2.5 rounded-lg text-sm font-medium"
+            className="px-5 py-2 rounded-lg text-sm font-medium"
             style={{
               backgroundColor: canProceed
                 ? colors.accent.primary
@@ -742,7 +746,7 @@ export default function DatasetStep({
               cursor: canProceed ? "pointer" : "not-allowed",
             }}
           >
-            Next: Map Columns
+            Next: AI Configuration
           </button>
         </div>
       </div>

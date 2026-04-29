@@ -1282,7 +1282,7 @@ export default function ConfigurationStep({
                               className="mb-2 block text-xs font-semibold"
                               style={{ color: colors.text.primary }}
                             >
-                              Behavior name
+                              Ai Configuration name
                             </label>
                             <input
                               value={configName}

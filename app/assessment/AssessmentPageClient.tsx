@@ -25,7 +25,6 @@ import ColumnMapperStep from "./components/ColumnMapperStep";
 import PromptAndConfigStep from "./components/PromptAndConfigStep";
 import ReviewStep from "./components/ReviewStep";
 import EvaluationsTab from "./components/EvaluationsTab";
-import { useAssessmentEvents } from "./useAssessmentEvents";
 import { ConfigSelection, SchemaProperty, AssessmentFormState } from "./types";
 import { useAssessmentDatasetStore } from "./store";
 import { schemaToJsonSchema } from "./schemaUtils";
@@ -66,9 +65,8 @@ function ShimmerDot({ color }: { color: string }) {
   );
 }
 
-type IndicatorState = "none" | "processing" | "failed" | "success";
+type IndicatorState = "none" | "processing";
 type DatasetSummary = { dataset_id: number; dataset_name?: string };
-type EvaluationStatusRun = { status: string; updated_at: string };
 
 function AssessmentContent() {
   const router = useRouter();
@@ -83,9 +81,7 @@ function AssessmentContent() {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [selectedKeyId, setSelectedKeyId] = useState("");
   const [evalIndicator, setEvalIndicator] = useState<IndicatorState>("none");
-  const dismissedRef = useRef(false);
   const featureRedirectingRef = useRef(false);
-  const [assessmentRefreshToken, setAssessmentRefreshToken] = useState(0);
   const [experimentName, setExperimentName] = useState("");
   const {
     datasetId,
@@ -218,107 +214,8 @@ function AssessmentContent() {
     };
   }, [handleAssessmentForbiddenWithNotify, selectedKey?.key]);
 
-  const pollEvalStatus = useCallback(async () => {
-    if (!selectedKey) return;
-    try {
-      const data = await apiFetch<
-        { data?: EvaluationStatusRun[] } | EvaluationStatusRun[]
-      >("/api/assessment/evaluations?limit=10", selectedKey.key);
-      const runs: EvaluationStatusRun[] = Array.isArray(data)
-        ? data
-        : data.data || [];
-
-      const hasProcessing = runs.some(
-        (r: { status: string }) =>
-          r.status === "processing" || r.status === "pending",
-      );
-
-      if (hasProcessing) {
-        setEvalIndicator("processing");
-        dismissedRef.current = false;
-        return;
-      }
-
-      if (dismissedRef.current) {
-        setEvalIndicator("none");
-        return;
-      }
-
-      if (runs.length > 0) {
-        const recent = runs[0];
-        const updatedAt = new Date(recent.updated_at).getTime();
-        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-
-        if (updatedAt > fiveMinAgo) {
-          if (
-            recent.status === "failed" ||
-            recent.status === "completed_with_errors"
-          ) {
-            setEvalIndicator("failed");
-            return;
-          }
-          if (recent.status === "completed") {
-            setEvalIndicator("success");
-            return;
-          }
-        }
-      }
-
-      setEvalIndicator("none");
-    } catch (error) {
-      if (handleForbiddenApiError(error, handleAssessmentForbiddenWithNotify))
-        return;
-      // silently fail
-    }
-  }, [handleAssessmentForbiddenWithNotify, selectedKey]);
-
-  useEffect(() => {
-    if (!selectedKey) return;
-    pollEvalStatus();
-  }, [pollEvalStatus, selectedKey]);
-
-  useAssessmentEvents(
-    selectedKey?.key || "",
-    () => {
-      setAssessmentRefreshToken((prev) => prev + 1);
-      void pollEvalStatus();
-    },
-    activeTab === "results",
-    handleAssessmentForbiddenWithNotify,
-  );
-
   const handleTabSwitch = (tab: TabId) => {
-    if (
-      tab === "results" &&
-      (evalIndicator === "failed" || evalIndicator === "success")
-    ) {
-      dismissedRef.current = true;
-      setEvalIndicator("none");
-    }
     setActiveTab(tab);
-  };
-
-  const hasDraftData =
-    !!datasetId ||
-    columnMapping.textColumns.length > 0 ||
-    columnMapping.attachments.length > 0 ||
-    columnMapping.groundTruthColumns.length > 0 ||
-    !!promptTemplate.trim() ||
-    configs.length > 0 ||
-    outputSchema.length > 0 ||
-    !!experimentName.trim();
-
-  const resetDraftState = () => {
-    dismissedRef.current = false;
-    setEvalIndicator("none");
-    clearDataset();
-    setPromptTemplate("");
-    setOutputSchema([]);
-    setConfigs([]);
-    setExperimentName("");
-    setConfigStep(1);
-    setCompletedConfigSteps(new Set());
-    setActiveTab("datasets");
   };
 
   const markConfigCompleted = (step: number) => {
@@ -379,9 +276,8 @@ function AssessmentContent() {
       setPromptTemplate("");
       setOutputSchema([]);
       setConfigs([]);
-      dismissedRef.current = false;
+      setEvalIndicator("processing");
       setActiveTab("results");
-      pollEvalStatus();
     } catch (error) {
       if (handleForbiddenApiError(error, handleAssessmentForbiddenWithNotify))
         return;
@@ -399,7 +295,6 @@ function AssessmentContent() {
     experimentName,
     handleAssessmentForbiddenWithNotify,
     outputSchema,
-    pollEvalStatus,
     promptTemplate,
     selectedKey,
     toast,
@@ -441,21 +336,11 @@ function AssessmentContent() {
       dot: "#f59e0b",
       underline: "#f59e0b",
     },
-    failed: {
-      dot: colors.status.error,
-      underline: colors.status.error,
-    },
-    success: {
-      dot: colors.status.success,
-      underline: colors.status.success,
-    },
   };
 
   const indicatorColor: Record<IndicatorState, string> = {
     none: "transparent",
     processing: indicatorStyles.processing.dot,
-    failed: indicatorStyles.failed.dot,
-    success: indicatorStyles.success.dot,
   };
 
   return (
@@ -535,7 +420,7 @@ function AssessmentContent() {
           ) : (
             <>
               <div
-                className="flex-shrink-0 border-b flex items-center justify-between pr-4"
+                className="flex-shrink-0 border-b flex items-center pr-4"
                 style={{
                   backgroundColor: colors.bg.primary,
                   borderColor: colors.border,
@@ -575,23 +460,6 @@ function AssessmentContent() {
                     );
                   })}
                 </div>
-                <button
-                  onClick={resetDraftState}
-                  disabled={!hasDraftData}
-                  className="cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: hasDraftData
-                      ? colors.bg.primary
-                      : colors.bg.secondary,
-                    color: hasDraftData
-                      ? colors.text.primary
-                      : colors.text.secondary,
-                    cursor: hasDraftData ? "pointer" : "not-allowed",
-                  }}
-                >
-                  Start New
-                </button>
               </div>
 
               {activeTab === "datasets" && (
@@ -699,8 +567,8 @@ function AssessmentContent() {
                 <div className="flex-1 overflow-hidden flex flex-col">
                   <EvaluationsTab
                     apiKey={selectedKey?.key || ""}
-                    refreshToken={assessmentRefreshToken}
                     onForbidden={handleAssessmentForbiddenWithNotify}
+                    onStatusIndicatorChange={setEvalIndicator}
                   />
                 </div>
               )}

@@ -7,7 +7,6 @@
  * /api/llm/call/{job_id}/result to fetch it.
  *
  * This works for single-instance/local setups. For multi-instance deployments,
- * replace this with Redis/Upstash so webhook and polling requests can share state.
  */
 
 import "server-only";

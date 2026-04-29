@@ -1,7 +1,3 @@
-/**
- * Types for the Chat feature.
- */
-
 import { ConfigBlob } from "@/app/lib/types/configs";
 
 export type ChatRole = "user" | "assistant";

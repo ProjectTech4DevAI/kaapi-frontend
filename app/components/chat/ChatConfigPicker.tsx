@@ -1,7 +1,5 @@
 /**
  * ChatConfigPicker - Compact dropdown to choose which configuration drives
- * the chat assistant. Defaults to the latest version of the most recently
- * updated config when nothing is selected.
  */
 
 "use client";

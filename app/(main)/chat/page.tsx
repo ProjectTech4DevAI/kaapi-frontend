@@ -71,7 +71,6 @@ export default function ChatPage() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  // Restore last-used config selection so users don't re-pick across reloads.
   useEffect(() => {
     const stored = loadStoredSelection();
     if (stored) {
@@ -306,7 +305,7 @@ export default function ChatPage() {
                   ? "Select a configuration to start chatting…"
                   : "Message your assistant…"
             }
-            leftAccessory={
+            trailingAccessory={
               isAuthenticated ? (
                 <ChatConfigPicker
                   configId={configId}
@@ -314,7 +313,6 @@ export default function ChatPage() {
                   onSelect={handleConfigSelect}
                   disabled={isPending}
                   openUp
-                  alignLeft
                 />
               ) : null
             }

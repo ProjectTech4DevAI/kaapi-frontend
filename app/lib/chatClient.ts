@@ -70,24 +70,11 @@ async function fetchWebhookResult(
   jobId: string,
   apiKey: string,
 ): Promise<LLMCallStatusResponse | null> {
-  const res = await fetch(`/api/llm/call/${jobId}/result`, {
-    headers: apiKey ? { "X-API-KEY": apiKey } : undefined,
-    credentials: "include",
-  });
-
-  if (res.status === 204) return null;
-
-  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-
-  if (!res.ok) {
-    const message =
-      (body.error as string) ||
-      (body.message as string) ||
-      `Request failed: ${res.status}`;
-    throw new Error(message);
-  }
-
-  return body as unknown as LLMCallStatusResponse;
+  return apiFetch<LLMCallStatusResponse>(
+    `/api/llm/call/${jobId}/result`,
+    apiKey,
+    { acceptEmpty: true },
+  );
 }
 
 /**

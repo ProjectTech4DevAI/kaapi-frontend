@@ -1,9 +1,5 @@
 /**
  * ChatInput - Auto-growing textarea with a send button.
- *
- * Layout: textarea on top, controls row beneath with the parent-supplied
- * `leftAccessory` (e.g. config picker) on the left and the send button on
- * the right. Enter sends; Shift+Enter inserts a newline.
  */
 
 "use client";
@@ -19,8 +15,7 @@ interface ChatInputProps {
   isPending?: boolean;
   placeholder?: string;
   helperText?: string;
-  /** Slot rendered on the left of the controls row (e.g. config picker). */
-  leftAccessory?: ReactNode;
+  trailingAccessory?: ReactNode;
 }
 
 const MAX_HEIGHT_PX = 200;
@@ -33,7 +28,7 @@ export default function ChatInput({
   isPending = false,
   placeholder = "Message…",
   helperText,
-  leftAccessory,
+  trailingAccessory,
 }: ChatInputProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -69,9 +64,12 @@ export default function ChatInput({
             style={{ maxHeight: MAX_HEIGHT_PX }}
           />
           <div className="flex items-center gap-2 px-3 pb-2 pt-1">
-            <div className="flex-1 min-w-0 flex items-center gap-2">
-              {leftAccessory}
-            </div>
+            <div className="flex-1" />
+            {trailingAccessory && (
+              <div className="flex items-center gap-2 min-w-0">
+                {trailingAccessory}
+              </div>
+            )}
             <button
               type="button"
               onClick={onSend}
@@ -79,7 +77,7 @@ export default function ChatInput({
               aria-label="Send message"
               className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                 canSend
-                  ? "bg-accent-primary text-white hover:bg-accent-hover cursor-pointer"
+                  ? "bg-accent-primary text-white hover:bg-accent-secondary cursor-pointer"
                   : "bg-neutral-200 text-text-secondary cursor-not-allowed"
               }`}
             >

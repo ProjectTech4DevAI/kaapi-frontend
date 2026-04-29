@@ -1,7 +1,5 @@
 /**
  * ChatEmptyState - Welcome surface shown when the conversation is empty.
- *
- * Mirrors the Chat-style "Ask anything" hero with optional starter prompts.
  */
 
 "use client";

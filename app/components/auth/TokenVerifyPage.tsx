@@ -110,7 +110,7 @@ export default function TokenVerifyPage({
 
       if (elapsed >= duration) {
         clearInterval(timer);
-        router.push("/");
+        router.push("/chat");
       }
     }, interval);
 
@@ -213,7 +213,7 @@ export default function TokenVerifyPage({
 
             {status === "error" && (
               <div className="mt-8 space-y-3">
-                <Button fullWidth onClick={() => router.push("/")}>
+                <Button fullWidth onClick={() => router.push("/chat")}>
                   Go to Dashboard
                 </Button>
                 <button

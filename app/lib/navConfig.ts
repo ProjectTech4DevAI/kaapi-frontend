@@ -40,7 +40,7 @@ export const NAV_ITEMS: NavItemConfig[] = [
   },
   {
     name: "Chat",
-    route: "/",
+    route: "/chat",
     icon: "chat",
     gateDescription:
       "Log in to chat with your assistants and keep conversation history.",

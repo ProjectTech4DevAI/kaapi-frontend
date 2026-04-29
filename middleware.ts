@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
+  "/chat",
   "/invite",
   "/verify",
   "/coming-soon/guardrails",
@@ -14,7 +15,7 @@ const PUBLIC_ROUTES = new Set<string>([
 
 const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
 
-const HOME_ROUTE = "/";
+const HOME_ROUTE = "/chat";
 const PATHNAME_STARTS_WITH = ["/settings"];
 
 export function middleware(request: NextRequest) {

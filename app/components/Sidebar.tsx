@@ -27,11 +27,11 @@ import GatePopover from "@/app/components/GatePopover";
 import { NAV_ITEMS } from "@/app/lib/navConfig";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 
-const PUBLIC_ROUTES = new Set(["/"]);
+const PUBLIC_ROUTES = new Set(["/", "/chat"]);
 
 export default function Sidebar({
   collapsed,
-  activeRoute = "/",
+  activeRoute = "/chat",
 }: SidebarProps) {
   const router = useRouter();
   const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();

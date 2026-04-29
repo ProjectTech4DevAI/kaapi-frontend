@@ -13,10 +13,10 @@ interface ChatEmptyStateProps {
 }
 
 const SUGGESTIONS = [
-  "Summarize a long article in plain language",
-  "Draft a polite reply to a tough email",
-  "Brainstorm ideas for a product launch",
-  "Explain a complex concept like I'm five",
+  "Why evaluation is important",
+  "What is cosine similarity",
+  "What should be ideal score for evaluation results",
+  "How much it cost to run program with AI",
 ];
 
 export default function ChatEmptyState({

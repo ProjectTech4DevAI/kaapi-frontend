@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlayIcon,
+} from "@/app/components/icons";
 import { colors } from "@/app/lib/colors";
 import { AssessmentFormState } from "../types";
 import { schemaToJsonSchema } from "../schemaUtils";
@@ -60,23 +65,13 @@ function AccordionSection({
       >
         <div className="flex items-center gap-3">
           {/* Chevron */}
-          <svg
+          <ChevronRightIcon
             className="w-4 h-4 transition-transform flex-shrink-0"
             style={{
               color: colors.text.secondary,
               transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
             }}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          />
           <span
             className="text-sm font-semibold"
             style={{ color: colors.text.primary }}
@@ -476,19 +471,7 @@ export default function ReviewStep({
             className="text-xs font-medium cursor-pointer flex items-center gap-1.5 py-1"
             style={{ color: colors.text.secondary }}
           >
-            <svg
-              className="w-3.5 h-3.5 transition-transform group-open:rotate-90"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
+            <ChevronRightIcon className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
             View request payload
           </summary>
           <pre
@@ -543,19 +526,7 @@ export default function ReviewStep({
             backgroundColor: colors.bg.primary,
           }}
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ChevronLeftIcon className="w-3.5 h-3.5" />
           Back
         </button>
         <button
@@ -584,9 +555,7 @@ export default function ReviewStep({
             </>
           ) : (
             <>
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
+              <PlayIcon className="w-5 h-5" />
               Submit Evaluation
             </>
           )}

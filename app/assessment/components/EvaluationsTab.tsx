@@ -9,11 +9,13 @@ import {
   DatabaseIcon,
   ClipboardIcon,
   ChevronDownIcon,
+  DownloadIcon,
   EyeIcon,
 } from "@/app/components/icons";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
 import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/configTypes";
 import { handleForbiddenApiError } from "../errorUtils";
+import { formatRelativeTime } from "@/app/lib/utils";
 
 interface EvaluationsTabProps {
   apiKey: string;
@@ -79,6 +81,9 @@ type ExportFormat = "csv" | "xlsx";
 type AssessmentListResponse = AssessmentRun[] | { data?: AssessmentRun[] };
 type EvaluationListResponse = EvaluationRun[] | { data?: EvaluationRun[] };
 const RESULTS_POLL_INTERVAL_MS = 60_000;
+const ACTIVE_STATUSES = new Set(["processing", "pending"]);
+const FAILED_STATUSES = new Set(["failed", "completed_with_errors"]);
+const COMPLETED_STATUSES = new Set(["completed"]);
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   pending: { bg: "rgba(202, 138, 4, 0.1)", text: "#92400e" },
@@ -90,20 +95,44 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   cancelled: { bg: "rgba(107, 114, 128, 0.1)", text: "#374151" },
 };
 
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
+function isActiveStatus(status: string): boolean {
+  return ACTIVE_STATUSES.has(status);
+}
 
-  if (diffMins < 1) return "just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-  const diffMonths = Math.floor(diffDays / 30);
-  return `about ${diffMonths} month${diffMonths !== 1 ? "s" : ""} ago`;
+function isFailedStatus(status: string): boolean {
+  return FAILED_STATUSES.has(status);
+}
+
+function isCompletedStatus(status: string): boolean {
+  return COMPLETED_STATUSES.has(status);
+}
+
+function canRetryStatus(status: string): boolean {
+  return isFailedStatus(status);
+}
+
+function LoadingSpinner({
+  className,
+  centered = false,
+}: {
+  className: string;
+  centered?: boolean;
+}) {
+  return (
+    <div
+      className={`${className} border-2 border-t-transparent rounded-full animate-spin ${
+        centered ? "mx-auto" : ""
+      }`}
+      style={{
+        borderColor: colors.text.secondary,
+        borderTopColor: "transparent",
+      }}
+    />
+  );
+}
+
+function getAsyncErrorMessage(action: string, error: unknown): string {
+  return `${action}: ${error instanceof Error ? error.message : "Unknown error"}`;
 }
 
 function DownloadDropdown({
@@ -143,27 +172,9 @@ function DownloadDropdown({
         aria-expanded={open}
       >
         {loading ? (
-          <div
-            className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
-            style={{
-              borderColor: colors.text.secondary,
-              borderTopColor: "transparent",
-            }}
-          />
+          <LoadingSpinner className="w-3.5 h-3.5" />
         ) : (
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
+          <DownloadIcon className="w-3.5 h-3.5" />
         )}
         Export
         <ChevronDownIcon className="w-3 h-3" />
@@ -250,9 +261,7 @@ export default function EvaluationsTab({
       );
       const list = Array.isArray(data) ? data : data.data || [];
       setAssessments(list);
-      const hasActive = list.some(
-        (run) => run.status === "processing" || run.status === "pending",
-      );
+      const hasActive = list.some((run) => isActiveStatus(run.status));
       onStatusIndicatorChange?.(hasActive ? "processing" : "none");
     } catch (e) {
       if (handleForbiddenApiError(e, onForbidden)) return;
@@ -377,25 +386,18 @@ export default function EvaluationsTab({
 
   const counts = {
     total: assessments.length,
-    processing: assessments.filter(
-      (r) => r.status === "processing" || r.status === "pending",
-    ).length,
-    completed: assessments.filter((r) => r.status === "completed").length,
-    failed: assessments.filter(
-      (r) => r.status === "failed" || r.status === "completed_with_errors",
-    ).length,
+    processing: assessments.filter((run) => isActiveStatus(run.status)).length,
+    completed: assessments.filter((run) => isCompletedStatus(run.status))
+      .length,
+    failed: assessments.filter((run) => isFailedStatus(run.status)).length,
   };
 
   const filteredRuns =
     statusFilter === "all"
       ? assessments
       : assessments.filter((r) => {
-          if (statusFilter === "processing")
-            return r.status === "processing" || r.status === "pending";
-          if (statusFilter === "failed")
-            return (
-              r.status === "failed" || r.status === "completed_with_errors"
-            );
+          if (statusFilter === "processing") return isActiveStatus(r.status);
+          if (statusFilter === "failed") return isFailedStatus(r.status);
           return r.status === statusFilter;
         });
 
@@ -435,9 +437,7 @@ export default function EvaluationsTab({
         URL.revokeObjectURL(a.href);
         toast.success("Download started");
       } catch (error) {
-        toast.error(
-          `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        toast.error(getAsyncErrorMessage("Export failed", error));
       } finally {
         setDownloadingId(null);
       }
@@ -465,9 +465,7 @@ export default function EvaluationsTab({
         }
       } catch (error) {
         if (handleForbiddenApiError(error, onForbidden)) return;
-        toast.error(
-          `Re-run failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        toast.error(getAsyncErrorMessage("Re-run failed", error));
       } finally {
         setRerunningId(null);
       }
@@ -497,9 +495,7 @@ export default function EvaluationsTab({
         }
       } catch (error) {
         if (handleForbiddenApiError(error, onForbidden)) return;
-        toast.error(
-          `Retry failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        toast.error(getAsyncErrorMessage("Retry failed", error));
       } finally {
         setRetryingAssessmentId(null);
       }
@@ -536,9 +532,7 @@ export default function EvaluationsTab({
         setPreviewModal({ title: label, headers, rows });
       } catch (error) {
         if (handleForbiddenApiError(error, onForbidden)) return;
-        toast.error(
-          `Preview failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        );
+        toast.error(getAsyncErrorMessage("Preview failed", error));
       } finally {
         setPreviewLoading(null);
       }
@@ -631,13 +625,7 @@ export default function EvaluationsTab({
       <div className="p-6">
         {isLoading && assessments.length === 0 ? (
           <div className="py-16 text-center">
-            <div
-              className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3"
-              style={{
-                borderColor: colors.text.secondary,
-                borderTopColor: "transparent",
-              }}
-            />
+            <LoadingSpinner className="w-6 h-6 mb-3" centered />
             <p className="text-sm" style={{ color: colors.text.secondary }}>
               Loading assessments...
             </p>
@@ -671,9 +659,7 @@ export default function EvaluationsTab({
                 STATUS_COLORS[run.status] || STATUS_COLORS.processing;
               const isExpanded = expandedId === run.id;
               const childRuns = childRunsByAssessment[run.id] || [];
-              const canRetryAssessment =
-                run.status === "failed" ||
-                run.status === "completed_with_errors";
+              const canRetryAssessment = canRetryStatus(run.status);
               const isRetryingAssessment = retryingAssessmentId === run.id;
               const hasCompletedRuns = run.completed_runs > 0;
 
@@ -887,9 +873,12 @@ export default function EvaluationsTab({
                             const childStatusStyle =
                               STATUS_COLORS[childRun.status] ||
                               STATUS_COLORS.processing;
-                            const isFailedChild = childRun.status === "failed";
-                            const isCompletedChild =
-                              childRun.status === "completed";
+                            const isFailedChild = isFailedStatus(
+                              childRun.status,
+                            );
+                            const isCompletedChild = isCompletedStatus(
+                              childRun.status,
+                            );
                             const isRerunning = rerunningId === childRun.id;
                             const configKey =
                               childRun.config_id && childRun.config_version
@@ -1038,14 +1027,7 @@ export default function EvaluationsTab({
                                         }}
                                       >
                                         {previewLoading === childRun.id ? (
-                                          <div
-                                            className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
-                                            style={{
-                                              borderColor:
-                                                colors.text.secondary,
-                                              borderTopColor: "transparent",
-                                            }}
-                                          />
+                                          <LoadingSpinner className="w-3.5 h-3.5" />
                                         ) : (
                                           <EyeIcon className="w-3.5 h-3.5" />
                                         )}

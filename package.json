@@ -13,7 +13,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "cockatiel": "^3.2.1",
     "@react-oauth/google": "^0.13.4",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",

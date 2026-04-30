@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeftIcon } from "@/app/components/icons";
 import { colors } from "@/app/lib/colors";
 
 interface PromptEditorStepProps {
@@ -499,19 +500,7 @@ export default function PromptEditorStep({
             backgroundColor: colors.bg.primary,
           }}
         >
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ChevronLeftIcon className="h-3.5 w-3.5" />
           Back
         </button>
         <button

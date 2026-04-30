@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import {
-  assessmentApiFetch,
-  safeParseJson,
-  toDownloadResponse,
+  proxyDownloadOrJsonResponse,
+  proxyErrorResponse,
 } from "@/app/api/assessment/utils";
 
 export async function GET(
@@ -11,29 +10,21 @@ export async function GET(
 ) {
   try {
     const { evaluation_id } = await params;
-    const queryString = request.nextUrl.searchParams.toString();
-    const endpoint = `/api/v1/assessment/evaluations/${evaluation_id}/results${
-      queryString ? `?${queryString}` : ""
-    }`;
-
-    const response = await assessmentApiFetch(request, endpoint, {
+    const queryParams = new URLSearchParams();
+    queryParams.set("get_trace_info", "true");
+    const exportFormat = request.nextUrl.searchParams.get("export_format");
+    if (exportFormat) {
+      queryParams.set("export_format", exportFormat);
+    }
+    const endpoint = `/api/v1/assessment/evaluations/${evaluation_id}/results?${queryParams.toString()}`;
+    return await proxyDownloadOrJsonResponse(request, endpoint, {
       method: "GET",
     });
-
-    const downloadResponse = await toDownloadResponse(response);
-    if (downloadResponse) {
-      return downloadResponse;
-    }
-
-    const data = await safeParseJson(response);
-    return NextResponse.json(data, { status: response.status });
   } catch (error: unknown) {
-    console.error("Assessment evaluation results proxy error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to forward request",
-      },
-      { status: 500 },
+    return proxyErrorResponse(
+      "Assessment evaluation results proxy error:",
+      error,
+      "Failed to forward request",
     );
   }
 }

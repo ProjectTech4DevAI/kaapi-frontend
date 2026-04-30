@@ -1,6 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  CloseIcon,
+} from "@/app/components/icons";
 import { colors } from "@/app/lib/colors";
 import {
   ConfigBlob,
@@ -30,12 +43,13 @@ import {
 import { useToast } from "@/app/components/Toast";
 
 interface PromptAndConfigStepProps {
+  apiKey: string;
   textColumns: string[];
   sampleRow: Record<string, string>;
   promptTemplate: string;
   setPromptTemplate: (template: string) => void;
   configs: ConfigSelection[];
-  setConfigs: (configs: ConfigSelection[]) => void;
+  setConfigs: Dispatch<SetStateAction<ConfigSelection[]>>;
   outputSchema: SchemaProperty[];
   setOutputSchema: (schema: SchemaProperty[]) => void;
   onNext: () => void;
@@ -69,6 +83,7 @@ function buildInitialVersionState(): VersionListState {
 }
 
 export default function PromptAndConfigStep({
+  apiKey,
   textColumns,
   sampleRow,
   promptTemplate,
@@ -358,20 +373,20 @@ export default function PromptAndConfigStep({
         toast.error(`You can select up to ${MAX_CONFIGS} configurations`);
         return;
       }
-      setConfigs([...configs, selection]);
+      setConfigs((prev) => [...prev, selection]);
     },
     [configs, setConfigs, toast],
   );
 
   const removeSelection = useCallback(
     (configId: string, version: number) => {
-      setConfigs(
-        configs.filter(
+      setConfigs((prev) =>
+        prev.filter(
           (c) => !(c.config_id === configId && c.config_version === version),
         ),
       );
     },
-    [configs, setConfigs],
+    [setConfigs],
   );
 
   const toggleVersionSelection = useCallback(
@@ -383,7 +398,7 @@ export default function PromptAndConfigStep({
       }
       setLoadingSelectionKeys((prev) => ({ ...prev, [key]: true }));
       try {
-        const selection = await fetchConfigSelection(config, version);
+        const selection = await fetchConfigSelection(apiKey, config, version);
         addSelection(selection);
       } catch {
         toast.error("Failed to load configuration details");
@@ -391,7 +406,7 @@ export default function PromptAndConfigStep({
         setLoadingSelectionKeys((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [addSelection, isSelected, removeSelection, toast],
+    [addSelection, apiKey, isSelected, removeSelection, toast],
   );
 
   // Load configs
@@ -399,7 +414,11 @@ export default function PromptAndConfigStep({
     async (skip: number, replace: boolean) => {
       if (replace) setIsLoadingConfigs(true);
       try {
-        const result = await fetchConfigPage({ skip, limit: PAGE_SIZE });
+        const result = await fetchConfigPage({
+          apiKey,
+          skip,
+          limit: PAGE_SIZE,
+        });
         setConfigCards((prev) =>
           replace ? result.items : [...prev, ...result.items],
         );
@@ -411,7 +430,7 @@ export default function PromptAndConfigStep({
         setIsLoadingConfigs(false);
       }
     },
-    [toast],
+    [apiKey, toast],
   );
 
   useEffect(() => {
@@ -430,45 +449,50 @@ export default function PromptAndConfigStep({
   }, [configCards, searchQuery]);
 
   // Versions
-  const loadVersions = useCallback(async (configId: string, skip: number) => {
-    setVersionStateByConfig((prev) => ({
-      ...prev,
-      [configId]: {
-        ...(prev[configId] ?? buildInitialVersionState()),
-        isLoading: true,
-        error: null,
-      },
-    }));
-    try {
-      const result = await fetchConfigVersionsPage(configId, {
-        skip,
-        limit: VERSION_PAGE_SIZE,
-      });
-      setVersionStateByConfig((prev) => {
-        const existing = prev[configId] ?? buildInitialVersionState();
-        return {
-          ...prev,
-          [configId]: {
-            items:
-              skip === 0 ? result.items : [...existing.items, ...result.items],
-            isLoading: false,
-            error: null,
-            hasMore: result.hasMore,
-            nextSkip: result.nextSkip,
-          },
-        };
-      });
-    } catch {
+  const loadVersions = useCallback(
+    async (configId: string, skip: number) => {
       setVersionStateByConfig((prev) => ({
         ...prev,
         [configId]: {
           ...(prev[configId] ?? buildInitialVersionState()),
-          isLoading: false,
-          error: "Failed to load versions",
+          isLoading: true,
+          error: null,
         },
       }));
-    }
-  }, []);
+      try {
+        const result = await fetchConfigVersionsPage(apiKey, configId, {
+          skip,
+          limit: VERSION_PAGE_SIZE,
+        });
+        setVersionStateByConfig((prev) => {
+          const existing = prev[configId] ?? buildInitialVersionState();
+          return {
+            ...prev,
+            [configId]: {
+              items:
+                skip === 0
+                  ? result.items
+                  : [...existing.items, ...result.items],
+              isLoading: false,
+              error: null,
+              hasMore: result.hasMore,
+              nextSkip: result.nextSkip,
+            },
+          };
+        });
+      } catch {
+        setVersionStateByConfig((prev) => ({
+          ...prev,
+          [configId]: {
+            ...(prev[configId] ?? buildInitialVersionState()),
+            isLoading: false,
+            error: "Failed to load versions",
+          },
+        }));
+      }
+    },
+    [apiKey],
+  );
 
   const toggleConfigExpansion = useCallback(
     (configId: string) => {
@@ -517,6 +541,7 @@ export default function PromptAndConfigStep({
     setIsSaving(true);
     try {
       const saved = await saveAssessmentConfig({
+        apiKey,
         configName: configName.trim(),
         commitMessage: commitMessage.trim(),
         configBlob: draft,
@@ -972,19 +997,7 @@ export default function PromptAndConfigStep({
                           className="cursor-pointer rounded-full p-0.5"
                           style={{ color: colors.text.secondary }}
                         >
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2.5}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
+                          <CloseIcon className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
@@ -1073,13 +1086,26 @@ export default function PromptAndConfigStep({
                     ) : (
                       <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
                         {filteredConfigCards.map((config) => {
-                          const defaultSelected = isSelected(config.id, 1);
-                          const defaultLoading =
-                            loadingSelectionKeys[`${config.id}:1`];
-                          const isExpanded = expandedConfigId === config.id;
                           const versions =
                             versionStateByConfig[config.id] ??
                             buildInitialVersionState();
+                          const latestVersion =
+                            versions.items.reduce<number>(
+                              (maxVersion, item) =>
+                                item.version > maxVersion
+                                  ? item.version
+                                  : maxVersion,
+                              0,
+                            ) || 1;
+                          const defaultSelected = isSelected(
+                            config.id,
+                            latestVersion,
+                          );
+                          const defaultLoading =
+                            loadingSelectionKeys[
+                              `${config.id}:${latestVersion}`
+                            ];
+                          const isExpanded = expandedConfigId === config.id;
                           const knownVersionCount = versions.items.length;
                           const hasVersionsPanel =
                             knownVersionCount > 0 ||
@@ -1150,7 +1176,10 @@ export default function PromptAndConfigStep({
                               <div className="mt-4 flex items-center gap-2">
                                 <button
                                   onClick={() =>
-                                    void toggleVersionSelection(config, 1)
+                                    void toggleVersionSelection(
+                                      config,
+                                      latestVersion,
+                                    )
                                   }
                                   disabled={Boolean(defaultLoading)}
                                   className="cursor-pointer min-w-[152px] rounded-xl px-3 py-2.5 text-sm font-medium"
@@ -1229,24 +1258,14 @@ export default function PromptAndConfigStep({
                                     >
                                       {versionCountLabel}
                                     </span>
-                                    <svg
+                                    <ChevronDownIcon
                                       className="h-3.5 w-3.5 transition-transform duration-300 ease-in-out"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                      strokeWidth={2}
                                       style={{
                                         transform: isExpanded
                                           ? "rotate(180deg)"
                                           : "rotate(0deg)",
                                       }}
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M19 9l-7 7-7-7"
-                                      />
-                                    </svg>
+                                    />
                                   </button>
                                 )}
                               </div>
@@ -1704,19 +1723,7 @@ export default function PromptAndConfigStep({
                   className="flex h-8 w-8 items-center justify-center rounded-full"
                   style={{ color: colors.text.secondary }}
                 >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <CloseIcon className="h-5 w-5" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto px-6 py-5">
@@ -1788,19 +1795,7 @@ export default function PromptAndConfigStep({
             backgroundColor: colors.bg.primary,
           }}
         >
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ChevronLeftIcon className="h-3.5 w-3.5" />
           Back
         </button>
         <div className="flex items-center gap-3">

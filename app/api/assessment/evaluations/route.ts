@@ -1,25 +1,32 @@
-import { NextRequest, NextResponse } from "next/server";
-import { apiClient } from "@/app/lib/apiClient";
+import { NextRequest } from "next/server";
+import {
+  proxyErrorResponse,
+  proxyJsonResponse,
+  withQueryParams,
+} from "@/app/api/assessment/utils";
 
 export async function GET(request: NextRequest) {
   try {
-    const queryString = request.nextUrl.searchParams.toString();
-    const endpoint = `/api/v1/assessment/evaluations${
-      queryString ? `?${queryString}` : ""
-    }`;
-
-    const { status, data } = await apiClient(request, endpoint, {
-      method: "GET",
-    });
-
-    return NextResponse.json(data, { status });
-  } catch (error: unknown) {
-    console.error("Assessment evaluations list proxy error:", error);
-    return NextResponse.json(
+    const queryParams = new URLSearchParams();
+    const assessmentId = request.nextUrl.searchParams.get("assessment_id");
+    const limit = request.nextUrl.searchParams.get("limit");
+    if (assessmentId) {
+      queryParams.set("assessment_id", assessmentId);
+    }
+    if (limit) {
+      queryParams.set("limit", limit);
+    }
+    return await proxyJsonResponse(
+      request,
+      withQueryParams("/api/v1/assessment/evaluations", queryParams),
       {
-        error: "Failed to forward request to backend",
+        method: "GET",
       },
-      { status: 500 },
+    );
+  } catch (error: unknown) {
+    return proxyErrorResponse(
+      "Assessment evaluations list proxy error:",
+      error,
     );
   }
 }
@@ -27,24 +34,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
-    const { status, data } = await apiClient(
-      request,
-      "/api/v1/assessment/evaluations",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
-    );
-
-    return NextResponse.json(data, { status });
+    return await proxyJsonResponse(request, "/api/v1/assessment/evaluations", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   } catch (error: unknown) {
-    console.error("Assessment evaluations create proxy error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to forward request to backend",
-      },
-      { status: 500 },
+    return proxyErrorResponse(
+      "Assessment evaluations create proxy error:",
+      error,
     );
   }
 }

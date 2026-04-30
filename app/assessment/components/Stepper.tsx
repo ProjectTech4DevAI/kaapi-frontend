@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckIcon } from "@/app/components/icons";
 import { colors } from "@/app/lib/colors";
 
 export interface Step {
@@ -70,19 +71,7 @@ export default function Stepper({
               }}
             >
               {isCompleted && !isActive ? (
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <CheckIcon className="w-3.5 h-3.5" />
               ) : (
                 <span className="w-4 h-4 flex items-center justify-center text-[10px] font-bold">
                   {step.id}

@@ -43,7 +43,8 @@ export const useAssessmentDatasetStore = create<AssessmentDatasetState>()(
         datasetName: datasetName ?? state.datasetName,
         columns,
         sampleRow,
-        columnMapping: DEFAULT_MAPPING,
+        columnMapping:
+          datasetId !== state.datasetId ? DEFAULT_MAPPING : state.columnMapping,
       })),
 
     setColumnMapping: (mapping) => set({ columnMapping: mapping }),

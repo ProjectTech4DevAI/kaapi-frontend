@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+import { apiClient } from "@/app/lib/apiClient";
 
 const DOWNLOAD_CONTENT_TYPE_HINTS = [
   "text/csv",
@@ -13,45 +12,12 @@ export function isDownloadContentType(contentType: string): boolean {
   return DOWNLOAD_CONTENT_TYPE_HINTS.some((hint) => contentType.includes(hint));
 }
 
-function buildAssessmentAuthHeaders(
-  request: NextRequest | Request,
-  headers: Headers = new Headers(),
-): Headers {
-  const apiKey = request.headers.get("X-API-KEY") || "";
-  const cookie = request.headers.get("Cookie") || "";
-
-  if (apiKey) {
-    headers.set("X-API-KEY", apiKey);
-  }
-  if (cookie) {
-    headers.set("Cookie", cookie);
-  }
-
-  return headers;
-}
-
-export async function assessmentApiFetch(
-  request: NextRequest | Request,
+export function withQueryParams(
   endpoint: string,
-  options: RequestInit = {},
-): Promise<Response> {
-  const headers = buildAssessmentAuthHeaders(
-    request,
-    new Headers(options.headers),
-  );
-  if (
-    options.body !== undefined &&
-    !(options.body instanceof FormData) &&
-    !headers.has("Content-Type")
-  ) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  return fetch(`${BACKEND_URL}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  queryParams: URLSearchParams,
+): string {
+  const query = queryParams.toString();
+  return query ? `${endpoint}?${query}` : endpoint;
 }
 
 export async function safeParseJson(
@@ -84,4 +50,41 @@ export async function toDownloadResponse(
   }
 
   return new NextResponse(blob, { status: response.status, headers });
+}
+
+export async function proxyJsonResponse(
+  request: NextRequest,
+  endpoint: string,
+  init: RequestInit = {},
+): Promise<NextResponse> {
+  const { status, data } = await apiClient(request, endpoint, init);
+  return NextResponse.json(data, { status });
+}
+
+export async function proxyDownloadOrJsonResponse(
+  request: NextRequest,
+  endpoint: string,
+  init: RequestInit = {},
+): Promise<NextResponse> {
+  const response = await apiClient(request, endpoint, {
+    ...init,
+    responseType: "raw",
+  });
+
+  const downloadResponse = await toDownloadResponse(response);
+  if (downloadResponse) {
+    return downloadResponse;
+  }
+
+  const data = await safeParseJson(response);
+  return NextResponse.json(data, { status: response.status });
+}
+
+export function proxyErrorResponse(
+  logLabel: string,
+  error: unknown,
+  message = "Failed to forward request to backend",
+): NextResponse {
+  console.error(logLabel, error);
+  return NextResponse.json({ error: message }, { status: 500 });
 }

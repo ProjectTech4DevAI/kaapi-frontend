@@ -12,7 +12,6 @@ import {
   ConfigWithVersionResponse,
 } from "@/app/lib/configTypes";
 import { apiFetch } from "@/app/lib/apiClient";
-import { STORAGE_KEY } from "@/app/lib/constants/keystore";
 import { ConfigSelection } from "../types";
 import { CACHE_INVALIDATED_EVENT } from "./constants";
 
@@ -20,24 +19,6 @@ export interface PagedResult<T> {
   items: T[];
   hasMore: boolean;
   nextSkip: number;
-}
-
-function getApiKey(): string | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
-
-    const keys = JSON.parse(stored);
-    return keys.length > 0 ? keys[0].key : null;
-  } catch (error) {
-    console.error(
-      "Failed to load API key for assessment config module:",
-      error,
-    );
-    return null;
-  }
 }
 
 function normalizeConfigBlobForApi(configBlob: ConfigBlob): ConfigBlob {
@@ -70,10 +51,13 @@ function buildPageResult<T>(
   };
 }
 
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const apiKey = getApiKey();
+async function requestJson<T>(
+  url: string,
+  apiKey: string | null | undefined,
+  init?: RequestInit,
+): Promise<T> {
   if (!apiKey) {
-    throw new Error("No API key found. Please add one in the Keystore.");
+    throw new Error("No API key selected. Please choose one in the Keystore.");
   }
 
   return apiFetch<T>(url, apiKey, init);
@@ -87,9 +71,11 @@ export function invalidateAssessmentConfigCache(): void {
 }
 
 export async function fetchConfigPage(params: {
+  apiKey: string;
   skip?: number;
   limit?: number;
 }): Promise<PagedResult<ConfigPublic>> {
+  const { apiKey } = params;
   const skip = params.skip ?? 0;
   const limit = params.limit ?? 10;
   const query = new URLSearchParams({
@@ -98,6 +84,7 @@ export async function fetchConfigPage(params: {
   });
   const data = await requestJson<ConfigListResponse>(
     `/api/configs?${query.toString()}`,
+    apiKey,
   );
 
   if (!data.success || !data.data) {
@@ -108,6 +95,7 @@ export async function fetchConfigPage(params: {
 }
 
 export async function fetchConfigVersionsPage(
+  apiKey: string,
   configId: string,
   params: {
     skip?: number;
@@ -122,6 +110,7 @@ export async function fetchConfigVersionsPage(
   });
   const data = await requestJson<ConfigVersionListResponse>(
     `/api/configs/${configId}/versions?${query.toString()}`,
+    apiKey,
   );
 
   if (!data.success || !data.data) {
@@ -132,11 +121,13 @@ export async function fetchConfigVersionsPage(
 }
 
 export async function fetchConfigVersionDetail(
+  apiKey: string,
   configId: string,
   versionNumber: number,
 ): Promise<ConfigVersionPublic> {
   const data = await requestJson<ConfigVersionResponse>(
     `/api/configs/${configId}/versions/${versionNumber}`,
+    apiKey,
   );
 
   if (!data.success || !data.data) {
@@ -147,10 +138,15 @@ export async function fetchConfigVersionDetail(
 }
 
 export async function fetchConfigSelection(
+  apiKey: string,
   config: Pick<ConfigPublic, "id" | "name">,
   versionNumber: number,
 ): Promise<ConfigSelection> {
-  const version = await fetchConfigVersionDetail(config.id, versionNumber);
+  const version = await fetchConfigVersionDetail(
+    apiKey,
+    config.id,
+    versionNumber,
+  );
   const completion = version.config_blob.completion;
 
   return {
@@ -163,6 +159,7 @@ export async function fetchConfigSelection(
 }
 
 async function findConfigByExactName(
+  apiKey: string,
   name: string,
 ): Promise<ConfigPublic | null> {
   const normalizedName = name.trim().toLowerCase();
@@ -170,7 +167,7 @@ async function findConfigByExactName(
   let skip = 0;
 
   while (true) {
-    const page = await fetchConfigPage({ skip, limit });
+    const page = await fetchConfigPage({ apiKey, skip, limit });
     const match = page.items.find(
       (item) => item.name.trim().toLowerCase() === normalizedName,
     );
@@ -188,10 +185,12 @@ async function findConfigByExactName(
 }
 
 export async function saveAssessmentConfig(params: {
+  apiKey: string;
   configName: string;
   commitMessage: string;
   configBlob: ConfigBlob;
 }): Promise<ConfigSelection> {
+  const { apiKey } = params;
   const normalizedBlob = normalizeConfigBlobForApi(params.configBlob);
   const trimmedName = params.configName.trim();
 
@@ -199,7 +198,7 @@ export async function saveAssessmentConfig(params: {
     throw new Error("Configuration name is required");
   }
 
-  const existingConfig = await findConfigByExactName(trimmedName);
+  const existingConfig = await findConfigByExactName(apiKey, trimmedName);
 
   if (existingConfig) {
     const versionCreate: ConfigVersionCreate = {
@@ -209,6 +208,7 @@ export async function saveAssessmentConfig(params: {
     };
     const data = await requestJson<ConfigVersionResponse>(
       `/api/configs/${existingConfig.id}/versions`,
+      apiKey,
       {
         method: "POST",
         headers: {
@@ -240,13 +240,17 @@ export async function saveAssessmentConfig(params: {
     commit_message:
       params.commitMessage.trim() || "Initial assessment configuration",
   };
-  const data = await requestJson<ConfigWithVersionResponse>("/api/configs", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const data = await requestJson<ConfigWithVersionResponse>(
+    "/api/configs",
+    apiKey,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(configCreate),
     },
-    body: JSON.stringify(configCreate),
-  });
+  );
 
   if (!data.success || !data.data) {
     throw new Error(data.error || "Failed to create configuration");

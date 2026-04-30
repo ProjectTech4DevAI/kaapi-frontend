@@ -7,6 +7,7 @@ import { colors } from "@/app/lib/colors";
 import { Dataset } from "@/app/lib/types/datasets";
 import { useToast } from "@/app/components/Toast";
 import {
+  CheckIcon,
   CloseIcon,
   CloudUploadIcon,
   DatabaseIcon,
@@ -76,30 +77,54 @@ export default function DatasetStep({
   // Fetch file via proxy (server-side S3 download) and parse with XLSX
   const fetchAndParseFile = async (
     id: string | number,
-  ): Promise<{ headers: string[]; rows: string[][] } | null> => {
-    const json = await apiFetch<DatasetFileResponse>(
-      `/api/assessment/datasets/${id}?fetch_content=true`,
-      apiKey,
-    );
+  ): Promise<{ headers: string[]; rows: string[][] }> => {
+    let json: DatasetFileResponse;
+    try {
+      json = await apiFetch<DatasetFileResponse>(
+        `/api/assessment/datasets/${id}?fetch_content=true`,
+        apiKey,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to download dataset file";
+      throw new Error(message);
+    }
+
     const base64 = json?.file_content;
-    if (!base64) return null;
+    if (!base64) {
+      throw new Error("Dataset file content is unavailable.");
+    }
 
     // Decode base64 to binary and parse with XLSX
     const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
     const workbook = XLSX.read(binary, { type: "array" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    if (!sheet) return null;
+    if (!sheet) {
+      throw new Error("Dataset file does not contain a readable sheet.");
+    }
 
     const rawData: string[][] = XLSX.utils.sheet_to_json(sheet, {
       header: 1,
       defval: "",
     });
-    if (rawData.length === 0) return null;
+    if (rawData.length === 0) {
+      throw new Error("Dataset file is empty.");
+    }
 
     const headers = rawData[0].map(String);
+    if (headers.length === 0 || headers.every((header) => !header.trim())) {
+      throw new Error("Dataset file is missing column headers.");
+    }
+
     const rows = rawData
       .slice(1)
       .filter((row) => row.some((cell) => String(cell).trim() !== ""));
+
+    if (rows.length === 0) {
+      throw new Error("Dataset file has headers but no data rows.");
+    }
 
     return { headers, rows: rows.map((row) => row.map(String)) };
   };
@@ -212,6 +237,7 @@ export default function DatasetStep({
     setDatasetId(id);
     if (!id) {
       setSelectedDatasetName("");
+      onColumnsLoaded([]);
       return;
     }
     const resolvedName =
@@ -224,19 +250,22 @@ export default function DatasetStep({
     setIsLoadingColumns(true);
     try {
       const parsed = await fetchAndParseFile(id);
-      if (parsed?.headers) {
-        const firstRow = parsed.rows[0] || [];
-        const sampleRow = Object.fromEntries(
-          parsed.headers.map((header, index) => [
-            header,
-            String(firstRow[index] ?? ""),
-          ]),
-        );
-        onColumnsLoaded(parsed.headers, sampleRow);
-      }
+      const firstRow = parsed.rows[0] || [];
+      const sampleRow = Object.fromEntries(
+        parsed.headers.map((header, index) => [
+          header,
+          String(firstRow[index] ?? ""),
+        ]),
+      );
+      onColumnsLoaded(parsed.headers, sampleRow);
     } catch (e) {
       if (handleForbiddenApiError(e, onForbidden)) return;
-      console.error("Failed to fetch dataset columns:", e);
+      const message =
+        e instanceof Error ? e.message : "Failed to fetch dataset columns.";
+      onColumnsLoaded([]);
+      setDatasetId("");
+      setSelectedDatasetName("");
+      toast.error(message);
     } finally {
       setIsLoadingColumns(false);
     }
@@ -247,11 +276,6 @@ export default function DatasetStep({
     setViewingId(datasetId);
     try {
       const parsed = await fetchAndParseFile(datasetId);
-      if (!parsed || !parsed.headers) {
-        toast.error("No data available");
-        return;
-      }
-
       setViewModalData({
         name,
         headers: parsed.headers,
@@ -419,20 +443,10 @@ export default function DatasetStep({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <svg
+                    <CheckIcon
                       className="w-4 h-4 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
                       style={{ color: colors.status.success }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                    />
                     <div>
                       <p
                         className="text-sm font-medium"
@@ -630,20 +644,10 @@ export default function DatasetStep({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             {isSelected && (
-                              <svg
+                              <CheckIcon
                                 className="w-4 h-4 flex-shrink-0"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
                                 style={{ color: colors.status.success }}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M5 13l4 4L19 7"
-                                />
-                              </svg>
+                              />
                             )}
                             <div
                               className="text-sm font-semibold truncate"

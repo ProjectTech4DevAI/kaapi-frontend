@@ -1,25 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import { apiClient } from "@/app/lib/apiClient";
+import { NextRequest } from "next/server";
+import {
+  proxyErrorResponse,
+  proxyJsonResponse,
+  withQueryParams,
+} from "@/app/api/assessment/utils";
 
 export async function GET(request: NextRequest) {
   try {
-    const queryString = request.nextUrl.searchParams.toString();
-    const endpoint = `/api/v1/assessment/assessments${
-      queryString ? `?${queryString}` : ""
-    }`;
-
-    const { status, data } = await apiClient(request, endpoint, {
-      method: "GET",
-    });
-
-    return NextResponse.json(data, { status });
-  } catch (error: unknown) {
-    console.error("Assessment list proxy error:", error);
-    return NextResponse.json(
+    const queryParams = new URLSearchParams();
+    queryParams.set("get_trace_info", "true");
+    return await proxyJsonResponse(
+      request,
+      withQueryParams("/api/v1/assessment/assessments", queryParams),
       {
-        error: "Failed to forward request to backend",
+        method: "GET",
       },
-      { status: 500 },
     );
+  } catch (error: unknown) {
+    return proxyErrorResponse("Assessment list proxy error:", error);
   }
 }

@@ -1,6 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import {
+  CheckIcon,
+  ChevronUpIcon,
+  CloseIcon,
+  SearchIcon,
+  SlidersIcon,
+} from "@/app/components/icons";
 import { colors } from "@/app/lib/colors";
 import { useConfigs } from "@/app/hooks/useConfigs";
 import { SavedConfig } from "@/app/lib/types/configs";
@@ -153,19 +160,7 @@ export default function MultiConfigStep({
                   className="p-0.5 rounded-full transition-colors hover:bg-red-50"
                   style={{ color: colors.text.secondary }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <CloseIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
@@ -216,20 +211,10 @@ export default function MultiConfigStep({
                   inputRef.current?.focus();
                 }}
               >
-                <svg
+                <SearchIcon
                   className="w-4 h-4 mr-2 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
                   style={{ color: colors.text.secondary }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                />
                 <input
                   ref={inputRef}
                   type="text"
@@ -253,19 +238,7 @@ export default function MultiConfigStep({
                     className="p-0.5 rounded"
                     style={{ color: colors.text.secondary }}
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 15l7-7 7 7"
-                      />
-                    </svg>
+                    <ChevronUpIcon className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -349,19 +322,7 @@ export default function MultiConfigStep({
                                   }}
                                 >
                                   {selected && (
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="white"
-                                      strokeWidth={3}
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M5 13l4 4L19 7"
-                                      />
-                                    </svg>
+                                    <CheckIcon className="w-3 h-3 text-white" />
                                   )}
                                 </div>
                                 {/* Version info */}
@@ -420,20 +381,10 @@ export default function MultiConfigStep({
           className="rounded-lg border-2 border-dashed p-8 text-center"
           style={{ borderColor: colors.border }}
         >
-          <svg
+          <SlidersIcon
             className="mx-auto w-10 h-10 mb-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
             style={{ color: colors.border }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-            />
-          </svg>
+          />
           <p
             className="text-sm font-medium mb-1"
             style={{ color: colors.text.primary }}

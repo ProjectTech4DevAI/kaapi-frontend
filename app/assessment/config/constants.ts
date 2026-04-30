@@ -83,7 +83,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -102,7 +102,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -121,7 +121,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -140,7 +140,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -159,7 +159,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -178,7 +178,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -190,7 +190,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -209,7 +209,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -221,7 +221,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },
@@ -233,7 +233,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       summary: {
         type: "enum",
         default: "auto",
-        options: ["auto", "detailed", "concise", "null"],
+        options: ["auto", "detailed", "concise"],
         description: "Summarize the reasoning result.",
       },
     },

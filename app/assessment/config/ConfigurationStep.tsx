@@ -1,6 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  CloseIcon,
+} from "@/app/components/icons";
 import { useToast } from "@/app/components/Toast";
 import { colors } from "@/app/lib/colors";
 import {
@@ -30,8 +43,9 @@ import {
 } from "./api";
 
 interface ConfigurationStepProps {
+  apiKey: string;
   configs: ConfigSelection[];
-  setConfigs: (configs: ConfigSelection[]) => void;
+  setConfigs: Dispatch<SetStateAction<ConfigSelection[]>>;
   outputSchema: SchemaProperty[];
   setOutputSchema: (schema: SchemaProperty[]) => void;
   onNext: () => void;
@@ -118,25 +132,14 @@ function SelectionChip({
         style={{ color: colors.text.secondary }}
         aria-label={`Remove ${config.name || "config"} version ${config.config_version}`}
       >
-        <svg
-          className="h-3.5 w-3.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
+        <CloseIcon className="h-3.5 w-3.5" />
       </button>
     </div>
   );
 }
 
 export default function ConfigurationStep({
+  apiKey,
   configs,
   setConfigs,
   outputSchema,
@@ -231,21 +234,21 @@ export default function ConfigurationStep({
         return;
       }
 
-      setConfigs([...configs, selection]);
+      setConfigs((prev) => [...prev, selection]);
     },
     [configs, setConfigs, toast],
   );
 
   const removeSelection = useCallback(
     (configId: string, version: number) => {
-      setConfigs(
-        configs.filter(
+      setConfigs((prev) =>
+        prev.filter(
           (item) =>
             !(item.config_id === configId && item.config_version === version),
         ),
       );
     },
-    [configs, setConfigs],
+    [setConfigs],
   );
 
   const loadConfigPage = useCallback(
@@ -260,6 +263,7 @@ export default function ConfigurationStep({
 
       try {
         const page = await fetchConfigPage({
+          apiKey,
           skip: reset ? 0 : nextConfigSkip,
           limit: PAGE_SIZE,
         });
@@ -289,7 +293,7 @@ export default function ConfigurationStep({
         setIsLoadingMoreConfigs(false);
       }
     },
-    [hasMoreConfigs, isLoadingMoreConfigs, nextConfigSkip],
+    [apiKey, hasMoreConfigs, isLoadingMoreConfigs, nextConfigSkip],
   );
 
   useEffect(() => {
@@ -361,7 +365,7 @@ export default function ConfigurationStep({
       }));
 
       try {
-        const page = await fetchConfigVersionsPage(configId, {
+        const page = await fetchConfigVersionsPage(apiKey, configId, {
           skip: reset ? 0 : currentState.nextSkip,
           limit: VERSION_PAGE_SIZE,
         });
@@ -398,7 +402,7 @@ export default function ConfigurationStep({
         }));
       }
     },
-    [versionStateByConfig],
+    [apiKey, versionStateByConfig],
   );
 
   const toggleConfigExpansion = useCallback(
@@ -431,7 +435,11 @@ export default function ConfigurationStep({
       setLoadingSelectionKeys((prev) => ({ ...prev, [key]: true }));
 
       try {
-        const selection = await fetchConfigSelection(config, versionNumber);
+        const selection = await fetchConfigSelection(
+          apiKey,
+          config,
+          versionNumber,
+        );
         addSelection(selection);
       } catch (error) {
         toast.error(
@@ -447,7 +455,7 @@ export default function ConfigurationStep({
         });
       }
     },
-    [addSelection, configs.length, isSelected, removeSelection, toast],
+    [addSelection, apiKey, configs.length, isSelected, removeSelection, toast],
   );
 
   const updateDraftParam = useCallback(
@@ -495,6 +503,7 @@ export default function ConfigurationStep({
 
     try {
       const saved = await saveAssessmentConfig({
+        apiKey,
         configName,
         commitMessage,
         configBlob: draft,
@@ -514,6 +523,7 @@ export default function ConfigurationStep({
     }
   }, [
     addSelection,
+    apiKey,
     commitMessage,
     configName,
     configs.length,
@@ -823,13 +833,26 @@ export default function ConfigurationStep({
                           const versions =
                             versionStateByConfig[config.id] ||
                             buildInitialVersionState();
+                          const latestVersion =
+                            versions.items.reduce<number>(
+                              (maxVersion, item) =>
+                                item.version > maxVersion
+                                  ? item.version
+                                  : maxVersion,
+                              0,
+                            ) || 1;
                           const isExpanded = expandedConfigId === config.id;
                           const selectedVersions = selectedCountForConfig(
                             config.id,
                           );
-                          const defaultSelected = isSelected(config.id, 1);
+                          const defaultSelected = isSelected(
+                            config.id,
+                            latestVersion,
+                          );
                           const defaultLoading =
-                            loadingSelectionKeys[`${config.id}:1`];
+                            loadingSelectionKeys[
+                              `${config.id}:${latestVersion}`
+                            ];
                           const knownVersionCount = versions.items.length;
                           const hasVersionsPanel =
                             knownVersionCount > 0 ||
@@ -903,7 +926,10 @@ export default function ConfigurationStep({
                                   <button
                                     onClick={(event) => {
                                       event.stopPropagation();
-                                      void toggleVersionSelection(config, 1);
+                                      void toggleVersionSelection(
+                                        config,
+                                        latestVersion,
+                                      );
                                     }}
                                     disabled={Boolean(defaultLoading)}
                                     className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium"
@@ -1015,24 +1041,14 @@ export default function ConfigurationStep({
                                         backgroundColor: colors.bg.primary,
                                       }}
                                     >
-                                      <svg
+                                      <ChevronDownIcon
                                         className="h-3.5 w-3.5 transition-transform duration-300 ease-in-out"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
                                         style={{
                                           transform: isExpanded
                                             ? "rotate(180deg)"
                                             : "rotate(0deg)",
                                         }}
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          d="M19 9l-7 7-7-7"
-                                        />
-                                      </svg>
+                                      />
                                     </span>
                                   </button>
                                 )}
@@ -1621,19 +1637,7 @@ export default function ConfigurationStep({
             backgroundColor: colors.bg.primary,
           }}
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <ChevronLeftIcon className="w-3.5 h-3.5" />
           Back
         </button>
 

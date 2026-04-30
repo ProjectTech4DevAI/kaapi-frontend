@@ -535,6 +535,7 @@ function AssessmentContent() {
                       </div>
                       <div className={configStep === 2 ? "block" : "hidden"}>
                         <PromptAndConfigStep
+                          apiKey={selectedKey?.key || ""}
                           textColumns={columnMapping.textColumns}
                           sampleRow={sampleRow}
                           promptTemplate={promptTemplate}

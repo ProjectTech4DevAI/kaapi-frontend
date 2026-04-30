@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { colors } from "@/app/lib/colors";
 import { Attachment, ColumnMapping, ATTACHMENT_FORMATS } from "../types";
 
@@ -64,6 +64,32 @@ const ROLE_OPTIONS: RoleOption[] = [
   },
 ];
 
+function buildColumnConfigs(
+  columns: string[],
+  columnMapping: ColumnMapping,
+): ColumnConfig[] {
+  return columns.map((column) => {
+    if (columnMapping.textColumns.includes(column)) {
+      return { role: "text" };
+    }
+
+    if (columnMapping.groundTruthColumns.includes(column)) {
+      return { role: "ground_truth" };
+    }
+
+    const attachment = columnMapping.attachments.find(
+      (item) => item.column === column,
+    );
+    return attachment
+      ? {
+          role: "attachment",
+          attachmentType: attachment.type,
+          attachmentFormat: attachment.format,
+        }
+      : { role: "unmapped" };
+  });
+}
+
 export default function ColumnMapperStep({
   columns,
   columnMapping,
@@ -71,78 +97,56 @@ export default function ColumnMapperStep({
   onNext,
   onBack,
 }: ColumnMapperStepProps) {
-  const [columnConfigs, setColumnConfigs] = useState<
-    Record<string, ColumnConfig>
-  >(() => {
-    const configs: Record<string, ColumnConfig> = {};
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(() =>
+    buildColumnConfigs(columns, columnMapping),
+  );
 
-    columns.forEach((column) => {
-      if (columnMapping.textColumns.includes(column)) {
-        configs[column] = { role: "text" };
-        return;
-      }
+  useEffect(() => {
+    setColumnConfigs(buildColumnConfigs(columns, columnMapping));
+  }, [columns, columnMapping]);
 
-      if (columnMapping.groundTruthColumns.includes(column)) {
-        configs[column] = { role: "ground_truth" };
-        return;
-      }
-
-      const attachment = columnMapping.attachments.find(
-        (item) => item.column === column,
-      );
-      configs[column] = attachment
-        ? {
-            role: "attachment",
-            attachmentType: attachment.type,
-            attachmentFormat: attachment.format,
-          }
-        : { role: "unmapped" };
-    });
-
-    return configs;
-  });
-
-  const updateRole = (column: string, role: ColumnRole) => {
+  const updateRole = (index: number, role: ColumnRole) => {
     setColumnConfigs((prev) => {
-      const current = prev[column];
+      const current = prev[index];
+      const next = [...prev];
 
       if (role !== "attachment") {
-        return {
-          ...prev,
-          [column]: { role },
-        };
+        next[index] = { role };
+        return next;
       }
 
-      return {
-        ...prev,
-        [column]: {
-          role,
-          attachmentType: current?.attachmentType || "image",
-          attachmentFormat: current?.attachmentFormat || "url",
-        },
+      next[index] = {
+        role,
+        attachmentType: current?.attachmentType || "image",
+        attachmentFormat: current?.attachmentFormat || "url",
       };
+      return next;
     });
   };
 
-  const updateAttachmentType = (column: string, type: "image" | "pdf") => {
-    setColumnConfigs((prev) => ({
-      ...prev,
-      [column]: {
-        ...prev[column],
+  const updateAttachmentType = (index: number, type: "image" | "pdf") => {
+    setColumnConfigs((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...prev[index],
+        role: "attachment",
         attachmentType: type,
         attachmentFormat: "url",
-      },
-    }));
+      };
+      return next;
+    });
   };
 
-  const updateAttachmentFormat = (column: string, format: string) => {
-    setColumnConfigs((prev) => ({
-      ...prev,
-      [column]: {
-        ...prev[column],
+  const updateAttachmentFormat = (index: number, format: string) => {
+    setColumnConfigs((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...prev[index],
+        role: "attachment",
         attachmentFormat: format,
-      },
-    }));
+      };
+      return next;
+    });
   };
 
   const handleNext = () => {
@@ -150,7 +154,10 @@ export default function ColumnMapperStep({
     const attachments: Attachment[] = [];
     const groundTruthColumns: string[] = [];
 
-    Object.entries(columnConfigs).forEach(([column, config]) => {
+    columnConfigs.forEach((config, index) => {
+      const column = columns[index];
+      if (!column) return;
+
       if (config.role === "text") {
         textColumns.push(column);
       } else if (config.role === "ground_truth") {
@@ -172,12 +179,10 @@ export default function ColumnMapperStep({
     onNext();
   };
 
-  const mappedCount = Object.values(columnConfigs).filter(
+  const mappedCount = columnConfigs.filter(
     (config) => config.role !== "unmapped",
   ).length;
-  const hasText = Object.values(columnConfigs).some(
-    (config) => config.role === "text",
-  );
+  const hasText = columnConfigs.some((config) => config.role === "text");
 
   return (
     <div className="mx-auto flex min-h-full max-w-3xl flex-col">
@@ -238,7 +243,7 @@ export default function ColumnMapperStep({
             }}
           >
             {columns.map((column, index) => {
-              const config = columnConfigs[column] || {
+              const config = columnConfigs[index] || {
                 role: "unmapped" as ColumnRole,
               };
               const activeOption =
@@ -247,7 +252,7 @@ export default function ColumnMapperStep({
 
               return (
                 <div
-                  key={column}
+                  key={index}
                   className="px-4 py-4 sm:px-5"
                   style={{
                     borderTop:
@@ -296,7 +301,7 @@ export default function ColumnMapperStep({
                             <button
                               key={option.value}
                               type="button"
-                              onClick={() => updateRole(column, option.value)}
+                              onClick={() => updateRole(index, option.value)}
                               className="cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors"
                               style={{
                                 backgroundColor: isActive
@@ -333,7 +338,7 @@ export default function ColumnMapperStep({
                             value={config.attachmentType || "image"}
                             onChange={(event) =>
                               updateAttachmentType(
-                                column,
+                                index,
                                 event.target.value as "image" | "pdf",
                               )
                             }
@@ -359,7 +364,7 @@ export default function ColumnMapperStep({
                           <select
                             value={config.attachmentFormat || "url"}
                             onChange={(event) =>
-                              updateAttachmentFormat(column, event.target.value)
+                              updateAttachmentFormat(index, event.target.value)
                             }
                             className="cursor-pointer w-full rounded-lg border px-3 py-2 text-sm outline-none"
                             style={{

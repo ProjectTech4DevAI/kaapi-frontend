@@ -13,8 +13,7 @@ import Loader from "@/app/components/Loader";
 import Sidebar from "@/app/components/Sidebar";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
-import { FeatureFlag } from "@/app/lib/constants/featureFlags";
-import { STORAGE_KEY } from "@/app/lib/constants/keystore";
+import { FeatureFlag, STORAGE_KEYS } from "@/app/lib/constants";
 import { removeFeatureFromClient } from "@/app/lib/featureState";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import type {
@@ -135,7 +134,7 @@ function PageContent() {
   const [configs, setConfigs] = useState<ConfigSelection[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(STORAGE_KEYS.API_KEYS);
     if (!stored) return;
 
     try {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { FeatureFlagKey } from "@/app/lib/constants/featureFlags";
+import type { FeatureFlagKey } from "@/app/lib/constants";
 
 export interface NavSubItem {
   name: string;

@@ -1,4 +1,4 @@
-import { FeatureFlag } from "@/app/lib/constants/featureFlags";
+import { FeatureFlag } from "@/app/lib/constants";
 import { NavItemConfig, SettingsNavSection } from "@/app/lib/types/nav";
 
 export const SETTINGS_NAV: SettingsNavSection[] = [

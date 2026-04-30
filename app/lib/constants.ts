@@ -7,6 +7,12 @@ import { ToastType } from "@/app/components/Toast";
 
 export const APP_NAME = "Kaapi Konsole";
 
+export const FeatureFlag = {
+  ASSESSMENT: "ASSESSMENT",
+} as const;
+
+export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
+
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",
   SESSION: "kaapi_session",

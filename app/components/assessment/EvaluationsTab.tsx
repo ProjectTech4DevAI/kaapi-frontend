@@ -13,7 +13,6 @@ import {
 import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
 import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/types/configs";
-import { handleForbiddenApiError } from "@/app/assessment/errorUtils";
 import { formatRelativeTime } from "@/app/lib/utils";
 
 interface EvaluationsTabProps {
@@ -110,6 +109,23 @@ const SUMMARY_BADGE_CLASSES: Record<string, string> = {
   completed: "bg-neutral-50 text-green-800",
   failed: "bg-neutral-50 text-red-800",
 };
+
+function handleForbiddenError(
+  error: unknown,
+  onForbidden?: () => void,
+): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  const isForbidden =
+    /request failed:\s*403/i.test(error.message) ||
+    message.includes("forbidden") ||
+    message.includes("not enabled") ||
+    message.includes("permission denied");
+
+  if (!isForbidden) return false;
+  onForbidden?.();
+  return true;
+}
 
 function isActiveStatus(status: string): boolean {
   return ACTIVE_STATUSES.has(status);
@@ -259,7 +275,7 @@ export default function EvaluationsTab({
     setIsLoading(true);
     try {
       const data = await apiFetch<AssessmentListResponse>(
-        "/api/assessment/assessment",
+        "/api/assessment/runs",
         apiKey,
       );
       const list = Array.isArray(data) ? data : data.data || [];
@@ -267,7 +283,7 @@ export default function EvaluationsTab({
       const hasActive = list.some((run) => isActiveStatus(run.status));
       onStatusIndicatorChange?.(hasActive ? "processing" : "none");
     } catch (e) {
-      if (handleForbiddenApiError(e, onForbidden)) return;
+      if (handleForbiddenError(e, onForbidden)) return;
       console.error("Failed to load assessments:", e);
     } finally {
       setIsLoading(false);
@@ -285,7 +301,7 @@ export default function EvaluationsTab({
         const list = Array.isArray(data) ? data : data.data || [];
         setChildRunsByAssessment((prev) => ({ ...prev, [assessmentId]: list }));
       } catch (e) {
-        if (handleForbiddenApiError(e, onForbidden)) return;
+        if (handleForbiddenError(e, onForbidden)) return;
         console.error("Failed to load child runs:", e);
       }
     },
@@ -467,7 +483,7 @@ export default function EvaluationsTab({
           loadChildRuns(run.assessment_id);
         }
       } catch (error) {
-        if (handleForbiddenApiError(error, onForbidden)) return;
+        if (handleForbiddenError(error, onForbidden)) return;
         toast.error(getAsyncErrorMessage("Re-run failed", error));
       } finally {
         setRerunningId(null);
@@ -485,11 +501,9 @@ export default function EvaluationsTab({
 
       setRetryingAssessmentId(assessmentId);
       try {
-        await apiFetch(
-          `/api/assessment/assessment/${assessmentId}/retry`,
-          apiKey,
-          { method: "POST" },
-        );
+        await apiFetch(`/api/assessment/runs/${assessmentId}/retry`, apiKey, {
+          method: "POST",
+        });
 
         toast.success("Assessment re-submitted successfully!");
         void loadAssessments();
@@ -497,7 +511,7 @@ export default function EvaluationsTab({
           void loadChildRuns(expandedId);
         }
       } catch (error) {
-        if (handleForbiddenApiError(error, onForbidden)) return;
+        if (handleForbiddenError(error, onForbidden)) return;
         toast.error(getAsyncErrorMessage("Retry failed", error));
       } finally {
         setRetryingAssessmentId(null);
@@ -534,7 +548,7 @@ export default function EvaluationsTab({
         const { headers, rows } = jsonResultsToTableData(results);
         setPreviewModal({ title: label, headers, rows });
       } catch (error) {
-        if (handleForbiddenApiError(error, onForbidden)) return;
+        if (handleForbiddenError(error, onForbidden)) return;
         toast.error(getAsyncErrorMessage("Preview failed", error));
       } finally {
         setPreviewLoading(null);
@@ -709,7 +723,7 @@ export default function EvaluationsTab({
                             <DownloadDropdown
                               onDownload={(fmt) =>
                                 triggerDownload(
-                                  `/api/assessment/assessment/${run.id}/results`,
+                                  `/api/assessment/runs/${run.id}/results`,
                                   fmt,
                                   `assessment-${run.id}`,
                                 )

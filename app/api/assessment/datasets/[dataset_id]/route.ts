@@ -3,7 +3,7 @@ import { apiClient } from "@/app/lib/apiClient";
 import {
   proxyErrorResponse,
   withQueryParams,
-} from "@/app/api/assessment/utils";
+} from "@/app/api/assessment/_utils";
 
 const MAX_DATASET_PROXY_BYTES = 10 * 1024 * 1024;
 

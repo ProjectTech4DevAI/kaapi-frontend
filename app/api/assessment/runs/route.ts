@@ -3,7 +3,7 @@ import {
   proxyErrorResponse,
   proxyJsonResponse,
   withQueryParams,
-} from "@/app/api/assessment/utils";
+} from "@/app/api/assessment/_utils";
 
 export async function GET(request: NextRequest) {
   try {

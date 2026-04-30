@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/app/components/icons";
 import PlayIcon from "@/app/components/icons/assessment/PlayIcon";
-import { schemaToJsonSchema } from "@/app/assessment/schemaUtils";
-import { type AssessmentFormState } from "@/app/assessment/types";
+import { type AssessmentFormState } from "@/app/lib/types/assessment";
 
 interface ReviewStepProps {
   formState: AssessmentFormState;
@@ -12,6 +11,7 @@ interface ReviewStepProps {
   setExperimentName: (name: string) => void;
   isSubmitting: boolean;
   canSubmit: boolean;
+  outputSchemaJson: object | null;
   submitBlockerMessage: string;
   onSubmit: () => void;
   onBack: () => void;
@@ -100,6 +100,7 @@ export default function ReviewStep({
   setExperimentName,
   isSubmitting,
   canSubmit,
+  outputSchemaJson,
   submitBlockerMessage,
   onSubmit,
   onBack,
@@ -351,7 +352,7 @@ export default function ReviewStep({
                 attachments: columnMapping.attachments.map(
                   ({ column, type, format }) => ({ column, type, format }),
                 ),
-                output_schema: schemaToJsonSchema(outputSchema) || null,
+                output_schema: outputSchemaJson,
                 configs: configs.map(({ config_id, config_version }) => ({
                   config_id,
                   config_version,

@@ -14,7 +14,6 @@ import {
 } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import DataViewModal from "./DataViewModal";
-import { handleForbiddenApiError } from "@/app/assessment/errorUtils";
 
 interface DatasetStepProps {
   apiKey: string;
@@ -36,6 +35,23 @@ type CreateDatasetResponse =
 type DatasetFileResponse = { file_content?: string };
 
 const LEFT_PANEL_CLASSES = "w-[40%] min-w-[360px] max-w-[500px]";
+
+function handleForbiddenError(
+  error: unknown,
+  onForbidden?: () => void,
+): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  const isForbidden =
+    /request failed:\s*403/i.test(error.message) ||
+    message.includes("forbidden") ||
+    message.includes("not enabled") ||
+    message.includes("permission denied");
+
+  if (!isForbidden) return false;
+  onForbidden?.();
+  return true;
+}
 
 export default function DatasetStep({
   apiKey,
@@ -139,7 +155,7 @@ export default function DatasetStep({
       );
       setDatasets(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
-      if (handleForbiddenApiError(e, onForbidden)) return;
+      if (handleForbiddenError(e, onForbidden)) return;
       console.error("Failed to load datasets:", e);
     } finally {
       setIsLoading(false);
@@ -222,7 +238,7 @@ export default function DatasetStep({
 
       toast.success("Dataset created successfully!");
     } catch (error) {
-      if (handleForbiddenApiError(error, onForbidden)) return;
+      if (handleForbiddenError(error, onForbidden)) return;
       toast.error(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -258,7 +274,7 @@ export default function DatasetStep({
       );
       onColumnsLoaded(parsed.headers, sampleRow);
     } catch (e) {
-      if (handleForbiddenApiError(e, onForbidden)) return;
+      if (handleForbiddenError(e, onForbidden)) return;
       const message =
         e instanceof Error ? e.message : "Failed to fetch dataset columns.";
       onColumnsLoaded([]);
@@ -281,7 +297,7 @@ export default function DatasetStep({
         rows: parsed.rows,
       });
     } catch (err) {
-      if (handleForbiddenApiError(err, onForbidden)) return;
+      if (handleForbiddenError(err, onForbidden)) return;
       toast.error(
         err instanceof Error ? err.message : "Failed to view dataset",
       );
@@ -304,7 +320,7 @@ export default function DatasetStep({
       }
       void loadDatasets();
     } catch (err) {
-      if (handleForbiddenApiError(err, onForbidden)) return;
+      if (handleForbiddenError(err, onForbidden)) return;
       toast.error(
         err instanceof Error ? err.message : "Failed to delete dataset",
       );

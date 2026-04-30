@@ -5,7 +5,7 @@ import {
   ATTACHMENT_FORMATS,
   type Attachment,
   type ColumnMapping,
-} from "@/app/assessment/types";
+} from "@/app/lib/types/assessment";
 
 interface ColumnMapperStepProps {
   columns: string[];

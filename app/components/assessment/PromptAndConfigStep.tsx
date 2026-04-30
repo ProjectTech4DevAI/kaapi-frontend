@@ -20,30 +20,28 @@ import {
   ConfigPublic,
   ConfigVersionItems,
 } from "@/app/lib/types/configs";
+import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import { formatRelativeTime } from "@/app/lib/utils";
 import {
   MAX_CONFIGS,
   type ConfigSelection,
   type SchemaProperty,
-} from "@/app/assessment/types";
+} from "@/app/lib/types/assessment";
 import { OutputSchemaModal } from "./OutputSchemaStep";
 import {
   buildDefaultParams,
   ConfigParamDefinition,
   DEFAULT_CONFIG,
-  getDefaultModelForProvider,
-  getModelConfigDefinition,
-  getModelsByProvider,
-  PAGE_SIZE,
-  PROVIDER_OPTIONS,
-} from "@/app/assessment/config/constants";
-import {
   fetchConfigPage,
   fetchConfigSelection,
   fetchConfigVersionsPage,
-  invalidateAssessmentConfigCache,
-  saveAssessmentConfig,
-} from "@/app/assessment/config/api";
+  getDefaultModelForProvider,
+  getModelConfigDefinition,
+  getModelsByProvider,
+  invalidateConfigCache,
+  PROVIDER_OPTIONS,
+  saveConfig,
+} from "@/app/lib/assessment/config";
 import { useToast } from "@/app/components/Toast";
 
 interface PromptAndConfigStepProps {
@@ -350,7 +348,7 @@ export default function PromptAndConfigStep({
   }, [promptTemplate, sampleRow, textColumns]);
 
   // ══════════════════════════════════════════════════════════
-  // CONFIG SELECTION LOGIC (from ConfigurationStep)
+  // Config selection logic
   // ══════════════════════════════════════════════════════════
 
   const isSelected = useCallback(
@@ -421,7 +419,7 @@ export default function PromptAndConfigStep({
         const result = await fetchConfigPage({
           apiKey,
           skip,
-          limit: PAGE_SIZE,
+          limit: DEFAULT_PAGE_LIMIT,
         });
         setConfigCards((prev) =>
           replace ? result.items : [...prev, ...result.items],
@@ -544,13 +542,13 @@ export default function PromptAndConfigStep({
     }
     setIsSaving(true);
     try {
-      const saved = await saveAssessmentConfig({
+      const saved = await saveConfig({
         apiKey,
         configName: configName.trim(),
         commitMessage: commitMessage.trim(),
         configBlob: draft,
       });
-      invalidateAssessmentConfigCache();
+      invalidateConfigCache();
       addSelection({
         config_id: saved.config_id,
         config_version: saved.config_version,

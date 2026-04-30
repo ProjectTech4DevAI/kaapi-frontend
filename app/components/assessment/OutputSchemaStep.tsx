@@ -11,7 +11,7 @@ import {
 import {
   type SchemaProperty,
   type SchemaPropertyType,
-} from "@/app/assessment/types";
+} from "@/app/lib/types/assessment";
 import CompactToggleSwitch from "./CompactToggleSwitch";
 
 interface OutputSchemaStepProps {

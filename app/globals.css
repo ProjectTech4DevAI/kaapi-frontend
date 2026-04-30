@@ -200,6 +200,19 @@ a {
   animation: slideOut 0.3s ease-in forwards;
 }
 
+.assessment-indicator-dot-none {
+  background-color: transparent;
+}
+
+.assessment-indicator-underline-none {
+  background-color: #171717;
+}
+
+.assessment-indicator-dot-processing,
+.assessment-indicator-underline-processing {
+  background-color: #f59e0b;
+}
+
 @keyframes toastProgress {
   from {
     width: 100%;

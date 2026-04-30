@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { colors } from "@/app/lib/colors";
 import { Attachment, ColumnMapping, ATTACHMENT_FORMATS } from "../types";
 
 interface ColumnMapperStepProps {
@@ -23,44 +22,43 @@ interface ColumnConfig {
 interface RoleOption {
   value: ColumnRole;
   label: string;
-  accent: string;
-  activeBg: string;
-  activeBorder: string;
-  activeText: string;
+  accentClass: string;
+  panelClass: string;
+  buttonClass: string;
 }
 
 const ROLE_OPTIONS: RoleOption[] = [
   {
     value: "text",
     label: "Text",
-    accent: "#166534",
-    activeBg: "rgba(22, 101, 52, 0.08)",
-    activeBorder: "rgba(22, 101, 52, 0.2)",
-    activeText: "#166534",
+    accentClass: "bg-green-800",
+    panelClass: "border-green-800/20 bg-green-900/[0.08]",
+    buttonClass:
+      "border-green-800/20 bg-green-900/[0.08] text-green-800 ring-1 ring-inset ring-green-800/30",
   },
   {
     value: "attachment",
     label: "Attachment",
-    accent: "#7c2d12",
-    activeBg: "rgba(124, 45, 18, 0.08)",
-    activeBorder: "rgba(124, 45, 18, 0.24)",
-    activeText: "#7c2d12",
+    accentClass: "bg-orange-900",
+    panelClass: "border-orange-900/25 bg-orange-950/[0.08]",
+    buttonClass:
+      "border-orange-900/25 bg-orange-950/[0.08] text-orange-900 ring-1 ring-inset ring-orange-900/35",
   },
   {
     value: "ground_truth",
     label: "Ground Truth",
-    accent: "#1d4ed8",
-    activeBg: "rgba(29, 78, 216, 0.08)",
-    activeBorder: "rgba(29, 78, 216, 0.24)",
-    activeText: "#1d4ed8",
+    accentClass: "bg-blue-700",
+    panelClass: "border-blue-700/25 bg-blue-700/[0.08]",
+    buttonClass:
+      "border-blue-700/25 bg-blue-700/[0.08] text-blue-700 ring-1 ring-inset ring-blue-700/35",
   },
   {
     value: "unmapped",
     label: "Skip",
-    accent: colors.text.secondary,
-    activeBg: colors.bg.secondary,
-    activeBorder: colors.border,
-    activeText: colors.text.primary,
+    accentClass: "bg-neutral-200",
+    panelClass: "border-neutral-200 bg-neutral-50",
+    buttonClass:
+      "border-neutral-200 bg-neutral-50 text-neutral-900 ring-1 ring-inset ring-neutral-200",
   },
 ];
 
@@ -189,59 +187,29 @@ export default function ColumnMapperStep({
       <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 pb-16">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2
-              className="text-lg font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <h2 className="text-lg font-semibold text-neutral-900">
               Map Columns
             </h2>
-            <p
-              className="mt-1 text-sm"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="mt-1 text-sm text-neutral-500">
               Choose a role for each column.
             </p>
           </div>
-          <div
-            className="rounded-full px-3 py-1 text-xs font-medium"
-            style={{
-              backgroundColor: colors.bg.secondary,
-              color: colors.text.secondary,
-            }}
-          >
+          <div className="rounded-full bg-neutral-50 px-3 py-1 text-xs font-medium text-neutral-500">
             {mappedCount}/{columns.length} mapped
           </div>
         </div>
 
         {columns.length === 0 ? (
-          <div
-            className="rounded-2xl border px-6 py-10 text-center"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-            }}
-          >
-            <p
-              className="text-sm font-medium"
-              style={{ color: colors.text.primary }}
-            >
+          <div className="rounded-2xl border border-neutral-200 bg-white px-6 py-10 text-center">
+            <p className="text-sm font-medium text-neutral-900">
               No columns found.
             </p>
-            <p
-              className="mt-1 text-sm"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="mt-1 text-sm text-neutral-500">
               Go back and select a dataset first.
             </p>
           </div>
         ) : (
-          <div
-            className="overflow-hidden rounded-2xl border"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-            }}
-          >
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
             {columns.map((column, index) => {
               const config = columnConfigs[index] || {
                 role: "unmapped" as ColumnRole,
@@ -253,42 +221,28 @@ export default function ColumnMapperStep({
               return (
                 <div
                   key={index}
-                  className="px-4 py-4 sm:px-5"
-                  style={{
-                    borderTop:
-                      index === 0 ? "none" : `1px solid ${colors.border}`,
-                    backgroundColor: colors.bg.primary,
-                  }}
+                  className={`bg-white px-4 py-4 sm:px-5 ${
+                    index === 0 ? "" : "border-t border-neutral-200"
+                  }`}
                 >
                   <div
-                    className="flex flex-col gap-3 rounded-xl border px-3 py-3"
-                    style={{
-                      borderColor:
-                        config.role === "unmapped"
-                          ? colors.border
-                          : activeOption.activeBorder,
-                      backgroundColor:
-                        config.role === "unmapped"
-                          ? colors.bg.primary
-                          : activeOption.activeBg,
-                    }}
+                    className={`flex flex-col gap-3 rounded-xl border px-3 py-3 ${
+                      config.role === "unmapped"
+                        ? "border-neutral-200 bg-white"
+                        : activeOption.panelClass
+                    }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className="h-2.5 w-2.5 rounded-full"
-                            style={{
-                              backgroundColor:
-                                config.role === "unmapped"
-                                  ? colors.border
-                                  : activeOption.accent,
-                            }}
+                            className={`h-2.5 w-2.5 rounded-full ${
+                              config.role === "unmapped"
+                                ? "bg-neutral-200"
+                                : activeOption.accentClass
+                            }`}
                           />
-                          <span
-                            className="font-mono text-sm font-semibold"
-                            style={{ color: colors.text.primary }}
-                          >
+                          <span className="font-mono text-sm font-semibold text-neutral-900">
                             {column}
                           </span>
                         </div>
@@ -302,21 +256,11 @@ export default function ColumnMapperStep({
                               key={option.value}
                               type="button"
                               onClick={() => updateRole(index, option.value)}
-                              className="cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors"
-                              style={{
-                                backgroundColor: isActive
-                                  ? option.activeBg
-                                  : colors.bg.primary,
-                                borderColor: isActive
-                                  ? option.activeBorder
-                                  : colors.border,
-                                color: isActive
-                                  ? option.activeText
-                                  : colors.text.secondary,
-                                boxShadow: isActive
-                                  ? `inset 0 0 0 1px ${option.accent}`
-                                  : "none",
-                              }}
+                              className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                                isActive
+                                  ? option.buttonClass
+                                  : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50"
+                              }`}
                             >
                               {option.label}
                             </button>
@@ -328,10 +272,7 @@ export default function ColumnMapperStep({
                     {config.role === "attachment" && (
                       <div className="flex flex-col gap-3 pt-1 sm:flex-row">
                         <label className="flex-1">
-                          <span
-                            className="mb-1 block text-xs font-medium"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <span className="mb-1 block text-xs font-medium text-neutral-500">
                             Attachment Type
                           </span>
                           <select
@@ -342,12 +283,7 @@ export default function ColumnMapperStep({
                                 event.target.value as "image" | "pdf",
                               )
                             }
-                            className="cursor-pointer w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                            style={{
-                              borderColor: colors.border,
-                              backgroundColor: colors.bg.primary,
-                              color: colors.text.primary,
-                            }}
+                            className="w-full cursor-pointer rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none"
                           >
                             <option value="image">Image</option>
                             <option value="pdf">PDF</option>
@@ -355,10 +291,7 @@ export default function ColumnMapperStep({
                         </label>
 
                         <label className="flex-1">
-                          <span
-                            className="mb-1 block text-xs font-medium"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <span className="mb-1 block text-xs font-medium text-neutral-500">
                             Source
                           </span>
                           <select
@@ -366,12 +299,7 @@ export default function ColumnMapperStep({
                             onChange={(event) =>
                               updateAttachmentFormat(index, event.target.value)
                             }
-                            className="cursor-pointer w-full rounded-lg border px-3 py-2 text-sm outline-none"
-                            style={{
-                              borderColor: colors.border,
-                              backgroundColor: colors.bg.primary,
-                              color: colors.text.primary,
-                            }}
+                            className="w-full cursor-pointer rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none"
                           >
                             {ATTACHMENT_FORMATS[
                               config.attachmentType || "image"
@@ -392,37 +320,21 @@ export default function ColumnMapperStep({
         )}
       </div>
 
-      <div
-        className="mt-auto sticky bottom-0 z-10 flex flex-col gap-3 border-t py-3 sm:flex-row sm:items-center sm:justify-between"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          borderColor: colors.border,
-          marginLeft: "-1.5rem",
-          marginRight: "-1.5rem",
-          paddingLeft: "1.5rem",
-          paddingRight: "1.5rem",
-        }}
-      >
+      <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex flex-col gap-3 border-t border-neutral-200 bg-neutral-50 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={onBack}
-            className="rounded-lg border px-5 py-2.5 text-sm font-medium"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.primary,
-            }}
+            className="rounded-lg border border-neutral-200 bg-white px-5 py-2.5 text-sm font-medium text-neutral-900"
           >
             Back
           </button>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <span
-              className="text-xs"
-              style={{
-                color: hasText ? colors.text.secondary : colors.status.warning,
-              }}
+              className={`text-xs ${
+                hasText ? "text-neutral-500" : "text-amber-500"
+              }`}
             >
               {hasText
                 ? "Ready to continue."
@@ -432,15 +344,11 @@ export default function ColumnMapperStep({
               type="button"
               onClick={handleNext}
               disabled={!hasText}
-              className="rounded-lg px-5 py-2.5 text-sm font-medium"
-              style={{
-                backgroundColor: hasText
-                  ? colors.accent.primary
-                  : colors.bg.secondary,
-                color: hasText ? colors.text.white : colors.text.secondary,
-                border: `1px solid ${hasText ? colors.accent.primary : colors.border}`,
-                cursor: hasText ? "pointer" : "not-allowed",
-              }}
+              className={`rounded-lg border px-5 py-2.5 text-sm font-medium ${
+                hasText
+                  ? "cursor-pointer border-neutral-900 bg-neutral-900 text-white"
+                  : "cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-500"
+              }`}
             >
               Next: Prompt Editor
             </button>

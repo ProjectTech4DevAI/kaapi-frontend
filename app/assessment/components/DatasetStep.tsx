@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { Dataset } from "@/app/lib/types/datasets";
 import { useToast } from "@/app/components/Toast";
 import {
@@ -348,25 +347,15 @@ export default function DatasetStep({
     <div className="flex min-h-0 flex-1 overflow-hidden">
       {/* Left Panel - Create Dataset + Experiment Name */}
       <div
-        className={`${LEFT_PANEL_CLASSES} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-r`}
-        style={{
-          backgroundColor: colors.bg.primary,
-          borderColor: colors.border,
-        }}
+        className={`${LEFT_PANEL_CLASSES} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-white`}
       >
         <div className="flex-1 overflow-auto p-4 space-y-4">
           {/* Page Title */}
           <div>
-            <h2
-              className="text-base font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <h2 className="text-base font-semibold text-neutral-900">
               Create New Dataset
             </h2>
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: colors.text.secondary }}
-            >
+            <p className="text-xs mt-0.5 text-neutral-500">
               Upload a CSV file for evaluation
             </p>
           </div>
@@ -375,8 +364,7 @@ export default function DatasetStep({
           <div>
             <label
               htmlFor="dataset-name"
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: colors.text.secondary }}
+              className="mb-1.5 block text-xs font-medium text-neutral-500"
             >
               Name *
             </label>
@@ -386,12 +374,7 @@ export default function DatasetStep({
               value={datasetName}
               onChange={(e) => setDatasetName(e.target.value)}
               placeholder="e.g., Hindi QnA Dataset"
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
-                color: colors.text.primary,
-              }}
+              className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
             />
           </div>
 
@@ -399,8 +382,7 @@ export default function DatasetStep({
           <div>
             <label
               htmlFor="dataset-description"
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: colors.text.secondary }}
+              className="mb-1.5 block text-xs font-medium text-neutral-500"
             >
               Description
             </label>
@@ -410,21 +392,13 @@ export default function DatasetStep({
               value={datasetDescription}
               onChange={(e) => setDatasetDescription(e.target.value)}
               placeholder="Optional description"
-              className="w-full px-3 py-2 border rounded-md text-sm"
-              style={{
-                backgroundColor: colors.bg.primary,
-                borderColor: colors.border,
-                color: colors.text.primary,
-              }}
+              className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
             />
           </div>
 
           {/* CSV Upload */}
           <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: colors.text.secondary }}
-            >
+            <label className="mb-1.5 block text-xs font-medium text-neutral-500">
               Upload CSV *
             </label>
 
@@ -437,27 +411,15 @@ export default function DatasetStep({
             />
 
             {uploadedFile ? (
-              <div
-                className="rounded-lg p-3"
-                style={{ backgroundColor: colors.bg.secondary }}
-              >
+              <div className="rounded-lg bg-neutral-50 p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <CheckIcon
-                      className="w-4 h-4 flex-shrink-0"
-                      style={{ color: colors.status.success }}
-                    />
+                    <CheckIcon className="h-4 w-4 flex-shrink-0 text-green-600" />
                     <div>
-                      <p
-                        className="text-sm font-medium"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <p className="text-sm font-medium text-neutral-900">
                         {uploadedFile.name}
                       </p>
-                      <p
-                        className="text-xs"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <p className="text-xs text-neutral-500">
                         {(uploadedFile.size / 1024).toFixed(1)} KB
                       </p>
                     </div>
@@ -468,8 +430,7 @@ export default function DatasetStep({
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
                     aria-label="Remove file"
-                    className="p-1 rounded"
-                    style={{ color: colors.text.secondary }}
+                    className="rounded p-1 text-neutral-500"
                   >
                     <CloseIcon className="w-4 h-4" />
                   </button>
@@ -477,12 +438,11 @@ export default function DatasetStep({
               </div>
             ) : (
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${isDragging ? "border-blue-400 bg-blue-50/30" : ""}`}
-                style={{
-                  borderColor: isDragging
-                    ? colors.accent.primary
-                    : colors.border,
-                }}
+                className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+                  isDragging
+                    ? "border-neutral-900 bg-blue-50/30"
+                    : "border-neutral-200"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -491,19 +451,13 @@ export default function DatasetStep({
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
               >
-                <span
-                  className="block mx-auto mb-2"
-                  style={{ color: colors.border }}
-                >
+                <span className="mx-auto mb-2 block text-neutral-200">
                   <CloudUploadIcon className="h-8 w-8" />
                 </span>
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: colors.text.primary }}
-                >
+                <p className="mb-1 text-sm font-medium text-neutral-900">
                   Drop file here, or click to browse
                 </p>
-                <p className="text-xs" style={{ color: colors.text.secondary }}>
+                <p className="text-xs text-neutral-500">
                   CSV or Excel (.xlsx, .xls)
                 </p>
               </div>
@@ -512,48 +466,25 @@ export default function DatasetStep({
         </div>
 
         {/* Bottom Action Bar */}
-        <div
-          className="flex-shrink-0 border-t px-4 py-3 flex items-center justify-end gap-3"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
+        <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t border-neutral-200 bg-white px-4 py-3">
           <button
             onClick={resetForm}
-            className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{ color: colors.text.secondary }}
+            className="rounded-lg px-4 py-2 text-sm font-medium text-neutral-500"
           >
             Cancel
           </button>
           <button
             onClick={handleCreateDataset}
             disabled={!uploadedFile || !datasetName.trim() || isUploading}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium"
-            style={{
-              backgroundColor:
-                !uploadedFile || !datasetName.trim() || isUploading
-                  ? colors.bg.secondary
-                  : colors.accent.primary,
-              color:
-                !uploadedFile || !datasetName.trim() || isUploading
-                  ? colors.text.secondary
-                  : "#fff",
-              cursor:
-                !uploadedFile || !datasetName.trim() || isUploading
-                  ? "not-allowed"
-                  : "pointer",
-            }}
+            className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium ${
+              !uploadedFile || !datasetName.trim() || isUploading
+                ? "cursor-not-allowed bg-neutral-50 text-neutral-500"
+                : "cursor-pointer bg-neutral-900 text-white"
+            }`}
           >
             {isUploading ? (
               <>
-                <div
-                  className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                  style={{
-                    borderColor: colors.text.secondary,
-                    borderTopColor: "transparent",
-                  }}
-                />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-500 border-t-transparent" />
                 Creating...
               </>
             ) : (
@@ -564,23 +495,14 @@ export default function DatasetStep({
       </div>
 
       {/* Right Panel - Dataset List + Selection */}
-      <div
-        className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        style={{ backgroundColor: colors.bg.secondary }}
-      >
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-neutral-50">
         <div className="flex-1 overflow-auto p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3
-              className="text-base font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <h3 className="text-base font-semibold text-neutral-900">
               Datasets
             </h3>
             {isLoadingColumns && (
-              <span
-                className="text-xs"
-                style={{ color: colors.text.secondary }}
-              >
+              <span className="text-xs text-neutral-500">
                 Loading columns...
               </span>
             )}
@@ -588,30 +510,16 @@ export default function DatasetStep({
 
           {isLoading ? (
             <div className="p-16 text-center">
-              <div
-                className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3"
-                style={{
-                  borderColor: colors.text.secondary,
-                  borderTopColor: "transparent",
-                }}
-              />
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
-                Loading datasets...
-              </p>
+              <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-neutral-500 border-t-transparent" />
+              <p className="text-sm text-neutral-500">Loading datasets...</p>
             </div>
           ) : datasets.length === 0 ? (
             <div className="p-16 text-center">
-              <DatabaseIcon
-                className="w-12 h-12 mx-auto mb-3"
-                style={{ color: colors.border }}
-              />
-              <p
-                className="text-sm font-medium mb-1"
-                style={{ color: colors.text.primary }}
-              >
+              <DatabaseIcon className="mx-auto mb-3 h-12 w-12 text-neutral-200" />
+              <p className="mb-1 text-sm font-medium text-neutral-900">
                 No datasets yet
               </p>
-              <p className="text-xs" style={{ color: colors.text.secondary }}>
+              <p className="text-xs text-neutral-500">
                 Create your first dataset using the form on the left
               </p>
             </div>
@@ -622,16 +530,11 @@ export default function DatasetStep({
                 return (
                   <div
                     key={dataset.dataset_id}
-                    className="rounded-lg overflow-hidden cursor-pointer transition-all"
-                    style={{
-                      backgroundColor: colors.bg.primary,
-                      boxShadow: isSelected
-                        ? `0 0 0 2px ${colors.accent.primary}`
-                        : "0 1px 3px rgba(0, 0, 0, 0.04)",
-                      borderLeft: isSelected
-                        ? `3px solid ${colors.accent.primary}`
-                        : "3px solid #DCCFC3",
-                    }}
+                    className={`cursor-pointer overflow-hidden rounded-lg border-l-[3px] bg-white transition-all ${
+                      isSelected
+                        ? "border-l-neutral-900 ring-2 ring-neutral-900 shadow-sm"
+                        : "border-l-[#DCCFC3] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                    }`}
                     onClick={() =>
                       handleDatasetSelect(
                         dataset.dataset_id.toString(),
@@ -644,15 +547,9 @@ export default function DatasetStep({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             {isSelected && (
-                              <CheckIcon
-                                className="w-4 h-4 flex-shrink-0"
-                                style={{ color: colors.status.success }}
-                              />
+                              <CheckIcon className="h-4 w-4 flex-shrink-0 text-green-600" />
                             )}
-                            <div
-                              className="text-sm font-semibold truncate"
-                              style={{ color: colors.text.primary }}
-                            >
+                            <div className="truncate text-sm font-semibold text-neutral-900">
                               {dataset.dataset_name}
                             </div>
                           </div>
@@ -661,18 +558,13 @@ export default function DatasetStep({
                               description={dataset.description}
                             />
                           )}
-                          <div
-                            className="flex items-center gap-3 mt-2 text-xs"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <div className="mt-2 flex items-center gap-3 text-xs text-neutral-500">
                             <span>{dataset.total_items} items</span>
                             {dataset.original_items > 0 &&
                               dataset.original_items !==
                                 dataset.total_items && (
                                 <>
-                                  <span style={{ color: colors.border }}>
-                                    ·
-                                  </span>
+                                  <span className="text-neutral-200">·</span>
                                   <span>{dataset.original_items} original</span>
                                 </>
                               )}
@@ -688,14 +580,11 @@ export default function DatasetStep({
                               );
                             }}
                             disabled={viewingId === dataset.dataset_id}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium border"
-                            style={{
-                              backgroundColor: "transparent",
-                              borderColor: colors.border,
-                              color: colors.text.primary,
-                              opacity:
-                                viewingId === dataset.dataset_id ? 0.5 : 1,
-                            }}
+                            className={`rounded-lg border border-neutral-200 bg-transparent px-3 py-1.5 text-xs font-medium text-neutral-900 ${
+                              viewingId === dataset.dataset_id
+                                ? "opacity-50"
+                                : ""
+                            }`}
                           >
                             {viewingId === dataset.dataset_id
                               ? "Loading..."
@@ -707,12 +596,7 @@ export default function DatasetStep({
                               setConfirmDeleteId(dataset.dataset_id);
                             }}
                             aria-label={`Delete ${dataset.dataset_name}`}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium border"
-                            style={{
-                              backgroundColor: "transparent",
-                              borderColor: colors.border,
-                              color: "hsl(8, 86%, 40%)",
-                            }}
+                            className="rounded-lg border border-neutral-200 bg-transparent px-3 py-1.5 text-xs font-medium text-red-700"
                           >
                             Delete
                           </button>
@@ -726,15 +610,9 @@ export default function DatasetStep({
           )}
         </div>
 
-        <div
-          className="sticky bottom-0 z-10 flex-shrink-0 border-t px-6 py-3 flex items-center justify-between"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
+        <div className="sticky bottom-0 z-10 flex flex-shrink-0 items-center justify-between border-t border-neutral-200 bg-white px-6 py-3">
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-            <span className="text-xs" style={{ color: colors.text.secondary }}>
+            <span className="text-xs text-neutral-500">
               {canProceed
                 ? "Dataset selected. Continue to AI configuration."
                 : "Select a dataset to continue."}
@@ -742,14 +620,11 @@ export default function DatasetStep({
             <button
               onClick={onNext}
               disabled={!canProceed}
-              className="px-5 py-2 rounded-lg text-sm font-medium"
-              style={{
-                backgroundColor: canProceed
-                  ? colors.accent.primary
-                  : colors.bg.secondary,
-                color: canProceed ? "#fff" : colors.text.secondary,
-                cursor: canProceed ? "pointer" : "not-allowed",
-              }}
+              className={`rounded-lg px-5 py-2 text-sm font-medium ${
+                canProceed
+                  ? "cursor-pointer bg-neutral-900 text-white"
+                  : "cursor-not-allowed bg-neutral-50 text-neutral-500"
+              }`}
             >
               Next: AI Configuration
             </button>
@@ -775,38 +650,27 @@ export default function DatasetStep({
           );
           return (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center"
-              style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
               onClick={() => setConfirmDeleteId(null)}
             >
               <div
-                className="rounded-lg shadow-xl w-full max-w-md"
-                style={{ backgroundColor: colors.bg.primary }}
+                className="w-full max-w-md rounded-lg bg-white shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="px-6 py-5">
                   <div className="flex items-start gap-3">
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: "rgba(220, 38, 38, 0.1)" }}
-                    >
-                      <span style={{ color: "hsl(8, 86%, 40%)" }}>
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-600/10">
+                      <span className="text-red-700">
                         <WarningIcon className="w-5 h-5" />
                       </span>
                     </div>
                     <div>
-                      <h3
-                        className="text-sm font-semibold"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <h3 className="text-sm font-semibold text-neutral-900">
                         Delete dataset
                       </h3>
-                      <p
-                        className="text-sm mt-1"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <p className="mt-1 text-sm text-neutral-500">
                         Are you sure you want to delete{" "}
-                        <strong style={{ color: colors.text.primary }}>
+                        <strong className="text-neutral-900">
                           {dataset?.dataset_name}
                         </strong>
                         ? This action cannot be undone.
@@ -814,18 +678,10 @@ export default function DatasetStep({
                     </div>
                   </div>
                 </div>
-                <div
-                  className="flex items-center justify-end gap-3 px-6 py-4 border-t"
-                  style={{ borderColor: colors.border }}
-                >
+                <div className="flex items-center justify-end gap-3 border-t border-neutral-200 px-6 py-4">
                   <button
                     onClick={() => setConfirmDeleteId(null)}
-                    className="px-4 py-2 rounded-lg text-sm font-medium border"
-                    style={{
-                      backgroundColor: "transparent",
-                      borderColor: colors.border,
-                      color: colors.text.primary,
-                    }}
+                    className="rounded-lg border border-neutral-200 bg-transparent px-4 py-2 text-sm font-medium text-neutral-900"
                   >
                     Cancel
                   </button>
@@ -835,12 +691,9 @@ export default function DatasetStep({
                       setConfirmDeleteId(null);
                     }}
                     disabled={deletingId === confirmDeleteId}
-                    className="px-4 py-2 rounded-lg text-sm font-medium"
-                    style={{
-                      backgroundColor: "hsl(8, 86%, 40%)",
-                      color: "#ffffff",
-                      opacity: deletingId === confirmDeleteId ? 0.5 : 1,
-                    }}
+                    className={`rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white ${
+                      deletingId === confirmDeleteId ? "opacity-50" : ""
+                    }`}
                   >
                     {deletingId === confirmDeleteId ? "Deleting..." : "Delete"}
                   </button>

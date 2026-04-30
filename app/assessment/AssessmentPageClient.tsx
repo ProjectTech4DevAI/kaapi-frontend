@@ -9,7 +9,6 @@ import {
   useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
-import { colors } from "@/app/lib/colors";
 import { apiFetch } from "@/app/lib/apiClient";
 import { STORAGE_KEY } from "@/app/lib/constants/keystore";
 import { FeatureFlag } from "@/app/lib/constants/featureFlags";
@@ -44,22 +43,34 @@ const CONFIG_STEPS: Step[] = [
   { id: 3, label: "Review" },
 ];
 
+const INDICATOR_CLASSES: Record<
+  IndicatorState,
+  { dot: string; underline: string }
+> = {
+  none: {
+    dot: "assessment-indicator-dot-none",
+    underline: "assessment-indicator-underline-none",
+  },
+  processing: {
+    dot: "assessment-indicator-dot-processing",
+    underline: "assessment-indicator-underline-processing",
+  },
+};
+
 declare global {
   interface Window {
     __assessmentForbiddenNavLock?: boolean;
   }
 }
 
-function ShimmerDot({ color }: { color: string }) {
+function ShimmerDot({ dotClassName }: { dotClassName: string }) {
   return (
     <span className="relative ml-1.5 inline-flex h-1.5 w-1.5">
       <span
-        className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping"
-        style={{ backgroundColor: color }}
+        className={`absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping ${dotClassName}`}
       />
       <span
-        className="relative inline-flex h-1.5 w-1.5 rounded-full"
-        style={{ backgroundColor: color }}
+        className={`relative inline-flex h-1.5 w-1.5 rounded-full ${dotClassName}`}
       />
     </span>
   );
@@ -370,60 +381,25 @@ function AssessmentContent() {
     return merged;
   }, [canReachReview, completedConfigSteps, hasMapperSelection]);
 
-  const indicatorStyles: Record<
-    IndicatorState,
-    { dot: string; underline: string }
-  > = {
-    none: {
-      dot: "transparent",
-      underline: colors.text.primary,
-    },
-    processing: {
-      dot: "#f59e0b",
-      underline: "#f59e0b",
-    },
-  };
-
-  const indicatorColor: Record<IndicatorState, string> = {
-    none: "transparent",
-    processing: indicatorStyles.processing.dot,
-  };
-
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="flex h-screen w-full flex-col bg-neutral-50">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/assessment" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div
-            className="border-b px-4 py-3 flex items-center gap-3 flex-shrink-0"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
+          <div className="flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-4 py-3">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               aria-label="Toggle sidebar"
-              className="cursor-pointer p-1.5 rounded-md"
-              style={{ color: colors.text.secondary }}
+              className="cursor-pointer rounded-md p-1.5 text-neutral-500"
             >
-              <MenuIcon
-                className="w-5 h-5"
-                style={{ color: colors.text.secondary }}
-              />
+              <MenuIcon className="h-5 w-5 text-neutral-500" />
             </button>
             <div>
-              <h1
-                className="text-base font-semibold"
-                style={{ color: colors.text.primary, letterSpacing: "-0.01em" }}
-              >
+              <h1 className="text-base font-semibold tracking-[-0.01em] text-neutral-900">
                 Assessment
               </h1>
-              <p className="text-xs" style={{ color: colors.text.secondary }}>
+              <p className="text-xs text-neutral-500">
                 Multi-modal batch evaluation with prompt templates, attachments,
                 and config comparison
               </p>
@@ -433,31 +409,18 @@ function AssessmentContent() {
           {apiKeys.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <span
-                  className="block mx-auto mb-4"
-                  style={{ color: colors.border }}
-                >
+                <span className="mx-auto mb-4 block text-neutral-200">
                   <KeyIcon className="h-12 w-12" />
                 </span>
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: colors.text.primary }}
-                >
+                <p className="mb-1 text-sm font-medium text-neutral-900">
                   API key required
                 </p>
-                <p
-                  className="text-xs mb-4"
-                  style={{ color: colors.text.secondary }}
-                >
+                <p className="mb-4 text-xs text-neutral-500">
                   Add an API key in the Keystore first
                 </p>
                 <a
                   href="/keystore"
-                  className="inline-block px-4 py-2 rounded-md text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#ffffff",
-                  }}
+                  className="inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
                 >
                   Go to Keystore
                 </a>
@@ -465,41 +428,34 @@ function AssessmentContent() {
             </div>
           ) : (
             <>
-              <div
-                className="flex-shrink-0 border-b flex items-center pr-4"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  borderColor: colors.border,
-                }}
-              >
+              <div className="flex shrink-0 items-center border-b border-neutral-200 bg-white pr-4">
                 <div className="flex">
                   {TABS.map((tab) => {
                     const isActive = activeTab === tab.id;
                     const showIndicator =
                       tab.id === "results" && evalIndicator !== "none";
-                    const tabColor = isActive
-                      ? colors.text.primary
-                      : colors.text.secondary;
 
                     return (
                       <button
                         key={tab.id}
                         onClick={() => handleTabSwitch(tab.id)}
-                        className="cursor-pointer relative px-5 py-3 text-sm font-medium transition-colors flex items-center"
-                        style={{ color: tabColor }}
+                        className={`relative flex cursor-pointer items-center px-5 py-3 text-sm font-medium transition-colors ${
+                          isActive ? "text-neutral-900" : "text-neutral-500"
+                        }`}
                       >
                         {tab.label}
                         {showIndicator && (
-                          <ShimmerDot color={indicatorColor[evalIndicator]} />
+                          <ShimmerDot
+                            dotClassName={INDICATOR_CLASSES[evalIndicator].dot}
+                          />
                         )}
                         {isActive && (
                           <div
-                            className="absolute bottom-0 left-0 right-0 h-0.5"
-                            style={{
-                              backgroundColor: showIndicator
-                                ? indicatorStyles[evalIndicator].underline
-                                : colors.text.primary,
-                            }}
+                            className={`absolute bottom-0 left-0 right-0 h-0.5 ${
+                              showIndicator
+                                ? INDICATOR_CLASSES[evalIndicator].underline
+                                : "bg-neutral-900"
+                            }`}
                           />
                         )}
                       </button>
@@ -533,29 +489,16 @@ function AssessmentContent() {
                 {!hasDataset ? (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
-                      <DatabaseIcon
-                        className="mx-auto h-12 w-12 mb-4"
-                        style={{ color: colors.border }}
-                      />
-                      <p
-                        className="text-sm font-medium mb-1"
-                        style={{ color: colors.text.primary }}
-                      >
+                      <DatabaseIcon className="mx-auto mb-4 h-12 w-12 text-neutral-200" />
+                      <p className="mb-1 text-sm font-medium text-neutral-900">
                         No dataset selected
                       </p>
-                      <p
-                        className="text-xs mb-4"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <p className="mb-4 text-xs text-neutral-500">
                         Select a dataset first from the Datasets tab
                       </p>
                       <button
                         onClick={() => setActiveTab("datasets")}
-                        className="cursor-pointer px-4 py-2 rounded-md text-sm font-medium"
-                        style={{
-                          backgroundColor: colors.accent.primary,
-                          color: "#ffffff",
-                        }}
+                        className="cursor-pointer rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
                       >
                         Go to Datasets
                       </button>

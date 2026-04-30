@@ -1,7 +1,9 @@
 "use client";
 
-import { colors } from "@/app/lib/colors";
-import { ToggleOffIcon, ToggleOnIcon } from "./icons/ToggleThumbIcons";
+import {
+  ToggleOffIcon,
+  ToggleOnIcon,
+} from "@/app/components/icons/assessment/ToggleThumbIcons";
 
 interface CompactToggleSwitchProps {
   checked: boolean;
@@ -21,22 +23,19 @@ export default function CompactToggleSwitch({
       aria-checked={checked}
       onClick={onChange}
       title={title}
-      className="h-7 w-12 rounded-full border p-0.5 transition-colors flex-shrink-0 cursor-pointer"
-      style={{
-        backgroundColor: checked
-          ? "rgba(23, 23, 23, 0.9)"
-          : colors.bg.secondary,
-        borderColor: checked ? "rgba(23, 23, 23, 0.9)" : colors.border,
-      }}
+      className={`h-7 w-12 cursor-pointer flex-shrink-0 rounded-full border p-0.5 transition-colors ${
+        checked
+          ? "border-neutral-900/90 bg-neutral-900/90"
+          : "border-neutral-200 bg-neutral-50"
+      }`}
     >
       <span className="relative flex h-full w-full items-center">
         <span
-          className="h-5 w-5 rounded-full shadow-sm transition-transform flex items-center justify-center"
-          style={{
-            backgroundColor: checked ? "#ffffff" : colors.bg.primary,
-            color: checked ? "#111111" : colors.text.secondary,
-            transform: checked ? "translateX(24px)" : "translateX(0)",
-          }}
+          className={`flex h-5 w-5 items-center justify-center rounded-full shadow-sm transition-transform ${
+            checked
+              ? "translate-x-6 bg-white text-neutral-950"
+              : "translate-x-0 bg-white text-neutral-500"
+          }`}
         >
           {checked ? (
             <ToggleOnIcon className="h-3 w-3" />

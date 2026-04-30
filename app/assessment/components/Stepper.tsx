@@ -1,7 +1,6 @@
 "use client";
 
 import { CheckIcon } from "@/app/components/icons";
-import { colors } from "@/app/lib/colors";
 
 export interface Step {
   id: number;
@@ -22,10 +21,7 @@ export default function Stepper({
   completedSteps,
 }: StepperProps) {
   return (
-    <div
-      className="flex flex-wrap items-center gap-2 px-6 py-4 border-b"
-      style={{ borderColor: colors.border, backgroundColor: colors.bg.primary }}
-    >
+    <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-white px-6 py-4">
       {steps.map((step, index) => {
         const isActive = currentStep === step.id;
         const isCompleted = completedSteps.has(step.id);
@@ -41,34 +37,21 @@ export default function Stepper({
           <div key={step.id} className="flex items-center gap-2">
             {index > 0 && (
               <div
-                className="w-8 h-px"
-                style={{
-                  backgroundColor:
-                    isCompleted || isActive
-                      ? colors.accent.primary
-                      : colors.border,
-                }}
+                className={`h-px w-8 ${
+                  isCompleted || isActive ? "bg-neutral-900" : "bg-neutral-200"
+                }`}
               />
             )}
             <button
               onClick={() => isClickable && onStepClick(step.id)}
               disabled={!isClickable}
-              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium text-left transition-colors"
-              style={{
-                backgroundColor: isActive
-                  ? colors.accent.primary
+              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+                isActive
+                  ? "border-neutral-900 bg-neutral-900 text-white"
                   : isCompleted
-                    ? colors.bg.secondary
-                    : "transparent",
-                color: isActive
-                  ? "#ffffff"
-                  : isCompleted
-                    ? colors.text.primary
-                    : colors.text.secondary,
-                border: `1px solid ${isActive ? colors.accent.primary : isCompleted ? colors.border : colors.border}`,
-                cursor: isClickable ? "pointer" : "default",
-                opacity: isClickable ? 1 : 0.5,
-              }}
+                    ? "border-neutral-200 bg-neutral-50 text-neutral-900"
+                    : "border-neutral-200 bg-transparent text-neutral-500"
+              } ${isClickable ? "cursor-pointer opacity-100" : "cursor-default opacity-50"}`}
             >
               {isCompleted && !isActive ? (
                 <CheckIcon className="w-3.5 h-3.5" />

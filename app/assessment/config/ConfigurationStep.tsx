@@ -15,7 +15,6 @@ import {
   CloseIcon,
 } from "@/app/components/icons";
 import { useToast } from "@/app/components/Toast";
-import { colors } from "@/app/lib/colors";
 import {
   ConfigBlob,
   ConfigPublic,
@@ -107,20 +106,11 @@ function SelectionChip({
   onRemove: (configId: string, version: number) => void;
 }) {
   return (
-    <div
-      className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
-      style={{
-        borderColor: colors.accent.primary,
-        backgroundColor: "rgba(23, 23, 23, 0.05)",
-      }}
-    >
-      <span
-        className="text-sm font-medium"
-        style={{ color: colors.text.primary }}
-      >
+    <div className="inline-flex items-center gap-2 rounded-full border border-neutral-900 bg-neutral-900/5 px-3 py-1.5">
+      <span className="text-sm font-medium text-neutral-900">
         {config.name}
       </span>
-      <span className="text-xs" style={{ color: colors.text.secondary }}>
+      <span className="text-xs text-neutral-500">
         v{config.config_version}{" "}
         {config.provider && config.model
           ? `• ${config.provider}/${config.model}`
@@ -128,8 +118,7 @@ function SelectionChip({
       </span>
       <button
         onClick={() => onRemove(config.config_id, config.config_version)}
-        className="cursor-pointer rounded-full p-0.5"
-        style={{ color: colors.text.secondary }}
+        className="cursor-pointer rounded-full p-0.5 text-neutral-500"
         aria-label={`Remove ${config.name || "config"} version ${config.config_version}`}
       >
         <CloseIcon className="h-3.5 w-3.5" />
@@ -561,10 +550,7 @@ export default function ConfigurationStep({
                   : parseInt(event.target.value, 10),
               )
             }
-            className="h-2 w-full cursor-pointer appearance-none rounded-full"
-            style={{
-              background: `linear-gradient(to right, ${colors.accent.primary} 0%, ${colors.accent.primary} ${((value - min) / (max - min || 1)) * 100}%, ${colors.border} ${((value - min) / (max - min || 1)) * 100}%, ${colors.border} 100%)`,
-            }}
+            className="h-2 w-full cursor-pointer appearance-none rounded-full bg-neutral-200 accent-neutral-900"
           />
           <input
             type="number"
@@ -582,18 +568,10 @@ export default function ConfigurationStep({
                 Number.isNaN(nextValue) ? definition.default : nextValue,
               );
             }}
-            className="w-24 rounded-xl border px-3 py-2 text-sm outline-none"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-              color: colors.text.primary,
-            }}
+            className="w-24 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none"
           />
         </div>
-        <div
-          className="flex items-center justify-between text-[11px]"
-          style={{ color: colors.text.secondary }}
-        >
+        <div className="flex items-center justify-between text-[11px] text-neutral-500">
           <span>{min}</span>
           <span>{max}</span>
         </div>
@@ -612,12 +590,7 @@ export default function ConfigurationStep({
         <select
           value={String(value)}
           onChange={(event) => updateDraftParam(paramKey, event.target.value)}
-          className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-            color: colors.text.primary,
-          }}
+          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none"
         >
           {(definition.options || []).map((option) => (
             <option key={option} value={option}>
@@ -632,1049 +605,771 @@ export default function ConfigurationStep({
   };
 
   return (
-    <div className="mx-auto flex min-h-full max-w-7xl flex-col">
-      <div className="flex-1 space-y-6 pb-4">
-        <div>
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: colors.text.primary }}
-          >
-            Configuration
-          </h2>
-        </div>
-
-        <div className="space-y-4">
-          <div
-            className="flex items-center gap-1 overflow-x-auto rounded-2xl border p-1"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.primary,
-            }}
-            role="tablist"
-            aria-label="Configuration sections"
-          >
-            {CONFIG_SECTION_META.map((section) => {
-              const isActive = activeSubtab === section.id;
-              const status =
-                section.id === "configs"
-                  ? `${configs.length}/${MAX_CONFIGS} selected`
-                  : hasConfiguredResponseFormat
-                    ? `${namedSchemaCount} fields`
-                    : "Required";
-
-              return (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => setActiveSubtab(section.id)}
-                  className="relative min-w-[200px] rounded-xl px-4 py-2.5 text-left transition-all"
-                  style={{
-                    backgroundColor: isActive
-                      ? colors.bg.secondary
-                      : "transparent",
-                    color: colors.text.primary,
-                    boxShadow: isActive ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
-                  }}
-                  aria-selected={isActive}
-                  role="tab"
-                >
-                  {isActive && (
-                    <span
-                      className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full"
-                      style={{ backgroundColor: colors.accent.primary }}
-                    />
-                  )}
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold"
-                      style={{
-                        backgroundColor: isActive
-                          ? colors.accent.primary
-                          : colors.bg.primary,
-                        color: isActive ? "#ffffff" : colors.text.secondary,
-                      }}
-                    >
-                      {section.index}
-                    </span>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium leading-5">
-                        {section.title}
-                      </div>
-                      <div
-                        className="text-[11px]"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        {status}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 min-h-0 flex-col">
+        <div className="flex-1 space-y-6 pb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-neutral-900">
+              Configuration
+            </h2>
           </div>
 
-          {activeSubtab === "configs" && (
+          <div className="space-y-4">
             <div
-              className="rounded-2xl border p-4"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-              }}
-              role="tabpanel"
+              className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-neutral-200 bg-white p-1"
+              role="tablist"
+              aria-label="Configuration sections"
             >
-              {configs.length > 0 && (
-                <div
-                  className="mb-4 rounded-2xl border p-3"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: colors.bg.secondary,
-                  }}
-                >
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3
-                      className="text-sm font-semibold"
-                      style={{ color: colors.text.primary }}
-                    >
-                      Selected behavior
-                    </h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {configs.map((config) => (
-                      <SelectionChip
-                        key={`${config.config_id}-${config.config_version}`}
-                        config={config}
-                        onRemove={removeSelection}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              {CONFIG_SECTION_META.map((section) => {
+                const isActive = activeSubtab === section.id;
+                const status =
+                  section.id === "configs"
+                    ? `${configs.length}/${MAX_CONFIGS} selected`
+                    : hasConfiguredResponseFormat
+                      ? `${namedSchemaCount} fields`
+                      : "Required";
 
-              <div
-                className="mb-4 inline-flex items-center gap-0 rounded-full p-1"
-                style={{ backgroundColor: colors.bg.secondary }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setMode("existing")}
-                  className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor:
-                      mode === "existing" ? "#171717" : "transparent",
-                    color:
-                      mode === "existing" ? "#ffffff" : colors.text.secondary,
-                  }}
-                >
-                  Saved
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("create")}
-                  className="cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor:
-                      mode === "create" ? "#171717" : "transparent",
-                    color:
-                      mode === "create" ? "#ffffff" : colors.text.secondary,
-                  }}
-                >
-                  New
-                </button>
-              </div>
-
-              {mode === "existing" ? (
-                <div className="space-y-5">
-                  <h3
-                    className="text-sm font-semibold"
-                    style={{ color: colors.text.primary }}
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => setActiveSubtab(section.id)}
+                    className={`relative min-w-[200px] rounded-xl px-4 py-2.5 text-left text-neutral-900 transition-all ${
+                      isActive
+                        ? "bg-neutral-50 shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+                        : "bg-transparent"
+                    }`}
+                    aria-selected={isActive}
+                    role="tab"
                   >
-                    Choose behavior
-                  </h3>
-
-                  <div>
-                    <div className="mb-5">
-                      <input
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Search behaviors..."
-                        className="w-full rounded-2xl border px-4 py-3 text-sm outline-none"
-                        style={{
-                          borderColor: colors.border,
-                          backgroundColor: colors.bg.secondary,
-                          color: colors.text.primary,
-                        }}
-                      />
+                    {isActive && (
+                      <span className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full bg-neutral-900" />
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                          isActive
+                            ? "bg-neutral-900 text-white"
+                            : "bg-white text-neutral-500"
+                        }`}
+                      >
+                        {section.index}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium leading-5">
+                          {section.title}
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          {status}
+                        </div>
+                      </div>
                     </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                    {isLoadingConfigs ? (
-                      <div
-                        className="py-12 text-center text-sm"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        Loading behaviors...
-                      </div>
-                    ) : configError ? (
-                      <div
-                        className="py-12 text-center text-sm"
-                        style={{ color: colors.status.error }}
-                      >
-                        {configError}
-                      </div>
-                    ) : filteredConfigCards.length === 0 ? (
-                      <div
-                        className="py-12 text-center text-sm"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        No saved behaviors found.
-                      </div>
-                    ) : (
-                      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {filteredConfigCards.map((config) => {
-                          const versions =
-                            versionStateByConfig[config.id] ||
-                            buildInitialVersionState();
-                          const latestVersion =
-                            versions.items.reduce<number>(
-                              (maxVersion, item) =>
-                                item.version > maxVersion
-                                  ? item.version
-                                  : maxVersion,
-                              0,
-                            ) || 1;
-                          const isExpanded = expandedConfigId === config.id;
-                          const selectedVersions = selectedCountForConfig(
-                            config.id,
-                          );
-                          const defaultSelected = isSelected(
-                            config.id,
-                            latestVersion,
-                          );
-                          const defaultLoading =
-                            loadingSelectionKeys[
-                              `${config.id}:${latestVersion}`
-                            ];
-                          const knownVersionCount = versions.items.length;
-                          const hasVersionsPanel =
-                            knownVersionCount > 0 ||
-                            versions.hasMore ||
-                            versions.isLoading ||
-                            Boolean(versions.error);
-                          const previewVersions = versions.items.slice(0, 3);
-                          const versionCountLabel =
-                            knownVersionCount > 0
-                              ? `${knownVersionCount}${versions.hasMore ? "+" : ""}`
-                              : "Check";
+            {activeSubtab === "configs" && (
+              <div
+                className="rounded-2xl border border-neutral-200 bg-white p-4"
+                role="tabpanel"
+              >
+                {configs.length > 0 && (
+                  <div className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-neutral-900">
+                        Selected behavior
+                      </h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {configs.map((config) => (
+                        <SelectionChip
+                          key={`${config.config_id}-${config.config_version}`}
+                          config={config}
+                          onRemove={removeSelection}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                          return (
-                            <div
-                              key={config.id}
-                              className="self-start rounded-2xl border transition-shadow"
-                              style={{
-                                borderColor: isExpanded
-                                  ? colors.accent.primary
-                                  : colors.border,
-                                backgroundColor: colors.bg.primary,
-                                boxShadow: isExpanded
-                                  ? "0 10px 22px rgba(23, 23, 23, 0.07)"
-                                  : "0 1px 2px rgba(23, 23, 23, 0.03)",
-                              }}
-                            >
-                              <button
-                                onClick={() => toggleConfigExpansion(config.id)}
-                                className="cursor-pointer w-full rounded-2xl p-4 text-left"
+                <div className="mb-4 inline-flex items-center gap-0 rounded-full bg-neutral-50 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setMode("existing")}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                      mode === "existing"
+                        ? "bg-neutral-900 text-white"
+                        : "bg-transparent text-neutral-500"
+                    }`}
+                  >
+                    Saved
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("create")}
+                    className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                      mode === "create"
+                        ? "bg-neutral-900 text-white"
+                        : "bg-transparent text-neutral-500"
+                    }`}
+                  >
+                    New
+                  </button>
+                </div>
+
+                {mode === "existing" ? (
+                  <div className="space-y-5">
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Choose behavior
+                    </h3>
+
+                    <div>
+                      <div className="mb-5">
+                        <input
+                          value={searchQuery}
+                          onChange={(event) =>
+                            setSearchQuery(event.target.value)
+                          }
+                          placeholder="Search behaviors..."
+                          className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none"
+                        />
+                      </div>
+
+                      {isLoadingConfigs ? (
+                        <div className="py-12 text-center text-sm text-neutral-500">
+                          Loading behaviors...
+                        </div>
+                      ) : configError ? (
+                        <div className="py-12 text-center text-sm text-red-600">
+                          {configError}
+                        </div>
+                      ) : filteredConfigCards.length === 0 ? (
+                        <div className="py-12 text-center text-sm text-neutral-500">
+                          No saved behaviors found.
+                        </div>
+                      ) : (
+                        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+                          {filteredConfigCards.map((config) => {
+                            const versions =
+                              versionStateByConfig[config.id] ||
+                              buildInitialVersionState();
+                            const latestVersion =
+                              versions.items.reduce<number>(
+                                (maxVersion, item) =>
+                                  item.version > maxVersion
+                                    ? item.version
+                                    : maxVersion,
+                                0,
+                              ) || 1;
+                            const isExpanded = expandedConfigId === config.id;
+                            const selectedVersions = selectedCountForConfig(
+                              config.id,
+                            );
+                            const defaultSelected = isSelected(
+                              config.id,
+                              latestVersion,
+                            );
+                            const defaultLoading =
+                              loadingSelectionKeys[
+                                `${config.id}:${latestVersion}`
+                              ];
+                            const knownVersionCount = versions.items.length;
+                            const hasVersionsPanel =
+                              knownVersionCount > 0 ||
+                              versions.hasMore ||
+                              versions.isLoading ||
+                              Boolean(versions.error);
+                            const previewVersions = versions.items.slice(0, 3);
+                            const versionCountLabel =
+                              knownVersionCount > 0
+                                ? `${knownVersionCount}${versions.hasMore ? "+" : ""}`
+                                : "Check";
+
+                            return (
+                              <div
+                                key={config.id}
+                                className={`self-start rounded-2xl border bg-white transition-shadow ${
+                                  isExpanded
+                                    ? "border-neutral-900 shadow-[0_10px_22px_rgba(23,23,23,0.07)]"
+                                    : "border-neutral-200 shadow-[0_1px_2px_rgba(23,23,23,0.03)]"
+                                }`}
                               >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <h4
-                                      className="truncate text-base font-semibold"
-                                      style={{ color: colors.text.primary }}
-                                    >
-                                      {config.name}
-                                    </h4>
-                                    <div
-                                      className="mt-1 text-xs"
-                                      style={{ color: colors.text.secondary }}
-                                    >
-                                      {formatRelativeTime(config.updated_at)}
+                                <button
+                                  onClick={() =>
+                                    toggleConfigExpansion(config.id)
+                                  }
+                                  className="cursor-pointer w-full rounded-2xl p-4 text-left"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <h4 className="truncate text-base font-semibold text-neutral-900">
+                                        {config.name}
+                                      </h4>
+                                      <div className="mt-1 text-xs text-neutral-500">
+                                        {formatRelativeTime(config.updated_at)}
+                                      </div>
                                     </div>
+                                    {selectedVersions > 0 && (
+                                      <span className="rounded-full bg-neutral-900/5 px-2.5 py-1 text-[11px] font-medium text-neutral-900">
+                                        In use
+                                      </span>
+                                    )}
                                   </div>
-                                  {selectedVersions > 0 && (
-                                    <span
-                                      className="rounded-full px-2.5 py-1 text-[11px] font-medium"
-                                      style={{
-                                        backgroundColor:
-                                          "rgba(23, 23, 23, 0.06)",
-                                        color: colors.text.primary,
+
+                                  <p className="mt-3 text-sm leading-6 text-neutral-500">
+                                    {config.description ||
+                                      "No description provided for this configuration."}
+                                  </p>
+                                </button>
+
+                                <div className="px-4 pb-4 pt-1">
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void toggleVersionSelection(
+                                          config,
+                                          latestVersion,
+                                        );
                                       }}
+                                      disabled={Boolean(defaultLoading)}
+                                      className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium ${
+                                        defaultSelected
+                                          ? "border-neutral-200 bg-neutral-50 text-neutral-900"
+                                          : "border-neutral-900 bg-neutral-900 text-white"
+                                      } ${defaultLoading ? "cursor-progress" : "cursor-pointer"}`}
                                     >
-                                      In use
-                                    </span>
+                                      {defaultLoading
+                                        ? "Working..."
+                                        : defaultSelected
+                                          ? "Added"
+                                          : "Use this behavior"}
+                                    </button>
+                                  </div>
+                                  {hasVersionsPanel && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        toggleConfigExpansion(config.id)
+                                      }
+                                      aria-label={
+                                        isExpanded
+                                          ? "Hide saved versions"
+                                          : "View saved versions"
+                                      }
+                                      className={`mt-2 flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-neutral-900 transition-colors ${
+                                        isExpanded
+                                          ? "border-neutral-900 bg-neutral-50"
+                                          : "border-neutral-200 bg-white"
+                                      }`}
+                                    >
+                                      <div className="relative h-7 w-9 shrink-0">
+                                        <span className="absolute inset-x-1 top-0 h-4 rounded-md border border-neutral-200 bg-white opacity-65" />
+                                        <span
+                                          className={`absolute inset-x-0 top-1.5 h-4 rounded-md border bg-neutral-50 ${
+                                            isExpanded
+                                              ? "border-neutral-900"
+                                              : "border-neutral-200"
+                                          }`}
+                                        />
+                                      </div>
+
+                                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                                        <div className="flex items-center -space-x-1.5">
+                                          {previewVersions.length > 0
+                                            ? previewVersions.map((version) => (
+                                                <span
+                                                  key={version.id}
+                                                  className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-neutral-200 bg-white px-1.5 text-[10px] font-semibold text-neutral-500"
+                                                >
+                                                  v{version.version}
+                                                </span>
+                                              ))
+                                            : null}
+                                        </div>
+                                        <span className="text-xs font-semibold">
+                                          {isExpanded
+                                            ? "Hide versions"
+                                            : "View more versions"}
+                                        </span>
+                                        <span
+                                          className={`rounded-full px-2 py-1 text-[10px] font-semibold text-neutral-500 ${
+                                            isExpanded
+                                              ? "bg-neutral-900/10"
+                                              : "bg-neutral-50"
+                                          }`}
+                                        >
+                                          {versionCountLabel}
+                                        </span>
+                                      </div>
+
+                                      <span
+                                        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-white ${
+                                          isExpanded
+                                            ? "border-neutral-900"
+                                            : "border-neutral-200"
+                                        }`}
+                                      >
+                                        <ChevronDownIcon
+                                          className={`h-3.5 w-3.5 transition-transform duration-300 ease-in-out ${
+                                            isExpanded
+                                              ? "rotate-180"
+                                              : "rotate-0"
+                                          }`}
+                                        />
+                                      </span>
+                                    </button>
                                   )}
                                 </div>
 
-                                <p
-                                  className="mt-3 text-sm leading-6"
-                                  style={{ color: colors.text.secondary }}
-                                >
-                                  {config.description ||
-                                    "No description provided for this configuration."}
-                                </p>
-                              </button>
-
-                              <div className="px-4 pb-4 pt-1">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      void toggleVersionSelection(
-                                        config,
-                                        latestVersion,
-                                      );
-                                    }}
-                                    disabled={Boolean(defaultLoading)}
-                                    className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium"
-                                    style={{
-                                      backgroundColor: defaultSelected
-                                        ? colors.bg.secondary
-                                        : colors.accent.primary,
-                                      color: defaultSelected
-                                        ? colors.text.primary
-                                        : "#ffffff",
-                                      border: `1px solid ${defaultSelected ? colors.border : colors.accent.primary}`,
-                                      cursor: defaultLoading
-                                        ? "progress"
-                                        : "pointer",
-                                    }}
-                                  >
-                                    {defaultLoading
-                                      ? "Working..."
-                                      : defaultSelected
-                                        ? "Added"
-                                        : "Use this behavior"}
-                                  </button>
-                                </div>
                                 {hasVersionsPanel && (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      toggleConfigExpansion(config.id)
-                                    }
-                                    aria-label={
+                                  <div
+                                    className={`overflow-hidden border-t border-neutral-200 bg-neutral-50 transition-all duration-300 ease-in-out ${
                                       isExpanded
-                                        ? "Hide saved versions"
-                                        : "View saved versions"
-                                    }
-                                    className="mt-2 flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors"
-                                    style={{
-                                      borderColor: isExpanded
-                                        ? colors.accent.primary
-                                        : colors.border,
-                                      backgroundColor: isExpanded
-                                        ? colors.bg.secondary
-                                        : colors.bg.primary,
-                                      color: colors.text.primary,
-                                    }}
+                                        ? "pointer-events-auto max-h-[30rem] opacity-100"
+                                        : "pointer-events-none max-h-0 opacity-0"
+                                    }`}
                                   >
-                                    <div className="relative h-7 w-9 shrink-0">
-                                      <span
-                                        className="absolute inset-x-1 top-0 h-4 rounded-md border"
-                                        style={{
-                                          borderColor: colors.border,
-                                          backgroundColor: colors.bg.primary,
-                                          opacity: 0.65,
-                                        }}
-                                      />
-                                      <span
-                                        className="absolute inset-x-0 top-1.5 h-4 rounded-md border"
-                                        style={{
-                                          borderColor: isExpanded
-                                            ? colors.accent.primary
-                                            : colors.border,
-                                          backgroundColor: colors.bg.secondary,
-                                        }}
-                                      />
-                                    </div>
-
-                                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                                      <div className="flex items-center -space-x-1.5">
-                                        {previewVersions.length > 0
-                                          ? previewVersions.map((version) => (
-                                              <span
-                                                key={version.id}
-                                                className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-1.5 text-[10px] font-semibold"
-                                                style={{
-                                                  borderColor: colors.border,
-                                                  backgroundColor:
-                                                    colors.bg.primary,
-                                                  color: colors.text.secondary,
-                                                }}
-                                              >
-                                                v{version.version}
-                                              </span>
-                                            ))
-                                          : null}
+                                    <div className="px-4 pb-4 pt-3">
+                                      <div className="mb-3 flex items-center justify-between gap-3">
+                                        <div>
+                                          <div className="text-sm font-semibold text-neutral-900">
+                                            Other versions
+                                          </div>
+                                          <div className="mt-0.5 text-[11px] text-neutral-500">
+                                            Choose a different saved version for
+                                            this behavior.
+                                          </div>
+                                        </div>
+                                        <button
+                                          onClick={() =>
+                                            void loadVersions(config.id, true)
+                                          }
+                                          className="cursor-pointer text-xs font-medium text-neutral-500"
+                                        >
+                                          Refresh
+                                        </button>
                                       </div>
-                                      <span className="text-xs font-semibold">
-                                        {isExpanded
-                                          ? "Hide versions"
-                                          : "View more versions"}
-                                      </span>
-                                      <span
-                                        className="rounded-full px-2 py-1 text-[10px] font-semibold"
-                                        style={{
-                                          backgroundColor: isExpanded
-                                            ? "rgba(23, 23, 23, 0.08)"
-                                            : colors.bg.secondary,
-                                          color: colors.text.secondary,
-                                        }}
-                                      >
-                                        {versionCountLabel}
-                                      </span>
-                                    </div>
 
-                                    <span
-                                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border"
-                                      style={{
-                                        borderColor: isExpanded
-                                          ? colors.accent.primary
-                                          : colors.border,
-                                        backgroundColor: colors.bg.primary,
-                                      }}
-                                    >
-                                      <ChevronDownIcon
-                                        className="h-3.5 w-3.5 transition-transform duration-300 ease-in-out"
-                                        style={{
-                                          transform: isExpanded
-                                            ? "rotate(180deg)"
-                                            : "rotate(0deg)",
-                                        }}
-                                      />
-                                    </span>
-                                  </button>
+                                      {versions.error ? (
+                                        <div className="rounded-xl border border-neutral-200 px-3 py-4 text-sm text-red-600">
+                                          {versions.error}
+                                        </div>
+                                      ) : versions.items.length === 0 &&
+                                        versions.isLoading ? (
+                                        <div className="rounded-xl border border-neutral-200 px-3 py-4 text-sm text-neutral-500">
+                                          Loading versions...
+                                        </div>
+                                      ) : (
+                                        <div className="max-h-64 space-y-2 overflow-auto pr-1">
+                                          {versions.items.map((version) => {
+                                            const selected = isSelected(
+                                              config.id,
+                                              version.version,
+                                            );
+                                            const selectionKey = `${config.id}:${version.version}`;
+                                            const isSelecting =
+                                              loadingSelectionKeys[
+                                                selectionKey
+                                              ];
+
+                                            return (
+                                              <div
+                                                key={version.id}
+                                                className={`rounded-xl border bg-white px-3 py-2.5 ${
+                                                  selected
+                                                    ? "border-neutral-900"
+                                                    : "border-neutral-200"
+                                                }`}
+                                              >
+                                                <div className="flex items-center justify-between gap-3">
+                                                  <div className="min-w-0">
+                                                    <div className="text-sm font-semibold text-neutral-900">
+                                                      Version {version.version}
+                                                    </div>
+                                                    <div className="mt-0.5 text-xs leading-5 text-neutral-500">
+                                                      {version.commit_message ||
+                                                        config.name}
+                                                    </div>
+                                                    <div className="mt-1 text-[11px] text-neutral-500">
+                                                      {formatRelativeTime(
+                                                        version.updated_at,
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <button
+                                                    onClick={() =>
+                                                      void toggleVersionSelection(
+                                                        config,
+                                                        version.version,
+                                                      )
+                                                    }
+                                                    disabled={Boolean(
+                                                      isSelecting,
+                                                    )}
+                                                    className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-medium ${
+                                                      selected
+                                                        ? "border-neutral-200 bg-neutral-50 text-neutral-900"
+                                                        : "border-neutral-900 bg-neutral-900 text-white"
+                                                    } ${
+                                                      isSelecting
+                                                        ? "cursor-progress"
+                                                        : "cursor-pointer"
+                                                    }`}
+                                                  >
+                                                    {isSelecting
+                                                      ? "Working..."
+                                                      : selected
+                                                        ? "Remove"
+                                                        : "Select"}
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+
+                                          {versions.hasMore && (
+                                            <button
+                                              onClick={() =>
+                                                void loadVersions(
+                                                  config.id,
+                                                  false,
+                                                )
+                                              }
+                                              disabled={versions.isLoading}
+                                              className="w-full cursor-pointer rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-900"
+                                            >
+                                              {versions.isLoading
+                                                ? "Loading more versions..."
+                                                : "Load more versions"}
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
-
-                              {hasVersionsPanel && (
-                                <div
-                                  className={`overflow-hidden border-t transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[30rem] opacity-100" : "max-h-0 opacity-0"}`}
-                                  style={{
-                                    borderColor: colors.border,
-                                    backgroundColor: colors.bg.secondary,
-                                    pointerEvents: isExpanded ? "auto" : "none",
-                                  }}
-                                >
-                                  <div className="px-4 pb-4 pt-3">
-                                    <div className="mb-3 flex items-center justify-between gap-3">
-                                      <div>
-                                        <div
-                                          className="text-sm font-semibold"
-                                          style={{ color: colors.text.primary }}
-                                        >
-                                          Other versions
-                                        </div>
-                                        <div
-                                          className="mt-0.5 text-[11px]"
-                                          style={{
-                                            color: colors.text.secondary,
-                                          }}
-                                        >
-                                          Choose a different saved version for
-                                          this behavior.
-                                        </div>
-                                      </div>
-                                      <button
-                                        onClick={() =>
-                                          void loadVersions(config.id, true)
-                                        }
-                                        className="cursor-pointer text-xs font-medium"
-                                        style={{ color: colors.text.secondary }}
-                                      >
-                                        Refresh
-                                      </button>
-                                    </div>
-
-                                    {versions.error ? (
-                                      <div
-                                        className="rounded-xl border px-3 py-4 text-sm"
-                                        style={{
-                                          borderColor: colors.border,
-                                          color: colors.status.error,
-                                        }}
-                                      >
-                                        {versions.error}
-                                      </div>
-                                    ) : versions.items.length === 0 &&
-                                      versions.isLoading ? (
-                                      <div
-                                        className="rounded-xl border px-3 py-4 text-sm"
-                                        style={{
-                                          borderColor: colors.border,
-                                          color: colors.text.secondary,
-                                        }}
-                                      >
-                                        Loading versions...
-                                      </div>
-                                    ) : (
-                                      <div className="max-h-64 space-y-2 overflow-auto pr-1">
-                                        {versions.items.map((version) => {
-                                          const selected = isSelected(
-                                            config.id,
-                                            version.version,
-                                          );
-                                          const selectionKey = `${config.id}:${version.version}`;
-                                          const isSelecting =
-                                            loadingSelectionKeys[selectionKey];
-
-                                          return (
-                                            <div
-                                              key={version.id}
-                                              className="rounded-xl border px-3 py-2.5"
-                                              style={{
-                                                borderColor: selected
-                                                  ? colors.accent.primary
-                                                  : colors.border,
-                                                backgroundColor:
-                                                  colors.bg.primary,
-                                              }}
-                                            >
-                                              <div className="flex items-center justify-between gap-3">
-                                                <div className="min-w-0">
-                                                  <div
-                                                    className="text-sm font-semibold"
-                                                    style={{
-                                                      color:
-                                                        colors.text.primary,
-                                                    }}
-                                                  >
-                                                    Version {version.version}
-                                                  </div>
-                                                  <div
-                                                    className="mt-0.5 text-xs leading-5"
-                                                    style={{
-                                                      color:
-                                                        colors.text.secondary,
-                                                    }}
-                                                  >
-                                                    {version.commit_message ||
-                                                      config.name}
-                                                  </div>
-                                                  <div
-                                                    className="mt-1 text-[11px]"
-                                                    style={{
-                                                      color:
-                                                        colors.text.secondary,
-                                                    }}
-                                                  >
-                                                    {formatRelativeTime(
-                                                      version.updated_at,
-                                                    )}
-                                                  </div>
-                                                </div>
-                                                <button
-                                                  onClick={() =>
-                                                    void toggleVersionSelection(
-                                                      config,
-                                                      version.version,
-                                                    )
-                                                  }
-                                                  disabled={Boolean(
-                                                    isSelecting,
-                                                  )}
-                                                  className="shrink-0 rounded-xl px-3 py-2 text-xs font-medium"
-                                                  style={{
-                                                    backgroundColor: selected
-                                                      ? colors.bg.secondary
-                                                      : colors.accent.primary,
-                                                    color: selected
-                                                      ? colors.text.primary
-                                                      : "#ffffff",
-                                                    border: `1px solid ${selected ? colors.border : colors.accent.primary}`,
-                                                    cursor: isSelecting
-                                                      ? "progress"
-                                                      : "pointer",
-                                                  }}
-                                                >
-                                                  {isSelecting
-                                                    ? "Working..."
-                                                    : selected
-                                                      ? "Remove"
-                                                      : "Select"}
-                                                </button>
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-
-                                        {versions.hasMore && (
-                                          <button
-                                            onClick={() =>
-                                              void loadVersions(
-                                                config.id,
-                                                false,
-                                              )
-                                            }
-                                            disabled={versions.isLoading}
-                                            className="cursor-pointer w-full rounded-xl border px-4 py-2.5 text-sm font-medium"
-                                            style={{
-                                              borderColor: colors.border,
-                                              backgroundColor:
-                                                colors.bg.primary,
-                                              color: colors.text.primary,
-                                            }}
-                                          >
-                                            {versions.isLoading
-                                              ? "Loading more versions..."
-                                              : "Load more versions"}
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div ref={loadMoreRef} className="h-2 w-full" />
-
-                    {isLoadingMoreConfigs && (
-                      <div
-                        className="pt-4 text-center text-sm"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        Loading more behaviors...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(24rem,0.95fr)] lg:gap-5">
-                    <div>
-                      <div>
-                        <div className="mb-3">
-                          <h4
-                            className="text-sm font-semibold"
-                            style={{ color: colors.text.primary }}
-                          >
-                            Instructions
-                          </h4>
+                            );
+                          })}
                         </div>
-                        <textarea
-                          value={String(draftParams.instructions || "")}
-                          onChange={(event) =>
-                            updateDraftParam("instructions", event.target.value)
-                          }
-                          placeholder="Tell the AI how it should respond"
-                          className="min-h-[28rem] w-full rounded-2xl border px-4 py-4 text-sm leading-6 outline-none"
-                          style={{
-                            borderColor: colors.border,
-                            backgroundColor: colors.bg.primary,
-                            color: colors.text.primary,
-                          }}
-                        />
-                      </div>
+                      )}
+
+                      <div ref={loadMoreRef} className="h-2 w-full" />
+
+                      {isLoadingMoreConfigs && (
+                        <div className="pt-4 text-center text-sm text-neutral-500">
+                          Loading more behaviors...
+                        </div>
+                      )}
                     </div>
-
-                    <div
-                      className="hidden lg:block"
-                      style={{ backgroundColor: colors.border }}
-                    />
-
-                    <div className="space-y-8">
+                  </div>
+                ) : (
+                  <div>
+                    <div className="grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(24rem,0.95fr)] lg:gap-5">
                       <div>
-                        <h4
-                          className="mb-4 text-sm font-semibold"
-                          style={{ color: colors.text.primary }}
-                        >
-                          Basics
-                        </h4>
-                        <div className="space-y-4">
-                          <div>
-                            <label
-                              className="mb-2 block text-xs font-semibold"
-                              style={{ color: colors.text.primary }}
-                            >
-                              Ai Configuration name
-                            </label>
-                            <input
-                              value={configName}
-                              onChange={(event) =>
-                                setConfigName(event.target.value)
-                              }
-                              placeholder="e.g. Helpful grader"
-                              className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                              style={{
-                                borderColor: colors.border,
-                                backgroundColor: colors.bg.primary,
-                                color: colors.text.primary,
-                              }}
-                            />
+                        <div>
+                          <div className="mb-3">
+                            <h4 className="text-sm font-semibold text-neutral-900">
+                              Instructions
+                            </h4>
                           </div>
+                          <textarea
+                            value={String(draftParams.instructions || "")}
+                            onChange={(event) =>
+                              updateDraftParam(
+                                "instructions",
+                                event.target.value,
+                              )
+                            }
+                            placeholder="Tell the AI how it should respond"
+                            className="min-h-[28rem] w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-sm leading-6 text-neutral-900 outline-none"
+                          />
+                        </div>
+                      </div>
 
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                              <label
-                                className="mb-2 block text-xs font-semibold"
-                                style={{ color: colors.text.primary }}
-                              >
-                                AI service
-                              </label>
-                              <select
-                                value={draft.completion.provider}
-                                onChange={(event) => {
-                                  const provider = event.target
-                                    .value as "openai";
-                                  const defaultModel =
-                                    getDefaultModelForProvider(provider);
-                                  setDraft((prev) => ({
-                                    ...prev,
-                                    completion: {
-                                      ...prev.completion,
-                                      provider,
-                                      params: {
-                                        instructions: String(
-                                          prev.completion.params.instructions ||
-                                            "",
-                                        ),
-                                        model: defaultModel,
-                                        ...buildDefaultParams(defaultModel),
-                                      },
-                                    },
-                                  }));
-                                }}
-                                className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                                style={{
-                                  borderColor: colors.border,
-                                  backgroundColor: colors.bg.primary,
-                                  color: colors.text.primary,
-                                }}
-                              >
-                                {PROVIDER_OPTIONS.map((option) => (
-                                  <option
-                                    key={option.value}
-                                    value={option.value}
-                                  >
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
+                      <div className="hidden bg-neutral-200 lg:block" />
 
+                      <div className="space-y-8">
+                        <div>
+                          <h4 className="mb-4 text-sm font-semibold text-neutral-900">
+                            Basics
+                          </h4>
+                          <div className="space-y-4">
                             <div>
-                              <label
-                                className="mb-2 block text-xs font-semibold"
-                                style={{ color: colors.text.primary }}
-                              >
-                                Model
+                              <label className="mb-2 block text-xs font-semibold text-neutral-900">
+                                Ai Configuration name
                               </label>
-                              <select
-                                value={currentModel}
+                              <input
+                                value={configName}
                                 onChange={(event) =>
-                                  handleModelChange(event.target.value)
+                                  setConfigName(event.target.value)
                                 }
-                                className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                                style={{
-                                  borderColor: colors.border,
-                                  backgroundColor: colors.bg.primary,
-                                  color: colors.text.primary,
-                                }}
-                              >
-                                {providerModels.map((model) => (
-                                  <option key={model.value} value={model.value}>
-                                    {model.label}
-                                  </option>
-                                ))}
-                              </select>
+                                placeholder="e.g. Helpful grader"
+                                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
+                              />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-2 block text-xs font-semibold text-neutral-900">
+                                  AI service
+                                </label>
+                                <select
+                                  value={draft.completion.provider}
+                                  onChange={(event) => {
+                                    const provider = event.target
+                                      .value as "openai";
+                                    const defaultModel =
+                                      getDefaultModelForProvider(provider);
+                                    setDraft((prev) => ({
+                                      ...prev,
+                                      completion: {
+                                        ...prev.completion,
+                                        provider,
+                                        params: {
+                                          instructions: String(
+                                            prev.completion.params
+                                              .instructions || "",
+                                          ),
+                                          model: defaultModel,
+                                          ...buildDefaultParams(defaultModel),
+                                        },
+                                      },
+                                    }));
+                                  }}
+                                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
+                                >
+                                  {PROVIDER_OPTIONS.map((option) => (
+                                    <option
+                                      key={option.value}
+                                      value={option.value}
+                                    >
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block text-xs font-semibold text-neutral-900">
+                                  Model
+                                </label>
+                                <select
+                                  value={currentModel}
+                                  onChange={(event) =>
+                                    handleModelChange(event.target.value)
+                                  }
+                                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
+                                >
+                                  {providerModels.map((model) => (
+                                    <option
+                                      key={model.value}
+                                      value={model.value}
+                                    >
+                                      {model.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      <details
-                        className="rounded-2xl border px-4 py-3"
-                        style={{
-                          borderColor: colors.border,
-                          backgroundColor: colors.bg.secondary,
-                        }}
-                      >
-                        <summary
-                          className="cursor-pointer text-sm font-semibold"
-                          style={{ color: colors.text.primary }}
-                        >
-                          Advanced settings
-                        </summary>
-                        <div className="mt-4">
-                          {Object.entries(currentParamDefs).map(
-                            ([paramKey, definition]) => (
-                              <div
-                                key={paramKey}
-                                className="border-b py-4 last:border-b-0"
-                                style={{ borderColor: colors.border }}
-                              >
-                                <div className="mb-3 flex items-start justify-between gap-3">
-                                  <div>
-                                    <div
-                                      className="text-sm font-semibold"
-                                      style={{ color: colors.text.primary }}
-                                    >
-                                      {paramKey}
+                        <details className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                          <summary className="cursor-pointer text-sm font-semibold text-neutral-900">
+                            Advanced settings
+                          </summary>
+                          <div className="mt-4">
+                            {Object.entries(currentParamDefs).map(
+                              ([paramKey, definition]) => (
+                                <div
+                                  key={paramKey}
+                                  className="border-b border-neutral-200 py-4 last:border-b-0"
+                                >
+                                  <div className="mb-3 flex items-start justify-between gap-3">
+                                    <div>
+                                      <div className="text-sm font-semibold text-neutral-900">
+                                        {paramKey}
+                                      </div>
+                                      <div className="mt-1 text-xs leading-5 text-neutral-500">
+                                        {definition.description}
+                                      </div>
                                     </div>
-                                    <div
-                                      className="mt-1 text-xs leading-5"
-                                      style={{ color: colors.text.secondary }}
-                                    >
-                                      {definition.description}
-                                    </div>
+                                    <span className="rounded-full bg-white px-2 py-0.5 text-[11px] text-neutral-500">
+                                      default {String(definition.default)}
+                                    </span>
                                   </div>
-                                  <span
-                                    className="rounded-full px-2 py-0.5 text-[11px]"
-                                    style={{
-                                      backgroundColor: colors.bg.primary,
-                                      color: colors.text.secondary,
-                                    }}
-                                  >
-                                    default {String(definition.default)}
-                                  </span>
+                                  {renderParamControl(paramKey, definition)}
                                 </div>
-                                {renderParamControl(paramKey, definition)}
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </details>
+                              ),
+                            )}
+                          </div>
+                        </details>
 
-                      <div>
-                        <div className="mb-4">
-                          <h4
-                            className="text-sm font-semibold"
-                            style={{ color: colors.text.primary }}
-                          >
-                            Save behavior
-                          </h4>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div>
-                            <label
-                              className="mb-2 block text-xs font-semibold"
-                              style={{ color: colors.text.primary }}
-                            >
-                              Save note
-                            </label>
-                            <input
-                              value={commitMessage}
-                              onChange={(event) =>
-                                setCommitMessage(event.target.value)
-                              }
-                              placeholder="Optional"
-                              className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                              style={{
-                                borderColor: colors.border,
-                                backgroundColor: colors.bg.primary,
-                                color: colors.text.primary,
-                              }}
-                            />
+                        <div>
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-neutral-900">
+                              Save behavior
+                            </h4>
                           </div>
 
-                          <div
-                            className="rounded-xl p-3"
-                            style={{ backgroundColor: colors.bg.secondary }}
-                          >
-                            <div
-                              className="text-xs font-semibold uppercase tracking-[0.18em]"
-                              style={{ color: colors.text.secondary }}
-                            >
-                              Summary
+                          <div className="space-y-4">
+                            <div>
+                              <label className="mb-2 block text-xs font-semibold text-neutral-900">
+                                Save note
+                              </label>
+                              <input
+                                value={commitMessage}
+                                onChange={(event) =>
+                                  setCommitMessage(event.target.value)
+                                }
+                                placeholder="Optional"
+                                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none"
+                              />
                             </div>
-                            <div className="mt-3 space-y-1.5 text-sm">
-                              <div style={{ color: colors.text.primary }}>
-                                {configName.trim() || "Unnamed configuration"}
-                              </div>
-                              <div style={{ color: colors.text.secondary }}>
-                                {draft.completion.provider}/{currentModel}
-                              </div>
-                              <div style={{ color: colors.text.secondary }}>
-                                {Object.keys(currentParamDefs).length} parameter
-                                {Object.keys(currentParamDefs).length === 1
-                                  ? ""
-                                  : "s"}{" "}
-                                configured
-                              </div>
-                            </div>
-                          </div>
 
-                          <button
-                            onClick={() => void handleCreateAndAdd()}
-                            disabled={isSaving || !configName.trim()}
-                            className="w-full rounded-2xl px-4 py-3 text-sm font-semibold"
-                            style={{
-                              backgroundColor:
+                            <div className="rounded-xl bg-neutral-50 p-3">
+                              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
+                                Summary
+                              </div>
+                              <div className="mt-3 space-y-1.5 text-sm">
+                                <div className="text-neutral-900">
+                                  {configName.trim() || "Unnamed configuration"}
+                                </div>
+                                <div className="text-neutral-500">
+                                  {draft.completion.provider}/{currentModel}
+                                </div>
+                                <div className="text-neutral-500">
+                                  {Object.keys(currentParamDefs).length}{" "}
+                                  parameter
+                                  {Object.keys(currentParamDefs).length === 1
+                                    ? ""
+                                    : "s"}{" "}
+                                  configured
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={() => void handleCreateAndAdd()}
+                              disabled={isSaving || !configName.trim()}
+                              className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold ${
                                 isSaving || !configName.trim()
-                                  ? colors.bg.primary
-                                  : colors.accent.primary,
-                              color:
-                                isSaving || !configName.trim()
-                                  ? colors.text.secondary
-                                  : "#ffffff",
-                              border: `1px solid ${isSaving || !configName.trim() ? colors.border : colors.accent.primary}`,
-                              cursor:
-                                isSaving || !configName.trim()
-                                  ? "not-allowed"
-                                  : "pointer",
-                            }}
-                          >
-                            {isSaving ? "Saving behavior..." : "Save behavior"}
-                          </button>
+                                  ? "cursor-not-allowed border-neutral-200 bg-white text-neutral-500"
+                                  : "cursor-pointer border-neutral-900 bg-neutral-900 text-white"
+                              }`}
+                            >
+                              {isSaving
+                                ? "Saving behavior..."
+                                : "Save behavior"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {activeSubtab === "schema" && (
-            <div
-              className="rounded-2xl border p-6"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.bg.primary,
-              }}
-              role="tabpanel"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3
-                    className="text-sm font-semibold"
-                    style={{ color: colors.text.primary }}
-                  >
-                    Response format
-                  </h3>
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: colors.text.secondary }}
+            {activeSubtab === "schema" && (
+              <div
+                className="rounded-2xl border border-neutral-200 bg-white p-6"
+                role="tabpanel"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-900">
+                      Response format
+                    </h3>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      {hasConfiguredResponseFormat
+                        ? `${namedSchemaCount} field(s) defined`
+                        : "No schema defined. Response format is required."}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSchemaModalOpen(true)}
+                    className="cursor-pointer rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
                   >
                     {hasConfiguredResponseFormat
-                      ? `${namedSchemaCount} field(s) defined`
-                      : "No schema defined. Response format is required."}
-                  </p>
+                      ? "Edit schema"
+                      : "Define schema"}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSchemaModalOpen(true)}
-                  className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#fff",
-                  }}
-                >
-                  {hasConfiguredResponseFormat
-                    ? "Edit schema"
-                    : "Define schema"}
-                </button>
-              </div>
 
-              {hasConfiguredResponseFormat && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {outputSchema
-                    .filter((p) => p.name.trim())
-                    .map((p) => (
-                      <span
-                        key={p.id}
-                        className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs"
-                        style={{
-                          borderColor: colors.border,
-                          color: colors.text.primary,
-                        }}
-                      >
-                        <span className="font-medium">{p.name}</span>
-                        <span style={{ color: colors.text.secondary }}>
-                          {p.type}
-                          {p.isArray ? "[]" : ""}
+                {hasConfiguredResponseFormat && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {outputSchema
+                      .filter((p) => p.name.trim())
+                      .map((p) => (
+                        <span
+                          key={p.id}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 px-3 py-1 text-xs text-neutral-900"
+                        >
+                          <span className="font-medium">{p.name}</span>
+                          <span className="text-neutral-500">
+                            {p.type}
+                            {p.isArray ? "[]" : ""}
+                          </span>
                         </span>
-                      </span>
-                    ))}
-                </div>
-              )}
+                      ))}
+                  </div>
+                )}
 
-              <OutputSchemaModal
-                open={schemaModalOpen}
-                onClose={() => setSchemaModalOpen(false)}
-                schema={outputSchema}
-                setSchema={setOutputSchema}
-              />
-            </div>
-          )}
+                <OutputSchemaModal
+                  open={schemaModalOpen}
+                  onClose={() => setSchemaModalOpen(false)}
+                  schema={outputSchema}
+                  setSchema={setOutputSchema}
+                />
+              </div>
+            )}
+          </div>
         </div>
+        {/* end space-y-6 content wrapper */}
       </div>
-      {/* end space-y-6 content wrapper */}
 
-      <div
-        className="sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          borderColor: colors.border,
-          marginLeft: "-1.5rem",
-          marginRight: "-1.5rem",
-          paddingLeft: "1.5rem",
-          paddingRight: "1.5rem",
-        }}
-      >
-        <button
-          onClick={
-            activeSubtab === "schema"
-              ? () => setActiveSubtab("configs")
-              : onBack
-          }
-          className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
-          style={{
-            borderColor: colors.border,
-            color: colors.text.primary,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
-          <ChevronLeftIcon className="w-3.5 h-3.5" />
-          Back
-        </button>
-
-        <div className="flex items-center gap-3">
-          {activeSubtab === "schema" && !canFinishFromSchema && (
-            <span className="text-xs" style={{ color: colors.text.secondary }}>
-              {schemaBlockerMessage}
-            </span>
-          )}
+      <div className="mt-auto sticky bottom-0 z-10 border-t border-neutral-200 bg-neutral-50 py-2">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6">
           <button
             onClick={
-              activeSubtab === "configs"
-                ? () => setActiveSubtab("schema")
-                : onNext
+              activeSubtab === "schema"
+                ? () => setActiveSubtab("configs")
+                : onBack
             }
-            disabled={activeSubtab === "schema" && !canFinishFromSchema}
-            className="rounded-lg px-6 py-2.5 text-sm font-medium"
-            style={{
-              backgroundColor:
-                activeSubtab === "configs" || canFinishFromSchema
-                  ? colors.accent.primary
-                  : colors.bg.secondary,
-              color:
-                activeSubtab === "configs" || canFinishFromSchema
-                  ? "#ffffff"
-                  : colors.text.secondary,
-              cursor:
-                activeSubtab === "schema" && !canFinishFromSchema
-                  ? "not-allowed"
-                  : "pointer",
-              border: `1px solid ${activeSubtab === "configs" || canFinishFromSchema ? colors.accent.primary : colors.border}`,
-            }}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-neutral-900"
           >
-            {activeSubtab === "configs"
-              ? "Next: Response Format"
-              : "Next: Review"}
+            <ChevronLeftIcon className="w-3.5 h-3.5" />
+            Back
           </button>
+
+          <div className="flex items-center gap-3">
+            {activeSubtab === "schema" && !canFinishFromSchema && (
+              <span className="text-xs text-neutral-500">
+                {schemaBlockerMessage}
+              </span>
+            )}
+            <button
+              onClick={
+                activeSubtab === "configs"
+                  ? () => setActiveSubtab("schema")
+                  : onNext
+              }
+              disabled={activeSubtab === "schema" && !canFinishFromSchema}
+              className={`rounded-lg border px-6 py-2.5 text-sm font-medium ${
+                activeSubtab === "configs" || canFinishFromSchema
+                  ? "cursor-pointer border-neutral-900 bg-neutral-900 text-white"
+                  : "cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-500"
+              }`}
+            >
+              {activeSubtab === "configs"
+                ? "Next: Response Format"
+                : "Next: Review"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useCallback, useId } from "react";
-import { colors } from "@/app/lib/colors";
 
 interface JsonEditorProps {
   value: string;
@@ -14,12 +13,12 @@ interface JsonEditorProps {
 
 /* JSON token colors — light background */
 const C = {
-  key: "#0550ae", // blue — property keys
-  string: "#116329", // green — string values
-  number: "#953800", // orange — numbers
-  boolean: "#8250df", // purple — true/false
-  null: "#8250df", // purple — null
-  punct: "#6e7781", // gray — brackets, commas, colons
+  key: "text-[#0550ae]",
+  string: "text-[#116329]",
+  number: "text-[#953800]",
+  boolean: "text-[#8250df]",
+  null: "text-[#8250df]",
+  punct: "text-[#6e7781]",
 };
 
 function highlight(code: string): string {
@@ -37,38 +36,31 @@ function highlight(code: string): string {
   while ((m = re.exec(code)) !== null) {
     // punctuation / whitespace between tokens
     if (cursor < m.index) {
-      result += `<span style="color:${C.punct}">${escHtml(code.slice(cursor, m.index))}</span>`;
+      result += `<span class="${C.punct}">${escHtml(code.slice(cursor, m.index))}</span>`;
     }
 
     if (m[1] !== undefined) {
       const isKey = !!m[2];
-      result += `<span style="color:${isKey ? C.key : C.string}">${escHtml(m[1])}</span>`;
-      if (m[2])
-        result += `<span style="color:${C.punct}">${escHtml(m[2])}</span>`;
+      result += `<span class="${isKey ? C.key : C.string}">${escHtml(m[1])}</span>`;
+      if (m[2]) result += `<span class="${C.punct}">${escHtml(m[2])}</span>`;
       cursor = m.index + m[0].length;
     } else if (m[3] !== undefined) {
-      result += `<span style="color:${m[3] === "null" ? C.null : C.boolean}">${escHtml(m[3])}</span>`;
+      result += `<span class="${m[3] === "null" ? C.null : C.boolean}">${escHtml(m[3])}</span>`;
       cursor = m.index + m[3].length;
     } else if (m[4] !== undefined) {
-      result += `<span style="color:${C.number}">${escHtml(m[4])}</span>`;
+      result += `<span class="${C.number}">${escHtml(m[4])}</span>`;
       cursor = m.index + m[4].length;
     }
   }
 
   if (cursor < code.length) {
-    result += `<span style="color:${C.punct}">${escHtml(code.slice(cursor))}</span>`;
+    result += `<span class="${C.punct}">${escHtml(code.slice(cursor))}</span>`;
   }
 
   return result;
 }
 
-const FONT: React.CSSProperties = {
-  fontFamily:
-    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-  fontSize: "13px",
-  lineHeight: "1.7",
-  tabSize: 2,
-};
+const EDITOR_FONT_CLASSES = "font-mono text-[13px] leading-[1.7] [tab-size:2]";
 
 export default function JsonEditor({
   value,
@@ -120,46 +112,30 @@ export default function JsonEditor({
   };
 
   const borderColor = error
-    ? "rgba(239,68,68,0.4)"
+    ? "border-red-500/40"
     : isValid && value.trim()
-      ? "rgba(34,197,94,0.35)"
-      : colors.border;
+      ? "border-green-500/35"
+      : "border-neutral-200";
+  const minHeightClass = minHeight === 420 ? "min-h-[420px]" : "min-h-[400px]";
+  const statusClass = error
+    ? "bg-red-500/[0.07] text-red-500"
+    : isValid
+      ? "bg-green-600/[0.07] text-green-600"
+      : "";
 
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{ border: `1px solid ${borderColor}` }}
-    >
+    <div className={`overflow-hidden rounded-xl border ${borderColor}`}>
       {/* Minimal top bar */}
-      <div
-        className="flex items-center justify-between px-4 py-2 border-b"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          borderColor: colors.border,
-        }}
-      >
+      <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2">
         <div className="flex items-center gap-2">
           <span
-            style={{ ...FONT, fontSize: "11px", color: colors.text.secondary }}
+            className={`${EDITOR_FONT_CLASSES} text-[11px] text-neutral-500`}
           >
             JSON
           </span>
           {value.trim() && (
             <span
-              className="text-[10px] px-1.5 py-0.5 rounded-full"
-              style={
-                error
-                  ? {
-                      color: "#ef4444",
-                      backgroundColor: "rgba(239,68,68,0.07)",
-                    }
-                  : isValid
-                    ? {
-                        color: "#16a34a",
-                        backgroundColor: "rgba(22,163,74,0.07)",
-                      }
-                    : {}
-              }
+              className={`rounded-full px-1.5 py-0.5 text-[10px] ${statusClass}`}
             >
               {error ? "Invalid" : isValid ? "Valid" : ""}
             </span>
@@ -171,8 +147,7 @@ export default function JsonEditor({
               id={errorId}
               role="alert"
               aria-live="polite"
-              className="text-[11px] truncate max-w-xs"
-              style={{ color: "#ef4444" }}
+              className="max-w-xs truncate text-[11px] text-red-500"
             >
               {error}
             </span>
@@ -181,8 +156,7 @@ export default function JsonEditor({
             <button
               type="button"
               onClick={() => onChange("")}
-              className="cursor-pointer text-xs"
-              style={{ color: colors.text.secondary }}
+              className="cursor-pointer text-xs text-neutral-500"
             >
               Clear
             </button>
@@ -191,24 +165,12 @@ export default function JsonEditor({
       </div>
 
       {/* Editor */}
-      <div
-        className="relative overflow-auto"
-        style={{ minHeight, backgroundColor: colors.bg.primary }}
-      >
+      <div className={`relative overflow-auto bg-white ${minHeightClass}`}>
         {/* Placeholder */}
         {!value && placeholder && (
           <pre
             aria-hidden
-            style={{
-              ...FONT,
-              position: "absolute",
-              inset: 0,
-              padding: "16px 20px",
-              color: colors.border,
-              pointerEvents: "none",
-              zIndex: 0,
-              margin: 0,
-            }}
+            className={`pointer-events-none absolute inset-0 z-0 m-0 px-5 py-4 text-neutral-200 ${EDITOR_FONT_CLASSES}`}
           >
             {placeholder}
           </pre>
@@ -218,19 +180,7 @@ export default function JsonEditor({
         <pre
           ref={preRef}
           aria-hidden
-          style={{
-            ...FONT,
-            position: "absolute",
-            inset: 0,
-            padding: "16px 20px",
-            margin: 0,
-            pointerEvents: "none",
-            overflow: "hidden",
-            minHeight,
-            zIndex: 1,
-            whiteSpace: "pre",
-            wordBreak: "normal",
-          }}
+          className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre break-normal px-5 py-4 ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
           dangerouslySetInnerHTML={{ __html: highlight(value) + "\n" }}
         />
 
@@ -249,21 +199,7 @@ export default function JsonEditor({
           aria-label="JSON editor"
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className="relative w-full resize-none outline-none"
-          style={{
-            ...FONT,
-            position: "relative",
-            padding: "16px 20px",
-            backgroundColor: "transparent",
-            color: "transparent",
-            caretColor: colors.text.primary,
-            minHeight,
-            zIndex: 2,
-            border: "none",
-            display: "block",
-            whiteSpace: "pre",
-            wordBreak: "normal",
-          }}
+          className={`relative z-20 block w-full resize-none border-none bg-transparent px-5 py-4 text-transparent outline-none caret-neutral-900 whitespace-pre break-normal ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
         />
       </div>
     </div>

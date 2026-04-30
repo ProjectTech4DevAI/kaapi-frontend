@@ -8,7 +8,6 @@ import {
   SearchIcon,
   SlidersIcon,
 } from "@/app/components/icons";
-import { colors } from "@/app/lib/colors";
 import { useConfigs } from "@/app/hooks/useConfigs";
 import { SavedConfig } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
@@ -101,13 +100,10 @@ export default function MultiConfigStep({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h2
-          className="text-lg font-semibold"
-          style={{ color: colors.text.primary }}
-        >
+        <h2 className="text-lg font-semibold text-neutral-900">
           Select Configurations
         </h2>
-        <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+        <p className="mt-1 text-sm text-neutral-500">
           Choose up to {MAX_CONFIGS} configurations for comparison. Each will
           run as a separate batch.
         </p>
@@ -116,49 +112,29 @@ export default function MultiConfigStep({
       {/* Selected configs as tags */}
       {configs.length > 0 && (
         <div>
-          <label
-            className="block text-xs font-medium mb-2"
-            style={{ color: colors.text.secondary }}
-          >
+          <label className="mb-2 block text-xs font-medium text-neutral-500">
             Selected ({configs.length}/{MAX_CONFIGS})
           </label>
           <div className="flex flex-wrap gap-2">
             {configs.map((config, index) => (
               <div
                 key={`${config.config_id}-${config.config_version}`}
-                className="inline-flex items-center gap-2 border rounded-full pl-3 pr-1.5 py-1.5"
-                style={{
-                  borderColor: colors.accent.primary,
-                  backgroundColor: "rgba(59, 130, 246, 0.05)",
-                }}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-900 bg-blue-500/[0.05] pl-3 pr-1.5 py-1.5"
               >
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: colors.text.primary }}
-                  >
+                  <span className="text-sm font-medium text-neutral-900">
                     {config.name}
                   </span>
-                  <span
-                    className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      color: colors.text.secondary,
-                    }}
-                  >
+                  <span className="rounded-full bg-neutral-50 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
                     v{config.config_version}
                   </span>
-                  <span
-                    className="text-xs"
-                    style={{ color: colors.text.secondary }}
-                  >
+                  <span className="text-xs text-neutral-500">
                     {config.provider}/{config.model}
                   </span>
                 </div>
                 <button
                   onClick={() => removeConfig(index)}
-                  className="p-0.5 rounded-full transition-colors hover:bg-red-50"
-                  style={{ color: colors.text.secondary }}
+                  className="rounded-full p-0.5 text-neutral-500 transition-colors hover:bg-red-50"
                 >
                   <CloseIcon className="w-3.5 h-3.5" />
                 </button>
@@ -171,50 +147,31 @@ export default function MultiConfigStep({
       {/* Config selector */}
       {configs.length < MAX_CONFIGS && (
         <div ref={dropdownRef} className="relative">
-          <label
-            className="block text-xs font-medium mb-1.5"
-            style={{ color: colors.text.secondary }}
-          >
+          <label className="mb-1.5 block text-xs font-medium text-neutral-500">
             Add Configuration
           </label>
 
           {isLoading ? (
-            <div
-              className="text-sm py-4 text-center"
-              style={{ color: colors.text.secondary }}
-            >
+            <div className="py-4 text-center text-sm text-neutral-500">
               Loading configurations...
             </div>
           ) : error ? (
-            <div
-              className="text-sm py-4 text-center"
-              style={{ color: colors.status.error }}
-            >
-              {error}
-            </div>
+            <div className="py-4 text-center text-sm text-red-600">{error}</div>
           ) : (
             <div className="relative">
               {/* Trigger / search input */}
               <div
-                className="flex items-center border rounded-lg px-3 py-2.5 cursor-text"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  borderColor: isDropdownOpen
-                    ? colors.accent.primary
-                    : colors.border,
-                  boxShadow: isDropdownOpen
-                    ? `0 0 0 1px ${colors.accent.primary}`
-                    : "none",
-                }}
+                className={`flex cursor-text items-center rounded-lg border bg-white px-3 py-2.5 ${
+                  isDropdownOpen
+                    ? "border-neutral-900 ring-1 ring-neutral-900"
+                    : "border-neutral-200"
+                }`}
                 onClick={() => {
                   setIsDropdownOpen(true);
                   inputRef.current?.focus();
                 }}
               >
-                <SearchIcon
-                  className="w-4 h-4 mr-2 flex-shrink-0"
-                  style={{ color: colors.text.secondary }}
-                />
+                <SearchIcon className="mr-2 h-4 w-4 flex-shrink-0 text-neutral-500" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -225,8 +182,7 @@ export default function MultiConfigStep({
                   }}
                   onFocus={() => setIsDropdownOpen(true)}
                   placeholder={`Search configurations... (${MAX_CONFIGS - configs.length} remaining)`}
-                  className="flex-1 text-sm bg-transparent outline-none"
-                  style={{ color: colors.text.primary }}
+                  className="flex-1 bg-transparent text-sm text-neutral-900 outline-none"
                 />
                 {isDropdownOpen && (
                   <button
@@ -235,8 +191,7 @@ export default function MultiConfigStep({
                       setIsDropdownOpen(false);
                       setSearchQuery("");
                     }}
-                    className="p-0.5 rounded"
-                    style={{ color: colors.text.secondary }}
+                    className="rounded p-0.5 text-neutral-500"
                   >
                     <ChevronUpIcon className="w-4 h-4" />
                   </button>
@@ -245,19 +200,10 @@ export default function MultiConfigStep({
 
               {/* Dropdown list */}
               {isDropdownOpen && (
-                <div
-                  className="absolute z-50 w-full mt-1 rounded-lg border shadow-lg overflow-hidden"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    borderColor: colors.border,
-                  }}
-                >
+                <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-lg">
                   <div className="max-h-72 overflow-auto">
                     {filteredGroups.length === 0 ? (
-                      <div
-                        className="px-4 py-6 text-center text-sm"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <div className="px-4 py-6 text-center text-sm text-neutral-500">
                         {searchQuery
                           ? `No configs match "${searchQuery}"`
                           : "No configurations available"}
@@ -266,14 +212,7 @@ export default function MultiConfigStep({
                       filteredGroups.map((group) => (
                         <div key={group.config_id}>
                           {/* Group header */}
-                          <div
-                            className="px-3 py-2 text-xs font-semibold uppercase tracking-wide sticky top-0 border-b"
-                            style={{
-                              backgroundColor: colors.bg.secondary,
-                              color: colors.text.secondary,
-                              borderColor: colors.border,
-                            }}
-                          >
+                          <div className="sticky top-0 border-b border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">
                             {group.name}
                             <span className="font-normal ml-1 normal-case">
                               ({group.totalVersions} version
@@ -290,36 +229,19 @@ export default function MultiConfigStep({
                               <button
                                 key={version.id}
                                 onClick={() => handleSelect(version)}
-                                className="w-full px-4 py-3 text-left flex items-center gap-3 transition-colors border-b"
-                                style={{
-                                  backgroundColor: selected
-                                    ? "rgba(59, 130, 246, 0.04)"
-                                    : colors.bg.primary,
-                                  borderColor: colors.border,
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (!selected)
-                                    e.currentTarget.style.backgroundColor =
-                                      colors.bg.secondary;
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    selected
-                                      ? "rgba(59, 130, 246, 0.04)"
-                                      : colors.bg.primary;
-                                }}
+                                className={`flex w-full items-center gap-3 border-b border-neutral-200 px-4 py-3 text-left transition-colors ${
+                                  selected
+                                    ? "bg-blue-500/[0.04]"
+                                    : "bg-white hover:bg-neutral-50"
+                                }`}
                               >
                                 {/* Checkbox */}
                                 <div
-                                  className="w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center"
-                                  style={{
-                                    borderColor: selected
-                                      ? colors.accent.primary
-                                      : colors.border,
-                                    backgroundColor: selected
-                                      ? colors.accent.primary
-                                      : "transparent",
-                                  }}
+                                  className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
+                                    selected
+                                      ? "border-neutral-900 bg-neutral-900"
+                                      : "border-neutral-200 bg-transparent"
+                                  }`}
                                 >
                                   {selected && (
                                     <CheckIcon className="w-3 h-3 text-white" />
@@ -328,26 +250,14 @@ export default function MultiConfigStep({
                                 {/* Version info */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span
-                                      className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                                      style={{
-                                        backgroundColor: colors.bg.secondary,
-                                        color: colors.text.secondary,
-                                      }}
-                                    >
+                                    <span className="rounded bg-neutral-50 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
                                       v{version.version}
                                     </span>
-                                    <span
-                                      className="text-sm truncate"
-                                      style={{ color: colors.text.primary }}
-                                    >
+                                    <span className="truncate text-sm text-neutral-900">
                                       {version.commit_message || "No message"}
                                     </span>
                                   </div>
-                                  <div
-                                    className="text-xs mt-0.5 flex items-center gap-1"
-                                    style={{ color: colors.text.secondary }}
-                                  >
+                                  <div className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500">
                                     <span>
                                       {version.provider}/{version.modelName}
                                     </span>
@@ -377,21 +287,12 @@ export default function MultiConfigStep({
 
       {/* Empty state */}
       {configs.length === 0 && !isLoading && !error && (
-        <div
-          className="rounded-lg border-2 border-dashed p-8 text-center"
-          style={{ borderColor: colors.border }}
-        >
-          <SlidersIcon
-            className="mx-auto w-10 h-10 mb-3"
-            style={{ color: colors.border }}
-          />
-          <p
-            className="text-sm font-medium mb-1"
-            style={{ color: colors.text.primary }}
-          >
+        <div className="rounded-lg border-2 border-dashed border-neutral-200 p-8 text-center">
+          <SlidersIcon className="mx-auto mb-3 h-10 w-10 text-neutral-200" />
+          <p className="mb-1 text-sm font-medium text-neutral-900">
             No configurations selected
           </p>
-          <p className="text-xs" style={{ color: colors.text.secondary }}>
+          <p className="text-xs text-neutral-500">
             Use the search above to find and select up to {MAX_CONFIGS}{" "}
             configurations
           </p>
@@ -402,25 +303,18 @@ export default function MultiConfigStep({
       <div className="flex justify-between pt-4">
         <button
           onClick={onBack}
-          className="px-6 py-2.5 rounded-lg text-sm font-medium border"
-          style={{
-            borderColor: colors.border,
-            color: colors.text.primary,
-            backgroundColor: colors.bg.primary,
-          }}
+          className="rounded-lg border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-neutral-900"
         >
           Back
         </button>
         <button
           onClick={onNext}
           disabled={configs.length === 0}
-          className="px-6 py-2.5 rounded-lg text-sm font-medium"
-          style={{
-            backgroundColor:
-              configs.length > 0 ? colors.accent.primary : colors.bg.secondary,
-            color: configs.length > 0 ? "#fff" : colors.text.secondary,
-            cursor: configs.length > 0 ? "pointer" : "not-allowed",
-          }}
+          className={`rounded-lg px-6 py-2.5 text-sm font-medium ${
+            configs.length > 0
+              ? "cursor-pointer bg-neutral-900 text-white"
+              : "cursor-not-allowed bg-neutral-50 text-neutral-500"
+          }`}
         >
           Next: Review
         </button>

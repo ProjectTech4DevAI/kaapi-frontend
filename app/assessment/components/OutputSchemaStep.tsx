@@ -8,7 +8,6 @@ import {
   CloseIcon,
   TrashIcon,
 } from "@/app/components/icons";
-import { colors } from "@/app/lib/colors";
 import { SchemaProperty, SchemaPropertyType } from "../types";
 import CompactToggleSwitch from "./CompactToggleSwitch";
 
@@ -224,12 +223,7 @@ function PropertyRow({
             onUpdate(property.id, (p) => ({ ...p, name: e.target.value }))
           }
           placeholder="name"
-          className="flex-1 min-w-0 h-9 px-3 border rounded-md text-sm"
-          style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border,
-            color: colors.text.primary,
-          }}
+          className="h-9 min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900"
         />
         <div className="relative min-w-0">
           <select
@@ -248,12 +242,7 @@ function PropertyRow({
                     : [],
               }));
             }}
-            className="appearance-none w-full h-9 pl-3 pr-10 border rounded-md text-sm cursor-pointer"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-              color: colors.text.primary,
-            }}
+            className="h-9 w-full cursor-pointer appearance-none rounded-md border border-neutral-200 bg-white pl-3 pr-10 text-sm text-neutral-900"
           >
             {TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -261,10 +250,7 @@ function PropertyRow({
               </option>
             ))}
           </select>
-          <ChevronDownIcon
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
-            style={{ color: colors.text.secondary }}
-          />
+          <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" />
         </div>
         <CompactToggleSwitch
           checked={property.isArray}
@@ -282,8 +268,7 @@ function PropertyRow({
         />
         <button
           onClick={() => onRemove(property.id)}
-          className="w-8 h-8 flex items-center justify-center rounded-md transition-colors flex-shrink-0 cursor-pointer justify-self-center"
-          style={{ color: colors.text.secondary }}
+          className="flex h-8 w-8 cursor-pointer justify-self-center items-center justify-center rounded-md text-neutral-500 transition-colors"
           aria-label={`Delete ${property.name.trim() || "field"}`}
           title="Delete"
         >
@@ -302,17 +287,11 @@ function PropertyRow({
                   onUpdateEnumValue(property.id, idx, e.target.value)
                 }
                 placeholder={`value ${idx + 1}`}
-                className="h-8 px-3 border rounded-md text-sm max-w-[240px]"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  borderColor: colors.border,
-                  color: colors.text.primary,
-                }}
+                className="h-8 max-w-[240px] rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900"
               />
               <button
                 onClick={() => onRemoveEnumValue(property.id, idx)}
-                className="w-7 h-7 flex items-center justify-center rounded-md cursor-pointer"
-                style={{ color: colors.text.secondary }}
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-neutral-500"
                 aria-label={`Remove enum value ${idx + 1} from ${property.name.trim() || "field"}`}
               >
                 <CloseIcon className="w-3.5 h-3.5" />
@@ -321,8 +300,7 @@ function PropertyRow({
           ))}
           <button
             onClick={() => onAddEnumValue(property.id)}
-            className="text-sm font-bold mt-0.5 cursor-pointer"
-            style={{ color: colors.text.primary }}
+            className="mt-0.5 cursor-pointer text-sm font-bold text-neutral-900"
           >
             + Add enum value
           </button>
@@ -346,8 +324,7 @@ function PropertyRow({
           ))}
           <button
             onClick={() => onAddChild(property.id)}
-            className="text-sm font-bold cursor-pointer"
-            style={{ color: colors.text.primary }}
+            className="cursor-pointer text-sm font-bold text-neutral-900"
           >
             + Add nested property
           </button>
@@ -399,37 +376,21 @@ export function OutputSchemaModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-        onClick={onClose}
-      />
-      <div
-        className="relative flex flex-col rounded-2xl shadow-2xl"
-        style={{
-          backgroundColor: colors.bg.primary,
-          width: "720px",
-          maxWidth: "90vw",
-          maxHeight: "85vh",
-        }}
-      >
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative flex max-h-[85vh] w-[720px] max-w-[90vw] flex-col rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 pt-6 pb-2">
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: colors.text.primary }}
-          >
+          <h2 className="text-lg font-semibold text-neutral-900">
             Response format
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer"
-            style={{ color: colors.text.secondary }}
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-neutral-500"
           >
             <CloseIcon className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="px-6 text-sm" style={{ color: colors.text.secondary }}>
+        <p className="px-6 text-sm text-neutral-500">
           Define the structure of the AI response. Use the visual editor or
           switch to JSON.
         </p>
@@ -441,25 +402,16 @@ export function OutputSchemaModal({
           />
         </div>
 
-        <div
-          className="flex items-center justify-end gap-3 px-6 py-4 border-t"
-          style={{ borderColor: colors.border }}
-        >
+        <div className="flex items-center justify-end gap-3 border-t border-neutral-200 px-6 py-4">
           <button
             onClick={handleReset}
-            className="cursor-pointer rounded-lg border px-5 py-2 text-sm font-medium"
-            style={{
-              borderColor: colors.border,
-              color: colors.text.primary,
-              backgroundColor: colors.bg.primary,
-            }}
+            className="cursor-pointer rounded-lg border border-neutral-200 bg-white px-5 py-2 text-sm font-medium text-neutral-900"
           >
             Reset
           </button>
           <button
             onClick={handleSave}
-            className="cursor-pointer rounded-lg px-5 py-2 text-sm font-medium"
-            style={{ backgroundColor: colors.accent.primary, color: "#fff" }}
+            className="cursor-pointer rounded-lg bg-neutral-900 px-5 py-2 text-sm font-medium text-white"
           >
             Save
           </button>
@@ -613,39 +565,24 @@ function OutputSchemaEditorInner({
 
   return (
     <div className="space-y-5">
-      <div
-        className="flex items-center gap-1 p-1 rounded-lg w-fit"
-        style={{ backgroundColor: colors.bg.secondary }}
-      >
+      <div className="flex w-fit items-center gap-1 rounded-lg bg-neutral-50 p-1">
         <button
           onClick={() => (editorMode === "code" ? switchToVisual() : undefined)}
-          className="cursor-pointer px-4 py-1.5 rounded-md text-sm font-medium transition-all"
-          style={{
-            backgroundColor:
-              editorMode === "visual" ? colors.bg.primary : "transparent",
-            color:
-              editorMode === "visual"
-                ? colors.text.primary
-                : colors.text.secondary,
-            boxShadow:
-              editorMode === "visual" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-          }}
+          className={`cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+            editorMode === "visual"
+              ? "bg-white text-neutral-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+              : "bg-transparent text-neutral-500"
+          }`}
         >
           Visual Editor
         </button>
         <button
           onClick={() => (editorMode !== "code" ? switchToCode() : undefined)}
-          className="cursor-pointer px-4 py-1.5 rounded-md text-sm font-medium transition-all"
-          style={{
-            backgroundColor:
-              editorMode === "code" ? colors.bg.primary : "transparent",
-            color:
-              editorMode === "code"
-                ? colors.text.primary
-                : colors.text.secondary,
-            boxShadow:
-              editorMode === "code" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-          }}
+          className={`cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+            editorMode === "code"
+              ? "bg-white text-neutral-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+              : "bg-transparent text-neutral-500"
+          }`}
         >
           JSON
         </button>
@@ -653,10 +590,7 @@ function OutputSchemaEditorInner({
 
       {editorMode === "visual" && (
         <div className="space-y-3">
-          <div
-            className="grid grid-cols-[minmax(0,1fr)_196px_56px_56px_36px] items-center gap-3 rounded-md px-1 text-[11px] font-semibold uppercase tracking-wide"
-            style={{ color: colors.text.secondary }}
-          >
+          <div className="grid grid-cols-[minmax(0,1fr)_196px_56px_56px_36px] items-center gap-3 rounded-md px-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
             <span>Output Field</span>
             <span>Type</span>
             <span>Array</span>
@@ -678,8 +612,7 @@ function OutputSchemaEditorInner({
           ))}
           <button
             onClick={() => setSchema([...schema, createProperty()])}
-            className="text-sm font-bold cursor-pointer px-4 py-2 rounded-lg"
-            style={{ color: "#fff", backgroundColor: colors.accent.primary }}
+            className="cursor-pointer rounded-lg bg-neutral-900 px-4 py-2 text-sm font-bold text-white"
           >
             + Add field
           </button>
@@ -711,19 +644,9 @@ export function OutputSchemaEditor({
     <div className="space-y-5">
       {title && (
         <div>
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: colors.text.primary }}
-          >
-            {title}
-          </h2>
+          <h2 className="text-lg font-semibold text-neutral-900">{title}</h2>
           {description ? (
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: colors.text.secondary }}
-            >
-              {description}
-            </p>
+            <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
           ) : null}
         </div>
       )}
@@ -749,38 +672,18 @@ export default function OutputSchemaStep({
       </div>
 
       {/* Navigation */}
-      <div
-        className="mt-auto sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          borderColor: colors.border,
-          marginLeft: "-1.5rem",
-          marginRight: "-1.5rem",
-          paddingLeft: "1.5rem",
-          paddingRight: "1.5rem",
-        }}
-      >
+      <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-6 py-2">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
           <button
             onClick={onBack}
-            className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
-            style={{
-              borderColor: colors.border,
-              color: colors.text.primary,
-              backgroundColor: colors.bg.primary,
-            }}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-neutral-900"
           >
             <ChevronLeftIcon className="w-3.5 h-3.5" />
             Back
           </button>
           <button
             onClick={onNext}
-            className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
-            style={{
-              backgroundColor: colors.accent.primary,
-              color: "#fff",
-              border: `1px solid ${colors.accent.primary}`,
-            }}
+            className="cursor-pointer rounded-lg border border-neutral-900 bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white"
           >
             Next: Review
           </button>

@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PlayIcon,
-} from "@/app/components/icons";
-import { colors } from "@/app/lib/colors";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/app/components/icons";
+import PlayIcon from "@/app/components/icons/assessment/PlayIcon";
 import { AssessmentFormState } from "../types";
 import { schemaToJsonSchema } from "../schemaUtils";
 
@@ -42,20 +38,15 @@ function AccordionSection({
 }: AccordionSectionProps) {
   return (
     <div
-      className="border rounded-lg overflow-hidden"
-      style={{
-        borderColor: isOpen ? colors.accent.primary : colors.border,
-        backgroundColor: colors.bg.primary,
-      }}
+      className={`overflow-hidden rounded-lg border bg-white ${
+        isOpen ? "border-neutral-900" : "border-neutral-200"
+      }`}
     >
       <div
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors cursor-pointer"
-        style={{
-          backgroundColor: isOpen
-            ? "rgba(59, 130, 246, 0.03)"
-            : colors.bg.primary,
-        }}
+        className={`w-full cursor-pointer flex items-center justify-between px-4 py-3.5 text-left transition-colors ${
+          isOpen ? "bg-blue-500/[0.03]" : "bg-white"
+        }`}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
@@ -68,26 +59,15 @@ function AccordionSection({
         <div className="flex items-center gap-3">
           {/* Chevron */}
           <ChevronRightIcon
-            className="w-4 h-4 transition-transform flex-shrink-0"
-            style={{
-              color: colors.text.secondary,
-              transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-            }}
+            className={`h-4 w-4 flex-shrink-0 text-neutral-500 transition-transform ${
+              isOpen ? "rotate-90" : "rotate-0"
+            }`}
           />
-          <span
-            className="text-sm font-semibold"
-            style={{ color: colors.text.primary }}
-          >
+          <span className="text-sm font-semibold text-neutral-900">
             {title}
           </span>
           {badge && (
-            <span
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-              style={{
-                backgroundColor: colors.bg.secondary,
-                color: colors.text.secondary,
-              }}
-            >
+            <span className="rounded-full bg-neutral-50 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
               {badge}
             </span>
           )}
@@ -98,11 +78,7 @@ function AccordionSection({
               e.stopPropagation();
               onEdit();
             }}
-            className="cursor-pointer text-xs font-medium px-2.5 py-1 rounded-md transition-colors"
-            style={{
-              color: colors.accent.primary,
-              backgroundColor: colors.bg.secondary,
-            }}
+            className="cursor-pointer rounded-md bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-900 transition-colors"
           >
             Edit
           </button>
@@ -110,10 +86,7 @@ function AccordionSection({
       </div>
 
       {isOpen && (
-        <div
-          className="px-4 pb-4 pt-1 border-t"
-          style={{ borderColor: colors.border }}
-        >
+        <div className="border-t border-neutral-200 px-4 pb-4 pt-1">
           {children}
         </div>
       )}
@@ -160,29 +133,17 @@ export default function ReviewStep({
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="mx-auto w-full max-w-2xl flex-1 space-y-4">
         <div className="mb-2">
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: colors.text.primary }}
-          >
+          <h2 className="text-lg font-semibold text-neutral-900">
             Review & Submit
           </h2>
-          <p className="text-sm mt-1" style={{ color: colors.text.secondary }}>
+          <p className="mt-1 text-sm text-neutral-500">
             Verify your evaluation configuration before submitting.
           </p>
         </div>
 
         {/* Experiment Name */}
-        <div
-          className="border rounded-lg p-4"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
-          <label
-            className="block text-xs font-medium mb-1.5"
-            style={{ color: colors.text.secondary }}
-          >
+        <div className="rounded-lg border border-neutral-200 bg-white p-4">
+          <label className="mb-1.5 block text-xs font-medium text-neutral-500">
             Experiment Name
           </label>
           <input
@@ -190,21 +151,9 @@ export default function ReviewStep({
             value={experimentName}
             onChange={(e) => setExperimentName(e.target.value)}
             placeholder="e.g. GPT-4o vs Claude Sonnet on medical QA"
-            className="w-full px-3 py-2 rounded-md text-sm border outline-none transition-colors"
-            style={{
-              backgroundColor: colors.bg.secondary,
-              borderColor: colors.border,
-              color: colors.text.primary,
-            }}
-            onFocus={(e) =>
-              (e.target.style.borderColor = colors.accent.primary)
-            }
-            onBlur={(e) => (e.target.style.borderColor = colors.border)}
+            className="w-full rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-900"
           />
-          <p
-            className="text-[11px] mt-1.5"
-            style={{ color: colors.text.secondary }}
-          >
+          <p className="mt-1.5 text-[11px] text-neutral-500">
             A descriptive name to identify this evaluation run.
           </p>
         </div>
@@ -217,16 +166,10 @@ export default function ReviewStep({
           onToggle={() => toggleSection(1)}
         >
           <div className="pt-2">
-            <div
-              className="text-xs font-medium mb-1"
-              style={{ color: colors.text.secondary }}
-            >
+            <div className="mb-1 text-xs font-medium text-neutral-500">
               Dataset Name
             </div>
-            <div
-              className="text-sm font-medium"
-              style={{ color: colors.text.primary }}
-            >
+            <div className="text-sm font-medium text-neutral-900">
               {datasetName || "Unknown dataset"}
             </div>
           </div>
@@ -244,25 +187,14 @@ export default function ReviewStep({
           <div className="space-y-3 pt-2">
             {columnMapping.textColumns.length > 0 && (
               <div className="space-y-1.5">
-                <span
-                  className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: "rgba(22, 163, 74, 0.14)",
-                    color: "#166534",
-                  }}
-                >
+                <span className="inline-flex rounded-md bg-green-600/[0.14] px-2 py-0.5 text-xs font-semibold text-green-800">
                   Text
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {columnMapping.textColumns.map((col) => (
                     <span
                       key={col}
-                      className="inline-flex rounded px-2 py-0.5 text-xs font-mono font-medium"
-                      style={{
-                        backgroundColor: colors.bg.secondary,
-                        color: colors.text.primary,
-                        border: `1px solid ${colors.border}`,
-                      }}
+                      className="inline-flex rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-mono text-xs font-medium text-neutral-900"
                     >
                       {col}
                     </span>
@@ -272,31 +204,17 @@ export default function ReviewStep({
             )}
             {columnMapping.attachments.length > 0 && (
               <div className="space-y-1.5">
-                <span
-                  className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: "rgba(249, 115, 22, 0.14)",
-                    color: "#9a3412",
-                  }}
-                >
+                <span className="inline-flex rounded-md bg-orange-500/[0.14] px-2 py-0.5 text-xs font-semibold text-orange-800">
                   Attachments
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {columnMapping.attachments.map((a) => (
                     <span
                       key={a.column}
-                      className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-mono font-medium"
-                      style={{
-                        backgroundColor: colors.bg.secondary,
-                        color: colors.text.primary,
-                        border: `1px solid ${colors.border}`,
-                      }}
+                      className="inline-flex items-center gap-1 rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-mono text-xs font-medium text-neutral-900"
                     >
                       {a.column}
-                      <span
-                        className="font-sans text-[10px]"
-                        style={{ color: colors.text.secondary }}
-                      >
+                      <span className="font-sans text-[10px] text-neutral-500">
                         ({a.type}, {a.format})
                       </span>
                     </span>
@@ -306,25 +224,14 @@ export default function ReviewStep({
             )}
             {columnMapping.groundTruthColumns.length > 0 && (
               <div className="space-y-1.5">
-                <span
-                  className="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: "rgba(59, 130, 246, 0.14)",
-                    color: "#1e40af",
-                  }}
-                >
+                <span className="inline-flex rounded-md bg-blue-500/[0.14] px-2 py-0.5 text-xs font-semibold text-blue-800">
                   Ground Truth
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {columnMapping.groundTruthColumns.map((col) => (
                     <span
                       key={col}
-                      className="inline-flex rounded px-2 py-0.5 text-xs font-mono font-medium"
-                      style={{
-                        backgroundColor: colors.bg.secondary,
-                        color: colors.text.primary,
-                        border: `1px solid ${colors.border}`,
-                      }}
+                      className="inline-flex rounded border border-neutral-200 bg-neutral-50 px-2 py-0.5 font-mono text-xs font-medium text-neutral-900"
                     >
                       {col}
                     </span>
@@ -346,23 +253,11 @@ export default function ReviewStep({
         >
           <div className="pt-2">
             {promptTemplate ? (
-              <pre
-                className="text-xs font-mono whitespace-pre-wrap p-3 rounded-md"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.primary,
-                }}
-              >
+              <pre className="rounded-md bg-neutral-50 p-3 font-mono text-xs whitespace-pre-wrap text-neutral-900">
                 {promptTemplate}
               </pre>
             ) : (
-              <div
-                className="text-xs rounded-md p-3"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.secondary,
-                }}
-              >
+              <div className="rounded-md bg-neutral-50 p-3 text-xs text-neutral-500">
                 No template set — all text columns will be concatenated by the
                 backend.
               </div>
@@ -383,39 +278,20 @@ export default function ReviewStep({
             {configs.map((config, i) => (
               <div
                 key={`${config.config_id}-${config.config_version}`}
-                className="flex items-center gap-3 p-2.5 rounded-md"
-                style={{ backgroundColor: colors.bg.secondary }}
+                className="flex items-center gap-3 rounded-md bg-neutral-50 p-2.5"
               >
-                <span
-                  className="w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: "#fff",
-                  }}
-                >
+                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-bold text-white">
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: colors.text.primary }}
-                  >
+                  <span className="text-sm font-medium text-neutral-900">
                     {config.name}
                   </span>
-                  <span
-                    className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded font-medium"
-                    style={{
-                      backgroundColor: colors.bg.primary,
-                      color: colors.text.secondary,
-                    }}
-                  >
+                  <span className="ml-1.5 rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
                     v{config.config_version}
                   </span>
                 </div>
-                <span
-                  className="text-xs flex-shrink-0"
-                  style={{ color: colors.text.secondary }}
-                >
+                <span className="flex-shrink-0 text-xs text-neutral-500">
                   {config.provider}/{config.model}
                 </span>
               </div>
@@ -442,11 +318,7 @@ export default function ReviewStep({
                 {outputSchema.map((p) => (
                   <span
                     key={p.id}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-medium"
-                    style={{
-                      backgroundColor: "rgba(139, 92, 246, 0.1)",
-                      color: "#6d28d9",
-                    }}
+                    className="inline-flex items-center gap-1 rounded bg-violet-500/10 px-2 py-0.5 font-mono text-xs font-medium text-violet-700"
                   >
                     {p.name || "(unnamed)"}
                     <span className="font-sans text-[10px] opacity-70">
@@ -456,13 +328,7 @@ export default function ReviewStep({
                 ))}
               </div>
             ) : (
-              <div
-                className="text-xs rounded-md p-3"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.secondary,
-                }}
-              >
+              <div className="rounded-md bg-neutral-50 p-3 text-xs text-neutral-500">
                 No response format defined — model will return free-form text.
               </div>
             )}
@@ -471,20 +337,11 @@ export default function ReviewStep({
 
         {/* Request payload (collapsible) */}
         <details className="group">
-          <summary
-            className="text-xs font-medium cursor-pointer flex items-center gap-1.5 py-1"
-            style={{ color: colors.text.secondary }}
-          >
+          <summary className="flex cursor-pointer items-center gap-1.5 py-1 text-xs font-medium text-neutral-500">
             <ChevronRightIcon className="w-3.5 h-3.5 transition-transform group-open:rotate-90" />
             View request payload
           </summary>
-          <pre
-            className="mt-2 text-xs font-mono whitespace-pre-wrap p-3 rounded-md overflow-auto max-h-64"
-            style={{
-              backgroundColor: colors.bg.secondary,
-              color: colors.text.primary,
-            }}
-          >
+          <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-neutral-50 p-3 font-mono text-xs whitespace-pre-wrap text-neutral-900">
             {JSON.stringify(
               {
                 experiment_name: experimentName,
@@ -509,64 +366,34 @@ export default function ReviewStep({
       {/* end flex-1 content */}
 
       {/* Navigation */}
-      <div
-        className="mt-auto sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          borderColor: colors.border,
-          marginLeft: "-1.5rem",
-          marginRight: "-1.5rem",
-          paddingLeft: "1.5rem",
-          paddingRight: "1.5rem",
-        }}
-      >
+      <div className="mt-auto sticky bottom-0 z-10 border-t border-neutral-200 bg-neutral-50 py-2">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
           <button
             onClick={onBack}
             disabled={isSubmitting}
-            className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
-            style={{
-              borderColor: colors.border,
-              color: colors.text.primary,
-              backgroundColor: colors.bg.primary,
-            }}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-neutral-900"
           >
             <ChevronLeftIcon className="w-3.5 h-3.5" />
             Back
           </button>
           <div className="flex items-center gap-3">
             {!isSubmitting && !canSubmit && (
-              <span
-                className="text-xs"
-                style={{ color: colors.text.secondary }}
-              >
+              <span className="text-xs text-neutral-500">
                 {submitBlockerMessage}
               </span>
             )}
             <button
               onClick={onSubmit}
               disabled={isSubmitting || !canSubmit}
-              className="rounded-lg px-8 py-2.5 text-sm font-medium flex items-center gap-2"
-              style={{
-                backgroundColor:
-                  isSubmitting || !canSubmit
-                    ? colors.bg.secondary
-                    : colors.accent.primary,
-                color:
-                  isSubmitting || !canSubmit ? colors.text.secondary : "#fff",
-                cursor: isSubmitting || !canSubmit ? "not-allowed" : "pointer",
-                border: `1px solid ${isSubmitting || !canSubmit ? colors.border : colors.accent.primary}`,
-              }}
+              className={`flex items-center gap-2 rounded-lg border px-8 py-2.5 text-sm font-medium ${
+                isSubmitting || !canSubmit
+                  ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-500"
+                  : "cursor-pointer border-neutral-900 bg-neutral-900 text-white"
+              }`}
             >
               {isSubmitting ? (
                 <>
-                  <div
-                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                    style={{
-                      borderColor: colors.text.secondary,
-                      borderTopColor: "transparent",
-                    }}
-                  />
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-neutral-500 border-t-transparent" />
                   Submitting...
                 </>
               ) : (

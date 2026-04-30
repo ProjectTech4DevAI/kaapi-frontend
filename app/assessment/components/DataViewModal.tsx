@@ -1,6 +1,5 @@
 "use client";
 
-import { colors } from "@/app/lib/colors";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
 
 export interface DataViewModalProps {
@@ -23,71 +22,33 @@ export default function DataViewModal({
 }: DataViewModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       <div
-        className="rounded-lg shadow-xl flex flex-col"
-        style={{
-          backgroundColor: colors.bg.primary,
-          width: "85vw",
-          maxWidth: "1100px",
-          maxHeight: "80vh",
-        }}
+        className="flex max-h-[80vh] w-[85vw] max-w-[1100px] flex-col rounded-lg bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
-          style={{ borderColor: colors.border }}
-        >
+        <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
           <div>
-            <h3
-              className="text-sm font-semibold"
-              style={{ color: colors.text.primary }}
-            >
-              {title}
-            </h3>
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: colors.text.secondary }}
-            >
+            <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
+            <p className="mt-0.5 text-xs text-neutral-500">
               {subtitle ?? `${rows.length} rows · ${headers.length} columns`}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded"
-            style={{ color: colors.text.secondary }}
-          >
+          <button onClick={onClose} className="rounded p-1.5 text-neutral-500">
             <CloseIcon className="w-5 h-5" />
           </button>
         </div>
         <div className="flex-1 overflow-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  borderBottom: `1px solid ${colors.border}`,
-                }}
-              >
-                <th
-                  className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0"
-                  style={{
-                    color: colors.text.secondary,
-                    backgroundColor: colors.bg.secondary,
-                    width: "40px",
-                  }}
-                ></th>
+              <tr className="border-b border-neutral-200 bg-neutral-50">
+                <th className="sticky top-0 w-10 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"></th>
                 {headers.map((header, i) => (
                   <th
                     key={i}
-                    className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-0"
-                    style={{
-                      color: colors.text.secondary,
-                      backgroundColor: colors.bg.secondary,
-                    }}
+                    className="sticky top-0 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"
                   >
                     {header}
                   </th>
@@ -96,35 +57,14 @@ export default function DataViewModal({
             </thead>
             <tbody>
               {rows.map((row, rowIdx) => (
-                <tr
-                  key={rowIdx}
-                  style={{ borderBottom: `1px solid ${colors.border}` }}
-                >
-                  <td
-                    className="px-4 py-2.5 text-xs"
-                    style={{ color: colors.text.secondary }}
-                  >
+                <tr key={rowIdx} className="border-b border-neutral-200">
+                  <td className="px-4 py-2.5 text-xs text-neutral-500">
                     {rowIdx + 1}
                   </td>
                   {row.map((cell, cellIdx) => (
-                    <td
-                      key={cellIdx}
-                      className="px-4 py-2.5"
-                      style={{ color: colors.text.primary }}
-                    >
-                      <div
-                        className="text-sm"
-                        style={{
-                          maxHeight: "120px",
-                          overflow: "auto",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        {cell || (
-                          <span style={{ color: colors.text.secondary }}>
-                            —
-                          </span>
-                        )}
+                    <td key={cellIdx} className="px-4 py-2.5 text-neutral-900">
+                      <div className="max-h-[120px] overflow-auto text-sm leading-6">
+                        {cell || <span className="text-neutral-500">—</span>}
                       </div>
                     </td>
                   ))}

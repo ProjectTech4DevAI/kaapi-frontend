@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { useToast } from "@/app/components/Toast";
 import {
   RefreshIcon,
   DatabaseIcon,
   ClipboardIcon,
   ChevronDownIcon,
-  DownloadIcon,
   EyeIcon,
 } from "@/app/components/icons";
+import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
 import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/types/configs";
 import { handleForbiddenApiError } from "../errorUtils";
@@ -85,14 +84,31 @@ const ACTIVE_STATUSES = new Set(["processing", "pending"]);
 const FAILED_STATUSES = new Set(["failed", "completed_with_errors"]);
 const COMPLETED_STATUSES = new Set(["completed"]);
 
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  pending: { bg: "rgba(202, 138, 4, 0.1)", text: "#92400e" },
-  processing: { bg: "rgba(202, 138, 4, 0.1)", text: "#92400e" },
-  in_progress: { bg: "rgba(202, 138, 4, 0.1)", text: "#92400e" },
-  completed: { bg: "rgba(22, 163, 74, 0.1)", text: "#166534" },
-  completed_with_errors: { bg: "rgba(245, 158, 11, 0.12)", text: "#9a3412" },
-  failed: { bg: "rgba(220, 38, 38, 0.1)", text: "#991b1b" },
-  cancelled: { bg: "rgba(107, 114, 128, 0.1)", text: "#374151" },
+const STATUS_CLASSES: Record<string, string> = {
+  pending: "bg-yellow-600/10 text-amber-800",
+  processing: "bg-yellow-600/10 text-amber-800",
+  in_progress: "bg-yellow-600/10 text-amber-800",
+  completed: "bg-green-600/10 text-green-800",
+  completed_with_errors: "bg-amber-500/12 text-orange-800",
+  failed: "bg-red-600/10 text-red-800",
+  cancelled: "bg-gray-500/10 text-gray-700",
+};
+
+const ASSESSMENT_CARD_CLASSES: Record<string, string> = {
+  completed: "border-l-green-500",
+  failed: "border-l-red-500",
+  completed_with_errors: "border-l-amber-500",
+  pending: "border-l-yellow-500",
+  processing: "border-l-yellow-500",
+  in_progress: "border-l-yellow-500",
+  cancelled: "border-l-neutral-300",
+};
+
+const SUMMARY_BADGE_CLASSES: Record<string, string> = {
+  total: "bg-neutral-50 text-neutral-900",
+  processing: "bg-neutral-50 text-amber-800",
+  completed: "bg-neutral-50 text-green-800",
+  failed: "bg-neutral-50 text-red-800",
 };
 
 function isActiveStatus(status: string): boolean {
@@ -120,13 +136,9 @@ function LoadingSpinner({
 }) {
   return (
     <div
-      className={`${className} border-2 border-t-transparent rounded-full animate-spin ${
+      className={`${className} rounded-full border-2 border-neutral-500 border-t-transparent animate-spin ${
         centered ? "mx-auto" : ""
       }`}
-      style={{
-        borderColor: colors.text.secondary,
-        borderTopColor: "transparent",
-      }}
     />
   );
 }
@@ -161,13 +173,11 @@ function DownloadDropdown({
       <button
         onClick={() => setOpen(!open)}
         disabled={disabled || loading}
-        className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors"
-        style={{
-          borderColor: colors.border,
-          color: disabled ? colors.text.secondary : colors.text.primary,
-          backgroundColor: "transparent",
-          opacity: disabled || loading ? 0.5 : 1,
-        }}
+        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-200 bg-transparent px-2.5 py-1.5 text-xs font-medium transition-colors ${
+          disabled || loading
+            ? "text-neutral-500 opacity-50"
+            : "text-neutral-900"
+        }`}
         aria-label="Download results"
         aria-expanded={open}
       >
@@ -180,13 +190,7 @@ function DownloadDropdown({
         <ChevronDownIcon className="w-3 h-3" />
       </button>
       {open && (
-        <div
-          className="absolute right-0 mt-1 w-36 rounded-md shadow-lg border z-10 py-1"
-          style={{
-            backgroundColor: colors.bg.primary,
-            borderColor: colors.border,
-          }}
-        >
+        <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-neutral-200 bg-white py-1 shadow-lg">
           {(
             [
               ["csv", "CSV File"],
@@ -199,8 +203,7 @@ function DownloadDropdown({
                 onDownload(fmt);
                 setOpen(false);
               }}
-              className="cursor-pointer w-full text-left px-3 py-2 text-xs hover:opacity-80 transition-opacity"
-              style={{ color: colors.text.primary }}
+              className="w-full cursor-pointer px-3 py-2 text-left text-xs text-neutral-900 transition-opacity hover:opacity-80"
             >
               {label}
             </button>
@@ -544,18 +547,9 @@ export default function EvaluationsTab({
 
   return (
     <div className="flex-1 overflow-auto">
-      <div
-        className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
-        style={{
-          backgroundColor: colors.bg.primary,
-          borderColor: colors.border,
-        }}
-      >
+      <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
         <div className="flex items-center gap-3">
-          <h2
-            className="text-base font-semibold"
-            style={{ color: colors.text.primary }}
-          >
+          <h2 className="text-base font-semibold text-neutral-900">
             Assessments
           </h2>
           <div className="flex items-center gap-2 ml-2">
@@ -563,26 +557,26 @@ export default function EvaluationsTab({
               {
                 label: "Total",
                 value: counts.total,
-                color: colors.text.primary,
+                tone: "total",
               },
               {
                 label: "Processing",
                 value: counts.processing,
-                color: "#92400e",
+                tone: "processing",
               },
-              { label: "Completed", value: counts.completed, color: "#166534" },
-              { label: "Failed", value: counts.failed, color: "#991b1b" },
+              {
+                label: "Completed",
+                value: counts.completed,
+                tone: "completed",
+              },
+              { label: "Failed", value: counts.failed, tone: "failed" },
             ].map((item) => (
               <span
                 key={item.label}
-                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: item.color,
-                }}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs ${SUMMARY_BADGE_CLASSES[item.tone]}`}
               >
                 <span className="font-semibold">{item.value}</span>
-                <span style={{ color: colors.text.secondary }}>
+                <span className="text-neutral-500">
                   {item.label.toLowerCase()}
                 </span>
               </span>
@@ -595,12 +589,7 @@ export default function EvaluationsTab({
             aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="px-3 py-1.5 border rounded-md text-sm cursor-pointer"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-              color: colors.text.primary,
-            }}
+            className="cursor-pointer rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-900"
           >
             <option value="all">All Status</option>
             <option value="processing">Processing</option>
@@ -611,8 +600,7 @@ export default function EvaluationsTab({
           <button
             onClick={loadAssessments}
             disabled={isLoading}
-            className="cursor-pointer p-2 rounded-md border transition-colors"
-            style={{ borderColor: colors.border, color: colors.text.secondary }}
+            className="cursor-pointer rounded-md border border-neutral-200 p-2 text-neutral-500 transition-colors"
             aria-label="Refresh assessments"
           >
             <RefreshIcon
@@ -626,27 +614,19 @@ export default function EvaluationsTab({
         {isLoading && assessments.length === 0 ? (
           <div className="py-16 text-center">
             <LoadingSpinner className="w-6 h-6 mb-3" centered />
-            <p className="text-sm" style={{ color: colors.text.secondary }}>
-              Loading assessments...
-            </p>
+            <p className="text-sm text-neutral-500">Loading assessments...</p>
           </div>
         ) : filteredRuns.length === 0 ? (
           <div className="py-16 text-center">
-            <span
-              className="block mx-auto mb-3 w-12 h-12"
-              style={{ color: colors.border }}
-            >
+            <span className="block mx-auto mb-3 h-12 w-12 text-neutral-200">
               <ClipboardIcon className="w-12 h-12" />
             </span>
-            <p
-              className="text-sm font-medium mb-1"
-              style={{ color: colors.text.primary }}
-            >
+            <p className="mb-1 text-sm font-medium text-neutral-900">
               {statusFilter === "all"
                 ? "No assessments yet"
                 : `No ${statusFilter} assessments`}
             </p>
-            <p className="text-xs" style={{ color: colors.text.secondary }}>
+            <p className="text-xs text-neutral-500">
               {statusFilter === "all"
                 ? "Submit an assessment from the Config tab to get started"
                 : "Try changing the status filter"}
@@ -655,8 +635,8 @@ export default function EvaluationsTab({
         ) : (
           <div className="space-y-4">
             {filteredRuns.map((run) => {
-              const statusStyle =
-                STATUS_COLORS[run.status] || STATUS_COLORS.processing;
+              const statusClass =
+                STATUS_CLASSES[run.status] || STATUS_CLASSES.processing;
               const isExpanded = expandedId === run.id;
               const childRuns = childRunsByAssessment[run.id] || [];
               const canRetryAssessment = canRetryStatus(run.status);
@@ -666,90 +646,43 @@ export default function EvaluationsTab({
               return (
                 <div
                   key={run.id}
-                  className="rounded-xl border transition-shadow"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
-                    borderColor: colors.border,
-                    borderLeft: `3px solid ${
-                      run.status === "completed"
-                        ? "#22c55e"
-                        : run.status === "failed"
-                          ? "#ef4444"
-                          : run.status === "completed_with_errors"
-                            ? "#f59e0b"
-                            : "#eab308"
-                    }`,
-                  }}
+                  className={`rounded-xl border border-neutral-200 border-l-[3px] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow ${
+                    ASSESSMENT_CARD_CLASSES[run.status] ||
+                    ASSESSMENT_CARD_CLASSES.processing
+                  }`}
                 >
                   <div className="px-5 py-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-3 mb-1">
-                          <span
-                            className="text-sm font-bold truncate"
-                            style={{ color: colors.text.primary }}
-                          >
+                          <span className="truncate text-sm font-bold text-neutral-900">
                             {run.experiment_name}
                           </span>
-                          <span
-                            className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0"
-                            style={{
-                              backgroundColor: colors.bg.secondary,
-                              color: colors.text.secondary,
-                            }}
-                          >
+                          <span className="flex-shrink-0 rounded bg-neutral-50 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
                             {run.total_runs} configs
                           </span>
                         </div>
 
-                        <div
-                          className="text-xs mb-3"
-                          style={{ color: colors.text.secondary }}
-                        >
+                        <div className="mb-3 text-xs text-neutral-500">
                           {formatRelativeTime(run.inserted_at)}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
                           {run.dataset_name && (
-                            <span
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs"
-                              style={{
-                                backgroundColor: colors.bg.secondary,
-                                color: colors.text.secondary,
-                              }}
-                            >
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-50 px-2.5 py-1 text-xs text-neutral-500">
                               <DatabaseIcon className="w-3.5 h-3.5 flex-shrink-0" />
                               {run.dataset_name}
                             </span>
                           )}
 
-                          <span
-                            className="rounded-full px-2.5 py-1 text-xs"
-                            style={{
-                              backgroundColor: colors.bg.secondary,
-                              color: colors.text.secondary,
-                            }}
-                          >
+                          <span className="rounded-full bg-neutral-50 px-2.5 py-1 text-xs text-neutral-500">
                             {run.completed_runs} completed
                           </span>
-                          <span
-                            className="rounded-full px-2.5 py-1 text-xs"
-                            style={{
-                              backgroundColor: colors.bg.secondary,
-                              color: colors.text.secondary,
-                            }}
-                          >
+                          <span className="rounded-full bg-neutral-50 px-2.5 py-1 text-xs text-neutral-500">
                             {run.processing_runs + run.pending_runs} active
                           </span>
                           {run.failed_runs > 0 && (
-                            <span
-                              className="rounded-full px-2.5 py-1 text-xs"
-                              style={{
-                                backgroundColor: "rgba(220, 38, 38, 0.08)",
-                                color: "#991b1b",
-                              }}
-                            >
+                            <span className="rounded-full bg-red-600/[0.08] px-2.5 py-1 text-xs text-red-800">
                               {run.failed_runs} failed
                             </span>
                           )}
@@ -758,13 +691,7 @@ export default function EvaluationsTab({
                         {(run.status === "failed" ||
                           run.status === "completed_with_errors") &&
                           run.error_message && (
-                            <div
-                              className="mt-2 text-xs px-3 py-2 rounded-md"
-                              style={{
-                                backgroundColor: "rgba(220, 38, 38, 0.05)",
-                                color: "#991b1b",
-                              }}
-                            >
+                            <div className="mt-2 rounded-md bg-red-600/[0.05] px-3 py-2 text-xs text-red-800">
                               {run.error_message}
                             </div>
                           )}
@@ -772,11 +699,7 @@ export default function EvaluationsTab({
 
                       <div className="flex flex-col items-end gap-3 flex-shrink-0">
                         <span
-                          className="text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wide"
-                          style={{
-                            backgroundColor: statusStyle.bg,
-                            color: statusStyle.text,
-                          }}
+                          className={`rounded-md px-3 py-1 text-xs font-bold uppercase tracking-wide ${statusClass}`}
                         >
                           {run.status.replace("_", " ")}
                         </span>
@@ -799,28 +722,20 @@ export default function EvaluationsTab({
                             <button
                               onClick={() => handleRetryAssessment(run.id)}
                               disabled={isRetryingAssessment}
-                              className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                              style={{
-                                backgroundColor: isRetryingAssessment
-                                  ? colors.border
-                                  : colors.text.primary,
-                                color: "#ffffff",
-                                opacity: isRetryingAssessment ? 0.7 : 1,
-                              }}
+                              className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white ${
+                                isRetryingAssessment
+                                  ? "bg-neutral-200 opacity-70"
+                                  : "bg-neutral-900"
+                              }`}
                             >
                               {isRetryingAssessment ? "Retrying..." : "Retry"}
                             </button>
                           )}
                           <button
                             onClick={() => handleExpand(run.id)}
-                            className="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
-                            style={{
-                              backgroundColor: isExpanded
-                                ? colors.bg.secondary
-                                : "transparent",
-                              borderColor: colors.border,
-                              color: colors.text.primary,
-                            }}
+                            className={`cursor-pointer rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-900 transition-colors ${
+                              isExpanded ? "bg-neutral-50" : "bg-transparent"
+                            }`}
                           >
                             {isExpanded ? "Hide details" : "View details"}
                           </button>
@@ -829,50 +744,32 @@ export default function EvaluationsTab({
                     </div>
 
                     {isExpanded && (
-                      <div
-                        className="mt-5 space-y-3 border-t pt-4"
-                        style={{ borderColor: colors.border }}
-                      >
+                      <div className="mt-5 space-y-3 border-t border-neutral-200 pt-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div
-                              className="text-sm font-semibold"
-                              style={{ color: colors.text.primary }}
-                            >
+                            <div className="text-sm font-semibold text-neutral-900">
                               Configurations in this assessment
                             </div>
-                            <div
-                              className="mt-1 text-xs"
-                              style={{ color: colors.text.secondary }}
-                            >
+                            <div className="mt-1 text-xs text-neutral-500">
                               Each configuration keeps its own status, preview,
                               and export actions.
                             </div>
                           </div>
-                          <div
-                            className="rounded-full px-2.5 py-1 text-[11px] font-medium"
-                            style={{
-                              backgroundColor: colors.bg.secondary,
-                              color: colors.text.secondary,
-                            }}
-                          >
+                          <div className="rounded-full bg-neutral-50 px-2.5 py-1 text-[11px] font-medium text-neutral-500">
                             {childRuns.length} run
                             {childRuns.length !== 1 ? "s" : ""}
                           </div>
                         </div>
 
                         {childRuns.length === 0 ? (
-                          <div
-                            className="text-sm"
-                            style={{ color: colors.text.secondary }}
-                          >
+                          <div className="text-sm text-neutral-500">
                             Loading child evaluation runs...
                           </div>
                         ) : (
                           childRuns.map((childRun) => {
-                            const childStatusStyle =
-                              STATUS_COLORS[childRun.status] ||
-                              STATUS_COLORS.processing;
+                            const childStatusClass =
+                              STATUS_CLASSES[childRun.status] ||
+                              STATUS_CLASSES.processing;
                             const isFailedChild = isFailedStatus(
                               childRun.status,
                             );
@@ -903,52 +800,29 @@ export default function EvaluationsTab({
                             return (
                               <div
                                 key={childRun.id}
-                                className="rounded-xl border p-4"
-                                style={{
-                                  borderColor: colors.border,
-                                  backgroundColor: colors.bg.secondary,
-                                }}
+                                className="rounded-xl border border-neutral-200 bg-neutral-50 p-4"
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <span
-                                        className="text-sm font-semibold"
-                                        style={{ color: colors.text.primary }}
-                                      >
+                                      <span className="text-sm font-semibold text-neutral-900">
                                         {configName}
                                       </span>
                                       {childRun.config_version !== null && (
-                                        <span
-                                          className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                                          style={{
-                                            backgroundColor: colors.bg.primary,
-                                            color: colors.text.secondary,
-                                          }}
-                                        >
+                                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
                                           v{childRun.config_version}
                                         </span>
                                       )}
                                       {configDetail?.provider &&
                                         configDetail?.model && (
-                                          <span
-                                            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                                            style={{
-                                              backgroundColor:
-                                                "rgba(23, 23, 23, 0.05)",
-                                              color: colors.text.secondary,
-                                            }}
-                                          >
+                                          <span className="rounded-full bg-neutral-900/5 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
                                             {configDetail.provider}/
                                             {configDetail.model}
                                           </span>
                                         )}
                                     </div>
 
-                                    <div
-                                      className="mt-1 text-sm"
-                                      style={{ color: colors.text.secondary }}
-                                    >
+                                    <div className="mt-1 text-sm text-neutral-500">
                                       {isConfigLoading
                                         ? "Loading configuration details..."
                                         : configDetail?.description ||
@@ -956,10 +830,7 @@ export default function EvaluationsTab({
                                           "No description available for this configuration."}
                                     </div>
 
-                                    <div
-                                      className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
-                                      style={{ color: colors.text.secondary }}
-                                    >
+                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
                                       <span>{childRun.total_items} items</span>
                                       {childRun.updated_at && (
                                         <span>
@@ -976,19 +847,13 @@ export default function EvaluationsTab({
                                     </div>
 
                                     {configError && (
-                                      <div
-                                        className="mt-2 text-xs"
-                                        style={{ color: "#991b1b" }}
-                                      >
+                                      <div className="mt-2 text-xs text-red-800">
                                         {configError}
                                       </div>
                                     )}
                                     {isFailedChild &&
                                       childRun.error_message && (
-                                        <div
-                                          className="mt-2 text-xs"
-                                          style={{ color: "#991b1b" }}
-                                        >
+                                        <div className="mt-2 text-xs text-red-800">
                                           {childRun.error_message}
                                         </div>
                                       )}
@@ -996,11 +861,7 @@ export default function EvaluationsTab({
 
                                   <div className="flex items-center gap-2 flex-shrink-0">
                                     <span
-                                      className="text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wide"
-                                      style={{
-                                        backgroundColor: childStatusStyle.bg,
-                                        color: childStatusStyle.text,
-                                      }}
+                                      className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${childStatusClass}`}
                                     >
                                       {formatStatusLabel(childRun.status)}
                                     </span>
@@ -1015,16 +876,11 @@ export default function EvaluationsTab({
                                         disabled={
                                           previewLoading === childRun.id
                                         }
-                                        className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors"
-                                        style={{
-                                          borderColor: colors.border,
-                                          color: colors.text.primary,
-                                          backgroundColor: "transparent",
-                                          opacity:
-                                            previewLoading === childRun.id
-                                              ? 0.5
-                                              : 1,
-                                        }}
+                                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-200 bg-transparent px-2.5 py-1.5 text-xs font-medium text-neutral-900 transition-colors ${
+                                          previewLoading === childRun.id
+                                            ? "opacity-50"
+                                            : ""
+                                        }`}
                                       >
                                         {previewLoading === childRun.id ? (
                                           <LoadingSpinner className="w-3.5 h-3.5" />
@@ -1052,14 +908,11 @@ export default function EvaluationsTab({
                                       <button
                                         onClick={() => handleRerun(childRun)}
                                         disabled={isRerunning}
-                                        className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                                        style={{
-                                          backgroundColor: isRerunning
-                                            ? colors.border
-                                            : colors.text.primary,
-                                          color: "#ffffff",
-                                          opacity: isRerunning ? 0.7 : 1,
-                                        }}
+                                        className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white ${
+                                          isRerunning
+                                            ? "bg-neutral-200 opacity-70"
+                                            : "bg-neutral-900"
+                                        }`}
                                       >
                                         {isRerunning
                                           ? "Re-running..."

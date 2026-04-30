@@ -24,26 +24,8 @@ import {
   extractAssistantText,
   pollLLMCall,
 } from "@/app/lib/chatClient";
-import {
-  ChatMessage,
-  LLMCallRequest,
-  StoredSelection,
-} from "@/app/lib/types/chat";
-
-const SELECTION_STORAGE_KEY = "kaapi_chat_selection";
-
-function loadStoredSelection(): StoredSelection | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(SELECTION_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredSelection;
-    if (parsed && parsed.configId && parsed.version) return parsed;
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
+import { useChatStore } from "@/app/lib/store/chat";
+import { ChatMessage, LLMCallRequest } from "@/app/lib/types/chat";
 
 function genId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -61,70 +43,50 @@ export default function ChatPage() {
     pageSize: 0,
   });
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messages = useChatStore((s) => s.messages);
+  const conversationId = useChatStore((s) => s.conversationId);
+  const configId = useChatStore((s) => s.configId);
+  const configVersion = useChatStore((s) => s.configVersion);
+  const chatHydrated = useChatStore((s) => s.hasHydrated);
+  const appendMessages = useChatStore((s) => s.appendMessages);
+  const updateMessageInStore = useChatStore((s) => s.updateMessage);
+  const setConversationId = useChatStore((s) => s.setConversationId);
+  const setConfig = useChatStore((s) => s.setConfig);
+  const clearConversation = useChatStore((s) => s.clearConversation);
+
   const [draft, setDraft] = useState("");
   const [isPending, setIsPending] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [configId, setConfigId] = useState("");
-  const [configVersion, setConfigVersion] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
 
+  // Trigger persisted-state rehydration on mount.
   useEffect(() => {
-    const stored = loadStoredSelection();
-    if (stored) {
-      setConfigId(stored.configId);
-      setConfigVersion(stored.version);
-    }
+    useChatStore.persist.rehydrate();
   }, []);
-
-  useEffect(() => {
-    if (!configId || !configVersion) return;
-    try {
-      window.localStorage.setItem(
-        SELECTION_STORAGE_KEY,
-        JSON.stringify({ configId, version: configVersion }),
-      );
-    } catch {
-      /* ignore quota errors */
-    }
-  }, [configId, configVersion]);
 
   // Cancel any in-flight poll when leaving the page.
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
 
-  const updateMessage = useCallback(
-    (id: string, patch: Partial<ChatMessage>) => {
-      setMessages((prev) =>
-        prev.map((m) => (m.id === id ? { ...m, ...patch } : m)),
-      );
-    },
-    [],
-  );
-
   const handleNewChat = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
-    setMessages([]);
-    setConversationId(null);
+    clearConversation();
     setIsPending(false);
-  }, []);
+  }, [clearConversation]);
 
   const handleConfigSelect = useCallback(
     (newConfigId: string, newVersion: number) => {
       const isDifferent =
         newConfigId !== configId || newVersion !== configVersion;
-      setConfigId(newConfigId);
-      setConfigVersion(newVersion);
+      setConfig(newConfigId, newVersion);
       if (isDifferent) {
-        setConversationId(null);
-        setMessages([]);
+        clearConversation();
       }
     },
-    [configId, configVersion],
+    [clearConversation, configId, configVersion, setConfig],
   );
 
   const sendMessage = useCallback(
@@ -162,7 +124,7 @@ export default function ChatPage() {
         status: "pending",
       };
 
-      setMessages((prev) => [...prev, userMessage, assistantMessage]);
+      appendMessages(userMessage, assistantMessage);
       setDraft("");
       setIsPending(true);
 
@@ -198,7 +160,7 @@ export default function ChatPage() {
           throw new Error(created.error || "Failed to start the request");
         }
         const jobId = created.data.job_id;
-        updateMessage(assistantMessage.id, { jobId });
+        updateMessageInStore(assistantMessage.id, { jobId });
 
         const result = await pollLLMCall(jobId, apiKey, {
           signal: controller.signal,
@@ -211,7 +173,7 @@ export default function ChatPage() {
           setConversationId(newConversationId);
         }
 
-        updateMessage(assistantMessage.id, {
+        updateMessageInStore(assistantMessage.id, {
           content:
             text ||
             "(The assistant returned an empty response — try again or pick a different configuration.)",
@@ -219,7 +181,7 @@ export default function ChatPage() {
         });
       } catch (err) {
         if ((err as Error)?.name === "AbortError") {
-          updateMessage(assistantMessage.id, {
+          updateMessageInStore(assistantMessage.id, {
             status: "error",
             content: "Cancelled.",
             error: "Cancelled",
@@ -228,7 +190,7 @@ export default function ChatPage() {
         }
         const message =
           err instanceof Error ? err.message : "Something went wrong";
-        updateMessage(assistantMessage.id, {
+        updateMessageInStore(assistantMessage.id, {
           status: "error",
           content: message,
           error: message,
@@ -244,19 +206,22 @@ export default function ChatPage() {
     [
       allConfigMeta,
       apiKey,
+      appendMessages,
       configId,
       configVersion,
       configs,
       conversationId,
       isAuthenticated,
       loadSingleVersion,
+      setConversationId,
       toast,
-      updateMessage,
+      updateMessageInStore,
     ],
   );
 
   const hasConversation = messages.length > 0;
   const hasConfig = !!configId && !!configVersion;
+  const isReady = isHydrated && chatHydrated;
 
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
@@ -280,7 +245,7 @@ export default function ChatPage() {
             }
           />
 
-          {!isHydrated ? (
+          {!isReady ? (
             <div className="flex-1" />
           ) : hasConversation ? (
             <ChatMessageList messages={messages} />

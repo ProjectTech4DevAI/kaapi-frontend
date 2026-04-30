@@ -89,8 +89,3 @@ export interface PollOptions {
   intervalMs?: number;
   timeoutMs?: number;
 }
-
-export interface StoredSelection {
-  configId: string;
-  version: number;
-}

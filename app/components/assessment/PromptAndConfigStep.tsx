@@ -21,7 +21,11 @@ import {
   ConfigVersionItems,
 } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { ConfigSelection, MAX_CONFIGS, SchemaProperty } from "../types";
+import {
+  MAX_CONFIGS,
+  type ConfigSelection,
+  type SchemaProperty,
+} from "@/app/assessment/types";
 import { OutputSchemaModal } from "./OutputSchemaStep";
 import {
   buildDefaultParams,
@@ -32,14 +36,14 @@ import {
   getModelsByProvider,
   PAGE_SIZE,
   PROVIDER_OPTIONS,
-} from "../config/constants";
+} from "@/app/assessment/config/constants";
 import {
   fetchConfigPage,
   fetchConfigSelection,
   fetchConfigVersionsPage,
   invalidateAssessmentConfigCache,
   saveAssessmentConfig,
-} from "../config/api";
+} from "@/app/assessment/config/api";
 import { useToast } from "@/app/components/Toast";
 
 interface PromptAndConfigStepProps {

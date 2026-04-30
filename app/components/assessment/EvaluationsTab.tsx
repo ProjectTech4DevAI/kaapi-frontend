@@ -13,7 +13,7 @@ import {
 import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
 import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/types/configs";
-import { handleForbiddenApiError } from "../errorUtils";
+import { handleForbiddenApiError } from "@/app/assessment/errorUtils";
 import { formatRelativeTime } from "@/app/lib/utils";
 
 interface EvaluationsTabProps {

@@ -11,7 +11,7 @@ import {
 import { useConfigs } from "@/app/hooks/useConfigs";
 import { SavedConfig } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { ConfigSelection, MAX_CONFIGS } from "../types";
+import { MAX_CONFIGS, type ConfigSelection } from "@/app/assessment/types";
 
 interface MultiConfigStepProps {
   configs: ConfigSelection[];

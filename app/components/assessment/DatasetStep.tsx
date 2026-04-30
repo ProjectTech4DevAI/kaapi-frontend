@@ -14,7 +14,7 @@ import {
 } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import DataViewModal from "./DataViewModal";
-import { handleForbiddenApiError } from "../errorUtils";
+import { handleForbiddenApiError } from "@/app/assessment/errorUtils";
 
 interface DatasetStepProps {
   apiKey: string;

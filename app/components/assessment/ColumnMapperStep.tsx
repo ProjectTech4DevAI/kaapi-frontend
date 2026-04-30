@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Attachment, ColumnMapping, ATTACHMENT_FORMATS } from "../types";
+import {
+  ATTACHMENT_FORMATS,
+  type Attachment,
+  type ColumnMapping,
+} from "@/app/assessment/types";
 
 interface ColumnMapperStepProps {
   columns: string[];

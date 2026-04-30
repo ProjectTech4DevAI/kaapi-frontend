@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/app/components/icons";
 import PlayIcon from "@/app/components/icons/assessment/PlayIcon";
-import { AssessmentFormState } from "../types";
-import { schemaToJsonSchema } from "../schemaUtils";
+import { schemaToJsonSchema } from "@/app/assessment/schemaUtils";
+import { type AssessmentFormState } from "@/app/assessment/types";
 
 interface ReviewStepProps {
   formState: AssessmentFormState;

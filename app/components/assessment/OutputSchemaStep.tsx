@@ -8,7 +8,10 @@ import {
   CloseIcon,
   TrashIcon,
 } from "@/app/components/icons";
-import { SchemaProperty, SchemaPropertyType } from "../types";
+import {
+  type SchemaProperty,
+  type SchemaPropertyType,
+} from "@/app/assessment/types";
 import CompactToggleSwitch from "./CompactToggleSwitch";
 
 interface OutputSchemaStepProps {

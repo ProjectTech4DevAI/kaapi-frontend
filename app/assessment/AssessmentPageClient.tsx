@@ -16,14 +16,17 @@ import { removeFeatureFromClient } from "@/app/lib/featureState";
 import { APIKey } from "@/app/lib/types/credentials";
 import Sidebar from "@/app/components/Sidebar";
 import Loader from "@/app/components/Loader";
+import {
+  ColumnMapperStep,
+  DatasetStep,
+  EvaluationsTab,
+  PromptAndConfigStep,
+  ReviewStep,
+  type Step,
+  Stepper,
+} from "@/app/components/assessment";
 import { MenuIcon, KeyIcon, DatabaseIcon } from "@/app/components/icons";
 import { useToast } from "@/app/components/Toast";
-import Stepper, { Step } from "./components/Stepper";
-import DatasetStep from "./components/DatasetStep";
-import ColumnMapperStep from "./components/ColumnMapperStep";
-import PromptAndConfigStep from "./components/PromptAndConfigStep";
-import ReviewStep from "./components/ReviewStep";
-import EvaluationsTab from "./components/EvaluationsTab";
 import { ConfigSelection, SchemaProperty, AssessmentFormState } from "./types";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assesment";
 import { schemaToJsonSchema } from "./schemaUtils";

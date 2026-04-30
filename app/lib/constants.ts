@@ -7,6 +7,12 @@ import { ToastType } from "@/app/components/Toast";
 
 export const APP_NAME = "Kaapi Konsole";
 
+export const FeatureFlag = {
+  ASSESSMENT: "ASSESSMENT",
+} as const;
+
+export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
+
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",
   SESSION: "kaapi_session",
@@ -36,6 +42,8 @@ export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 
 /** Dispatched when the user's session is no longer valid (expired or revoked). */
 export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
+/** Dispatched when client-side feature flags are updated. */
+export const FEATURES_UPDATED_EVENT = "kaapi:features-updated";
 
 export const PROVIDES_OPTIONS = [
   { value: "openai", label: "OpenAI" },

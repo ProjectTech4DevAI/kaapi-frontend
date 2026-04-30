@@ -77,7 +77,7 @@ export interface CompletionParams {
 }
 
 export interface CompletionConfig {
-  provider: "openai";
+  provider: "openai" | "google";
   type?: "text" | "stt" | "tts";
   params: CompletionParams;
 }

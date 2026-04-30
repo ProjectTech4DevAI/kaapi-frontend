@@ -8,10 +8,11 @@ export async function GET(
   const { config_id } = await params;
 
   try {
-    const { status, data } = await apiClient(
-      request,
-      `/api/v1/configs/${config_id}/versions`,
-    );
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const endpoint = `/api/v1/configs/${config_id}/versions${queryString ? `?${queryString}` : ""}`;
+    const { status, data } = await apiClient(request, endpoint);
+
     return NextResponse.json(data, { status });
   } catch (_error) {
     return NextResponse.json(
@@ -29,7 +30,6 @@ export async function POST(
 
   try {
     const body = await request.json();
-
     const { status, data } = await apiClient(
       request,
       `/api/v1/configs/${config_id}/versions`,

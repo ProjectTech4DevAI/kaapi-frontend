@@ -81,6 +81,7 @@ export default function OnboardingPage() {
     isLoadingMore,
     hasMore,
     loadMore,
+    refetch: refetchOrganizations,
   } = usePaginatedList<Organization>({
     endpoint: "/api/organization",
     limit: DEFAULT_PAGE_LIMIT,
@@ -145,6 +146,17 @@ export default function OnboardingPage() {
   const handleSuccess = (data: OnboardResponseData) => {
     setOnboardData(data);
     setView("success");
+  };
+
+  const handleOnboardAnother = () => {
+    setOnboardData(null);
+    setView("form");
+  };
+
+  const handleBackToOrgsFromSuccess = () => {
+    setOnboardData(null);
+    refetchOrganizations();
+    setView("list");
   };
 
   const handleSelectProject = (project: Project) => {
@@ -293,7 +305,11 @@ export default function OnboardingPage() {
                     />
                   </div>
 
-                  <OnboardingSuccess data={onboardData} />
+                  <OnboardingSuccess
+                    data={onboardData}
+                    onOnboardAnother={handleOnboardAnother}
+                    onBackToList={handleBackToOrgsFromSuccess}
+                  />
                 </>
               )}
             </div>

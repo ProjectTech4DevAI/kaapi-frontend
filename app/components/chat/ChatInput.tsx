@@ -60,7 +60,7 @@ export default function ChatInput({
             placeholder={placeholder}
             disabled={disabled}
             rows={1}
-            className="block w-full resize-none bg-transparent text-[15px] leading-6 px-5 pt-3 pb-1 outline-none placeholder:text-text-secondary disabled:opacity-60"
+            className="block w-full resize-none bg-transparent text-text-primary text-[15px] leading-6 px-5 pt-3 pb-1 outline-none placeholder:text-text-secondary disabled:opacity-60"
             style={{ maxHeight: MAX_HEIGHT_PX }}
           />
           <div className="flex items-center gap-2 px-3 pb-2 pt-1">

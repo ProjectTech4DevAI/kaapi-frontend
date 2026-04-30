@@ -82,16 +82,6 @@
   --color-status-default-text: hsl(330, 3%, 49%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --background-secondary: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a1a1a1;
-    --border: #262626;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);

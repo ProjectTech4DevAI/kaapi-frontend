@@ -750,7 +750,7 @@ export default function OutputSchemaStep({
 
       {/* Navigation */}
       <div
-        className="sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
+        className="mt-auto sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
         style={{
           backgroundColor: colors.bg.secondary,
           borderColor: colors.border,
@@ -760,29 +760,31 @@ export default function OutputSchemaStep({
           paddingRight: "1.5rem",
         }}
       >
-        <button
-          onClick={onBack}
-          className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
-          style={{
-            borderColor: colors.border,
-            color: colors.text.primary,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
-          <ChevronLeftIcon className="w-3.5 h-3.5" />
-          Back
-        </button>
-        <button
-          onClick={onNext}
-          className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
-          style={{
-            backgroundColor: colors.accent.primary,
-            color: "#fff",
-            border: `1px solid ${colors.accent.primary}`,
-          }}
-        >
-          Next: Review
-        </button>
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <button
+            onClick={onBack}
+            className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
+            style={{
+              borderColor: colors.border,
+              color: colors.text.primary,
+              backgroundColor: colors.bg.primary,
+            }}
+          >
+            <ChevronLeftIcon className="w-3.5 h-3.5" />
+            Back
+          </button>
+          <button
+            onClick={onNext}
+            className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
+            style={{
+              backgroundColor: colors.accent.primary,
+              color: "#fff",
+              border: `1px solid ${colors.accent.primary}`,
+            }}
+          >
+            Next: Review
+          </button>
+        </div>
       </div>
     </div>
   );

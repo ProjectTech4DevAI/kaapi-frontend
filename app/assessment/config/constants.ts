@@ -1,4 +1,4 @@
-import { ConfigBlob } from "@/app/lib/configTypes";
+import { ConfigBlob } from "@/app/lib/types/configs";
 
 export type ConfigParamType = "float" | "int" | "enum";
 

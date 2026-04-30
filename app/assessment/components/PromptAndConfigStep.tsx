@@ -19,7 +19,7 @@ import {
   ConfigBlob,
   ConfigPublic,
   ConfigVersionItems,
-} from "@/app/lib/configTypes";
+} from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
 import { ConfigSelection, MAX_CONFIGS, SchemaProperty } from "../types";
 import { OutputSchemaModal } from "./OutputSchemaStep";
@@ -619,11 +619,14 @@ export default function PromptAndConfigStep({
   };
 
   const namedSchemaFields = outputSchema.filter((field) => field.name.trim());
+  const hasPromptTemplate = promptTemplate.trim().length > 0;
   const hasConfiguredResponseFormat = namedSchemaFields.length > 0;
-  // Response format is mandatory and at least one config must be selected.
-  const canProceed = configs.length > 0 && hasConfiguredResponseFormat;
-  const nextBlockerMessage =
-    configs.length === 0
+  // Prompt, response format, and at least one config are mandatory.
+  const canProceed =
+    hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
+  const nextBlockerMessage = !hasPromptTemplate
+    ? "Write a prompt to continue"
+    : configs.length === 0
       ? "Select at least one configuration to continue"
       : !hasConfiguredResponseFormat
         ? "Set response format to continue"
@@ -643,9 +646,9 @@ export default function PromptAndConfigStep({
   }, [configMode]);
 
   return (
-    <div className="mx-auto flex min-h-full max-w-7xl flex-col">
-      <div className="flex-1 pb-20">
-        <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+    <div className="flex min-h-full w-full flex-col">
+      <div className="mx-auto w-full max-w-7xl flex-1 pb-20">
+        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2
               className="text-xl font-semibold"
@@ -694,7 +697,7 @@ export default function PromptAndConfigStep({
           </div>
         </div>
 
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(480px,1.35fr)]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(330px,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(360px,1.05fr)]">
           <section className="min-w-0">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -875,7 +878,7 @@ export default function PromptAndConfigStep({
             </div>
           </section>
 
-          <aside className="space-y-5 xl:sticky xl:top-6 self-start">
+          <aside className="self-start space-y-5 lg:sticky lg:top-6 lg:min-w-[330px] xl:min-w-[360px]">
             <details
               open
               className="rounded-2xl border"
@@ -969,21 +972,23 @@ export default function PromptAndConfigStep({
                     {configs.map((c) => (
                       <div
                         key={`${c.config_id}-${c.config_version}`}
-                        className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5"
+                        className="inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-1"
                         style={{
                           borderColor: colors.accent.primary,
                           backgroundColor: "rgba(23, 23, 23, 0.05)",
                         }}
                       >
                         <span
-                          className="text-sm font-medium"
+                          className="max-w-[100px] truncate text-[12px] font-semibold"
                           style={{ color: colors.text.primary }}
+                          title={c.name}
                         >
                           {c.name}
                         </span>
                         <span
-                          className="text-xs"
+                          className="max-w-[96px] truncate text-[10px]"
                           style={{ color: colors.text.secondary }}
+                          title={`v${c.config_version} ${c.provider && c.model ? `· ${c.provider}/${c.model}` : ""}`}
                         >
                           v{c.config_version}{" "}
                           {c.provider && c.model
@@ -994,10 +999,10 @@ export default function PromptAndConfigStep({
                           onClick={() =>
                             removeSelection(c.config_id, c.config_version)
                           }
-                          className="cursor-pointer rounded-full p-0.5"
+                          className="inline-flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-full"
                           style={{ color: colors.text.secondary }}
                         >
-                          <CloseIcon className="h-3.5 w-3.5" />
+                          <CloseIcon className="h-3 w-3" />
                         </button>
                       </div>
                     ))}
@@ -1121,7 +1126,7 @@ export default function PromptAndConfigStep({
                           return (
                             <div
                               key={config.id}
-                              className="flex min-h-[188px] flex-col rounded-2xl border p-4"
+                              className="flex flex-col rounded-[24px] border p-3.5"
                               style={{
                                 borderColor: isExpanded
                                   ? colors.accent.primary
@@ -1130,11 +1135,11 @@ export default function PromptAndConfigStep({
                                     : colors.border,
                                 backgroundColor: colors.bg.primary,
                                 boxShadow: isExpanded
-                                  ? "0 10px 24px rgba(15, 23, 42, 0.06)"
-                                  : "0 1px 2px rgba(15, 23, 42, 0.03)",
+                                  ? "0 10px 22px rgba(15, 23, 42, 0.06)"
+                                  : "0 4px 14px rgba(15, 23, 42, 0.035)",
                               }}
                             >
-                              <div className="flex min-h-[88px] items-start justify-between gap-3">
+                              <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0 flex-1">
                                   <div
                                     className="truncate text-sm font-semibold"
@@ -1152,7 +1157,7 @@ export default function PromptAndConfigStep({
                                   </div>
                                   {config.description && (
                                     <div
-                                      className="mt-3 text-xs leading-5"
+                                      className="mt-1.5 text-xs leading-5"
                                       style={{ color: colors.text.secondary }}
                                     >
                                       {config.description}
@@ -1161,7 +1166,7 @@ export default function PromptAndConfigStep({
                                 </div>
                                 {defaultSelected && (
                                   <span
-                                    className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium"
+                                    className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium"
                                     style={{
                                       backgroundColor: colors.bg.secondary,
                                       color: colors.text.primary,
@@ -1173,7 +1178,7 @@ export default function PromptAndConfigStep({
                                 )}
                               </div>
 
-                              <div className="mt-4 flex items-center gap-2">
+                              <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                                 <button
                                   onClick={() =>
                                     void toggleVersionSelection(
@@ -1182,7 +1187,7 @@ export default function PromptAndConfigStep({
                                     )
                                   }
                                   disabled={Boolean(defaultLoading)}
-                                  className="cursor-pointer min-w-[152px] rounded-xl px-3 py-2.5 text-sm font-medium"
+                                  className="inline-flex min-w-[126px] cursor-pointer items-center justify-center rounded-full px-3.5 py-2 text-[12px] font-medium"
                                   style={{
                                     backgroundColor: defaultSelected
                                       ? colors.bg.secondary
@@ -1214,7 +1219,7 @@ export default function PromptAndConfigStep({
                                         ? "Hide saved versions"
                                         : "View saved versions"
                                     }
-                                    className="flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors"
+                                    className="inline-flex min-w-[146px] items-center justify-center gap-2 rounded-full border px-3.5 py-2 text-[12px] font-medium transition-colors"
                                     style={{
                                       borderColor: isExpanded
                                         ? colors.accent.primary
@@ -1225,32 +1230,13 @@ export default function PromptAndConfigStep({
                                       color: colors.text.primary,
                                     }}
                                   >
-                                    <div className="relative h-5 w-7 shrink-0">
-                                      <span
-                                        className="absolute inset-x-1 top-0 h-3.5 rounded-md border"
-                                        style={{
-                                          borderColor: colors.border,
-                                          backgroundColor: colors.bg.primary,
-                                          opacity: 0.65,
-                                        }}
-                                      />
-                                      <span
-                                        className="absolute inset-x-0 top-1 h-3.5 rounded-md border"
-                                        style={{
-                                          borderColor: isExpanded
-                                            ? colors.accent.primary
-                                            : colors.border,
-                                          backgroundColor: colors.bg.secondary,
-                                        }}
-                                      />
-                                    </div>
                                     <span className="font-semibold">
                                       {isExpanded
                                         ? "Hide versions"
-                                        : "View more versions"}
+                                        : "Show versions"}
                                     </span>
                                     <span
-                                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                                      className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
                                       style={{
                                         backgroundColor: colors.bg.secondary,
                                         color: colors.text.secondary,
@@ -1259,7 +1245,7 @@ export default function PromptAndConfigStep({
                                       {versionCountLabel}
                                     </span>
                                     <ChevronDownIcon
-                                      className="h-3.5 w-3.5 transition-transform duration-300 ease-in-out"
+                                      className="h-3 w-3 transition-transform duration-300 ease-in-out"
                                       style={{
                                         transform: isExpanded
                                           ? "rotate(180deg)"
@@ -1272,54 +1258,74 @@ export default function PromptAndConfigStep({
 
                               {hasVersionsPanel && (
                                 <div
-                                  className="mt-3 flex items-center gap-2 text-[11px]"
+                                  className="mt-2 flex items-center gap-1.5 text-[11px]"
                                   style={{ color: colors.text.secondary }}
                                 >
-                                  <div className="flex items-center -space-x-1.5">
+                                  <span
+                                    className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                                    style={{
+                                      borderColor: colors.border,
+                                      backgroundColor: colors.bg.secondary,
+                                      color: colors.text.secondary,
+                                    }}
+                                  >
                                     {previewVersions.length > 0
-                                      ? previewVersions.map((version) => (
-                                          <span
-                                            key={version.id}
-                                            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border px-1 text-[9px] font-semibold"
-                                            style={{
-                                              borderColor: colors.border,
-                                              backgroundColor:
-                                                colors.bg.primary,
-                                              color: colors.text.secondary,
-                                            }}
-                                          >
-                                            v{version.version}
-                                          </span>
-                                        ))
-                                      : null}
-                                  </div>
+                                      ? previewVersions
+                                          .map(
+                                            (version) => `v${version.version}`,
+                                          )
+                                          .join(", ")
+                                      : "Versions"}
+                                  </span>
                                   <span>
                                     {previewVersions.length > 0
-                                      ? "Saved versions"
-                                      : 'Tap "View versions" to load history'}
+                                      ? `${knownVersionCount} saved version${knownVersionCount === 1 ? "" : "s"}`
+                                      : 'Use "Show versions" to view history'}
                                   </span>
                                 </div>
                               )}
 
                               {hasVersionsPanel && (
                                 <div
-                                  className={`mt-3 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[26rem] opacity-100" : "max-h-0 opacity-0"}`}
+                                  className={`mt-2 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-[22rem] opacity-100" : "max-h-0 opacity-0"}`}
                                   style={{
                                     pointerEvents: isExpanded ? "auto" : "none",
                                   }}
                                 >
                                   <div
-                                    className="rounded-xl border p-3"
+                                    className="rounded-[20px] border p-2.5"
                                     style={{
                                       borderColor: colors.border,
                                       backgroundColor: colors.bg.secondary,
                                     }}
                                   >
-                                    <div
-                                      className="mb-1 text-xs font-medium"
-                                      style={{ color: colors.text.secondary }}
-                                    >
-                                      Saved versions
+                                    <div className="mb-2 flex items-center justify-between gap-3">
+                                      <div>
+                                        <div
+                                          className="text-sm font-semibold"
+                                          style={{ color: colors.text.primary }}
+                                        >
+                                          Saved versions
+                                        </div>
+                                        <div
+                                          className="mt-0.5 text-xs"
+                                          style={{
+                                            color: colors.text.secondary,
+                                          }}
+                                        >
+                                          Pick a specific version to reuse.
+                                        </div>
+                                      </div>
+                                      <span
+                                        className="inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold"
+                                        style={{
+                                          borderColor: colors.border,
+                                          backgroundColor: colors.bg.primary,
+                                          color: colors.text.secondary,
+                                        }}
+                                      >
+                                        {knownVersionCount}
+                                      </span>
                                     </div>
                                     {versions.isLoading &&
                                     versions.items.length === 0 ? (
@@ -1330,7 +1336,7 @@ export default function PromptAndConfigStep({
                                         Loading versions...
                                       </div>
                                     ) : (
-                                      <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                                      <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
                                         {versions.items.map((v) => {
                                           const vSelected = isSelected(
                                             config.id,
@@ -1344,7 +1350,7 @@ export default function PromptAndConfigStep({
                                           return (
                                             <div
                                               key={v.id}
-                                              className="flex items-center justify-between rounded-xl border px-3 py-2.5"
+                                              className="flex items-center justify-between gap-2.5 rounded-[18px] border px-2.5 py-2"
                                               style={{
                                                 backgroundColor:
                                                   colors.bg.primary,
@@ -1353,18 +1359,34 @@ export default function PromptAndConfigStep({
                                                   : colors.border,
                                               }}
                                             >
-                                              <div className="min-w-0">
-                                                <div
-                                                  className="text-xs font-semibold"
-                                                  style={{
-                                                    color: colors.text.primary,
-                                                  }}
-                                                >
-                                                  Version {v.version}
+                                              <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                  <span
+                                                    className="inline-flex items-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold"
+                                                    style={{
+                                                      borderColor:
+                                                        colors.border,
+                                                      backgroundColor:
+                                                        colors.bg.secondary,
+                                                      color:
+                                                        colors.text.secondary,
+                                                    }}
+                                                  >
+                                                    v{v.version}
+                                                  </span>
+                                                  <div
+                                                    className="text-xs font-semibold"
+                                                    style={{
+                                                      color:
+                                                        colors.text.primary,
+                                                    }}
+                                                  >
+                                                    Version {v.version}
+                                                  </div>
                                                 </div>
                                                 {v.commit_message && (
                                                   <div
-                                                    className="mt-0.5 truncate text-[11px]"
+                                                    className="mt-1 truncate text-[11px]"
                                                     style={{
                                                       color:
                                                         colors.text.secondary,
@@ -1382,7 +1404,7 @@ export default function PromptAndConfigStep({
                                                   )
                                                 }
                                                 disabled={Boolean(vLoading)}
-                                                className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium"
+                                                className="cursor-pointer rounded-full px-3 py-1.5 text-[11px] font-medium"
                                                 style={{
                                                   backgroundColor: vSelected
                                                     ? colors.bg.secondary
@@ -1776,7 +1798,7 @@ export default function PromptAndConfigStep({
 
       {/* ── BOTTOM NAV ── */}
       <div
-        className="sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
+        className="mt-auto sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
         style={{
           backgroundColor: colors.bg.secondary,
           borderColor: colors.border,
@@ -1786,39 +1808,44 @@ export default function PromptAndConfigStep({
           paddingRight: "1.5rem",
         }}
       >
-        <button
-          onClick={onBack}
-          className="flex cursor-pointer items-center gap-2 rounded-lg border px-6 py-2.5 text-sm font-medium"
-          style={{
-            borderColor: colors.border,
-            color: colors.text.primary,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
-          <ChevronLeftIcon className="h-3.5 w-3.5" />
-          Back
-        </button>
-        <div className="flex items-center gap-3">
-          {!canProceed && (
-            <span className="text-xs" style={{ color: colors.text.secondary }}>
-              {nextBlockerMessage}
-            </span>
-          )}
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
           <button
-            onClick={onNext}
-            disabled={!canProceed}
-            className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
+            onClick={onBack}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border px-6 py-2.5 text-sm font-medium"
             style={{
-              backgroundColor: canProceed
-                ? colors.accent.primary
-                : colors.bg.primary,
-              color: canProceed ? "#fff" : colors.text.secondary,
-              cursor: canProceed ? "pointer" : "not-allowed",
-              border: `1px solid ${canProceed ? colors.accent.primary : colors.border}`,
+              borderColor: colors.border,
+              color: colors.text.primary,
+              backgroundColor: colors.bg.primary,
             }}
           >
-            Next: Review
+            <ChevronLeftIcon className="h-3.5 w-3.5" />
+            Back
           </button>
+          <div className="flex items-center gap-3">
+            {!canProceed && (
+              <span
+                className="text-xs"
+                style={{ color: colors.text.secondary }}
+              >
+                {nextBlockerMessage}
+              </span>
+            )}
+            <button
+              onClick={onNext}
+              disabled={!canProceed}
+              className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
+              style={{
+                backgroundColor: canProceed
+                  ? colors.accent.primary
+                  : colors.bg.primary,
+                color: canProceed ? "#fff" : colors.text.secondary,
+                cursor: canProceed ? "pointer" : "not-allowed",
+                border: `1px solid ${canProceed ? colors.accent.primary : colors.border}`,
+              }}
+            >
+              Next: Review
+            </button>
+          </div>
         </div>
       </div>
     </div>

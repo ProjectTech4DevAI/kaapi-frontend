@@ -185,8 +185,8 @@ export default function ColumnMapperStep({
   const hasText = columnConfigs.some((config) => config.role === "text");
 
   return (
-    <div className="mx-auto flex min-h-full max-w-3xl flex-col">
-      <div className="flex-1 space-y-5 pb-16">
+    <div className="flex min-h-full w-full flex-col">
+      <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 pb-16">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2
@@ -393,7 +393,7 @@ export default function ColumnMapperStep({
       </div>
 
       <div
-        className="sticky bottom-0 z-10 flex flex-col gap-3 border-t py-3 sm:flex-row sm:items-center sm:justify-between"
+        className="mt-auto sticky bottom-0 z-10 flex flex-col gap-3 border-t py-3 sm:flex-row sm:items-center sm:justify-between"
         style={{
           backgroundColor: colors.bg.secondary,
           borderColor: colors.border,
@@ -403,46 +403,48 @@ export default function ColumnMapperStep({
           paddingRight: "1.5rem",
         }}
       >
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-lg border px-5 py-2.5 text-sm font-medium"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-            color: colors.text.primary,
-          }}
-        >
-          Back
-        </button>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <span
-            className="text-xs"
-            style={{
-              color: hasText ? colors.text.secondary : colors.status.warning,
-            }}
-          >
-            {hasText
-              ? "Ready to continue."
-              : "Select at least one Text column."}
-          </span>
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={handleNext}
-            disabled={!hasText}
-            className="rounded-lg px-5 py-2.5 text-sm font-medium"
+            onClick={onBack}
+            className="rounded-lg border px-5 py-2.5 text-sm font-medium"
             style={{
-              backgroundColor: hasText
-                ? colors.accent.primary
-                : colors.bg.secondary,
-              color: hasText ? colors.text.white : colors.text.secondary,
-              border: `1px solid ${hasText ? colors.accent.primary : colors.border}`,
-              cursor: hasText ? "pointer" : "not-allowed",
+              borderColor: colors.border,
+              backgroundColor: colors.bg.primary,
+              color: colors.text.primary,
             }}
           >
-            Next: Prompt Editor
+            Back
           </button>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <span
+              className="text-xs"
+              style={{
+                color: hasText ? colors.text.secondary : colors.status.warning,
+              }}
+            >
+              {hasText
+                ? "Ready to continue."
+                : "Select at least one Text column."}
+            </span>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={!hasText}
+              className="rounded-lg px-5 py-2.5 text-sm font-medium"
+              style={{
+                backgroundColor: hasText
+                  ? colors.accent.primary
+                  : colors.bg.secondary,
+                color: hasText ? colors.text.white : colors.text.secondary,
+                border: `1px solid ${hasText ? colors.accent.primary : colors.border}`,
+                cursor: hasText ? "pointer" : "not-allowed",
+              }}
+            >
+              Next: Prompt Editor
+            </button>
+          </div>
         </div>
       </div>
     </div>

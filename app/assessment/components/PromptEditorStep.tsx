@@ -281,7 +281,7 @@ export default function PromptEditorStep({
   }, [promptTemplate, sampleRow, textColumns]);
 
   return (
-    <div className="mx-auto flex min-h-full max-w-6xl flex-col">
+    <div className="mx-auto flex min-h-full max-w-5xl flex-col">
       <div className="flex-1 space-y-3 pb-20">
         <div>
           <h2
@@ -480,7 +480,7 @@ export default function PromptEditorStep({
       </div>
 
       <div
-        className="sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
+        className="mt-auto sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
         style={{
           backgroundColor: colors.bg.secondary,
           borderColor: colors.border,
@@ -490,31 +490,33 @@ export default function PromptEditorStep({
           paddingRight: "1.5rem",
         }}
       >
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex cursor-pointer items-center gap-2 rounded-lg border px-6 py-2.5 text-sm font-medium"
-          style={{
-            borderColor: colors.border,
-            color: colors.text.primary,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
-          <ChevronLeftIcon className="h-3.5 w-3.5" />
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={onNext}
-          className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
-          style={{
-            backgroundColor: colors.accent.primary,
-            color: "#fff",
-            border: `1px solid ${colors.accent.primary}`,
-          }}
-        >
-          Next: Review
-        </button>
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border px-6 py-2.5 text-sm font-medium"
+            style={{
+              borderColor: colors.border,
+              color: colors.text.primary,
+              backgroundColor: colors.bg.primary,
+            }}
+          >
+            <ChevronLeftIcon className="h-3.5 w-3.5" />
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
+            style={{
+              backgroundColor: colors.accent.primary,
+              color: "#fff",
+              border: `1px solid ${colors.accent.primary}`,
+            }}
+          >
+            Next: Review
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -727,31 +727,33 @@ export default function DatasetStep({
         </div>
 
         <div
-          className="flex-shrink-0 border-t px-6 py-3 flex items-center justify-between"
+          className="sticky bottom-0 z-10 flex-shrink-0 border-t px-6 py-3 flex items-center justify-between"
           style={{
             borderColor: colors.border,
             backgroundColor: colors.bg.primary,
           }}
         >
-          <span className="text-xs" style={{ color: colors.text.secondary }}>
-            {canProceed
-              ? "Dataset selected. Continue to AI configuration."
-              : "Select a dataset to continue."}
-          </span>
-          <button
-            onClick={onNext}
-            disabled={!canProceed}
-            className="px-5 py-2 rounded-lg text-sm font-medium"
-            style={{
-              backgroundColor: canProceed
-                ? colors.accent.primary
-                : colors.bg.secondary,
-              color: canProceed ? "#fff" : colors.text.secondary,
-              cursor: canProceed ? "pointer" : "not-allowed",
-            }}
-          >
-            Next: AI Configuration
-          </button>
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+            <span className="text-xs" style={{ color: colors.text.secondary }}>
+              {canProceed
+                ? "Dataset selected. Continue to AI configuration."
+                : "Select a dataset to continue."}
+            </span>
+            <button
+              onClick={onNext}
+              disabled={!canProceed}
+              className="px-5 py-2 rounded-lg text-sm font-medium"
+              style={{
+                backgroundColor: canProceed
+                  ? colors.accent.primary
+                  : colors.bg.secondary,
+                color: canProceed ? "#fff" : colors.text.secondary,
+                cursor: canProceed ? "pointer" : "not-allowed",
+              }}
+            >
+              Next: AI Configuration
+            </button>
+          </div>
         </div>
       </div>
 

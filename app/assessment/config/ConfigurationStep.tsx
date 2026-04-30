@@ -20,7 +20,7 @@ import {
   ConfigBlob,
   ConfigPublic,
   ConfigVersionItems,
-} from "@/app/lib/configTypes";
+} from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
 import { ConfigSelection, MAX_CONFIGS, SchemaProperty } from "../types";
 import { OutputSchemaModal } from "../components/OutputSchemaStep";

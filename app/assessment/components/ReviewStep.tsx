@@ -15,6 +15,8 @@ interface ReviewStepProps {
   experimentName: string;
   setExperimentName: (name: string) => void;
   isSubmitting: boolean;
+  canSubmit: boolean;
+  submitBlockerMessage: string;
   onSubmit: () => void;
   onBack: () => void;
   onEditStep: (step: number) => void;
@@ -124,6 +126,8 @@ export default function ReviewStep({
   experimentName,
   setExperimentName,
   isSubmitting,
+  canSubmit,
+  submitBlockerMessage,
   onSubmit,
   onBack,
   onEditStep,
@@ -153,8 +157,8 @@ export default function ReviewStep({
   };
 
   return (
-    <div className="mx-auto flex min-h-full max-w-2xl flex-col">
-      <div className="flex-1 space-y-4">
+    <div className="flex min-h-full w-full flex-col">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-4">
         <div className="mb-2">
           <h2
             className="text-lg font-semibold"
@@ -506,7 +510,7 @@ export default function ReviewStep({
 
       {/* Navigation */}
       <div
-        className="sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
+        className="mt-auto sticky bottom-0 z-10 flex items-center justify-between border-t py-2"
         style={{
           backgroundColor: colors.bg.secondary,
           borderColor: colors.border,
@@ -516,50 +520,64 @@ export default function ReviewStep({
           paddingRight: "1.5rem",
         }}
       >
-        <button
-          onClick={onBack}
-          disabled={isSubmitting}
-          className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
-          style={{
-            borderColor: colors.border,
-            color: colors.text.primary,
-            backgroundColor: colors.bg.primary,
-          }}
-        >
-          <ChevronLeftIcon className="w-3.5 h-3.5" />
-          Back
-        </button>
-        <button
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          className="rounded-lg px-8 py-2.5 text-sm font-medium flex items-center gap-2"
-          style={{
-            backgroundColor: isSubmitting
-              ? colors.bg.secondary
-              : colors.accent.primary,
-            color: isSubmitting ? colors.text.secondary : "#fff",
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-            border: `1px solid ${isSubmitting ? colors.border : colors.accent.primary}`,
-          }}
-        >
-          {isSubmitting ? (
-            <>
-              <div
-                className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                style={{
-                  borderColor: colors.text.secondary,
-                  borderTopColor: "transparent",
-                }}
-              />
-              Submitting...
-            </>
-          ) : (
-            <>
-              <PlayIcon className="w-5 h-5" />
-              Submit Evaluation
-            </>
-          )}
-        </button>
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
+          <button
+            onClick={onBack}
+            disabled={isSubmitting}
+            className="cursor-pointer rounded-lg border px-6 py-2.5 text-sm font-medium flex items-center gap-2"
+            style={{
+              borderColor: colors.border,
+              color: colors.text.primary,
+              backgroundColor: colors.bg.primary,
+            }}
+          >
+            <ChevronLeftIcon className="w-3.5 h-3.5" />
+            Back
+          </button>
+          <div className="flex items-center gap-3">
+            {!isSubmitting && !canSubmit && (
+              <span
+                className="text-xs"
+                style={{ color: colors.text.secondary }}
+              >
+                {submitBlockerMessage}
+              </span>
+            )}
+            <button
+              onClick={onSubmit}
+              disabled={isSubmitting || !canSubmit}
+              className="rounded-lg px-8 py-2.5 text-sm font-medium flex items-center gap-2"
+              style={{
+                backgroundColor:
+                  isSubmitting || !canSubmit
+                    ? colors.bg.secondary
+                    : colors.accent.primary,
+                color:
+                  isSubmitting || !canSubmit ? colors.text.secondary : "#fff",
+                cursor: isSubmitting || !canSubmit ? "not-allowed" : "pointer",
+                border: `1px solid ${isSubmitting || !canSubmit ? colors.border : colors.accent.primary}`,
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <div
+                    className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                    style={{
+                      borderColor: colors.text.secondary,
+                      borderTopColor: "transparent",
+                    }}
+                  />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <PlayIcon className="w-5 h-5" />
+                  Submit Evaluation
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -56,7 +56,7 @@ export default function ConfigCard({
 
       // 2. Read the cached version items to find the latest version number
       //    (onLoadVersions populates configState.versionItemsCache)
-      const { configState } = await import("@/app/lib/store/configStore");
+      const { configState } = await import("@/app/lib/store/config");
       const versionItems = configState.versionItemsCache[config.id];
       if (!versionItems || versionItems.length === 0) {
         setIsLoadingDetails(false);

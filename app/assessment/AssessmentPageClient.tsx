@@ -26,7 +26,7 @@ import PromptAndConfigStep from "./components/PromptAndConfigStep";
 import ReviewStep from "./components/ReviewStep";
 import EvaluationsTab from "./components/EvaluationsTab";
 import { ConfigSelection, SchemaProperty, AssessmentFormState } from "./types";
-import { useAssessmentDatasetStore } from "./store";
+import { useAssessmentDatasetStore } from "@/app/lib/store/assesment";
 import { schemaToJsonSchema } from "./schemaUtils";
 import { handleForbiddenApiError } from "./errorUtils";
 
@@ -241,6 +241,26 @@ function AssessmentContent() {
       toast.error("No API key selected");
       return;
     }
+    if (!datasetId) {
+      toast.error("Dataset is required");
+      return;
+    }
+    if (columnMapping.textColumns.length === 0) {
+      toast.error("Map at least one text column");
+      return;
+    }
+    if (!promptTemplate.trim()) {
+      toast.error("Prompt is required");
+      return;
+    }
+    if (!outputSchema.some((field) => field.name.trim())) {
+      toast.error("Response format is required");
+      return;
+    }
+    if (configs.length === 0) {
+      toast.error("Select at least one configuration");
+      return;
+    }
     if (!experimentName.trim()) {
       toast.error("Experiment name is required");
       return;
@@ -313,10 +333,36 @@ function AssessmentContent() {
 
   const hasDataset = !!datasetId && columns.length > 0;
   const hasMapperSelection = columnMapping.textColumns.length > 0;
+  const hasPromptTemplate = promptTemplate.trim().length > 0;
   const hasConfiguredResponseFormat = outputSchema.some((field) =>
     field.name.trim(),
   );
-  const canReachReview = configs.length > 0 && hasConfiguredResponseFormat;
+  const canReachReview =
+    hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
+  const canSubmitAssessment =
+    !!selectedKey &&
+    !!datasetId &&
+    hasMapperSelection &&
+    hasPromptTemplate &&
+    hasConfiguredResponseFormat &&
+    configs.length > 0 &&
+    experimentName.trim().length > 0 &&
+    !isSubmitting;
+  const submitBlockerMessage = !selectedKey
+    ? "Select an API key to submit"
+    : !datasetId
+      ? "Select a dataset to submit"
+      : !hasMapperSelection
+        ? "Map at least one text column to submit"
+        : !hasPromptTemplate
+          ? "Write a prompt to submit"
+          : !hasConfiguredResponseFormat
+            ? "Set response format to submit"
+            : configs.length === 0
+              ? "Select at least one configuration to submit"
+              : !experimentName.trim()
+                ? "Enter an experiment name to submit"
+                : "";
   const effectiveCompletedConfigSteps = useMemo(() => {
     const merged = new Set(completedConfigSteps);
     if (hasMapperSelection) merged.add(1);
@@ -523,8 +569,12 @@ function AssessmentContent() {
                       onStepClick={setConfigStep}
                       completedSteps={effectiveCompletedConfigSteps}
                     />
-                    <div className="flex-1 overflow-auto px-6 pt-6">
-                      <div className={configStep === 1 ? "block" : "hidden"}>
+                    <div className="flex flex-1 flex-col overflow-auto px-6 pt-6">
+                      <div
+                        className={
+                          configStep === 1 ? "flex h-full flex-col" : "hidden"
+                        }
+                      >
                         <ColumnMapperStep
                           columns={columns}
                           columnMapping={columnMapping}
@@ -533,7 +583,11 @@ function AssessmentContent() {
                           onBack={() => setActiveTab("datasets")}
                         />
                       </div>
-                      <div className={configStep === 2 ? "block" : "hidden"}>
+                      <div
+                        className={
+                          configStep === 2 ? "flex h-full flex-col" : "hidden"
+                        }
+                      >
                         <PromptAndConfigStep
                           apiKey={selectedKey?.key || ""}
                           textColumns={columnMapping.textColumns}
@@ -548,12 +602,18 @@ function AssessmentContent() {
                           onBack={() => setConfigStep(1)}
                         />
                       </div>
-                      <div className={configStep === 3 ? "block" : "hidden"}>
+                      <div
+                        className={
+                          configStep === 3 ? "flex h-full flex-col" : "hidden"
+                        }
+                      >
                         <ReviewStep
                           formState={formState}
                           experimentName={experimentName}
                           setExperimentName={setExperimentName}
                           isSubmitting={isSubmitting}
+                          canSubmit={canSubmitAssessment}
+                          submitBlockerMessage={submitBlockerMessage}
                           onSubmit={handleSubmit}
                           onBack={() => setConfigStep(2)}
                           onEditStep={setConfigStep}

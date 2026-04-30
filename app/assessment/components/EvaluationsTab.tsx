@@ -13,7 +13,7 @@ import {
   EyeIcon,
 } from "@/app/components/icons";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
-import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/configTypes";
+import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/types/configs";
 import { handleForbiddenApiError } from "../errorUtils";
 import { formatRelativeTime } from "@/app/lib/utils";
 

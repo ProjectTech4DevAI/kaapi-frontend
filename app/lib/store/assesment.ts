@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ColumnMapping } from "./types";
+import type { ColumnMapping } from "@/app/assessment/types";
 
 interface AssessmentDatasetState {
   datasetId: string;

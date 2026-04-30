@@ -133,6 +133,10 @@ export async function DELETE(
       { method: "DELETE" },
     );
 
+    if (status === 204) {
+      return new NextResponse(null, { status });
+    }
+
     return NextResponse.json(data, { status });
   } catch (error: unknown) {
     return proxyErrorResponse("Assessment dataset delete proxy error:", error);

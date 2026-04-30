@@ -10,7 +10,7 @@ import {
   ConfigVersionPublic,
   ConfigVersionResponse,
   ConfigWithVersionResponse,
-} from "@/app/lib/configTypes";
+} from "@/app/lib/types/configs";
 import { apiFetch } from "@/app/lib/apiClient";
 import { ConfigSelection } from "../types";
 import { CACHE_INVALIDATED_EVENT } from "./constants";

@@ -1,6 +1,6 @@
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { formatDistanceToNow } from "date-fns";
-import { clearConfigCache } from "@/app/lib/store/configStore";
+import { clearConfigCache } from "@/app/lib/store/config";
 import {
   ConfigPublic,
   ConfigVersionPublic,

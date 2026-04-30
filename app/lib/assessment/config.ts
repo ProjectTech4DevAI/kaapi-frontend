@@ -547,7 +547,7 @@ export async function saveConfig(params: {
 
   return {
     config_id: data.data.id,
-    config_version: data.data.version,
+    config_version: data.data.version.version,
     name: data.data.name,
     provider: normalizedBlob.completion.provider,
     model: String(normalizedBlob.completion.params.model || ""),

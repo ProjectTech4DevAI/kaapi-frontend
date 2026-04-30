@@ -259,7 +259,7 @@ export default function EvaluationsTab({
     setIsLoading(true);
     try {
       const data = await apiFetch<AssessmentListResponse>(
-        "/api/assessment/assessments",
+        "/api/assessment/assessment",
         apiKey,
       );
       const list = Array.isArray(data) ? data : data.data || [];
@@ -486,7 +486,7 @@ export default function EvaluationsTab({
       setRetryingAssessmentId(assessmentId);
       try {
         await apiFetch(
-          `/api/assessment/assessments/${assessmentId}/retry`,
+          `/api/assessment/assessment/${assessmentId}/retry`,
           apiKey,
           { method: "POST" },
         );
@@ -709,7 +709,7 @@ export default function EvaluationsTab({
                             <DownloadDropdown
                               onDownload={(fmt) =>
                                 triggerDownload(
-                                  `/api/assessment/assessments/${run.id}/results`,
+                                  `/api/assessment/assessment/${run.id}/results`,
                                   fmt,
                                   `assessment-${run.id}`,
                                 )

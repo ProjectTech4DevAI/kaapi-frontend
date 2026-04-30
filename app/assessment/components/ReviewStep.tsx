@@ -157,7 +157,7 @@ export default function ReviewStep({
   };
 
   return (
-    <div className="flex min-h-full w-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="mx-auto w-full max-w-2xl flex-1 space-y-4">
         <div className="mb-2">
           <h2

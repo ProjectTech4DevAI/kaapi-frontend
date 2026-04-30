@@ -281,7 +281,7 @@ export default function PromptEditorStep({
   }, [promptTemplate, sampleRow, textColumns]);
 
   return (
-    <div className="mx-auto flex min-h-full max-w-5xl flex-col">
+    <div className="mx-auto flex h-full min-h-0 max-w-5xl flex-col">
       <div className="flex-1 space-y-3 pb-20">
         <div>
           <h2

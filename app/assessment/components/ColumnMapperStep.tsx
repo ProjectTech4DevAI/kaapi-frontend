@@ -185,7 +185,7 @@ export default function ColumnMapperStep({
   const hasText = columnConfigs.some((config) => config.role === "text");
 
   return (
-    <div className="flex min-h-full w-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="mx-auto w-full max-w-3xl flex-1 space-y-5 pb-16">
         <div className="flex items-start justify-between gap-4">
           <div>

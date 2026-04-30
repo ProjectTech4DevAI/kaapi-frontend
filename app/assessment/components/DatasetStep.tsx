@@ -345,10 +345,10 @@ export default function DatasetStep({
   const canProceed = datasetId && !isLoadingColumns;
 
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex min-h-0 flex-1 overflow-hidden">
       {/* Left Panel - Create Dataset + Experiment Name */}
       <div
-        className={`${LEFT_PANEL_CLASSES} flex-shrink-0 border-r flex flex-col overflow-hidden`}
+        className={`${LEFT_PANEL_CLASSES} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-r`}
         style={{
           backgroundColor: colors.bg.primary,
           borderColor: colors.border,
@@ -565,7 +565,7 @@ export default function DatasetStep({
 
       {/* Right Panel - Dataset List + Selection */}
       <div
-        className="flex-1 flex flex-col overflow-hidden"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
         style={{ backgroundColor: colors.bg.secondary }}
       >
         <div className="flex-1 overflow-auto p-6">

@@ -526,7 +526,7 @@ function AssessmentContent() {
               )}
 
               <div
-                className={`flex-1 overflow-hidden flex flex-col ${
+                className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
                   activeTab === "config" ? "" : "hidden"
                 }`}
               >
@@ -569,10 +569,12 @@ function AssessmentContent() {
                       onStepClick={setConfigStep}
                       completedSteps={effectiveCompletedConfigSteps}
                     />
-                    <div className="flex flex-1 flex-col overflow-auto px-6 pt-6">
+                    <div className="flex min-h-0 flex-1 flex-col overflow-auto px-6 pt-6">
                       <div
                         className={
-                          configStep === 1 ? "flex h-full flex-col" : "hidden"
+                          configStep === 1
+                            ? "flex min-h-0 h-full flex-1 flex-col"
+                            : "hidden"
                         }
                       >
                         <ColumnMapperStep
@@ -585,7 +587,9 @@ function AssessmentContent() {
                       </div>
                       <div
                         className={
-                          configStep === 2 ? "flex h-full flex-col" : "hidden"
+                          configStep === 2
+                            ? "flex min-h-0 h-full flex-1 flex-col"
+                            : "hidden"
                         }
                       >
                         <PromptAndConfigStep
@@ -604,7 +608,9 @@ function AssessmentContent() {
                       </div>
                       <div
                         className={
-                          configStep === 3 ? "flex h-full flex-col" : "hidden"
+                          configStep === 3
+                            ? "flex min-h-0 h-full flex-1 flex-col"
+                            : "hidden"
                         }
                       >
                         <ReviewStep

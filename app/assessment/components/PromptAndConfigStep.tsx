@@ -646,7 +646,7 @@ export default function PromptAndConfigStep({
   }, [configMode]);
 
   return (
-    <div className="flex min-h-full w-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col">
       <div className="mx-auto w-full max-w-7xl flex-1 pb-20">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>

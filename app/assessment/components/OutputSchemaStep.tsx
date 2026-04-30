@@ -739,7 +739,7 @@ export default function OutputSchemaStep({
   onBack,
 }: OutputSchemaStepProps) {
   return (
-    <div className="mx-auto flex min-h-full max-w-2xl flex-col">
+    <div className="mx-auto flex h-full min-h-0 max-w-2xl flex-col">
       <div className="flex-1 space-y-5 pb-16">
         <OutputSchemaEditor
           schema={schema}

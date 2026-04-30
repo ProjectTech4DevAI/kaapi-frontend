@@ -156,21 +156,40 @@ export function uploadWithProgress<T>(
 }
 
 /**
+ * Options accepted by `apiFetch`. Extends `RequestInit` with one extra knob:
+ */
+export type ApiFetchOptions = RequestInit & { acceptEmpty?: boolean };
+
+/**
  * Client-side fetch helper for Next.js route handlers (/api/*).
  *
  * - Attaches X-API-KEY header and `credentials: "include"` for cookie auth.
  * - On **403 "revoked"**: forces immediate logout (no refresh).
  * - On **401**: tries a silent token refresh, retries once, then logs out.
  * - All other errors are thrown as-is.
+ * Default return type is `Promise<T>`. Pass `{ acceptEmpty: true }` to opt
+ * into `Promise<T | null>` (returns null on 204).
  */
 export async function apiFetch<T>(
   url: string,
   apiKey: string,
-  options: RequestInit = {},
-): Promise<T> {
+  options?: RequestInit,
+): Promise<T>;
+export async function apiFetch<T>(
+  url: string,
+  apiKey: string,
+  options: ApiFetchOptions & { acceptEmpty: true },
+): Promise<T | null>;
+export async function apiFetch<T>(
+  url: string,
+  apiKey: string,
+  options: ApiFetchOptions = {},
+): Promise<T | null> {
+  const { acceptEmpty, ...fetchOptions } = options;
+
   const buildHeaders = () => {
-    const headers = new Headers(options.headers);
-    if (!(options.body instanceof FormData)) {
+    const headers = new Headers(fetchOptions.headers);
+    if (!(fetchOptions.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
     headers.set("X-API-KEY", apiKey);
@@ -178,12 +197,18 @@ export async function apiFetch<T>(
   };
 
   const doFetch = () =>
-    fetch(url, { ...options, headers: buildHeaders(), credentials: "include" });
+    fetch(url, {
+      ...fetchOptions,
+      headers: buildHeaders(),
+      credentials: "include",
+    });
 
   const res = await doFetch();
 
-  // Response OK → return parsed JSON
-  if (res.ok) return (await res.json()) as T;
+  if (res.ok) {
+    if (acceptEmpty && res.status === 204) return null;
+    return (await res.json()) as T;
+  }
 
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
   const message = extractErrorMessage(body, `Request failed: ${res.status}`);
@@ -209,7 +234,10 @@ export async function apiFetch<T>(
 
   if (refreshed) {
     const retry = await doFetch();
-    if (retry.ok) return (await retry.json()) as T;
+    if (retry.ok) {
+      if (acceptEmpty && retry.status === 204) return null;
+      return (await retry.json()) as T;
+    }
 
     const retryBody = (await retry.json().catch(() => ({}))) as Record<
       string,

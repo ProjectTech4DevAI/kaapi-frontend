@@ -16,6 +16,7 @@ import {
 } from "@/app/lib/types/auth";
 import { apiFetch } from "@/app/lib/apiClient";
 import { AUTH_EXPIRED_EVENT, STORAGE_KEYS } from "@/app/lib/constants";
+import { useChatStore } from "@/app/lib/store/chat";
 import { clearAllStorage } from "@/app/lib/utils";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
 
@@ -134,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setCurrentUser(null);
     clearAllStorage();
+    useChatStore.getState().reset();
     setApiKeys([]);
   }, [persist]);
 

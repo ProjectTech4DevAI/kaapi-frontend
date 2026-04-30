@@ -88,8 +88,8 @@ export function DocumentListing({
                 onClick={() => onSelect(doc)}
                 className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                   selectedDocument?.id === doc.id
-                    ? "bg-[hsl(202,100%,95%)] border-[hsl(202,100%,50%)]"
-                    : "bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]"
+                    ? "bg-accent-subtle border-accent-muted"
+                    : "bg-bg-primary border-border"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">

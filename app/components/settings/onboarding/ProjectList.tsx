@@ -85,7 +85,7 @@ export default function ProjectList({
           {projects.map((project) => (
             <div
               key={project.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white transition-colors hover:bg-neutral-50"
+              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white transition-colors hover:bg-neutral-50 cursor-pointer"
             >
               <button
                 onClick={() => onSelectProject(project)}

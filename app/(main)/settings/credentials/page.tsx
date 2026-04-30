@@ -176,7 +176,7 @@ export default function CredentialsPage() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-bg-secondary">
+    <div className="w-full h-screen flex flex-col bg-bg-primary">
       <div className="flex flex-1 overflow-hidden">
         <SettingsSidebar />
 
@@ -192,7 +192,7 @@ export default function CredentialsPage() {
               selectedProvider={selectedProvider}
               credentials={credentials}
               onSelect={setSelectedProvider}
-              className="w-56 border-r border-border overflow-y-auto bg-bg-secondary"
+              className="w-56 border-r border-border overflow-y-auto bg-bg-primary"
             />
 
             <div className="flex-1 overflow-y-auto p-8">

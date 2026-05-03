@@ -241,7 +241,7 @@ export default function CreateSTTDatasetForm({
           onClick={() => {
             setDatasetName("");
             setDatasetDescription("");
-            setDatasetLanguageId(1);
+            setDatasetLanguageId(languages[0]?.id ?? datasetLanguageId);
             setAudioFiles([]);
             setPlayingFileId(null);
           }}

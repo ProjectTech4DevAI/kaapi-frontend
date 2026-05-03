@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import JsonEditor from "./JsonEditor";
 import {
   ChevronDownIcon,
@@ -9,24 +10,14 @@ import {
   TrashIcon,
 } from "@/app/components/icons";
 import {
+  type OutputSchemaEditorProps,
+  type OutputSchemaModalProps,
+  type OutputSchemaStepProps,
+  type PropertyRowProps,
   type SchemaProperty,
   type SchemaPropertyType,
 } from "@/app/lib/types/assessment";
 import CompactToggleSwitch from "./CompactToggleSwitch";
-
-interface OutputSchemaStepProps {
-  schema: SchemaProperty[];
-  setSchema: (schema: SchemaProperty[]) => void;
-  onNext: () => void;
-  onBack: () => void;
-}
-
-interface OutputSchemaEditorProps {
-  schema: SchemaProperty[];
-  setSchema: (schema: SchemaProperty[]) => void;
-  title?: string;
-  description?: React.ReactNode;
-}
 
 const TYPE_OPTIONS: Array<{ value: SchemaPropertyType; label: string }> = [
   { value: "string", label: "Text" },
@@ -191,21 +182,6 @@ function validateOpenApiSchema(raw: string): {
   return { valid: true, schema: obj, error: null };
 }
 
-/* ── PropertyRow ── */
-interface PropertyRowProps {
-  property: SchemaProperty;
-  depth: number;
-  onUpdate: (
-    id: string,
-    updater: (p: SchemaProperty) => SchemaProperty,
-  ) => void;
-  onRemove: (id: string) => void;
-  onAddChild: (parentId: string) => void;
-  onAddEnumValue: (id: string) => void;
-  onUpdateEnumValue: (id: string, index: number, value: string) => void;
-  onRemoveEnumValue: (id: string, index: number) => void;
-}
-
 function PropertyRow({
   property,
   depth,
@@ -337,14 +313,6 @@ function PropertyRow({
   );
 }
 
-/* ── Modal wrapper ── */
-interface OutputSchemaModalProps {
-  open: boolean;
-  onClose: () => void;
-  schema: SchemaProperty[];
-  setSchema: (schema: SchemaProperty[]) => void;
-}
-
 export function OutputSchemaModal({
   open,
   onClose,
@@ -352,7 +320,12 @@ export function OutputSchemaModal({
   setSchema,
 }: OutputSchemaModalProps) {
   const [draftSchema, setDraftSchema] = useState<SchemaProperty[]>([]);
+  const [mounted, setMounted] = useState(false);
   const schemaRef = useRef(schema);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     schemaRef.current = schema;
@@ -366,7 +339,7 @@ export function OutputSchemaModal({
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
   const handleSave = () => {
     setSchema(draftSchema);
@@ -377,9 +350,12 @@ export function OutputSchemaModal({
     setDraftSchema([createProperty()]);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
       <div className="relative flex max-h-[85vh] w-[720px] max-w-[90vw] flex-col rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 pt-6 pb-2">
           <h2 className="text-lg font-semibold text-neutral-900">
@@ -420,7 +396,8 @@ export function OutputSchemaModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

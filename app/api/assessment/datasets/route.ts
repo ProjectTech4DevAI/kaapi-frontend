@@ -1,8 +1,5 @@
 import { NextRequest } from "next/server";
-import {
-  proxyErrorResponse,
-  proxyJsonResponse,
-} from "@/app/api/assessment/_utils";
+import { proxyErrorResponse, proxyJsonResponse } from "@/app/api/_routeProxy";
 
 export async function GET(request: NextRequest) {
   try {

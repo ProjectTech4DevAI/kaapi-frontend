@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { apiClient } from "@/app/lib/apiClient";
+import { NextRequest } from "next/server";
+import { proxyErrorResponse, proxyJsonResponse } from "@/app/api/_routeProxy";
 
 /**
  * GET /api/evaluations/datasets
@@ -8,21 +8,9 @@ import { apiClient } from "@/app/lib/apiClient";
  */
 export async function GET(request: NextRequest) {
   try {
-    const { status, data } = await apiClient(
-      request,
-      "/api/v1/evaluations/datasets",
-    );
-
-    return NextResponse.json(data, { status });
+    return await proxyJsonResponse(request, "/api/v1/evaluations/datasets");
   } catch (error: unknown) {
-    console.error("Proxy error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to forward request to backend",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return proxyErrorResponse("Evaluations datasets list proxy error:", error);
   }
 }
 
@@ -34,24 +22,14 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
 
-    const { status, data } = await apiClient(
-      request,
-      "/api/v1/evaluations/datasets",
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-
-    return NextResponse.json(data, { status });
+    return await proxyJsonResponse(request, "/api/v1/evaluations/datasets", {
+      method: "POST",
+      body: formData,
+    });
   } catch (error: unknown) {
-    console.error("Proxy error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to forward request to backend",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
+    return proxyErrorResponse(
+      "Evaluations datasets create proxy error:",
+      error,
     );
   }
 }

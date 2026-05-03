@@ -4,11 +4,12 @@
 
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/Toast";
+import { ASSESSMENT_FEATURE_FLAG } from "@/app/lib/assessment/constants";
 
 export const APP_NAME = "Kaapi Konsole";
 
 export const FeatureFlag = {
-  ASSESSMENT: "ASSESSMENT",
+  ASSESSMENT: ASSESSMENT_FEATURE_FLAG,
 } as const;
 
 export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
@@ -20,6 +21,11 @@ export const STORAGE_KEYS = {
   COLLECTION_CACHE: "collection_job_cache",
   DOCUMENT_SIZES: "document_file_sizes",
   SIDEBAR_MENUS: "sidebar-expanded-menus",
+} as const;
+
+export const COOKIE_KEYS = {
+  ROLE: "kaapi_role",
+  FEATURES: "kaapi_features",
 } as const;
 
 /** localStorage key for the config cache */

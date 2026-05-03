@@ -3,6 +3,8 @@
  * These types represent configs as they are consumed by the frontend,
  */
 
+import type { AssessmentConfigTag } from "@/app/lib/assessment/constants";
+
 export interface SavedConfig {
   id: string;
   config_id: string;
@@ -101,11 +103,13 @@ export interface ConfigCreate {
   description?: string | null;
   config_blob: ConfigBlob;
   commit_message?: string | null;
+  tag?: ConfigTag | null;
 }
 
 export interface ConfigUpdate {
   name?: string | null; // 1-128 chars
   description?: string | null;
+  tag?: ConfigTag | null;
 }
 
 export interface ConfigVersionCreate {
@@ -117,6 +121,7 @@ export interface ConfigPublic {
   id: string;
   name: string;
   description: string | null;
+  tag?: ConfigTag | null;
   project_id: number;
   inserted_at: string;
   updated_at: string;
@@ -157,3 +162,4 @@ export type ConfigResponse = APIResponse<ConfigPublic>;
 export type ConfigWithVersionResponse = APIResponse<ConfigWithVersion>;
 export type ConfigVersionListResponse = APIResponse<ConfigVersionItems[]>;
 export type ConfigVersionResponse = APIResponse<ConfigVersionPublic>;
+export type ConfigTag = "DEFAULT" | AssessmentConfigTag;

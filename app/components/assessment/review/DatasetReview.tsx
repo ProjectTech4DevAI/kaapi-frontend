@@ -1,0 +1,23 @@
+"use client";
+
+import type { DatasetReviewProps } from "@/app/lib/types/assessment";
+import ReviewSection from "./ReviewSection";
+
+export default function DatasetReview({
+  datasetName,
+  isOpen,
+  onToggle,
+}: DatasetReviewProps) {
+  return (
+    <ReviewSection title="Dataset" isOpen={isOpen} onToggle={onToggle}>
+      <div className="pt-2">
+        <div className="mb-1 text-xs font-medium text-neutral-500">
+          Dataset Name
+        </div>
+        <div className="text-sm font-medium text-neutral-900">
+          {datasetName || "Unknown dataset"}
+        </div>
+      </div>
+    </ReviewSection>
+  );
+}

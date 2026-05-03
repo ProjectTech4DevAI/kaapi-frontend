@@ -1,15 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useId } from "react";
-
-interface JsonEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  error?: string | null;
-  isValid?: boolean;
-  placeholder?: string;
-  minHeight?: number;
-}
+import type { JsonEditorProps } from "@/app/lib/types/assessment";
 
 /* JSON token colors — light background */
 const C = {

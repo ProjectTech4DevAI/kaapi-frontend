@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
+import type { RouteContext } from "@/app/lib/types/assessment";
 
-interface RouteContext {
-  params: Promise<{ assessment_id: string }>;
-}
-
-export async function POST(request: NextRequest, context: RouteContext) {
+export async function POST(
+  request: NextRequest,
+  context: RouteContext<"assessment_id">,
+) {
   try {
     const { assessment_id } = await context.params;
     const { status, data } = await apiClient(

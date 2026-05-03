@@ -3,36 +3,33 @@ import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export type UploadPhase = "uploading" | "processing" | "done";
-type ApiClientOptions = RequestInit & { responseType?: "json" | "raw" };
-type ApiClientJsonResponse = {
+type ApiClientOptions<TResponseType extends "json" | "raw" = "json"> =
+  RequestInit & { responseType?: TResponseType };
+type ApiClientJsonResponse<TData = unknown> = {
   status: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- proxy routes relay heterogeneous backend payloads
-  data: any;
+  data: TData | null;
   headers: Headers;
 };
+type ApiClientResponse<
+  TData,
+  TResponseType extends "json" | "raw",
+> = TResponseType extends "raw" ? Response : ApiClientJsonResponse<TData>;
 
 /** Coalesces concurrent refresh calls into a single request. */
 let refreshPromise: Promise<boolean> | null = null;
 
 /**
  * Forwards a request to the backend, relaying auth headers (X-API-KEY, Cookie).
- * Returns raw { status, data, headers } so the route handler can relay the response.
+ * Returns either a parsed JSON payload or the raw backend response.
  */
-export function apiClient(
+export async function apiClient<
+  TData = unknown,
+  TResponseType extends "json" | "raw" = "json",
+>(
   request: NextRequest | Request,
   endpoint: string,
-  options: RequestInit & { responseType: "raw" },
-): Promise<Response>;
-export function apiClient(
-  request: NextRequest | Request,
-  endpoint: string,
-  options?: RequestInit & { responseType?: "json" },
-): Promise<ApiClientJsonResponse>;
-export async function apiClient(
-  request: NextRequest | Request,
-  endpoint: string,
-  options: ApiClientOptions = {},
-): Promise<Response | ApiClientJsonResponse> {
+  options: ApiClientOptions<TResponseType> = {} as ApiClientOptions<TResponseType>,
+): Promise<ApiClientResponse<TData, TResponseType>> {
   const { responseType = "json", ...requestOptions } = options;
   const apiKey = request.headers.get("X-API-KEY") || "";
   const cookie = request.headers.get("Cookie") || "";
@@ -54,13 +51,17 @@ export async function apiClient(
   });
 
   if (responseType === "raw") {
-    return response;
+    return response as ApiClientResponse<TData, TResponseType>;
   }
 
   const text = response.status === 204 ? "" : await response.text();
-  const data = text ? JSON.parse(text) : null;
+  const data: unknown = text ? JSON.parse(text) : null;
 
-  return { status: response.status, data, headers: response.headers };
+  return {
+    status: response.status,
+    data: data as TData | null,
+    headers: response.headers,
+  } as ApiClientResponse<TData, TResponseType>;
 }
 
 /** Parse an error body into a readable message string. */

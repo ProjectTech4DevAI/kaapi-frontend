@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --background-secondary: #fafafa;
   --foreground: #171717;
@@ -75,16 +76,6 @@
   --color-status-default-bg: hsl(0, 0%, 100%);
   --color-status-default-border: hsl(0, 0%, 85%);
   --color-status-default-text: hsl(330, 3%, 49%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --background-secondary: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a1a1a1;
-    --border: #262626;
-  }
 }
 
 body {
@@ -198,19 +189,6 @@ a {
 
 .animate-slideOut {
   animation: slideOut 0.3s ease-in forwards;
-}
-
-.assessment-indicator-dot-none {
-  background-color: transparent;
-}
-
-.assessment-indicator-underline-none {
-  background-color: #171717;
-}
-
-.assessment-indicator-dot-processing,
-.assessment-indicator-underline-processing {
-  background-color: #f59e0b;
 }
 
 @keyframes toastProgress {

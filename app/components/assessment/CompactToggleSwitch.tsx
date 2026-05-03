@@ -4,12 +4,7 @@ import {
   ToggleOffIcon,
   ToggleOnIcon,
 } from "@/app/components/icons/assessment/ToggleThumbIcons";
-
-interface CompactToggleSwitchProps {
-  checked: boolean;
-  onChange: () => void;
-  title: string;
-}
+import type { CompactToggleSwitchProps } from "@/app/lib/types/assessment";
 
 export default function CompactToggleSwitch({
   checked,

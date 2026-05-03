@@ -1,6 +1,8 @@
-import { FEATURES_UPDATED_EVENT, STORAGE_KEYS } from "@/app/lib/constants";
-
-const FEATURES_COOKIE = "kaapi_features";
+import {
+  COOKIE_KEYS,
+  FEATURES_UPDATED_EVENT,
+  STORAGE_KEYS,
+} from "@/app/lib/constants";
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 function parseFeatures(raw: string | undefined): string[] | null {
@@ -30,7 +32,7 @@ function writeFeaturesCookie(features: string[]): void {
   if (typeof document === "undefined") return;
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   const value = encodeURIComponent(JSON.stringify(features));
-  document.cookie = `${FEATURES_COOKIE}=${value}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+  document.cookie = `${COOKIE_KEYS.FEATURES}=${value}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
 }
 
 function readSessionFeatures(): string[] | null {
@@ -78,7 +80,7 @@ function broadcastFeatures(features: string[]): void {
 
 export function removeFeatureFromClient(feature: string): void {
   const currentFeatures =
-    parseFeatures(readCookie(FEATURES_COOKIE)) ?? readSessionFeatures();
+    parseFeatures(readCookie(COOKIE_KEYS.FEATURES)) ?? readSessionFeatures();
   if (!currentFeatures) return;
 
   const nextFeatures = currentFeatures.filter((value) => value !== feature);

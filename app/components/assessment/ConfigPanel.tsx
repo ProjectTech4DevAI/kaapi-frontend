@@ -1,45 +1,11 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
 import { DatabaseIcon } from "@/app/components/icons";
-import type {
-  AssessmentFormState,
-  ColumnMapping,
-  ConfigSelection,
-  SchemaProperty,
-} from "@/app/lib/types/assessment";
+import type { ConfigPanelProps, Step } from "@/app/lib/types/assessment";
 import ColumnMapperStep from "./ColumnMapperStep";
 import PromptAndConfigStep from "./PromptAndConfigStep";
 import ReviewStep from "./ReviewStep";
-import Stepper, { type Step } from "./Stepper";
-
-interface ConfigPanelProps {
-  apiKey: string;
-  canSubmitAssessment: boolean;
-  columns: string[];
-  columnMapping: ColumnMapping;
-  completedSteps: Set<number>;
-  configStep: number;
-  configs: ConfigSelection[];
-  experimentName: string;
-  formState: AssessmentFormState;
-  hasDataset: boolean;
-  isSubmitting: boolean;
-  outputSchema: SchemaProperty[];
-  outputSchemaJson: object | null;
-  promptTemplate: string;
-  sampleRow: Record<string, string>;
-  setActiveTabToDatasets: () => void;
-  setColumnMapping: (mapping: ColumnMapping) => void;
-  setConfigStep: (step: number) => void;
-  setConfigs: Dispatch<SetStateAction<ConfigSelection[]>>;
-  setExperimentName: (name: string) => void;
-  setOutputSchema: (schema: SchemaProperty[]) => void;
-  setPromptTemplate: (template: string) => void;
-  submitBlockerMessage: string;
-  onSubmit: () => void;
-  onStepComplete: (step: number) => void;
-}
+import Stepper from "./Stepper";
 
 const CONFIG_STEPS: Step[] = [
   { id: 1, label: "Mapper" },
@@ -61,6 +27,7 @@ export default function ConfigPanel({
   isSubmitting,
   outputSchema,
   outputSchemaJson,
+  systemInstruction,
   promptTemplate,
   sampleRow,
   setActiveTabToDatasets,
@@ -69,6 +36,7 @@ export default function ConfigPanel({
   setConfigs,
   setExperimentName,
   setOutputSchema,
+  setSystemInstruction,
   setPromptTemplate,
   submitBlockerMessage,
   onSubmit,
@@ -127,6 +95,8 @@ export default function ConfigPanel({
             apiKey={apiKey}
             textColumns={columnMapping.textColumns}
             sampleRow={sampleRow}
+            systemInstruction={systemInstruction}
+            setSystemInstruction={setSystemInstruction}
             promptTemplate={promptTemplate}
             setPromptTemplate={setPromptTemplate}
             configs={configs}

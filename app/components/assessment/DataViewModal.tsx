@@ -1,14 +1,7 @@
 "use client";
 
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
-
-export interface DataViewModalProps {
-  title: string;
-  subtitle?: string;
-  headers: string[];
-  rows: string[][];
-  onClose: () => void;
-}
+import type { DataViewModalProps } from "@/app/lib/types/assessment";
 
 /**
  * Reusable modal for viewing tabular data (dataset preview, result preview).

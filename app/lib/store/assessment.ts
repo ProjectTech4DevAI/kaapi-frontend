@@ -1,24 +1,8 @@
 import { create } from "zustand";
-import type { ColumnMapping } from "@/app/lib/types/assessment";
-
-interface AssessmentDatasetState {
-  datasetId: string;
-  datasetName: string;
-  columns: string[];
-  sampleRow: Record<string, string>;
-  columnMapping: ColumnMapping;
-
-  setDatasetId: (id: string) => void;
-  setDatasetName: (name: string) => void;
-  setDataset: (
-    datasetId: string,
-    columns: string[],
-    sampleRow: Record<string, string>,
-    datasetName?: string,
-  ) => void;
-  setColumnMapping: (mapping: ColumnMapping) => void;
-  clearDataset: () => void;
-}
+import type {
+  AssessmentDatasetState,
+  ColumnMapping,
+} from "@/app/lib/types/assessment";
 
 const DEFAULT_MAPPING: ColumnMapping = {
   textColumns: [],

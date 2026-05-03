@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
+import { handleForbiddenError } from "@/app/lib/assessment/access";
 import { useToast } from "@/app/components/Toast";
 import {
   RefreshIcon,
@@ -14,70 +15,16 @@ import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
 import DataViewModal, { jsonResultsToTableData } from "./DataViewModal";
 import { ConfigResponse, ConfigVersionResponse } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
-
-interface EvaluationsTabProps {
-  apiKey: string;
-  onForbidden?: () => void;
-  onStatusIndicatorChange?: (state: "none" | "processing") => void;
-}
-
-interface AssessmentRun {
-  id: number;
-  experiment_name: string;
-  dataset_name: string | null;
-  dataset_id: number | null;
-  status: string;
-  total_runs: number;
-  pending_runs: number;
-  processing_runs: number;
-  completed_runs: number;
-  failed_runs: number;
-  run_stats: {
-    run_id: number;
-    config_id: string | null;
-    config_version: number | null;
-    status: string;
-    total_items: number;
-    error_message: string | null;
-    updated_at: string | null;
-  }[];
-  error_message: string | null;
-  inserted_at: string;
-  updated_at: string;
-}
-
-interface EvaluationRun {
-  id: number;
-  assessment_id: number | null;
-  run_name: string;
-  dataset_name: string | null;
-  dataset_id: number | null;
-  config_id: string | null;
-  config_version: number | null;
-  status: string;
-  total_items: number;
-  error_message: string | null;
-  organization_id: number;
-  project_id: number;
-  assessment_config: Record<string, unknown> | null;
-  inserted_at: string;
-  updated_at: string;
-}
-
-interface ConfigRunDetail {
-  configId: string;
-  version: number;
-  name: string;
-  description: string | null;
-  commitMessage: string | null;
-  provider: string | null;
-  model: string | null;
-}
-
-type StatusFilter = "all" | "processing" | "completed" | "failed";
-type ExportFormat = "csv" | "xlsx";
-type AssessmentListResponse = AssessmentRun[] | { data?: AssessmentRun[] };
-type EvaluationListResponse = EvaluationRun[] | { data?: EvaluationRun[] };
+import type {
+  AssessmentChildRun,
+  AssessmentChildRunListResponse,
+  AssessmentListResponse,
+  AssessmentRun,
+  ConfigRunDetail,
+  EvaluationsTabProps,
+  ExportFormat,
+  StatusFilter,
+} from "@/app/lib/types/assessment";
 const RESULTS_POLL_INTERVAL_MS = 60_000;
 const ACTIVE_STATUSES = new Set(["processing", "pending"]);
 const FAILED_STATUSES = new Set(["failed", "completed_with_errors"]);
@@ -109,23 +56,6 @@ const SUMMARY_BADGE_CLASSES: Record<string, string> = {
   completed: "bg-neutral-50 text-green-800",
   failed: "bg-neutral-50 text-red-800",
 };
-
-function handleForbiddenError(
-  error: unknown,
-  onForbidden?: () => void,
-): boolean {
-  if (!(error instanceof Error)) return false;
-  const message = error.message.toLowerCase();
-  const isForbidden =
-    /request failed:\s*403/i.test(error.message) ||
-    message.includes("forbidden") ||
-    message.includes("not enabled") ||
-    message.includes("permission denied");
-
-  if (!isForbidden) return false;
-  onForbidden?.();
-  return true;
-}
 
 function isActiveStatus(status: string): boolean {
   return ACTIVE_STATUSES.has(status);
@@ -233,12 +163,11 @@ function DownloadDropdown({
 export default function EvaluationsTab({
   apiKey,
   onForbidden,
-  onStatusIndicatorChange,
 }: EvaluationsTabProps) {
   const toast = useToast();
   const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
   const [childRunsByAssessment, setChildRunsByAssessment] = useState<
-    Record<number, EvaluationRun[]>
+    Record<number, AssessmentChildRun[]>
   >({});
   const [configDetailsByKey, setConfigDetailsByKey] = useState<
     Record<string, ConfigRunDetail>
@@ -275,27 +204,25 @@ export default function EvaluationsTab({
     setIsLoading(true);
     try {
       const data = await apiFetch<AssessmentListResponse>(
-        "/api/assessment/runs",
+        "/api/assessment/assessments",
         apiKey,
       );
       const list = Array.isArray(data) ? data : data.data || [];
       setAssessments(list);
-      const hasActive = list.some((run) => isActiveStatus(run.status));
-      onStatusIndicatorChange?.(hasActive ? "processing" : "none");
     } catch (e) {
       if (handleForbiddenError(e, onForbidden)) return;
       console.error("Failed to load assessments:", e);
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, onForbidden, onStatusIndicatorChange]);
+  }, [apiKey, onForbidden]);
 
   const loadChildRuns = useCallback(
     async (assessmentId: number) => {
       if (!apiKey) return;
       try {
-        const data = await apiFetch<EvaluationListResponse>(
-          `/api/assessment/evaluations?assessment_id=${assessmentId}`,
+        const data = await apiFetch<AssessmentChildRunListResponse>(
+          `/api/assessment/runs?assessment_id=${assessmentId}`,
           apiKey,
         );
         const list = Array.isArray(data) ? data : data.data || [];
@@ -465,7 +392,7 @@ export default function EvaluationsTab({
   );
 
   const handleRerun = useCallback(
-    async (run: EvaluationRun) => {
+    async (run: AssessmentChildRun) => {
       if (!apiKey) {
         toast.error("Cannot retry without an API key");
         return;
@@ -473,11 +400,11 @@ export default function EvaluationsTab({
 
       setRerunningId(run.id);
       try {
-        await apiFetch(`/api/assessment/evaluations/${run.id}/retry`, apiKey, {
+        await apiFetch(`/api/assessment/runs/${run.id}/retry`, apiKey, {
           method: "POST",
         });
 
-        toast.success("Evaluation re-submitted successfully!");
+        toast.success("Run re-submitted successfully!");
         loadAssessments();
         if (run.assessment_id) {
           loadChildRuns(run.assessment_id);
@@ -501,9 +428,13 @@ export default function EvaluationsTab({
 
       setRetryingAssessmentId(assessmentId);
       try {
-        await apiFetch(`/api/assessment/runs/${assessmentId}/retry`, apiKey, {
-          method: "POST",
-        });
+        await apiFetch(
+          `/api/assessment/assessments/${assessmentId}/retry`,
+          apiKey,
+          {
+            method: "POST",
+          },
+        );
 
         toast.success("Assessment re-submitted successfully!");
         void loadAssessments();
@@ -538,10 +469,7 @@ export default function EvaluationsTab({
       try {
         const json = await apiFetch<
           { data?: Record<string, unknown>[] } | Record<string, unknown>[]
-        >(
-          `/api/assessment/evaluations/${runId}/results?export_format=json`,
-          apiKey,
-        );
+        >(`/api/assessment/runs/${runId}/results?export_format=json`, apiKey);
         const results: Record<string, unknown>[] = Array.isArray(json)
           ? json
           : json.data || [];
@@ -723,7 +651,7 @@ export default function EvaluationsTab({
                             <DownloadDropdown
                               onDownload={(fmt) =>
                                 triggerDownload(
-                                  `/api/assessment/runs/${run.id}/results`,
+                                  `/api/assessment/assessments/${run.id}/results`,
                                   fmt,
                                   `assessment-${run.id}`,
                                 )
@@ -777,7 +705,7 @@ export default function EvaluationsTab({
 
                         {childRuns.length === 0 ? (
                           <div className="text-sm text-neutral-500">
-                            Loading child evaluation runs...
+                            Loading child runs...
                           </div>
                         ) : (
                           childRuns.map((childRun) => {
@@ -908,7 +836,7 @@ export default function EvaluationsTab({
                                       <DownloadDropdown
                                         onDownload={(fmt) =>
                                           triggerDownload(
-                                            `/api/assessment/evaluations/${childRun.id}/results`,
+                                            `/api/assessment/runs/${childRun.id}/results`,
                                             fmt,
                                             `run-${childRun.id}`,
                                           )

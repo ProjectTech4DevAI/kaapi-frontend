@@ -4,7 +4,15 @@ import {
   CACHE_KEY,
   DEFAULT_PAGE_LIMIT,
 } from "@/app/lib/constants";
-import type { ConfigSelection } from "@/app/lib/types/assessment";
+import { ASSESSMENT_CONFIG_TAG } from "@/app/lib/assessment/constants";
+import type {
+  AssessmentModelConfig,
+  ConfigParamDefinition,
+  ConfigSelection,
+  ModelOption,
+  PagedResult,
+  VersionListState,
+} from "@/app/lib/types/assessment";
 import {
   ConfigBlob,
   CompletionParams,
@@ -18,34 +26,6 @@ import {
   ConfigVersionResponse,
   ConfigWithVersionResponse,
 } from "@/app/lib/types/configs";
-
-export type ConfigParamType = "float" | "int" | "enum";
-
-export interface ConfigParamDefinition {
-  type: ConfigParamType;
-  default: number | string;
-  description: string;
-  min?: number;
-  max?: number;
-  options?: string[];
-}
-
-export interface AssessmentModelConfig {
-  provider: "openai";
-  model_name: string;
-  config: Record<string, ConfigParamDefinition>;
-}
-
-export interface ModelOption {
-  value: string;
-  label: string;
-}
-
-export interface PagedResult<T> {
-  items: T[];
-  hasMore: boolean;
-  nextSkip: number;
-}
 
 const GPT4_STYLE_CONFIG = {
   top_p: {
@@ -308,6 +288,20 @@ export const DEFAULT_CONFIG: ConfigBlob = {
   },
 };
 
+export function buildInitialAssessmentConfigDraft(): ConfigBlob {
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as ConfigBlob;
+}
+
+export function buildInitialAssessmentVersionState(): VersionListState {
+  return {
+    items: [],
+    isLoading: false,
+    error: null,
+    hasMore: true,
+    nextSkip: 0,
+  };
+}
+
 function normalizeConfigBlobForApi(configBlob: ConfigBlob): ConfigBlob {
   const nextParams: Partial<CompletionParams> = {};
 
@@ -368,6 +362,7 @@ export async function fetchConfigPage(params: {
   const query = new URLSearchParams({
     skip: String(skip),
     limit: String(limit),
+    tag: ASSESSMENT_CONFIG_TAG,
   });
   const data = await requestJson<ConfigListResponse>(
     `/api/configs?${query.toString()}`,
@@ -523,6 +518,7 @@ export async function saveConfig(params: {
   const configCreate: ConfigCreate = {
     name: trimmedName,
     description: "Assessment configuration",
+    tag: ASSESSMENT_CONFIG_TAG,
     config_blob: normalizedBlob,
     commit_message:
       params.commitMessage.trim() || "Initial assessment configuration",

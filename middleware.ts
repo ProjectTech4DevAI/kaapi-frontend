@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  COOKIE_KEYS,
   FeatureFlag,
   type FeatureFlagKey,
-} from "@/app/lib/constants/featureFlags";
+} from "@/app/lib/constants";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/evaluations",
@@ -23,8 +24,6 @@ const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
 
 const HOME_ROUTE = "/evaluations";
 const PATHNAME_STARTS_WITH = ["/settings"];
-const FEATURES_COOKIE = "kaapi_features";
-
 function parseFeatures(raw: string | undefined): Set<string> {
   if (!raw) return new Set();
   try {
@@ -40,8 +39,10 @@ function parseFeatures(raw: string | undefined): Set<string> {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const role = request.cookies.get("kaapi_role")?.value;
-  const features = parseFeatures(request.cookies.get(FEATURES_COOKIE)?.value);
+  const role = request.cookies.get(COOKIE_KEYS.ROLE)?.value;
+  const features = parseFeatures(
+    request.cookies.get(COOKIE_KEYS.FEATURES)?.value,
+  );
   const isAuthenticated = role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
 

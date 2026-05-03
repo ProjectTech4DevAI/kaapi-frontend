@@ -1,5 +1,8 @@
-import { NextResponse } from "next/server";
-import { apiClient } from "@/app/lib/apiClient";
+import {
+  proxyErrorResponse,
+  proxyJsonResponse,
+  withQueryParams,
+} from "@/app/api/_routeProxy";
 
 export async function GET(
   request: Request,
@@ -7,20 +10,15 @@ export async function GET(
 ) {
   const { document_id } = await params;
   try {
-    const { status, data } = await apiClient(
+    return await proxyJsonResponse(
       request,
-      `/api/v1/documents/${document_id}?include_url=true`,
+      withQueryParams(
+        `/api/v1/documents/${document_id}`,
+        new URLSearchParams({ include_url: "true" }),
+      ),
     );
-    return NextResponse.json(data, { status });
   } catch (error: unknown) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        data: null,
-      },
-      { status: 500 },
-    );
+    return proxyErrorResponse("Document details proxy error:", error);
   }
 }
 
@@ -31,23 +29,14 @@ export async function DELETE(
   const { document_id } = await params;
 
   try {
-    const { status, data } = await apiClient(
+    return await proxyJsonResponse(
       request,
       `/api/v1/documents/${document_id}`,
       {
         method: "DELETE",
       },
     );
-
-    return NextResponse.json(data, { status });
   } catch (error: unknown) {
-    console.error("Delete error:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to delete document",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return proxyErrorResponse("Document delete proxy error:", error);
   }
 }

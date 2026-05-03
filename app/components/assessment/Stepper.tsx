@@ -1,18 +1,7 @@
 "use client";
 
 import { CheckIcon } from "@/app/components/icons";
-
-export interface Step {
-  id: number;
-  label: string;
-}
-
-interface StepperProps {
-  steps: Step[];
-  currentStep: number;
-  onStepClick: (step: number) => void;
-  completedSteps: Set<number>;
-}
+import type { StepperProps } from "@/app/lib/types/assessment";
 
 export default function Stepper({
   steps,

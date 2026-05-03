@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import {
   proxyDownloadOrJsonResponse,
   proxyErrorResponse,
-} from "@/app/api/assessment/_utils";
+  withQueryParams,
+} from "@/app/api/_routeProxy";
 
 export async function GET(
   request: NextRequest,
@@ -10,11 +11,14 @@ export async function GET(
 ) {
   try {
     const { assessment_id } = await params;
-    const queryParams = new URLSearchParams();
+    const queryParams = new URLSearchParams(request.nextUrl.searchParams);
     queryParams.set("get_trace_info", "true");
     return await proxyDownloadOrJsonResponse(
       request,
-      `/api/v1/assessment/assessments/${assessment_id}/results?${queryParams.toString()}`,
+      withQueryParams(
+        `/api/v1/assessment/assessments/${assessment_id}/results`,
+        queryParams,
+      ),
       { method: "GET" },
     );
   } catch (error: unknown) {

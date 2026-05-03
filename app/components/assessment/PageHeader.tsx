@@ -1,10 +1,7 @@
 "use client";
 
 import { MenuIcon } from "@/app/components/icons";
-
-interface PageHeaderProps {
-  onToggleSidebar: () => void;
-}
+import type { PageHeaderProps } from "@/app/lib/types/assessment";
 
 export default function PageHeader({ onToggleSidebar }: PageHeaderProps) {
   return (

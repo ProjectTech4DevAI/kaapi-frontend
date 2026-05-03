@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
-import {
-  proxyErrorResponse,
-  withQueryParams,
-} from "@/app/api/assessment/_utils";
+import { proxyErrorResponse, withQueryParams } from "@/app/api/_routeProxy";
 
 const MAX_DATASET_PROXY_BYTES = 10 * 1024 * 1024;
 

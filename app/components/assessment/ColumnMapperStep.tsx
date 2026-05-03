@@ -4,67 +4,68 @@ import { useEffect, useState } from "react";
 import {
   ATTACHMENT_FORMATS,
   type Attachment,
+  type ColumnConfig,
+  type ColumnRole,
   type ColumnMapping,
+  type ColumnMapperStepProps,
+  type RoleOption,
+  type RoleVisuals,
 } from "@/app/lib/types/assessment";
 
-interface ColumnMapperStepProps {
-  columns: string[];
-  columnMapping: ColumnMapping;
-  setColumnMapping: (mapping: ColumnMapping) => void;
-  onNext: () => void;
-  onBack: () => void;
-}
-
-type ColumnRole = "unmapped" | "text" | "attachment" | "ground_truth";
-
-interface ColumnConfig {
-  role: ColumnRole;
-  attachmentType?: "image" | "pdf";
-  attachmentFormat?: string;
-}
-
-interface RoleOption {
-  value: ColumnRole;
-  label: string;
-  accentClass: string;
-  panelClass: string;
-  buttonClass: string;
-}
-
-const ROLE_OPTIONS: RoleOption[] = [
-  {
+const roleOptionMap: Record<ColumnRole, RoleOption> = {
+  text: {
     value: "text",
     label: "Text",
-    accentClass: "bg-green-800",
-    panelClass: "border-green-800/20 bg-green-900/[0.08]",
-    buttonClass:
-      "border-green-800/20 bg-green-900/[0.08] text-green-800 ring-1 ring-inset ring-green-800/30",
   },
-  {
+  attachment: {
     value: "attachment",
     label: "Attachment",
-    accentClass: "bg-orange-900",
-    panelClass: "border-orange-900/25 bg-orange-950/[0.08]",
-    buttonClass:
-      "border-orange-900/25 bg-orange-950/[0.08] text-orange-900 ring-1 ring-inset ring-orange-900/35",
   },
-  {
+  ground_truth: {
     value: "ground_truth",
     label: "Ground Truth",
-    accentClass: "bg-blue-700",
-    panelClass: "border-blue-700/25 bg-blue-700/[0.08]",
-    buttonClass:
-      "border-blue-700/25 bg-blue-700/[0.08] text-blue-700 ring-1 ring-inset ring-blue-700/35",
   },
-  {
+  unmapped: {
     value: "unmapped",
     label: "Skip",
-    accentClass: "bg-neutral-200",
-    panelClass: "border-neutral-200 bg-neutral-50",
-    buttonClass:
-      "border-neutral-200 bg-neutral-50 text-neutral-900 ring-1 ring-inset ring-neutral-200",
   },
-];
+};
+
+const ROLE_OPTIONS = Object.values(roleOptionMap);
+
+function colorMapping(role: ColumnRole): RoleVisuals {
+  switch (role) {
+    case "text":
+      return {
+        panelClass: "border-emerald-800/20 bg-emerald-900/[0.08]",
+        dotClass: "bg-emerald-800",
+        activeButtonClass:
+          "border-emerald-800/20 bg-emerald-900/[0.08] text-emerald-800 ring-1 ring-inset ring-emerald-800/30",
+      };
+    case "attachment":
+      return {
+        panelClass: "border-orange-900/25 bg-orange-950/[0.08]",
+        dotClass: "bg-orange-900",
+        activeButtonClass:
+          "border-orange-900/25 bg-orange-950/[0.08] text-orange-900 ring-1 ring-inset ring-orange-900/35",
+      };
+    case "ground_truth":
+      return {
+        panelClass: "border-blue-700/25 bg-blue-700/[0.08]",
+        dotClass: "bg-blue-700",
+        activeButtonClass:
+          "border-blue-700/25 bg-blue-700/[0.08] text-blue-700 ring-1 ring-inset ring-blue-700/35",
+      };
+    case "unmapped":
+    default:
+      return {
+        panelClass: "border-border bg-bg-primary",
+        dotClass: "bg-border",
+        activeButtonClass:
+          "border-border bg-bg-secondary text-foreground ring-1 ring-inset ring-border",
+      };
+  }
+}
 
 function buildColumnConfigs(
   columns: string[],
@@ -219,8 +220,8 @@ export default function ColumnMapperStep({
                 role: "unmapped" as ColumnRole,
               };
               const activeOption =
-                ROLE_OPTIONS.find((option) => option.value === config.role) ||
-                ROLE_OPTIONS[3];
+                roleOptionMap[config.role] || roleOptionMap.unmapped;
+              const roleVisuals = colorMapping(activeOption.value);
 
               return (
                 <div
@@ -230,21 +231,13 @@ export default function ColumnMapperStep({
                   }`}
                 >
                   <div
-                    className={`flex flex-col gap-3 rounded-xl border px-3 py-3 ${
-                      config.role === "unmapped"
-                        ? "border-neutral-200 bg-white"
-                        : activeOption.panelClass
-                    }`}
+                    className={`flex flex-col gap-3 rounded-xl border px-3 py-3 ${roleVisuals.panelClass}`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`h-2.5 w-2.5 rounded-full ${
-                              config.role === "unmapped"
-                                ? "bg-neutral-200"
-                                : activeOption.accentClass
-                            }`}
+                            className={`h-2.5 w-2.5 rounded-full ${roleVisuals.dotClass}`}
                           />
                           <span className="font-mono text-sm font-semibold text-neutral-900">
                             {column}
@@ -262,8 +255,8 @@ export default function ColumnMapperStep({
                               onClick={() => updateRole(index, option.value)}
                               className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                                 isActive
-                                  ? option.buttonClass
-                                  : "border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50"
+                                  ? roleVisuals.activeButtonClass
+                                  : "border-border bg-bg-primary text-text-secondary hover:bg-bg-secondary"
                               }`}
                             >
                               {option.label}

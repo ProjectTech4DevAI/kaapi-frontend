@@ -139,3 +139,9 @@ export interface EvalJob {
   inserted_at: string;
   updated_at: string;
 }
+
+export interface EvalJobApiResponse {
+  success?: boolean;
+  error?: string;
+  data?: EvalJob;
+}

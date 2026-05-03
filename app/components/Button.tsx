@@ -56,7 +56,7 @@ export default function Button({
   return (
     <button
       disabled={disabled}
-      className={`rounded-full text-sm font-medium transition-colors inline-flex items-center justify-center gap-2 cursor-pointer ${
+      className={`rounded-full text-sm font-medium transition-colors inline-flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
         sizeStyles[size]
       } ${disabled ? styles.disabled : styles.base} ${
         fullWidth ? "w-full" : ""

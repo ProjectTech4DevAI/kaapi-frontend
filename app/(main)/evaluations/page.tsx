@@ -43,14 +43,13 @@ function SimplifiedEvalContent() {
   const apiKey = activeKey?.key ?? "";
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mounted, setMounted] = useState(false);
-  // Dataset creation state
   const [datasetName, setDatasetName] = useState("");
   const [datasetDescription, setDatasetDescription] = useState("");
   const [duplicationFactor, setDuplicationFactor] = useState("1");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [storedDatasets, setStoredDatasets] = useState<Dataset[]>([]);
-  const [isDatasetsLoading, setIsDatasetsLoading] = useState(false);
+  const [isDatasetsLoading, setIsDatasetsLoading] = useState(true);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>(() => {
     return searchParams.get("dataset") || "";
   });
@@ -90,6 +89,7 @@ function SimplifiedEvalContent() {
 
   useEffect(() => {
     if (isAuthenticated) loadStoredDatasets();
+    else setIsDatasetsLoading(false);
   }, [isAuthenticated, loadStoredDatasets]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

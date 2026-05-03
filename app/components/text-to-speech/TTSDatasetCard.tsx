@@ -2,7 +2,7 @@
 
 import { TTSDataset } from "@/app/lib/types/textToSpeech";
 import { Button } from "@/app/components";
-import TTSDatasetDescription from "./DatasetDescription";
+import TTSDatasetDescription from "@/app/components/text-to-speech/DatasetDescription";
 
 interface TTSDatasetCardProps {
   dataset: TTSDataset;
@@ -16,7 +16,7 @@ export default function TTSDatasetCard({
   onView,
 }: TTSDatasetCardProps) {
   return (
-    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-[3px] border-l-[#DCCFC3]">
+    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-[3px] border-l-accent-secondary/50">
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">

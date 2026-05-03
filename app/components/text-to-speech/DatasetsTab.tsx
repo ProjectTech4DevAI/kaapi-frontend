@@ -143,7 +143,6 @@ export default function DatasetsTab({
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      {/* Left Panel - Dataset List */}
       <div className="flex-1 flex flex-col overflow-hidden bg-bg-secondary">
         <div className="flex-1 overflow-auto p-6">
           <div className="flex items-center justify-between mb-4">
@@ -179,7 +178,6 @@ export default function DatasetsTab({
         </div>
       </div>
 
-      {/* Right Panel - Create Dataset Form */}
       <div
         className="shrink-0 border-l flex flex-col overflow-hidden bg-bg-primary border-border"
         style={{ width: `${leftPanelWidth}px` }}

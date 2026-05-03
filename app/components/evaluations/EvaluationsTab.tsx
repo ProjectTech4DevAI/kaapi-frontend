@@ -42,7 +42,7 @@ export default function EvaluationsTab({
   setActiveTab,
 }: EvaluationsTabProps) {
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assistantConfigs, setAssistantConfigs] = useState<
     Map<string, AssistantConfig>
@@ -117,6 +117,7 @@ export default function EvaluationsTab({
 
   useEffect(() => {
     if (isAuthenticated) fetchEvaluations();
+    else setIsLoading(false);
   }, [isAuthenticated, fetchEvaluations]);
 
   const handleRun = async () => {

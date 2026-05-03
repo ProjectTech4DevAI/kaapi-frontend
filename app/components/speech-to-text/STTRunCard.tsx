@@ -3,7 +3,6 @@
 import { STTRun } from "@/app/lib/types/speechToText";
 import { Button } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
-import StatusBadge from "@/app/components/StatusBadge";
 import { getStatusColor } from "@/app/components/utils";
 
 interface STTRunCardProps {
@@ -38,7 +37,11 @@ export default function STTRunCard({
               </div>
             )}
           </div>
-          <StatusBadge status={run.status} size="sm" />
+          <div
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
+          >
+            {run.status.toUpperCase()}
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-4 mt-3">

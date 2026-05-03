@@ -38,7 +38,7 @@ export default function TTSRunCard({
             )}
           </div>
           <span
-            className={`px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
           >
             {run.status}
           </span>

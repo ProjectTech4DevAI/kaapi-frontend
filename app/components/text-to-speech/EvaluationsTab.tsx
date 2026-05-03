@@ -114,7 +114,6 @@ export default function EvaluationsTab({
 
   return (
     <div className="flex-1 flex overflow-hidden">
-      {/* Left Panel - Evaluation Runs List or Results */}
       <TTSRunsList
         runs={runs}
         isLoadingRuns={isLoadingRuns}
@@ -128,7 +127,6 @@ export default function EvaluationsTab({
         onUpdateFeedback={updateFeedback}
       />
 
-      {/* Right Panel - Evaluation Configuration */}
       {selectedRunId === null && (
         <div
           className="shrink-0 border-l flex flex-col overflow-hidden bg-bg-primary border-border"

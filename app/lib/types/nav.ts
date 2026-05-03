@@ -51,3 +51,14 @@ export interface SettingsNavSection {
   label: string;
   items: SettingsNavItem[];
 }
+
+export interface Tab {
+  id: string;
+  label: string;
+}
+
+export interface TabNavigationProps {
+  tabs: Tab[];
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+}

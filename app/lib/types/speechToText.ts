@@ -146,3 +146,9 @@ export interface CreateRunResponse {
   id: number;
   run_name: string;
 }
+
+export interface STTViewDatasetModalData {
+  name: string;
+  datasetId: number;
+  samples: STTSample[];
+}

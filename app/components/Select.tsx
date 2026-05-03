@@ -19,7 +19,7 @@ export default function Select({
 }: SelectProps) {
   return (
     <select
-      className="w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1"
+      className="w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
       {...props}
     >
       {placeholder && <option value="">{placeholder}</option>}

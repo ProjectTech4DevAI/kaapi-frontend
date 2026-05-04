@@ -42,7 +42,6 @@ export default function EvalRunCard({
                 {timeAgo(job.inserted_at)}
               </div>
             )}
-            {/* Error message (if failed) */}
             {job.error_message && (
               <div className="mt-2 text-xs wrap-break-word overflow-hidden text-status-error-text">
                 {job.error_message}
@@ -50,7 +49,7 @@ export default function EvalRunCard({
             )}
           </div>
           <span
-            className={`px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
           >
             {job.status}
           </span>

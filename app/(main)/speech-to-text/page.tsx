@@ -20,7 +20,6 @@ import ErrorModal from "@/app/components/ErrorModal";
 import DatasetsTab from "@/app/components/speech-to-text/DatasetsTab";
 import EvaluationsTab from "@/app/components/speech-to-text/EvaluationsTab";
 import {
-  Tab,
   AudioFile,
   Dataset,
   STTRun,
@@ -36,6 +35,7 @@ import {
   CreateDatasetResponse,
   CreateRunResponse,
 } from "@/app/lib/types/speechToText";
+import { Tab } from "@/app/lib/types/evaluation";
 
 export default function SpeechToTextPage() {
   const toast = useToast();
@@ -52,7 +52,7 @@ export default function SpeechToTextPage() {
   const [playingFileId, setPlayingFileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
+  const [isLoadingDatasets, setIsLoadingDatasets] = useState(true);
   const [evaluationName, setEvaluationName] = useState("");
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
     null,
@@ -60,7 +60,7 @@ export default function SpeechToTextPage() {
   const [selectedModel, setSelectedModel] = useState("gemini-2.5-pro");
   const [isRunning, setIsRunning] = useState(false);
   const [runs, setRuns] = useState<STTRun[]>([]);
-  const [isLoadingRuns, setIsLoadingRuns] = useState(false);
+  const [isLoadingRuns, setIsLoadingRuns] = useState(true);
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
   const [results, setResults] = useState<STTResult[]>([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);

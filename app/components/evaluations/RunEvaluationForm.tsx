@@ -6,8 +6,7 @@ import Select from "@/app/components/Select";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-
-type Tab = "datasets" | "evaluations";
+import { Tab } from "@/app/lib/types/evaluation";
 
 interface RunEvaluationFormProps {
   storedDatasets: Dataset[];

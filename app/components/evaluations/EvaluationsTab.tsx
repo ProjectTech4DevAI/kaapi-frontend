@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
-import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
+import { EvalJob, AssistantConfig, Tab } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import EvalRunsList from "./EvalRunsList";
 import RunEvaluationForm from "./RunEvaluationForm";
-
-type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;
@@ -42,7 +40,7 @@ export default function EvaluationsTab({
   setActiveTab,
 }: EvaluationsTabProps) {
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assistantConfigs, setAssistantConfigs] = useState<
     Map<string, AssistantConfig>
@@ -117,6 +115,7 @@ export default function EvaluationsTab({
 
   useEffect(() => {
     if (isAuthenticated) fetchEvaluations();
+    else setIsLoading(false);
   }, [isAuthenticated, fetchEvaluations]);
 
   const handleRun = async () => {

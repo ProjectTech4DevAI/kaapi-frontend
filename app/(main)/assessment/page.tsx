@@ -321,7 +321,6 @@ function PageContent() {
         hasDataset,
         isSubmitting,
         outputSchema,
-        outputSchemaJson,
         systemInstruction,
         promptTemplate,
         sampleRow,

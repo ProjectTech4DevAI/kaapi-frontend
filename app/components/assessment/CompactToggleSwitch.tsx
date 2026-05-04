@@ -24,7 +24,7 @@ export default function CompactToggleSwitch({
       title={title}
       className={`h-7 w-12 cursor-pointer flex-shrink-0 rounded-full border p-0.5 transition-colors ${
         checked
-          ? "border-neutral-900/90 bg-neutral-900/90"
+          ? "border-accent-primary bg-accent-primary"
           : "border-neutral-200 bg-neutral-50"
       }`}
     >
@@ -32,7 +32,7 @@ export default function CompactToggleSwitch({
         <span
           className={`flex h-5 w-5 items-center justify-center rounded-full shadow-sm transition-transform ${
             checked
-              ? "translate-x-6 bg-white text-neutral-950"
+              ? "translate-x-6 bg-white text-accent-primary"
               : "translate-x-0 bg-white text-neutral-500"
           }`}
         >

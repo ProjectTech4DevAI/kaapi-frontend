@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { handleForbiddenError } from "@/app/lib/assessment/access";
@@ -9,7 +9,10 @@ import {
   getAsyncErrorMessage,
   getResultsCounts,
 } from "@/app/lib/assessment/results";
-import { RESULTS_POLL_INTERVAL_MS } from "@/app/lib/assessment/constants";
+import {
+  ASSESSMENT_TAG,
+  RESULTS_POLL_INTERVAL_MS,
+} from "@/app/lib/assessment/constants";
 import type {
   ConfigResponse,
   ConfigVersionResponse,
@@ -31,6 +34,29 @@ interface UseAssessmentResultsParams {
   toast: ToastContextType;
 }
 import { jsonResultsToTableData } from "../DataViewModal";
+
+const CONFIG_VERSION_UNAVAILABLE_MESSAGE =
+  "Config version was tampered or changed.";
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
+  );
+}
+
+function getConfigDetailErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  const normalized = message.toLowerCase();
+  if (
+    message.includes("404") ||
+    normalized.includes("not found") ||
+    normalized.includes("unavailable")
+  ) {
+    return CONFIG_VERSION_UNAVAILABLE_MESSAGE;
+  }
+  return message || "Failed to load configuration details";
+}
 
 export default function useAssessmentResults({
   onForbidden,
@@ -62,6 +88,9 @@ export default function useAssessmentResults({
   const [previewLoading, setPreviewLoading] = useState<number | null>(null);
   const [previewModal, setPreviewModal] =
     useState<AssessmentResultsPreview | null>(null);
+  const configDetailControllersRef = useRef<Record<string, AbortController>>(
+    {},
+  );
 
   const buildAuthHeaders = useCallback(() => {
     const headers = new Headers();
@@ -110,7 +139,13 @@ export default function useAssessmentResults({
       if (!isAuthenticated) return;
 
       const key = `${configId}:${version}`;
-      if (configDetailsByKey[key] || configLoadingKeys[key]) return;
+      if (
+        configDetailsByKey[key] ||
+        configLoadingKeys[key] ||
+        configErrorKeys[key]
+      ) {
+        return;
+      }
 
       setConfigLoadingKeys((prev) => ({ ...prev, [key]: true }));
       setConfigErrorKeys((prev) => {
@@ -119,12 +154,22 @@ export default function useAssessmentResults({
         return next;
       });
 
+      configDetailControllersRef.current[key]?.abort();
+      const controller = new AbortController();
+      configDetailControllersRef.current[key] = controller;
+
       try {
+        const query = new URLSearchParams({ tag: ASSESSMENT_TAG });
         const [configResponse, versionResponse] = await Promise.all([
-          apiFetch<ConfigResponse>(`/api/configs/${configId}`, apiKey),
-          apiFetch<ConfigVersionResponse>(
-            `/api/configs/${configId}/versions/${version}`,
+          apiFetch<ConfigResponse>(
+            `/api/configs/${configId}?${query.toString()}`,
             apiKey,
+            { signal: controller.signal },
+          ),
+          apiFetch<ConfigVersionResponse>(
+            `/api/configs/${configId}/versions/${version}?${query.toString()}`,
+            apiKey,
+            { signal: controller.signal },
           ),
         ]);
 
@@ -155,14 +200,15 @@ export default function useAssessmentResults({
 
         setConfigDetailsByKey((prev) => ({ ...prev, [key]: detail }));
       } catch (error) {
+        if (isAbortError(error)) return;
         setConfigErrorKeys((prev) => ({
           ...prev,
-          [key]:
-            error instanceof Error
-              ? error.message
-              : "Failed to load configuration details",
+          [key]: getConfigDetailErrorMessage(error),
         }));
       } finally {
+        if (configDetailControllersRef.current[key] === controller) {
+          delete configDetailControllersRef.current[key];
+        }
         setConfigLoadingKeys((prev) => {
           const next = { ...prev };
           delete next[key];
@@ -170,8 +216,21 @@ export default function useAssessmentResults({
         });
       }
     },
-    [apiKey, configDetailsByKey, configLoadingKeys, isAuthenticated],
+    [
+      apiKey,
+      configDetailsByKey,
+      configErrorKeys,
+      configLoadingKeys,
+      isAuthenticated,
+    ],
   );
+
+  useEffect(() => {
+    const controllers = configDetailControllersRef.current;
+    return () => {
+      Object.values(controllers).forEach((controller) => controller.abort());
+    };
+  }, []);
 
   useEffect(() => {
     loadAssessments();

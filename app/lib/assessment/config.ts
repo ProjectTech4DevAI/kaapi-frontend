@@ -114,11 +114,7 @@ async function requestJson<T>(
   apiKey: string | null | undefined,
   init?: RequestInit,
 ): Promise<T> {
-  if (!apiKey) {
-    throw new Error("No API key selected. Please choose one in the Keystore.");
-  }
-
-  return apiFetch<T>(url, apiKey, init);
+  return apiFetch<T>(url, apiKey ?? "", init);
 }
 
 export function invalidateConfigCache(): void {
@@ -166,6 +162,7 @@ export async function fetchConfigVersionsPage(
   const query = new URLSearchParams({
     skip: String(skip),
     limit: String(limit),
+    tag: ASSESSMENT_TAG,
   });
   const data = await requestJson<ConfigVersionListResponse>(
     `/api/configs/${configId}/versions?${query.toString()}`,
@@ -184,8 +181,9 @@ export async function fetchConfigVersionDetail(
   configId: string,
   versionNumber: number,
 ): Promise<ConfigVersionPublic> {
+  const query = new URLSearchParams({ tag: ASSESSMENT_TAG });
   const data = await requestJson<ConfigVersionResponse>(
-    `/api/configs/${configId}/versions/${versionNumber}`,
+    `/api/configs/${configId}/versions/${versionNumber}?${query.toString()}`,
     apiKey,
   );
 

@@ -7,7 +7,6 @@ import {
 } from "@/app/lib/assessment/constants";
 import type {
   AssessmentFormState,
-  JsonSchemaValue,
   ValueSetter,
 } from "@/app/lib/types/assessment";
 
@@ -26,7 +25,6 @@ interface ReviewStepProps {
   setExperimentName: ValueSetter<string>;
   isSubmitting: boolean;
   canSubmit: boolean;
-  outputSchemaJson: JsonSchemaValue;
   submitBlockerMessage: string;
   onSubmit: () => void;
   onBack: () => void;
@@ -37,7 +35,6 @@ import ConfigsReview from "./review/ConfigsReview";
 import DatasetReview from "./review/DatasetReview";
 import ExperimentReview from "./review/ExperimentReview";
 import InputReview from "./review/InputReview";
-import PayloadReview from "./review/PayloadReview";
 import SchemaReview from "./review/SchemaReview";
 import SubmitReview from "./review/SubmitReview";
 
@@ -74,14 +71,12 @@ export default function ReviewStep({
   setExperimentName,
   isSubmitting,
   canSubmit,
-  outputSchemaJson,
   submitBlockerMessage,
   onSubmit,
   onBack,
   onEditStep,
 }: ReviewStepProps) {
   const {
-    datasetId,
     datasetName,
     columnMapping,
     systemInstruction,
@@ -113,7 +108,7 @@ export default function ReviewStep({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="mx-auto w-full max-w-2xl flex-1 space-y-4">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 pb-8">
         <div className="mb-2">
           <h2 className="text-lg font-semibold text-text-primary">
             Review & Submit
@@ -161,16 +156,6 @@ export default function ReviewStep({
           isOpen={openSections.has(REVIEW_SECTIONS.schema)}
           onToggle={() => toggleSection(REVIEW_SECTIONS.schema)}
           onEdit={() => onEditStep(2)}
-        />
-
-        <PayloadReview
-          experimentName={experimentName}
-          datasetId={datasetId}
-          systemInstruction={systemInstruction}
-          promptTemplate={promptTemplate}
-          columnMapping={columnMapping}
-          outputSchemaJson={outputSchemaJson}
-          configs={configs}
         />
       </div>
 

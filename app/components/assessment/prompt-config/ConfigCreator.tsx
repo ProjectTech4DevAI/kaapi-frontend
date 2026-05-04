@@ -114,7 +114,7 @@ export default function ConfigCreator({
 
       <div className="grid gap-3">
         <Field
-          label="AI Configuration name"
+          label="AI Configuration Name"
           value={configName}
           onChange={setConfigName}
           placeholder="Helpful grader"

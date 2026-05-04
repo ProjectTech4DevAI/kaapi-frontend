@@ -131,32 +131,32 @@ export default function CreatePanel({
             </div>
           )}
         </div>
-      </div>
 
-      <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-primary px-4 py-3">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onResetForm}
-          className="!rounded-lg"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          onClick={onCreateDataset}
-          disabled={!uploadedFile || !datasetName.trim() || isUploading}
-          className="!rounded-lg"
-        >
-          {isUploading ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />
-              Creating...
-            </>
-          ) : (
-            "Create Dataset"
-          )}
-        </Button>
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onResetForm}
+            className="!rounded-lg"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={onCreateDataset}
+            disabled={!uploadedFile || !datasetName.trim() || isUploading}
+            className="!rounded-lg"
+          >
+            {isUploading ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />
+                Creating...
+              </>
+            ) : (
+              "Create Dataset"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

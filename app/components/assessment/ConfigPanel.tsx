@@ -21,7 +21,6 @@ export default function ConfigPanel({
   hasDataset,
   isSubmitting,
   outputSchema,
-  outputSchemaJson,
   systemInstruction,
   promptTemplate,
   sampleRow,
@@ -113,7 +112,6 @@ export default function ConfigPanel({
             setExperimentName={setExperimentName}
             isSubmitting={isSubmitting}
             canSubmit={canSubmitAssessment}
-            outputSchemaJson={outputSchemaJson}
             submitBlockerMessage={submitBlockerMessage}
             onSubmit={onSubmit}
             onBack={() => setConfigStep(2)}

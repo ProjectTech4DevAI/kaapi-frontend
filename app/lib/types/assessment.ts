@@ -167,7 +167,6 @@ export interface ConfigPanelProps {
   hasDataset: boolean;
   isSubmitting: boolean;
   outputSchema: SchemaProperty[];
-  outputSchemaJson: JsonSchemaValue;
   systemInstruction: string;
   promptTemplate: string;
   sampleRow: SampleRow;

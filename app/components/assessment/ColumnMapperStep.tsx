@@ -24,21 +24,21 @@ function colorMapping(role: ColumnRole): RoleVisuals {
         panelClass: "border-status-success-border bg-status-success-bg",
         dotClass: "bg-status-success",
         activeButtonClass:
-          "border-status-success-border bg-status-success-bg text-status-success-text ring-1 ring-inset ring-status-success-border",
+          "!border-status-success-border !bg-status-success-bg !text-status-success-text hover:!bg-status-success-bg !ring-0",
       };
     case "attachment":
       return {
         panelClass: "border-status-warning-border bg-status-warning-bg",
         dotClass: "bg-status-warning",
         activeButtonClass:
-          "border-status-warning-border bg-status-warning-bg text-status-warning-text ring-1 ring-inset ring-status-warning-border",
+          "!border-status-warning-border !bg-status-warning-bg !text-status-warning-text hover:!bg-status-warning-bg !ring-0",
       };
     case "ground_truth":
       return {
         panelClass: "border-accent-subtle bg-accent-subtle/20",
         dotClass: "bg-accent-primary",
         activeButtonClass:
-          "border-accent-subtle bg-accent-subtle/20 text-accent-primary ring-1 ring-inset ring-accent-subtle",
+          "!border-accent-subtle !bg-accent-subtle/20 !text-accent-primary hover:!bg-accent-subtle/20 !ring-0",
       };
     case "unmapped":
     default:
@@ -46,7 +46,7 @@ function colorMapping(role: ColumnRole): RoleVisuals {
         panelClass: "border-border bg-bg-primary",
         dotClass: "bg-border",
         activeButtonClass:
-          "border-border bg-bg-secondary text-text-primary ring-1 ring-inset ring-border",
+          "!border-border !bg-bg-secondary !text-text-primary hover:!bg-bg-secondary !ring-0",
       };
   }
 }
@@ -237,13 +237,13 @@ export default function ColumnMapperStep({
                             <Button
                               key={option.value}
                               type="button"
-                              variant={isActive ? "secondary" : "outline"}
+                              variant="outline"
                               size="sm"
                               onClick={() => updateRole(index, option.value)}
                               className={`!rounded-full !px-4 !py-2 ${
                                 isActive
                                   ? roleVisuals.activeButtonClass
-                                  : "!bg-bg-primary text-text-secondary hover:!bg-bg-secondary"
+                                  : "!bg-bg-primary !text-text-secondary hover:!bg-bg-secondary"
                               }`}
                             >
                               {option.label}

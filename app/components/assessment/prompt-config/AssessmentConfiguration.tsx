@@ -2,7 +2,6 @@
 
 import { Button } from "@/app/components";
 import {
-  MAX_CONFIGS,
   type ConfigMode,
   type ConfigSelection,
   type ValueSetter,
@@ -87,20 +86,6 @@ export default function AssessmentConfiguration({
               : "Choose at least one configuration"}
           </div>
         </div>
-        {configs.length > 0 && configs.length < MAX_CONFIGS && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={(event) => {
-              event.preventDefault();
-              setConfigMode("existing");
-            }}
-            className="!min-w-[64px] !rounded-lg !px-3 !py-1.5 !text-xs !font-semibold"
-          >
-            Add more
-          </Button>
-        )}
       </summary>
 
       {configs.length > 0 && (

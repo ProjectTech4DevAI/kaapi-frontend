@@ -8,9 +8,11 @@ export async function GET(
   const { config_id } = await params;
 
   try {
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
     const { status, data } = await apiClient(
       request,
-      `/api/v1/configs/${config_id}`,
+      `/api/v1/configs/${config_id}${queryString ? `?${queryString}` : ""}`,
     );
     return NextResponse.json(data, { status });
   } catch (_error) {

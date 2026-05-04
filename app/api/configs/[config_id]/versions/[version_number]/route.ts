@@ -10,9 +10,11 @@ export async function GET(
   const { config_id, version_number } = await params;
 
   try {
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
     const { status, data } = await apiClient(
       request,
-      `/api/v1/configs/${config_id}/versions/${version_number}`,
+      `/api/v1/configs/${config_id}/versions/${version_number}${queryString ? `?${queryString}` : ""}`,
     );
     return NextResponse.json(data, { status });
   } catch (_error) {

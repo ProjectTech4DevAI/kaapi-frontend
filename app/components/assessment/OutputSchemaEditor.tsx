@@ -228,7 +228,7 @@ export function OutputSchemaModal({
     <Modal
       open
       onClose={onClose}
-      maxWidth="w-[720px] max-w-[90vw]"
+      maxWidth="!w-[760px] !max-w-[calc(100vw-2rem)]"
       maxHeight="max-h-[85vh]"
       showClose={false}
     >

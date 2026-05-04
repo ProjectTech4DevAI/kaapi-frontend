@@ -1,5 +1,7 @@
 "use client";
 
+// Top-level layout for the /assessment page. Renders the sidebar, tab navigation,
+// and the active tab content (Datasets, Config wizard, or Evaluations).
 import Sidebar from "@/app/components/Sidebar";
 import TabNavigation from "@/app/components/TabNavigation";
 import PageHeader from "@/app/components/PageHeader";

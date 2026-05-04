@@ -1,11 +1,14 @@
 "use client";
 
+// Entry point for the /assessment route.
+// Owns all top-level assessment state (selected dataset, column mapping, prompt, configs, schema)
+// and submits the run via POST /api/assessment/runs. Delegates rendering to PageLayout.
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Loader from "@/app/components/Loader";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
-import { handleForbiddenError } from "@/app/lib/assessment/access";
+import { handleForbiddenError } from "@/app/lib/utils/assessment";
 import { FeatureFlag } from "@/app/lib/constants";
 import { removeFeatureFromClient } from "@/app/lib/featureState";
 import { useAuth } from "@/app/lib/context/AuthContext";

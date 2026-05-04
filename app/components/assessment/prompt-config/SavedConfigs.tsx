@@ -5,8 +5,6 @@ import { buildInitialAssessmentVersionState } from "@/app/lib/assessment/config"
 import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
 import type { ValueSetter, VersionListState } from "@/app/lib/types/assessment";
 
-export type { VersionListState };
-
 interface SavedConfigsProps {
   configCards: ConfigPublic[];
   searchQuery: string;

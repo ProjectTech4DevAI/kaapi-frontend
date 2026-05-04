@@ -1,11 +1,19 @@
 "use client";
 
+// Datasets tab for the Assessment page. Lists existing datasets, handles upload via
+// /api/assessment/datasets (POST), delete via /api/assessment/datasets/:id (DELETE),
+// and preview by fetching file content with ?fetch_content=true.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { handleForbiddenError } from "@/app/lib/assessment/access";
+import {
+  extractCreatedDataset,
+  fetchAndParseDatasetFile,
+  handleForbiddenError,
+  isAllowedDatasetFile,
+} from "@/app/lib/utils/assessment";
 import type {
   CreateDatasetResponse,
   DatasetResponse,
@@ -16,11 +24,6 @@ import DataViewModal from "./DataViewModal";
 import DeleteModal from "./datasets/DeleteModal";
 import CreatePanel from "./datasets/CreatePanel";
 import DatasetList from "./datasets/DatasetList";
-import {
-  extractCreatedDataset,
-  fetchAndParseDatasetFile,
-  isAllowedDatasetFile,
-} from "./datasets/utils";
 
 export default function DatasetsTab({
   onForbidden,

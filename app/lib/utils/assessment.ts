@@ -1,3 +1,4 @@
+// Utility helpers for the Assessment feature.
 import * as XLSX from "xlsx";
 import { apiFetch } from "@/app/lib/apiClient";
 import { ALLOWED_DATASET_EXTENSIONS } from "@/app/lib/assessment/constants";
@@ -75,4 +76,21 @@ export function extractCreatedDataset(data: CreateDatasetResponse) {
     (data as { data?: { dataset_id?: number; dataset_name?: string } }).data ??
     (data as { dataset_id?: number; dataset_name?: string })
   );
+}
+
+export function handleForbiddenError(
+  error: unknown,
+  onForbidden?: () => void,
+): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  const isForbidden =
+    /request failed:\s*403/i.test(error.message) ||
+    message.includes("forbidden") ||
+    message.includes("not enabled") ||
+    message.includes("permission denied");
+
+  if (!isForbidden) return false;
+  onForbidden?.();
+  return true;
 }

@@ -1,5 +1,8 @@
 "use client";
 
+// Evaluations tab for the Assessment page. Displays assessment run cards with status,
+// supports retry via /api/assessment/assessments/:id/retry, and exports results via
+// /api/assessment/assessments/:id/results.
 import { useEffect, useRef, useState } from "react";
 import { Button, RunsListSkeleton } from "@/app/components";
 import Select from "@/app/components/Select";

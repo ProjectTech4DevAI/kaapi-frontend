@@ -14,7 +14,6 @@ export const colors = {
   text: {
     primary: "#171717",
     secondary: "#737373",
-    white: "#ffffff",
   },
 
   // Borders

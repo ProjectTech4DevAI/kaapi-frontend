@@ -1,3 +1,6 @@
+// BFF proxy for assessment dataset collection.
+// GET  /api/assessment/datasets  → backend GET  /api/v1/assessment/datasets
+// POST /api/assessment/datasets  → backend POST /api/v1/assessment/datasets (multipart upload)
 import { NextRequest } from "next/server";
 import { proxyErrorResponse, proxyJsonResponse } from "@/app/api/_routeProxy";
 

@@ -1,15 +1,5 @@
 import { apiClient } from "@/app/lib/apiClient";
 import { NextResponse } from "next/server";
-import {
-  proxyErrorResponse,
-  proxyJsonResponse,
-  withQueryParams,
-} from "@/app/api/_routeProxy";
-
-type DatasetDetailsPayload = Record<string, unknown> & {
-  data?: { signed_url?: string } | null;
-  signed_url?: string;
-};
 
 export async function GET(
   request: Request,
@@ -18,12 +8,19 @@ export async function GET(
   const { dataset_id } = await params;
 
   try {
-    const { data, status } = await apiClient<DatasetDetailsPayload>(
+    // Forward query parameters to the backend
+    const { searchParams } = new URL(request.url);
+    const backendParams = new URLSearchParams();
+    for (const [key, value] of searchParams.entries()) {
+      backendParams.append(key, value);
+    }
+    const queryString = backendParams.toString()
+      ? `?${backendParams.toString()}`
+      : "";
+
+    const { data, status } = await apiClient(
       request,
-      withQueryParams(
-        `/api/v1/evaluations/tts/datasets/${dataset_id}`,
-        new URL(request.url).searchParams,
-      ),
+      `/api/v1/evaluations/tts/datasets/${dataset_id}${queryString}`,
     );
 
     // If fetch_content=true, download the CSV from the signed URL and return it
@@ -45,14 +42,17 @@ export async function GET(
       }
       const csvText = await csvResponse.text();
       return NextResponse.json(
-        { ...(data ?? {}), csv_content: csvText },
+        { ...data, csv_content: csvText },
         { status: 200 },
       );
     }
 
     return NextResponse.json(data, { status });
-  } catch (error: unknown) {
-    return proxyErrorResponse("TTS dataset details proxy error:", error);
+  } catch (_error) {
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch dataset", data: null },
+      { status: 500 },
+    );
   }
 }
 
@@ -63,12 +63,20 @@ export async function DELETE(
   const { dataset_id } = await params;
 
   try {
-    return await proxyJsonResponse(
+    const { data, status } = await apiClient(
       request,
       `/api/v1/evaluations/tts/datasets/${dataset_id}`,
       { method: "DELETE" },
     );
+    return NextResponse.json(data, { status });
   } catch (error: unknown) {
-    return proxyErrorResponse("TTS dataset delete proxy error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete dataset",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

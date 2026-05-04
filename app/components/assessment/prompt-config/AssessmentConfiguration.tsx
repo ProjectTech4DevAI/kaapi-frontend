@@ -5,10 +5,11 @@ import {
   type ConfigMode,
   type ConfigSelection,
   type ValueSetter,
+  type VersionListState,
 } from "@/app/lib/types/assessment";
 import type { ConfigPublic } from "@/app/lib/types/configs";
 import ConfigCreator, { type ConfigCreatorProps } from "./ConfigCreator";
-import SavedConfigs, { type VersionListState } from "./SavedConfigs";
+import SavedConfigs from "./SavedConfigs";
 import SelectedConfigs from "./SelectedConfigs";
 
 interface AssessmentConfigurationProps extends Omit<

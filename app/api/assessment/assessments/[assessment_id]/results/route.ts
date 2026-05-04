@@ -1,3 +1,5 @@
+// BFF proxy for assessment results. Supports JSON and file download responses.
+// GET /api/assessment/assessments/:id/results → backend GET /api/v1/assessment/assessments/:id/results
 import { NextRequest } from "next/server";
 import {
   proxyDownloadOrJsonResponse,

@@ -1,3 +1,5 @@
+// BFF proxy for child run results. Supports JSON and file download responses.
+// GET /api/assessment/runs/:id/results → backend GET /api/v1/assessment/runs/:id/results
 import { NextRequest } from "next/server";
 import {
   proxyDownloadOrJsonResponse,

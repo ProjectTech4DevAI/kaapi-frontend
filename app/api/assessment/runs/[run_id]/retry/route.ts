@@ -1,3 +1,5 @@
+// BFF proxy to retry a failed child run.
+// POST /api/assessment/runs/:id/retry → backend POST /api/v1/assessment/runs/:id/retry
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 import type { RouteContext } from "@/app/lib/types/assessment";

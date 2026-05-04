@@ -1,3 +1,5 @@
+// Zustand store for the currently selected assessment dataset.
+// Persists dataset id, name, columns, sample row, and column mapping across wizard steps.
 import { create } from "zustand";
 import type {
   AssessmentDatasetState,

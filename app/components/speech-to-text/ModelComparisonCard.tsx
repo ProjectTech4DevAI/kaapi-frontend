@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * ModelComparisonCard Component
- *
- * Minimal card design showing just the essentials:
- * - Model name + WER score
- * - Expandable for full details
- */
-
 import React, { useState, useEffect } from "react";
 import { colors } from "@/app/lib/colors";
 import { ChevronDownIcon, ChevronRightIcon } from "@/app/components/icons";
@@ -38,15 +30,13 @@ interface ModelComparisonCardProps {
   compact?: boolean;
 }
 
-// Get WER color based on value
 const getWerColor = (wer: number) => {
   if (wer < 5) return colors.status.success;
-  if (wer < 10) return "#ca8a04"; // yellow-600
+  if (wer < 10) return "#ca8a04";
   if (wer < 20) return colors.status.warning;
   return colors.status.error;
 };
 
-// Get WER label
 const getWerLabel = (wer: number) => {
   if (wer < 5) return "Excellent";
   if (wer < 10) return "Good";
@@ -71,12 +61,10 @@ export default function ModelComparisonCard({
   const werPercent = strictMetrics ? strictMetrics.wer * 100 : null;
   const lenientWerPercent = lenientMetrics ? lenientMetrics.wer * 100 : null;
 
-  // Reset expanded state when model changes.
   useEffect(() => {
     setIsExpanded(false);
   }, [modelId]);
 
-  // Reset expanded state while pending.
   useEffect(() => {
     if (status === "pending") {
       setIsExpanded(false);
@@ -88,7 +76,6 @@ export default function ModelComparisonCard({
     setIsExpanded((prev) => !prev);
   };
 
-  // Check if we have enough data to show expanded content
   const hasExpandedContent =
     status === "success" && (transcript || strictMetrics);
 
@@ -105,11 +92,9 @@ export default function ModelComparisonCard({
         borderWidth: isBest ? "2px" : "1px",
       }}
     >
-      {/* Minimal Header - Always Visible */}
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            {/* Model Name */}
             <span
               className="text-sm font-medium truncate"
               style={{ color: colors.text.primary }}
@@ -117,7 +102,6 @@ export default function ModelComparisonCard({
               {modelName}
             </span>
 
-            {/* Best Badge - small */}
             {isBest && (
               <span className="text-xs px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 bg-[#dcfce7] text-[#15803d]">
                 Best
@@ -125,7 +109,6 @@ export default function ModelComparisonCard({
             )}
           </div>
 
-          {/* Right side: Status/WER + Expand */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {status === "pending" && (
               <div
@@ -152,7 +135,6 @@ export default function ModelComparisonCard({
               </span>
             )}
 
-            {/* Expand Button - only show if there's content to expand */}
             {hasExpandedContent && (
               <button
                 type="button"
@@ -175,7 +157,6 @@ export default function ModelComparisonCard({
           </div>
         </div>
 
-        {/* Error Message */}
         {status === "error" && (
           <div
             className="text-xs mt-2 truncate"
@@ -186,7 +167,6 @@ export default function ModelComparisonCard({
         )}
       </div>
 
-      {/* Expanded Details - only render if expanded AND has content */}
       {isExpanded && hasExpandedContent && (
         <div
           id={detailsId}
@@ -196,7 +176,6 @@ export default function ModelComparisonCard({
             backgroundColor: colors.bg.secondary,
           }}
         >
-          {/* WER Comparison */}
           {werPercent !== null && lenientWerPercent !== null ? (
             <div className="grid grid-cols-2 gap-3">
               <div
@@ -251,7 +230,6 @@ export default function ModelComparisonCard({
               </div>
             </div>
           ) : (
-            // Show loading state for WER if not available yet
             <div className="flex items-center justify-center py-2">
               <div
                 className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin mr-2"
@@ -269,7 +247,6 @@ export default function ModelComparisonCard({
             </div>
           )}
 
-          {/* Error Breakdown */}
           {strictMetrics && (
             <div className="grid grid-cols-4 gap-2 text-center">
               <div
@@ -343,7 +320,6 @@ export default function ModelComparisonCard({
             </div>
           )}
 
-          {/* Transcription */}
           {transcript && (
             <div>
               <div
@@ -364,7 +340,6 @@ export default function ModelComparisonCard({
             </div>
           )}
 
-          {/* View Diff Button */}
           {onClick && (
             <button
               type="button"

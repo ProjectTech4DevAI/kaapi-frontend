@@ -1,3 +1,5 @@
+// BFF proxy for assessment list.
+// GET /api/assessment/assessments → forwards to backend GET /api/v1/assessment/assessments
 import { NextRequest } from "next/server";
 import {
   proxyErrorResponse,

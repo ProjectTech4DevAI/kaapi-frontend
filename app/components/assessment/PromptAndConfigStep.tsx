@@ -13,6 +13,7 @@ import {
   type SchemaProperty,
   type StateSetter,
   type ValueSetter,
+  type VersionListState,
 } from "@/app/lib/types/assessment";
 
 interface PromptAndConfigStepProps {
@@ -29,7 +30,6 @@ interface PromptAndConfigStepProps {
   outputSchema: SchemaProperty[];
   setOutputSchema: ValueSetter<SchemaProperty[]>;
 }
-import type { VersionListState } from "./prompt-config/SavedConfigs";
 import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
 import { ASSESSMENT_CONFIG_VERSION_PAGE_SIZE } from "@/app/lib/assessment/constants";
 import {

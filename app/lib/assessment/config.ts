@@ -1,3 +1,6 @@
+// Config management helpers for the Assessment feature: fetching paginated config/version
+// lists, saving (create or update) configs, and building default drafts.
+// Calls /api/configs and /api/configs/:id/versions (BFF routes).
 import { apiFetch } from "@/app/lib/apiClient";
 import {
   CACHE_INVALIDATED_EVENT,

@@ -1,3 +1,6 @@
+// BFF proxy for assessment run collection.
+// GET  /api/assessment/runs → backend GET  /api/v1/assessment/runs (filterable via query params)
+// POST /api/assessment/runs → backend POST /api/v1/assessment/runs (triggers a new run)
 import { NextRequest } from "next/server";
 import {
   proxyErrorResponse,

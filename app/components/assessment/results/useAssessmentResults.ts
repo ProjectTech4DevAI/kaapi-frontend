@@ -1,9 +1,11 @@
 "use client";
 
+// Custom hook that fetches and polls assessment runs from /api/assessment/assessments.
+// Handles status filtering, retry actions, result counts, and auto-refresh while any run is active.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { handleForbiddenError } from "@/app/lib/assessment/access";
+import { handleForbiddenError } from "@/app/lib/utils/assessment";
 import {
   filterAssessments,
   getAsyncErrorMessage,

@@ -1,3 +1,5 @@
+// Central TypeScript type definitions for the Assessment feature.
+// Shared across API routes, components, store, and lib utilities.
 import type { Dispatch, SetStateAction } from "react";
 import type { Dataset } from "@/app/lib/types/dataset";
 import type { ConfigVersionItems } from "@/app/lib/types/configs";

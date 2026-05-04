@@ -60,7 +60,7 @@ export default function GroupedResultsTable({
           <thead>
             <tr className="bg-bg-secondary border-b border-border">
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{
                   width: `${COLUMN_WIDTHS.qId}px`,
                   minWidth: `${COLUMN_WIDTHS.qId}px`,
@@ -69,7 +69,7 @@ export default function GroupedResultsTable({
                 Q.ID
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{
                   width: `${COLUMN_WIDTHS.question}px`,
                   minWidth: `${COLUMN_WIDTHS.question}px`,
@@ -78,7 +78,7 @@ export default function GroupedResultsTable({
                 Question
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{
                   width: `${COLUMN_WIDTHS.groundTruth}px`,
                   minWidth: `${COLUMN_WIDTHS.groundTruth}px`,
@@ -89,7 +89,7 @@ export default function GroupedResultsTable({
               {Array.from({ length: maxAnswers }, (_, i) => (
                 <th
                   key={`answer-${i}`}
-                  className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                  className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                   style={{
                     width: `${COLUMN_WIDTHS.answer}px`,
                     minWidth: `${COLUMN_WIDTHS.answer}px`,
@@ -112,14 +112,14 @@ export default function GroupedResultsTable({
                     {group.question_id}
                   </td>
 
-                  <td className="px-4 pt-3 pb-1 align-top bg-[#fafafa]">
-                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
+                  <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle">
+                    <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {group.question}
                     </div>
                   </td>
 
-                  <td className="px-4 pt-3 pb-1 align-top bg-bg-secondary">
-                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
+                  <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle">
+                    <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {group.ground_truth_answer}
                     </div>
                   </td>
@@ -133,11 +133,11 @@ export default function GroupedResultsTable({
                         className="px-4 pt-3 pb-1 align-top"
                       >
                         {answer ? (
-                          <div className="text-sm overflow-auto text-[#171717] leading-6 max-h-[150px] wrap-break-word">
+                          <div className="text-sm overflow-auto text-text-primary leading-6 max-h-[150px] wrap-break-word">
                             {answer}
                           </div>
                         ) : (
-                          <span className="text-sm text-[#171717]">-</span>
+                          <span className="text-sm text-text-primary">-</span>
                         )}
                       </td>
                     );
@@ -148,8 +148,8 @@ export default function GroupedResultsTable({
                   className="border-b border-border"
                 >
                   <td className="px-4 pt-1 pb-3" />
-                  <td className="px-4 pt-1 pb-3 bg-bg-secondary" />
-                  <td className="px-4 pt-1 pb-3 bg-bg-secondary" />
+                  <td className="px-4 pt-1 pb-3 bg-accent-subtle" />
+                  <td className="px-4 pt-1 pb-3 bg-accent-subtle" />
 
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
                     const answerScores: TraceScore[] =
@@ -195,7 +195,7 @@ export default function GroupedResultsTable({
                                               <div
                                                 className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal ${
                                                   openCommentId === commentId
-                                                    ? "bg-[#171717] text-white"
+                                                    ? "bg-text-primary text-white"
                                                     : "bg-bg-secondary text-text-secondary"
                                                 }`}
                                                 onMouseEnter={(e) => {

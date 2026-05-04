@@ -16,7 +16,7 @@ export default function TTSDatasetCard({
   onView,
 }: TTSDatasetCardProps) {
   return (
-    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-[3px] border-l-accent-secondary/50">
+    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-sm border-l-[3px] border-l-accent-primary/50">
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">

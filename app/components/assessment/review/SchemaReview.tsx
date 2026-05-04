@@ -25,7 +25,7 @@ export default function SchemaReview({
             {outputSchema.map((property) => (
               <span
                 key={property.id}
-                className="inline-flex items-center gap-1 rounded bg-violet-500/10 px-2 py-0.5 font-mono text-xs font-medium text-violet-700"
+                className="inline-flex items-center gap-1 rounded bg-accent-subtle/30 px-2 py-0.5 font-mono text-xs font-medium text-accent-primary"
               >
                 {property.name || "(unnamed)"}
                 <span className="font-sans text-[10px] opacity-70">
@@ -35,7 +35,7 @@ export default function SchemaReview({
             ))}
           </div>
         ) : (
-          <div className="rounded-md bg-neutral-50 p-3 text-xs text-neutral-500">
+          <div className="rounded-md bg-bg-secondary p-3 text-xs text-text-secondary">
             No response format defined — model will return free-form text.
           </div>
         )}

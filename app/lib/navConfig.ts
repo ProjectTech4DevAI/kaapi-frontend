@@ -25,13 +25,6 @@ export const NAV_ITEMS: NavItemConfig[] = [
     gateDescription: "Log in to manage your knowledge bases for RAG.",
   },
   {
-    name: "Assessment",
-    route: "/assessment",
-    icon: "assessment",
-    featureFlag: FeatureFlag.ASSESSMENT,
-    gateDescription: "Log in to run assessments.",
-  },
-  {
     name: "Configurations",
     icon: "gear",
     submenu: [
@@ -63,5 +56,12 @@ export const NAV_ITEMS: NavItemConfig[] = [
     ],
     gateDescription:
       "Log in to compare model response quality across different configs.",
+  },
+  {
+    name: "Assessment",
+    route: "/assessment",
+    icon: "assessment",
+    featureFlag: FeatureFlag.ASSESSMENT,
+    gateDescription: "Log in to run assessments.",
   },
 ];

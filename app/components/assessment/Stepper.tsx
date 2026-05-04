@@ -10,7 +10,7 @@ export default function Stepper({
   completedSteps,
 }: StepperProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-white px-6 py-4">
+    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-bg-primary px-6 py-4">
       {steps.map((step, index) => {
         const isActive = currentStep === step.id;
         const isCompleted = completedSteps.has(step.id);
@@ -27,7 +27,7 @@ export default function Stepper({
             {index > 0 && (
               <div
                 className={`h-px w-8 ${
-                  isCompleted || isActive ? "bg-neutral-900" : "bg-neutral-200"
+                  isCompleted || isActive ? "bg-accent-primary" : "bg-border"
                 }`}
               />
             )}
@@ -36,10 +36,10 @@ export default function Stepper({
               disabled={!isClickable}
               className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors ${
                 isActive
-                  ? "border-neutral-900 bg-neutral-900 text-white"
+                  ? "border-accent-primary bg-accent-primary text-white"
                   : isCompleted
-                    ? "border-neutral-200 bg-neutral-50 text-neutral-900"
-                    : "border-neutral-200 bg-transparent text-neutral-500"
+                    ? "border-border bg-bg-secondary text-text-primary"
+                    : "border-border bg-transparent text-text-secondary"
               } ${isClickable ? "cursor-pointer opacity-100" : "cursor-default opacity-50"}`}
             >
               {isCompleted && !isActive ? (

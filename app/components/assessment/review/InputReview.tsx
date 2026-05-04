@@ -76,11 +76,11 @@ export default function InputReview({
               event.stopPropagation();
               setIsModalOpen(true);
             }}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+            className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
             aria-label="Expand LLM input"
             title="Expand LLM input"
           >
-            <span className="text-sm leading-none">⤢</span>
+            <span className="text-xl leading-none">⤢</span>
           </button>
         }
         badge={

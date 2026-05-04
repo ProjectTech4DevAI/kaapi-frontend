@@ -72,7 +72,7 @@ export default function PromptEditor({
 
     mirror.textContent = textarea.value.substring(0, textarea.selectionStart);
     const marker = document.createElement("span");
-    marker.textContent = "\u200b";
+    marker.textContent = "​";
     mirror.appendChild(marker);
 
     const markerRect = marker.getBoundingClientRect();
@@ -248,24 +248,17 @@ export default function PromptEditor({
 
   if (previewMode) {
     return (
-      <div
-        className="min-h-[260px] whitespace-pre-wrap break-words rounded-xl border px-4 py-3 text-sm leading-7"
-        style={{
-          backgroundColor: "var(--background-secondary)",
-          borderColor: "var(--border)",
-          color: "var(--foreground)",
-        }}
-      >
+      <div className="min-h-[260px] whitespace-pre-wrap break-words rounded-xl border border-border bg-bg-secondary px-4 py-3 text-sm leading-7 text-text-primary">
         {!value.trim() ? (
-          <span style={{ color: "var(--muted)" }}>{emptyPreviewText}</span>
+          <span className="text-text-secondary">{emptyPreviewText}</span>
         ) : enablePlaceholders && Object.keys(sampleRow).length === 0 ? (
-          <span style={{ color: "var(--muted)" }}>
+          <span className="text-text-secondary">
             Sample data not available. Go back to Datasets and choose a row with
             values.
           </span>
         ) : (
           previewText || (
-            <span style={{ color: "var(--muted)" }}>{emptyPreviewText}</span>
+            <span className="text-text-secondary">{emptyPreviewText}</span>
           )
         )}
       </div>
@@ -276,7 +269,7 @@ export default function PromptEditor({
     <>
       {enablePlaceholders && (
         <div className="mb-3">
-          <div className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
+          <div className="mb-2 text-xs text-text-secondary">
             Use `@` or tap a column chip to insert placeholders.
           </div>
           <div className="flex flex-wrap gap-2">
@@ -287,16 +280,11 @@ export default function PromptEditor({
                   key={col}
                   type="button"
                   onClick={() => insertPlaceholder(col)}
-                  className="cursor-pointer rounded-full border px-3 py-1.5 text-xs font-mono transition-colors"
-                  style={{
-                    backgroundColor: isUsed
-                      ? "rgba(22, 163, 74, 0.12)"
-                      : "var(--background)",
-                    borderColor: isUsed
-                      ? "rgba(22, 163, 74, 0.3)"
-                      : "var(--border)",
-                    color: isUsed ? "#166534" : "var(--foreground)",
-                  }}
+                  className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
+                    isUsed
+                      ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                      : "border-border bg-bg-primary text-text-primary"
+                  }`}
                 >
                   {`{${col}}`}
                 </button>
@@ -306,13 +294,7 @@ export default function PromptEditor({
         </div>
       )}
 
-      <div
-        className="relative rounded-xl border px-4 py-3"
-        style={{
-          borderColor: "var(--border)",
-          backgroundColor: "var(--background)",
-        }}
-      >
+      <div className="relative rounded-xl border border-border bg-bg-primary px-4 py-3">
         <textarea
           ref={textareaRef}
           value={value}
@@ -323,20 +305,17 @@ export default function PromptEditor({
           onKeyDown={handleKeyDown}
           onSelect={handleInput}
           placeholder={placeholder}
-          className="min-h-[260px] w-full resize-y border-0 bg-transparent px-0 py-0 text-sm leading-7 outline-none"
-          style={{ color: "var(--foreground)" }}
+          className="min-h-[260px] w-full resize-y border-0 bg-transparent px-0 py-0 text-sm leading-7 text-text-primary outline-none"
         />
         <div ref={mirrorRef} aria-hidden="true" />
 
         {mentionQuery !== null && mentionOptions.length > 0 && mentionPos && (
           <div
             ref={dropdownRef}
-            className="absolute z-50 overflow-hidden rounded-xl border shadow-lg"
+            className="absolute z-50 overflow-hidden rounded-xl border border-border bg-bg-primary shadow-lg"
             style={{
               top: `${mentionPos.top + 16}px`,
               left: `${Math.max(16, Math.min(mentionPos.left + 16, 320))}px`,
-              backgroundColor: "var(--background)",
-              borderColor: "var(--border)",
               minWidth: "220px",
               maxHeight: "180px",
               overflowY: "auto",
@@ -346,27 +325,16 @@ export default function PromptEditor({
               <button
                 key={col}
                 type="button"
-                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-mono"
-                style={{
-                  backgroundColor:
-                    idx === mentionIndex
-                      ? "var(--background-secondary)"
-                      : "var(--background)",
-                  color: "var(--foreground)",
-                }}
+                className={`flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-mono text-text-primary ${
+                  idx === mentionIndex ? "bg-bg-secondary" : "bg-bg-primary"
+                }`}
                 onMouseEnter={() => setMentionIndex(idx)}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   insertMention(col);
                 }}
               >
-                <span
-                  className="rounded px-1.5 py-0.5 text-xs font-sans"
-                  style={{
-                    backgroundColor: "var(--background-secondary)",
-                    color: "var(--muted)",
-                  }}
-                >
+                <span className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs font-sans text-text-secondary">
                   @
                 </span>
                 {col}

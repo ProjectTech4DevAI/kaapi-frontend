@@ -42,24 +42,21 @@ export default function AssessmentConfiguration({
   onParamChange,
   onSaveConfig,
 }: AssessmentConfigurationProps) {
+  const modeToggleClass = (active: boolean) =>
+    `cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+      active
+        ? "bg-accent-primary text-white"
+        : "bg-transparent text-text-secondary"
+    }`;
+
   return (
-    <details
-      open
-      className="rounded-2xl border"
-      style={{
-        borderColor: "var(--border)",
-        backgroundColor: "var(--background)",
-      }}
-    >
+    <details open className="rounded-2xl border border-border bg-bg-primary">
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3">
         <div>
-          <div
-            className="text-sm font-semibold"
-            style={{ color: "var(--foreground)" }}
-          >
+          <div className="text-sm font-semibold text-text-primary">
             AI Configuration
           </div>
-          <div className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+          <div className="mt-1 text-xs text-text-secondary">
             {configs.length > 0
               ? `${configs.length} selected`
               : "Choose at least one configuration"}
@@ -72,12 +69,7 @@ export default function AssessmentConfiguration({
               event.preventDefault();
               setConfigMode("existing");
             }}
-            className="min-w-[64px] cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--foreground)",
-              backgroundColor: "var(--background)",
-            }}
+            className="min-w-[64px] cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-1.5 text-xs font-semibold text-text-primary"
           >
             Add more
           </button>
@@ -85,44 +77,22 @@ export default function AssessmentConfiguration({
       </summary>
 
       {configs.length > 0 && (
-        <div
-          className="border-t px-4 py-4"
-          style={{ borderColor: "var(--border)" }}
-        >
+        <div className="border-t border-border px-4 py-4">
           <SelectedConfigs configs={configs} onRemove={onRemoveConfig} />
         </div>
       )}
 
-      <div
-        className="border-t px-4 py-4"
-        style={{ borderColor: "var(--border)" }}
-      >
-        <div
-          className="mb-4 inline-flex items-center gap-1 rounded-xl border p-1"
-          style={{
-            backgroundColor: "var(--background-secondary)",
-            borderColor: "var(--border)",
-          }}
-        >
+      <div className="border-t border-border px-4 py-4">
+        <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-bg-secondary p-1">
           <button
             onClick={() => setConfigMode("existing")}
-            className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
-            style={{
-              backgroundColor:
-                configMode === "existing" ? "var(--foreground)" : "transparent",
-              color: configMode === "existing" ? "#ffffff" : "var(--muted)",
-            }}
+            className={modeToggleClass(configMode === "existing")}
           >
             Saved
           </button>
           <button
             onClick={() => setConfigMode("create")}
-            className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
-            style={{
-              backgroundColor:
-                configMode === "create" ? "var(--foreground)" : "transparent",
-              color: configMode === "create" ? "#ffffff" : "var(--muted)",
-            }}
+            className={modeToggleClass(configMode === "create")}
           >
             New
           </button>

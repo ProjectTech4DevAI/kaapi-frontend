@@ -4,7 +4,7 @@ import {
   CACHE_KEY,
   DEFAULT_PAGE_LIMIT,
 } from "@/app/lib/constants";
-import { ASSESSMENT_CONFIG_TAG } from "@/app/lib/assessment/constants";
+import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
 import type {
   AssessmentModelConfig,
   ConfigParamDefinition,
@@ -362,7 +362,7 @@ export async function fetchConfigPage(params: {
   const query = new URLSearchParams({
     skip: String(skip),
     limit: String(limit),
-    tag: ASSESSMENT_CONFIG_TAG,
+    tag: ASSESSMENT_TAG,
   });
   const data = await requestJson<ConfigListResponse>(
     `/api/configs?${query.toString()}`,
@@ -518,7 +518,7 @@ export async function saveConfig(params: {
   const configCreate: ConfigCreate = {
     name: trimmedName,
     description: "Assessment configuration",
-    tag: ASSESSMENT_CONFIG_TAG,
+    tag: ASSESSMENT_TAG,
     config_blob: normalizedBlob,
     commit_message:
       params.commitMessage.trim() || "Initial assessment configuration",

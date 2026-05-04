@@ -31,19 +31,19 @@ function buildMappedColumns({
       key: `text:${column}`,
       column,
       role: "text" as const,
-      badgeClass: "bg-green-100 text-green-800",
+      badgeClass: "bg-status-success-bg text-status-success-text",
     })),
     ...attachments.map(({ column }) => ({
       key: `attachment:${column}`,
       column,
       role: "attachment" as const,
-      badgeClass: "bg-orange-100 text-orange-800",
+      badgeClass: "bg-status-warning-bg text-status-warning-text",
     })),
     ...groundTruthColumns.map((column) => ({
       key: `ground_truth:${column}`,
       column,
       role: "ground truth" as const,
-      badgeClass: "bg-blue-100 text-blue-800",
+      badgeClass: "bg-accent-subtle/30 text-accent-primary",
     })),
   ];
 }
@@ -95,10 +95,10 @@ export default function ReviewStep({
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="mx-auto w-full max-w-2xl flex-1 space-y-4">
         <div className="mb-2">
-          <h2 className="text-lg font-semibold text-neutral-900">
+          <h2 className="text-lg font-semibold text-text-primary">
             Review & Submit
           </h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 text-sm text-text-secondary">
             Verify your evaluation configuration before submitting.
           </p>
         </div>

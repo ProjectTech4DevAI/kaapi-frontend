@@ -17,27 +17,31 @@ export default function DatasetList({
   onNext,
 }: DatasetsListProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-neutral-50">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-bg-secondary">
       <div className="flex-1 overflow-auto p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-neutral-900">Datasets</h3>
+          <h3 className="text-base font-semibold text-text-primary">
+            Datasets
+          </h3>
           {isLoadingColumns && (
-            <span className="text-xs text-neutral-500">Loading columns...</span>
+            <span className="text-xs text-text-secondary">
+              Loading columns...
+            </span>
           )}
         </div>
 
         {isLoading ? (
           <div className="p-16 text-center">
-            <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-neutral-500 border-t-transparent" />
-            <p className="text-sm text-neutral-500">Loading datasets...</p>
+            <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-accent-primary border-t-transparent" />
+            <p className="text-sm text-text-secondary">Loading datasets...</p>
           </div>
         ) : datasets.length === 0 ? (
           <div className="p-16 text-center">
-            <DatabaseIcon className="mx-auto mb-3 h-12 w-12 text-neutral-200" />
-            <p className="mb-1 text-sm font-medium text-neutral-900">
+            <DatabaseIcon className="mx-auto mb-3 h-12 w-12 text-border" />
+            <p className="mb-1 text-sm font-medium text-text-primary">
               No datasets yet
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-text-secondary">
               Create your first dataset using the form on the left
             </p>
           </div>
@@ -48,10 +52,10 @@ export default function DatasetList({
               return (
                 <div
                   key={dataset.dataset_id}
-                  className={`cursor-pointer overflow-hidden rounded-lg border-l-[3px] bg-white transition-all ${
+                  className={`cursor-pointer overflow-hidden rounded-lg border-l-[3px] bg-bg-primary transition-all ${
                     isSelected
-                      ? "border-l-neutral-900 ring-2 ring-neutral-900 shadow-sm"
-                      : "border-l-[#DCCFC3] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                      ? "border-l-accent-primary ring-2 ring-accent-primary shadow-sm"
+                      : "border-l-accent-subtle shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                   }`}
                   onClick={() =>
                     onSelectDataset(
@@ -64,7 +68,7 @@ export default function DatasetList({
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <div className="truncate text-sm font-semibold text-neutral-900">
+                          <div className="truncate text-sm font-semibold text-text-primary">
                             {dataset.dataset_name}
                           </div>
                         </div>
@@ -73,12 +77,12 @@ export default function DatasetList({
                             description={dataset.description}
                           />
                         )}
-                        <div className="mt-2 flex items-center gap-3 text-xs text-neutral-500">
+                        <div className="mt-2 flex items-center gap-3 text-xs text-text-secondary">
                           <span>{dataset.total_items} items</span>
                           {dataset.original_items > 0 &&
                             dataset.original_items !== dataset.total_items && (
                               <>
-                                <span className="text-neutral-200">·</span>
+                                <span className="text-border">·</span>
                                 <span>{dataset.original_items} original</span>
                               </>
                             )}
@@ -95,7 +99,7 @@ export default function DatasetList({
                             );
                           }}
                           disabled={viewingId === dataset.dataset_id}
-                          className={`rounded-lg border border-neutral-200 bg-transparent px-3 py-1.5 text-xs font-medium text-neutral-900 ${
+                          className={`rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-text-primary ${
                             viewingId === dataset.dataset_id ? "opacity-50" : ""
                           }`}
                         >
@@ -110,7 +114,7 @@ export default function DatasetList({
                             onRequestDelete(dataset.dataset_id);
                           }}
                           aria-label={`Delete ${dataset.dataset_name}`}
-                          className="rounded-lg border border-neutral-200 bg-transparent px-3 py-1.5 text-xs font-medium text-red-700"
+                          className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-status-error"
                         >
                           Delete
                         </button>
@@ -124,9 +128,9 @@ export default function DatasetList({
         )}
       </div>
 
-      <div className="sticky bottom-0 z-10 flex flex-shrink-0 items-center justify-between border-t border-neutral-200 bg-white px-6 py-3">
+      <div className="sticky bottom-0 z-10 flex flex-shrink-0 items-center justify-between border-t border-border bg-bg-primary px-6 py-3">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-text-secondary">
             {canProceed
               ? "Dataset selected. Continue to AI configuration."
               : "Select a dataset to continue."}
@@ -137,8 +141,8 @@ export default function DatasetList({
             disabled={!canProceed}
             className={`rounded-lg px-5 py-2 text-sm font-medium ${
               canProceed
-                ? "cursor-pointer bg-neutral-900 text-white"
-                : "cursor-not-allowed bg-neutral-50 text-neutral-500"
+                ? "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
+                : "cursor-not-allowed bg-neutral-200 text-text-secondary"
             }`}
           >
             Next: AI Configuration

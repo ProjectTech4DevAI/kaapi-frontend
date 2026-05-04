@@ -10,12 +10,13 @@ export async function GET(
 ) {
   const { document_id } = await params;
   try {
+    const queryParams = new URL(request.url).searchParams;
+    const backendQueryParams = new URLSearchParams(queryParams);
+    backendQueryParams.set("include_url", "true");
+
     return await proxyJsonResponse(
       request,
-      withQueryParams(
-        `/api/v1/documents/${document_id}`,
-        new URLSearchParams({ include_url: "true" }),
-      ),
+      withQueryParams(`/api/v1/documents/${document_id}`, backendQueryParams),
     );
   } catch (error: unknown) {
     return proxyErrorResponse("Document details proxy error:", error);
@@ -29,9 +30,11 @@ export async function DELETE(
   const { document_id } = await params;
 
   try {
+    const queryParams = new URL(request.url).searchParams;
+
     return await proxyJsonResponse(
       request,
-      `/api/v1/documents/${document_id}`,
+      withQueryParams(`/api/v1/documents/${document_id}`, queryParams),
       {
         method: "DELETE",
       },

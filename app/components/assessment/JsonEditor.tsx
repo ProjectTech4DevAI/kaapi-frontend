@@ -104,24 +104,24 @@ export default function JsonEditor({
   };
 
   const borderColor = error
-    ? "border-red-500/40"
+    ? "border-status-error/40"
     : isValid && value.trim()
-      ? "border-green-500/35"
-      : "border-neutral-200";
+      ? "border-status-success/35"
+      : "border-border";
   const minHeightClass = minHeight === 420 ? "min-h-[420px]" : "min-h-[400px]";
   const statusClass = error
-    ? "bg-red-500/[0.07] text-red-500"
+    ? "bg-status-error-bg text-status-error-text"
     : isValid
-      ? "bg-green-600/[0.07] text-green-600"
+      ? "bg-status-success-bg text-status-success-text"
       : "";
 
   return (
     <div className={`overflow-hidden rounded-xl border ${borderColor}`}>
       {/* Minimal top bar */}
-      <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-4 py-2">
+      <div className="flex items-center justify-between border-b border-border bg-bg-secondary px-4 py-2">
         <div className="flex items-center gap-2">
           <span
-            className={`${EDITOR_FONT_CLASSES} text-[11px] text-neutral-500`}
+            className={`${EDITOR_FONT_CLASSES} text-[11px] text-text-secondary`}
           >
             JSON
           </span>
@@ -139,7 +139,7 @@ export default function JsonEditor({
               id={errorId}
               role="alert"
               aria-live="polite"
-              className="max-w-xs truncate text-[11px] text-red-500"
+              className="max-w-xs truncate text-[11px] text-status-error"
             >
               {error}
             </span>
@@ -148,7 +148,7 @@ export default function JsonEditor({
             <button
               type="button"
               onClick={() => onChange("")}
-              className="cursor-pointer text-xs text-neutral-500"
+              className="cursor-pointer text-xs text-text-secondary"
             >
               Clear
             </button>
@@ -157,12 +157,12 @@ export default function JsonEditor({
       </div>
 
       {/* Editor */}
-      <div className={`relative overflow-auto bg-white ${minHeightClass}`}>
+      <div className={`relative overflow-auto bg-bg-primary ${minHeightClass}`}>
         {/* Placeholder */}
         {!value && placeholder && (
           <pre
             aria-hidden
-            className={`pointer-events-none absolute inset-0 z-0 m-0 px-5 py-4 text-neutral-200 ${EDITOR_FONT_CLASSES}`}
+            className={`pointer-events-none absolute inset-0 z-0 m-0 px-5 py-4 text-border ${EDITOR_FONT_CLASSES}`}
           >
             {placeholder}
           </pre>
@@ -191,7 +191,7 @@ export default function JsonEditor({
           aria-label="JSON editor"
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`relative z-20 block w-full resize-none border-none bg-transparent px-5 py-4 text-transparent outline-none caret-neutral-900 whitespace-pre break-normal ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
+          className={`relative z-20 block w-full resize-none border-none bg-transparent px-5 py-4 text-transparent outline-none caret-text-primary whitespace-pre break-normal ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
         />
       </div>
     </div>

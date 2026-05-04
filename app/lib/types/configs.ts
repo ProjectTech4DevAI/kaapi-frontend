@@ -1,4 +1,4 @@
-import type { AssessmentConfigTag } from "@/app/lib/assessment/constants";
+import type { AssessmentTag } from "@/app/lib/assessment/constants";
 
 export interface SavedConfig {
   id: string;
@@ -157,4 +157,4 @@ export type ConfigResponse = APIResponse<ConfigPublic>;
 export type ConfigWithVersionResponse = APIResponse<ConfigWithVersion>;
 export type ConfigVersionListResponse = APIResponse<ConfigVersionItems[]>;
 export type ConfigVersionResponse = APIResponse<ConfigVersionPublic>;
-export type ConfigTag = "DEFAULT" | AssessmentConfigTag;
+export type ConfigTag = "DEFAULT" | AssessmentTag;

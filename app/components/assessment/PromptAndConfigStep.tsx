@@ -354,13 +354,10 @@ export default function PromptAndConfigStep({
       <div className="mx-auto w-full max-w-7xl flex-1 pb-20">
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2
-              className="text-xl font-semibold"
-              style={{ color: "var(--foreground)" }}
-            >
+            <h2 className="text-xl font-semibold text-text-primary">
               Prompt & Config
             </h2>
-            <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+            <p className="mt-1 text-sm text-text-secondary">
               Write the task on the left. Tune behavior and output on the right.
             </p>
           </div>
@@ -429,50 +426,29 @@ export default function PromptAndConfigStep({
         </div>
       </div>
 
-      <div
-        className="sticky bottom-0 z-10 mt-auto flex items-center justify-between border-t py-2"
-        style={{
-          backgroundColor: "var(--background-secondary)",
-          borderColor: "var(--border)",
-          marginLeft: "-1.5rem",
-          marginRight: "-1.5rem",
-          paddingLeft: "1.5rem",
-          paddingRight: "1.5rem",
-        }}
-      >
+      <div className="sticky bottom-0 z-10 mt-auto -mx-6 flex items-center justify-between border-t border-border bg-bg-secondary px-6 py-2">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
           <button
             onClick={onBack}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border px-6 py-2.5 text-sm font-medium"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--foreground)",
-              backgroundColor: "var(--background)",
-            }}
+            className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-bg-primary px-6 py-2.5 text-sm font-medium text-text-primary"
           >
             <ChevronLeftIcon className="h-3.5 w-3.5" />
             Back
           </button>
           <div className="flex items-center gap-3">
             {!canProceed && (
-              <span className="text-xs" style={{ color: "var(--muted)" }}>
+              <span className="text-xs text-text-secondary">
                 {nextBlockerMessage}
               </span>
             )}
             <button
               onClick={onNext}
               disabled={!canProceed}
-              className="cursor-pointer rounded-lg px-6 py-2.5 text-sm font-medium"
-              style={{
-                backgroundColor: canProceed
-                  ? "var(--foreground)"
-                  : "var(--background)",
-                color: canProceed ? "#fff" : "var(--muted)",
-                cursor: canProceed ? "pointer" : "not-allowed",
-                border: `1px solid ${
-                  canProceed ? "var(--foreground)" : "var(--border)"
-                }`,
-              }}
+              className={`rounded-lg px-6 py-2.5 text-sm font-medium ${
+                canProceed
+                  ? "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
+                  : "cursor-not-allowed bg-neutral-200 text-text-secondary"
+              }`}
             >
               Next: Review
             </button>

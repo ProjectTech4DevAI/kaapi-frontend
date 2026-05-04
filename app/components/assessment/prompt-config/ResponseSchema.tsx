@@ -14,25 +14,13 @@ export default function ResponseSchema({
 
   return (
     <>
-      <details
-        open
-        className="rounded-2xl border"
-        style={{
-          borderColor: "var(--border)",
-          backgroundColor: "var(--background)",
-        }}
-      >
+      <details open className="rounded-2xl border border-border bg-bg-primary">
         <summary className="flex cursor-pointer items-center justify-between px-4 py-3">
           <div className="min-w-0">
-            <div
-              className="text-sm font-semibold"
-              style={{ color: "var(--foreground)" }}
-            >
+            <div className="text-sm font-semibold text-text-primary">
               Response Format
             </div>
-            <div className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
-              {summary}
-            </div>
+            <div className="mt-1 text-xs text-text-secondary">{summary}</div>
           </div>
           <button
             type="button"
@@ -40,11 +28,7 @@ export default function ResponseSchema({
               event.preventDefault();
               setSchemaModalOpen(true);
             }}
-            className="min-w-[64px] cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold"
-            style={{
-              backgroundColor: "var(--foreground)",
-              color: "#fff",
-            }}
+            className="min-w-[64px] cursor-pointer rounded-lg bg-accent-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-hover"
           >
             {hasFields ? "Edit" : "Set"}
           </button>

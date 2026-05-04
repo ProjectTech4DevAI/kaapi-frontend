@@ -23,7 +23,7 @@ export default function ConfigsReview({
             key={`${config.config_id}-${config.config_version}`}
             className="flex items-center gap-3 rounded-md bg-neutral-50 p-2.5"
           >
-            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-bold text-white">
+            <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-accent-primary text-[10px] font-bold text-white">
               {index + 1}
             </span>
             <div className="min-w-0 flex-1">

@@ -14,13 +14,7 @@ export default function SystemPrompt({
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div
-      className="overflow-hidden rounded-2xl border"
-      style={{
-        borderColor: "var(--border)",
-        backgroundColor: "var(--background)",
-      }}
-    >
+    <div className="overflow-hidden rounded-2xl border border-border bg-bg-primary">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <button
           type="button"
@@ -28,16 +22,11 @@ export default function SystemPrompt({
           className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
         >
           <ChevronDownIcon
-            className="h-4 w-4 transition-transform"
-            style={{
-              color: "var(--muted)",
-              transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)",
-            }}
+            className={`h-4 w-4 text-text-secondary transition-transform ${
+              isOpen ? "rotate-0" : "-rotate-90"
+            }`}
           />
-          <span
-            className="text-base font-semibold"
-            style={{ color: "var(--foreground)" }}
-          >
+          <span className="text-base font-semibold text-text-primary">
             System prompt
           </span>
         </button>
@@ -52,10 +41,7 @@ export default function SystemPrompt({
       </div>
 
       {isOpen && (
-        <div
-          className="border-t px-5 pb-5 pt-4"
-          style={{ borderColor: "var(--border)" }}
-        >
+        <div className="border-t border-border px-5 pb-5 pt-4">
           <PromptEditor
             value={value}
             onChange={onChange}

@@ -31,30 +31,30 @@ const FAILED_STATUSES = new Set(["failed", "completed_with_errors"]);
 const COMPLETED_STATUSES = new Set(["completed"]);
 
 const STATUS_CLASSES: Record<string, string> = {
-  pending: "bg-yellow-600/10 text-amber-800",
-  processing: "bg-yellow-600/10 text-amber-800",
-  in_progress: "bg-yellow-600/10 text-amber-800",
-  completed: "bg-green-600/10 text-green-800",
-  completed_with_errors: "bg-amber-500/12 text-orange-800",
-  failed: "bg-red-600/10 text-red-800",
-  cancelled: "bg-gray-500/10 text-gray-700",
+  pending: "bg-status-warning-bg text-status-warning-text",
+  processing: "bg-status-warning-bg text-status-warning-text",
+  in_progress: "bg-status-warning-bg text-status-warning-text",
+  completed: "bg-status-success-bg text-status-success-text",
+  completed_with_errors: "bg-status-warning-bg text-status-warning-text",
+  failed: "bg-status-error-bg text-status-error-text",
+  cancelled: "bg-status-default-bg text-status-default-text",
 };
 
 const ASSESSMENT_CARD_CLASSES: Record<string, string> = {
-  completed: "border-l-green-500",
-  failed: "border-l-red-500",
-  completed_with_errors: "border-l-amber-500",
-  pending: "border-l-yellow-500",
-  processing: "border-l-yellow-500",
-  in_progress: "border-l-yellow-500",
-  cancelled: "border-l-neutral-300",
+  completed: "border-l-status-success",
+  failed: "border-l-status-error",
+  completed_with_errors: "border-l-status-warning",
+  pending: "border-l-status-warning",
+  processing: "border-l-status-warning",
+  in_progress: "border-l-status-warning",
+  cancelled: "border-l-border",
 };
 
 const SUMMARY_BADGE_CLASSES: Record<string, string> = {
-  total: "bg-neutral-50 text-neutral-900",
-  processing: "bg-neutral-50 text-amber-800",
-  completed: "bg-neutral-50 text-green-800",
-  failed: "bg-neutral-50 text-red-800",
+  total: "bg-bg-secondary text-text-primary",
+  processing: "bg-bg-secondary text-status-warning-text",
+  completed: "bg-bg-secondary text-status-success-text",
+  failed: "bg-bg-secondary text-status-error-text",
 };
 
 function isActiveStatus(status: string): boolean {
@@ -82,7 +82,7 @@ function LoadingSpinner({
 }) {
   return (
     <div
-      className={`${className} rounded-full border-2 border-neutral-500 border-t-transparent animate-spin ${
+      className={`${className} rounded-full border-2 border-accent-primary border-t-transparent animate-spin ${
         centered ? "mx-auto" : ""
       }`}
     />
@@ -119,10 +119,10 @@ function DownloadDropdown({
       <button
         onClick={() => setOpen(!open)}
         disabled={disabled || loading}
-        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-200 bg-transparent px-2.5 py-1.5 text-xs font-medium transition-colors ${
+        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-transparent px-2.5 py-1.5 text-xs font-medium transition-colors ${
           disabled || loading
-            ? "text-neutral-500 opacity-50"
-            : "text-neutral-900"
+            ? "text-text-secondary opacity-50"
+            : "text-text-primary"
         }`}
         aria-label="Download results"
         aria-expanded={open}
@@ -136,7 +136,7 @@ function DownloadDropdown({
         <ChevronDownIcon className="w-3 h-3" />
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-neutral-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-border bg-bg-primary py-1 shadow-lg">
           {(
             [
               ["csv", "CSV File"],
@@ -149,7 +149,7 @@ function DownloadDropdown({
                 onDownload(fmt);
                 setOpen(false);
               }}
-              className="w-full cursor-pointer px-3 py-2 text-left text-xs text-neutral-900 transition-opacity hover:opacity-80"
+              className="w-full cursor-pointer px-3 py-2 text-left text-xs text-text-primary transition-opacity hover:opacity-80"
             >
               {label}
             </button>
@@ -489,9 +489,9 @@ export default function EvaluationsTab({
 
   return (
     <div className="flex-1 overflow-auto">
-      <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-border bg-bg-primary px-6 py-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-neutral-900">
+          <h2 className="text-base font-semibold text-text-primary">
             Assessments
           </h2>
           <div className="flex items-center gap-2 ml-2">
@@ -518,7 +518,7 @@ export default function EvaluationsTab({
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs ${SUMMARY_BADGE_CLASSES[item.tone]}`}
               >
                 <span className="font-semibold">{item.value}</span>
-                <span className="text-neutral-500">
+                <span className="text-text-secondary">
                   {item.label.toLowerCase()}
                 </span>
               </span>
@@ -531,7 +531,7 @@ export default function EvaluationsTab({
             aria-label="Filter by status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            className="cursor-pointer rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-900"
+            className="cursor-pointer rounded-md border border-border bg-bg-primary px-3 py-1.5 text-sm text-text-primary"
           >
             <option value="all">All Status</option>
             <option value="processing">Processing</option>
@@ -542,7 +542,7 @@ export default function EvaluationsTab({
           <button
             onClick={loadAssessments}
             disabled={isLoading}
-            className="cursor-pointer rounded-md border border-neutral-200 p-2 text-neutral-500 transition-colors"
+            className="cursor-pointer rounded-md border border-border p-2 text-text-secondary transition-colors"
             aria-label="Refresh assessments"
           >
             <RefreshIcon
@@ -556,19 +556,21 @@ export default function EvaluationsTab({
         {isLoading && assessments.length === 0 ? (
           <div className="py-16 text-center">
             <LoadingSpinner className="w-6 h-6 mb-3" centered />
-            <p className="text-sm text-neutral-500">Loading assessments...</p>
+            <p className="text-sm text-text-secondary">
+              Loading assessments...
+            </p>
           </div>
         ) : filteredRuns.length === 0 ? (
           <div className="py-16 text-center">
-            <span className="block mx-auto mb-3 h-12 w-12 text-neutral-200">
+            <span className="block mx-auto mb-3 h-12 w-12 text-border">
               <ClipboardIcon className="w-12 h-12" />
             </span>
-            <p className="mb-1 text-sm font-medium text-neutral-900">
+            <p className="mb-1 text-sm font-medium text-text-primary">
               {statusFilter === "all"
                 ? "No assessments yet"
                 : `No ${statusFilter} assessments`}
             </p>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-text-secondary">
               {statusFilter === "all"
                 ? "Submit an assessment from the Config tab to get started"
                 : "Try changing the status filter"}
@@ -588,7 +590,7 @@ export default function EvaluationsTab({
               return (
                 <div
                   key={run.id}
-                  className={`rounded-xl border border-neutral-200 border-l-[3px] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow ${
+                  className={`rounded-xl border border-border border-l-[3px] bg-bg-primary shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-shadow ${
                     ASSESSMENT_CARD_CLASSES[run.status] ||
                     ASSESSMENT_CARD_CLASSES.processing
                   }`}
@@ -597,34 +599,34 @@ export default function EvaluationsTab({
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-3 mb-1">
-                          <span className="truncate text-sm font-bold text-neutral-900">
+                          <span className="truncate text-sm font-bold text-text-primary">
                             {run.experiment_name}
                           </span>
-                          <span className="flex-shrink-0 rounded bg-neutral-50 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500">
+                          <span className="flex-shrink-0 rounded bg-bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
                             {run.total_runs} configs
                           </span>
                         </div>
 
-                        <div className="mb-3 text-xs text-neutral-500">
+                        <div className="mb-3 text-xs text-text-secondary">
                           {formatRelativeTime(run.inserted_at)}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
                           {run.dataset_name && (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-50 px-2.5 py-1 text-xs text-neutral-500">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-secondary px-2.5 py-1 text-xs text-text-secondary">
                               <DatabaseIcon className="w-3.5 h-3.5 flex-shrink-0" />
                               {run.dataset_name}
                             </span>
                           )}
 
-                          <span className="rounded-full bg-neutral-50 px-2.5 py-1 text-xs text-neutral-500">
+                          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-xs text-text-secondary">
                             {run.completed_runs} completed
                           </span>
-                          <span className="rounded-full bg-neutral-50 px-2.5 py-1 text-xs text-neutral-500">
+                          <span className="rounded-full bg-bg-secondary px-2.5 py-1 text-xs text-text-secondary">
                             {run.processing_runs + run.pending_runs} active
                           </span>
                           {run.failed_runs > 0 && (
-                            <span className="rounded-full bg-red-600/[0.08] px-2.5 py-1 text-xs text-red-800">
+                            <span className="rounded-full bg-status-error-bg px-2.5 py-1 text-xs text-status-error-text">
                               {run.failed_runs} failed
                             </span>
                           )}
@@ -633,7 +635,7 @@ export default function EvaluationsTab({
                         {(run.status === "failed" ||
                           run.status === "completed_with_errors") &&
                           run.error_message && (
-                            <div className="mt-2 rounded-md bg-red-600/[0.05] px-3 py-2 text-xs text-red-800">
+                            <div className="mt-2 rounded-md bg-status-error-bg px-3 py-2 text-xs text-status-error-text">
                               {run.error_message}
                             </div>
                           )}
@@ -667,7 +669,7 @@ export default function EvaluationsTab({
                               className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white ${
                                 isRetryingAssessment
                                   ? "bg-neutral-200 opacity-70"
-                                  : "bg-neutral-900"
+                                  : "bg-accent-primary hover:bg-accent-hover"
                               }`}
                             >
                               {isRetryingAssessment ? "Retrying..." : "Retry"}
@@ -675,8 +677,8 @@ export default function EvaluationsTab({
                           )}
                           <button
                             onClick={() => handleExpand(run.id)}
-                            className={`cursor-pointer rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-900 transition-colors ${
-                              isExpanded ? "bg-neutral-50" : "bg-transparent"
+                            className={`cursor-pointer rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-primary transition-colors ${
+                              isExpanded ? "bg-bg-secondary" : "bg-transparent"
                             }`}
                           >
                             {isExpanded ? "Hide details" : "View details"}
@@ -686,25 +688,25 @@ export default function EvaluationsTab({
                     </div>
 
                     {isExpanded && (
-                      <div className="mt-5 space-y-3 border-t border-neutral-200 pt-4">
+                      <div className="mt-5 space-y-3 border-t border-border pt-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <div className="text-sm font-semibold text-neutral-900">
+                            <div className="text-sm font-semibold text-text-primary">
                               Configurations in this assessment
                             </div>
-                            <div className="mt-1 text-xs text-neutral-500">
+                            <div className="mt-1 text-xs text-text-secondary">
                               Each configuration keeps its own status, preview,
                               and export actions.
                             </div>
                           </div>
-                          <div className="rounded-full bg-neutral-50 px-2.5 py-1 text-[11px] font-medium text-neutral-500">
+                          <div className="rounded-full bg-bg-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary">
                             {childRuns.length} run
                             {childRuns.length !== 1 ? "s" : ""}
                           </div>
                         </div>
 
                         {childRuns.length === 0 ? (
-                          <div className="text-sm text-neutral-500">
+                          <div className="text-sm text-text-secondary">
                             Loading child runs...
                           </div>
                         ) : (
@@ -742,29 +744,29 @@ export default function EvaluationsTab({
                             return (
                               <div
                                 key={childRun.id}
-                                className="rounded-xl border border-neutral-200 bg-neutral-50 p-4"
+                                className="rounded-xl border border-border bg-bg-secondary p-4"
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-2">
-                                      <span className="text-sm font-semibold text-neutral-900">
+                                      <span className="text-sm font-semibold text-text-primary">
                                         {configName}
                                       </span>
                                       {childRun.config_version !== null && (
-                                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                                        <span className="rounded-full bg-bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
                                           v{childRun.config_version}
                                         </span>
                                       )}
                                       {configDetail?.provider &&
                                         configDetail?.model && (
-                                          <span className="rounded-full bg-neutral-900/5 px-2 py-0.5 text-[10px] font-medium text-neutral-500">
+                                          <span className="rounded-full bg-bg-primary px-2 py-0.5 text-[10px] font-medium text-text-secondary">
                                             {configDetail.provider}/
                                             {configDetail.model}
                                           </span>
                                         )}
                                     </div>
 
-                                    <div className="mt-1 text-sm text-neutral-500">
+                                    <div className="mt-1 text-sm text-text-secondary">
                                       {isConfigLoading
                                         ? "Loading configuration details..."
                                         : configDetail?.description ||
@@ -772,7 +774,7 @@ export default function EvaluationsTab({
                                           "No description available for this configuration."}
                                     </div>
 
-                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
+                                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
                                       <span>{childRun.total_items} items</span>
                                       {childRun.updated_at && (
                                         <span>
@@ -789,13 +791,13 @@ export default function EvaluationsTab({
                                     </div>
 
                                     {configError && (
-                                      <div className="mt-2 text-xs text-red-800">
+                                      <div className="mt-2 text-xs text-status-error-text">
                                         {configError}
                                       </div>
                                     )}
                                     {isFailedChild &&
                                       childRun.error_message && (
-                                        <div className="mt-2 text-xs text-red-800">
+                                        <div className="mt-2 text-xs text-status-error-text">
                                           {childRun.error_message}
                                         </div>
                                       )}
@@ -818,7 +820,7 @@ export default function EvaluationsTab({
                                         disabled={
                                           previewLoading === childRun.id
                                         }
-                                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-neutral-200 bg-transparent px-2.5 py-1.5 text-xs font-medium text-neutral-900 transition-colors ${
+                                        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-transparent px-2.5 py-1.5 text-xs font-medium text-text-primary transition-colors ${
                                           previewLoading === childRun.id
                                             ? "opacity-50"
                                             : ""
@@ -853,7 +855,7 @@ export default function EvaluationsTab({
                                         className={`rounded-lg px-3 py-1.5 text-xs font-medium text-white ${
                                           isRerunning
                                             ? "bg-neutral-200 opacity-70"
-                                            : "bg-neutral-900"
+                                            : "bg-accent-primary hover:bg-accent-hover"
                                         }`}
                                       >
                                         {isRerunning

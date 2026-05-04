@@ -5,7 +5,6 @@
  * Supports both row format (individual traces) and grouped format (multiple answers per question)
  */
 
-import { useState, useEffect } from "react";
 import type { GroupedTraceItem, EvalJob } from "@/app/lib/types/evaluation";
 import {
   getScoreObject,
@@ -15,6 +14,7 @@ import {
   isGroupedFormat,
 } from "@/app/lib/utils/evaluation";
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
+import { InfoTooltip } from "@/app/components";
 import GroupedResultsTable from "@/app/components/evaluations/GroupedResultsTable";
 
 interface DetailedResultsTableProps {
@@ -24,18 +24,6 @@ interface DetailedResultsTableProps {
 export default function DetailedResultsTable({
   job,
 }: DetailedResultsTableProps) {
-  const [openCommentId, setOpenCommentId] = useState<string | null>(null);
-  const [commentPos, setCommentPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (!openCommentId) return;
-    const handleScroll = () => setOpenCommentId(null);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [openCommentId]);
-
   const scoreObject = getScoreObject(job);
 
   if (!scoreObject || !hasSummaryScores(scoreObject)) {
@@ -99,23 +87,23 @@ export default function DetailedResultsTable({
           <thead>
             <tr className="bg-bg-secondary border-b border-border">
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{ width: `${COLUMN_WIDTHS.index}px` }}
               ></th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{ width: `${COLUMN_WIDTHS.question}px` }}
               >
                 Question
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{ width: `${COLUMN_WIDTHS.groundTruth}px` }}
               >
                 Ground Truth
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-[#171717]"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
                 style={{ width: `${COLUMN_WIDTHS.answer}px` }}
               >
                 Answer
@@ -123,7 +111,7 @@ export default function DetailedResultsTable({
               {scoreNames.map((scoreName) => (
                 <th
                   key={scoreName}
-                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-[#171717] whitespace-normal wrap-break-word"
+                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-text-primary whitespace-normal wrap-break-word"
                   style={{ width: `${COLUMN_WIDTHS.score}px` }}
                 >
                   {scoreName}
@@ -148,19 +136,19 @@ export default function DetailedResultsTable({
                   </td>
 
                   <td className="px-4 py-3 align-top bg-bg-primary">
-                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
+                    <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {question}
                     </div>
                   </td>
 
                   <td className="px-4 py-3 align-top bg-bg-primary">
-                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
+                    <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {groundTruth}
                     </div>
                   </td>
 
                   <td className="px-4 py-3 align-top bg-bg-primary">
-                    <div className="text-sm overflow-auto text-[#171717] leading-normal max-h-[150px] wrap-break-word">
+                    <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {answer}
                     </div>
                   </td>
@@ -185,40 +173,7 @@ export default function DetailedResultsTable({
                             {value}
                           </div>
                           {score?.comment && (
-                            <>
-                              <div
-                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal ${openCommentId === `${index}-${scoreName}` ? "bg-[#171717] text-bg-primary" : "bg-bg-secondary text-text-secondary"}`}
-                                onMouseEnter={(e) => {
-                                  const rect =
-                                    e.currentTarget.getBoundingClientRect();
-                                  const tooltipWidth = 300;
-                                  const centerX = rect.left + rect.width / 2;
-                                  const clampedLeft = Math.min(
-                                    Math.max(centerX - tooltipWidth / 2, 8),
-                                    window.innerWidth - tooltipWidth - 8,
-                                  );
-                                  setCommentPos({
-                                    top: rect.top - 8,
-                                    left: clampedLeft,
-                                  });
-                                  setOpenCommentId(`${index}-${scoreName}`);
-                                }}
-                                onMouseLeave={() => setOpenCommentId(null)}
-                              >
-                                i
-                              </div>
-                              {openCommentId === `${index}-${scoreName}` && (
-                                <div
-                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none bg-[#171717] text-white border border-gray-700 w-[300px] shadow-md -translate-y-full"
-                                  style={{
-                                    top: commentPos.top,
-                                    left: commentPos.left,
-                                  }}
-                                >
-                                  {score.comment}
-                                </div>
-                              )}
-                            </>
+                            <InfoTooltip text={score.comment} />
                           )}
                         </div>
                       </td>

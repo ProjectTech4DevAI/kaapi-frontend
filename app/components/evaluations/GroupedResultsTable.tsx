@@ -112,13 +112,13 @@ export default function GroupedResultsTable({
                     {group.question_id}
                   </td>
 
-                  <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle">
+                  <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle/50">
                     <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {group.question}
                     </div>
                   </td>
 
-                  <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle">
+                  <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle/50">
                     <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {group.ground_truth_answer}
                     </div>
@@ -148,8 +148,8 @@ export default function GroupedResultsTable({
                   className="border-b border-border"
                 >
                   <td className="px-4 pt-1 pb-3" />
-                  <td className="px-4 pt-1 pb-3 bg-accent-subtle" />
-                  <td className="px-4 pt-1 pb-3 bg-accent-subtle" />
+                  <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
+                  <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
 
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
                     const answerScores: TraceScore[] =

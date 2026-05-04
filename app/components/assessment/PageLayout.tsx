@@ -2,6 +2,7 @@
 
 import Sidebar from "@/app/components/Sidebar";
 import TabNavigation from "@/app/components/TabNavigation";
+import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import type { PageLayoutProps } from "@/app/lib/types/assessment";
@@ -9,7 +10,6 @@ import ApiKeyRequired from "./ApiKeyRequired";
 import ConfigPanel from "./ConfigPanel";
 import DatasetsTab from "./DatasetsTab";
 import EvaluationsTab from "./EvaluationsTab";
-import PageHeader from "./PageHeader";
 
 export default function PageLayout({
   activeTab,
@@ -28,7 +28,10 @@ export default function PageLayout({
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/assessment" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <PageHeader />
+          <PageHeader
+            title="Assessment"
+            subtitle="Multi-modal batch evaluation with prompt templates, attachments, and config comparison"
+          />
 
           {!activeKey ? (
             <ApiKeyRequired />

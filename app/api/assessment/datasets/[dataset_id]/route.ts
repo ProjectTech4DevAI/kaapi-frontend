@@ -1,7 +1,4 @@
-// BFF proxy for a single assessment dataset.
-// GET    /api/assessment/datasets/:id  → fetches metadata; with ?fetch_content=true downloads
-//        the file from S3 server-side and returns it as base64 (capped at 10 MB).
-// DELETE /api/assessment/datasets/:id  → backend DELETE /api/v1/assessment/datasets/:id
+// BFF proxy — GET (with optional S3 file fetch, max 10 MB) + DELETE /api/v1/assessment/datasets/:id
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 import { proxyErrorResponse, withQueryParams } from "@/app/api/_routeProxy";

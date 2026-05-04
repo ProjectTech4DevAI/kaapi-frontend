@@ -1,8 +1,6 @@
 "use client";
 
-// Datasets tab for the Assessment page. Lists existing datasets, handles upload via
-// /api/assessment/datasets (POST), delete via /api/assessment/datasets/:id (DELETE),
-// and preview by fetching file content with ?fetch_content=true.
+// Assessment Datasets tab — list, upload, delete, and preview datasets.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";

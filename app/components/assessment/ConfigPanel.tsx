@@ -1,7 +1,6 @@
 "use client";
 
-// Multi-step wizard panel for configuring an assessment run.
-// Hosts the Stepper and renders ColumnMapperStep → PromptAndConfigStep → ReviewStep in sequence.
+// Multi-step wizard (Column Mapper → Prompt & Config → Review) for configuring an assessment run.
 import { Button } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
 import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";

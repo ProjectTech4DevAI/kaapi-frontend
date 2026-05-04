@@ -1,6 +1,4 @@
-// Pure utility functions for assessment result status: checking active/failed/completed
-// states, computing summary counts, filtering runs by status, and formatting labels.
-// Used by EvaluationsTab and useAssessmentResults hook.
+// Result status utilities: status checks, counts, filters, and label formatting for assessment runs.
 import type {
   AssessmentRun,
   ResultTone,

@@ -1,5 +1,4 @@
-// BFF proxy to retry a failed assessment.
-// POST /api/assessment/assessments/:id/retry → backend POST /api/v1/assessment/assessments/:id/retry
+// BFF proxy — POST /api/v1/assessment/assessments/:id/retry
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 import type { RouteContext } from "@/app/lib/types/assessment";

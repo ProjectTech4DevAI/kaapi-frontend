@@ -1,5 +1,4 @@
-// Static constants for the Assessment feature: status sets, UI labels, CSS classes,
-// model configs, and wizard step definitions. Imported by components and lib utilities.
+// Constants for the Assessment feature: status sets, UI labels, model configs, and step definitions.
 import type {
   AssessmentModelConfig,
   ConfigParamDefinition,

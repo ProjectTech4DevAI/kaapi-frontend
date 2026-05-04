@@ -1,8 +1,6 @@
 "use client";
 
-// Entry point for the /assessment route.
-// Owns all top-level assessment state (selected dataset, column mapping, prompt, configs, schema)
-// and submits the run via POST /api/assessment/runs. Delegates rendering to PageLayout.
+// Assessment page entry point — owns all run state and submits via POST /api/assessment/runs.
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Loader from "@/app/components/Loader";

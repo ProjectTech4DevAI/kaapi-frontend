@@ -1,5 +1,3 @@
-// Utility functions for building and serializing the assessment output schema.
-// Converts the UI SchemaProperty tree into a JSON Schema object sent to the backend with the run payload.
 import type {
   SchemaProperty,
   SchemaPropertyType,

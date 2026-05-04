@@ -31,7 +31,7 @@ export default function DatasetsTab({
   onNext,
 }: DatasetsTabProps) {
   const toast = useToast();
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
   const apiKey = activeKey?.key ?? "";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +50,7 @@ export default function DatasetsTab({
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadDatasets = useCallback(async () => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const data = await apiFetch<DatasetResponse>(
@@ -64,7 +64,7 @@ export default function DatasetsTab({
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, onForbidden]);
+  }, [apiKey, isAuthenticated, onForbidden]);
 
   useEffect(() => {
     loadDatasets();
@@ -104,7 +104,7 @@ export default function DatasetsTab({
   };
 
   const handleCreateDataset = async () => {
-    if (!uploadedFile || !datasetName.trim() || !apiKey) return;
+    if (!uploadedFile || !datasetName.trim() || !isAuthenticated) return;
 
     setIsUploading(true);
     try {

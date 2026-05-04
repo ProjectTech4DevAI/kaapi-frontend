@@ -66,7 +66,7 @@ export default function PromptAndConfigStep({
   onBack,
 }: PromptAndConfigStepProps) {
   const toast = useToast();
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
   const apiKey = activeKey?.key ?? "";
 
   const [configMode, setConfigMode] = useState<ConfigMode>("existing");
@@ -176,6 +176,7 @@ export default function PromptAndConfigStep({
 
   const toggleVersionSelection = useCallback(
     async (config: ConfigPublic, version: number) => {
+      if (!isAuthenticated) return;
       const key = `${config.id}:${version}`;
       if (isSelected(config.id, version)) {
         removeSelection(config.id, version);
@@ -191,11 +192,15 @@ export default function PromptAndConfigStep({
         setLoadingSelectionKeys((prev) => ({ ...prev, [key]: false }));
       }
     },
-    [addSelection, apiKey, isSelected, removeSelection, toast],
+    [addSelection, apiKey, isAuthenticated, isSelected, removeSelection, toast],
   );
 
   const loadConfigs = useCallback(
     async (skip: number, replace: boolean) => {
+      if (!isAuthenticated) {
+        if (replace) setIsLoadingConfigs(false);
+        return;
+      }
       if (replace) setIsLoadingConfigs(true);
       try {
         const result = await fetchConfigPage({
@@ -214,15 +219,16 @@ export default function PromptAndConfigStep({
         setIsLoadingConfigs(false);
       }
     },
-    [apiKey, toast],
+    [apiKey, isAuthenticated, toast],
   );
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (!hasLoadedInitialConfigsRef.current) {
       hasLoadedInitialConfigsRef.current = true;
       void loadConfigs(0, true);
     }
-  }, [loadConfigs]);
+  }, [isAuthenticated, loadConfigs]);
 
   const filteredConfigCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -236,6 +242,7 @@ export default function PromptAndConfigStep({
 
   const loadVersions = useCallback(
     async (configId: string, skip: number) => {
+      if (!isAuthenticated) return;
       setVersionStateByConfig((prev) => ({
         ...prev,
         [configId]: {
@@ -277,7 +284,7 @@ export default function PromptAndConfigStep({
         }));
       }
     },
-    [apiKey],
+    [apiKey, isAuthenticated],
   );
 
   const toggleConfigExpansion = useCallback(
@@ -335,6 +342,10 @@ export default function PromptAndConfigStep({
   };
 
   const handleCreateAndAdd = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to create configurations");
+      return;
+    }
     if (!configName.trim()) {
       toast.error("Configuration name is required");
       return;

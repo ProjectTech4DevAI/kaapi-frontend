@@ -165,10 +165,6 @@ function PageContent() {
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!activeKey) {
-      toast.error("No API key selected");
-      return;
-    }
     if (!datasetId) {
       toast.error("Dataset is required");
       return;
@@ -196,7 +192,7 @@ function PageContent() {
 
     setIsSubmitting(true);
     try {
-      await apiFetch("/api/assessment/runs", activeKey.key, {
+      await apiFetch("/api/assessment/runs", activeKey?.key ?? "", {
         method: "POST",
         body: JSON.stringify({
           experiment_name: experimentName.trim(),
@@ -270,7 +266,6 @@ function PageContent() {
   const canReachReview =
     hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
   const canSubmitAssessment =
-    !!activeKey &&
     !!datasetId &&
     hasMapperSelection &&
     hasPromptTemplate &&
@@ -278,21 +273,19 @@ function PageContent() {
     configs.length > 0 &&
     experimentName.trim().length > 0 &&
     !isSubmitting;
-  const submitBlockerMessage = !activeKey
-    ? "Select an API key to submit"
-    : !datasetId
-      ? "Select a dataset to submit"
-      : !hasMapperSelection
-        ? "Map at least one text column to submit"
-        : !hasPromptTemplate
-          ? "Write a prompt to submit"
-          : !hasConfiguredResponseFormat
-            ? "Set response format to submit"
-            : configs.length === 0
-              ? "Select at least one configuration to submit"
-              : !experimentName.trim()
-                ? "Enter an experiment name to submit"
-                : "";
+  const submitBlockerMessage = !datasetId
+    ? "Select a dataset to submit"
+    : !hasMapperSelection
+      ? "Map at least one text column to submit"
+      : !hasPromptTemplate
+        ? "Write a prompt to submit"
+        : !hasConfiguredResponseFormat
+          ? "Set response format to submit"
+          : configs.length === 0
+            ? "Select at least one configuration to submit"
+            : !experimentName.trim()
+              ? "Enter an experiment name to submit"
+              : "";
   const effectiveCompletedConfigSteps = useMemo(() => {
     const merged = new Set(completedConfigSteps);
     if (hasMapperSelection) merged.add(1);

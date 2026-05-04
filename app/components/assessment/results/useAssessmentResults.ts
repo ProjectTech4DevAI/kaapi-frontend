@@ -36,7 +36,7 @@ export default function useAssessmentResults({
   onForbidden,
   toast,
 }: UseAssessmentResultsParams) {
-  const { activeKey } = useAuth();
+  const { activeKey, isAuthenticated } = useAuth();
   const apiKey = activeKey?.key ?? "";
   const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
   const [childRunsByAssessment, setChildRunsByAssessment] = useState<
@@ -70,7 +70,7 @@ export default function useAssessmentResults({
   }, [apiKey]);
 
   const loadAssessments = useCallback(async () => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const data = await apiFetch<AssessmentListResponse>(
@@ -85,11 +85,11 @@ export default function useAssessmentResults({
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, onForbidden]);
+  }, [apiKey, isAuthenticated, onForbidden]);
 
   const loadChildRuns = useCallback(
     async (assessmentId: number) => {
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
       try {
         const data = await apiFetch<AssessmentChildRunListResponse>(
           `/api/assessment/runs?assessment_id=${assessmentId}`,
@@ -102,12 +102,12 @@ export default function useAssessmentResults({
         console.error("Failed to load child runs:", e);
       }
     },
-    [apiKey, onForbidden],
+    [apiKey, isAuthenticated, onForbidden],
   );
 
   const loadConfigDetail = useCallback(
     async (configId: string, version: number) => {
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
 
       const key = `${configId}:${version}`;
       if (configDetailsByKey[key] || configLoadingKeys[key]) return;
@@ -170,7 +170,7 @@ export default function useAssessmentResults({
         });
       }
     },
-    [apiKey, configDetailsByKey, configLoadingKeys],
+    [apiKey, configDetailsByKey, configLoadingKeys, isAuthenticated],
   );
 
   useEffect(() => {
@@ -178,7 +178,7 @@ export default function useAssessmentResults({
   }, [loadAssessments]);
 
   useEffect(() => {
-    if (!apiKey) return;
+    if (!isAuthenticated) return;
     const timer = setInterval(() => {
       void loadAssessments();
       if (expandedId !== null) {
@@ -187,7 +187,7 @@ export default function useAssessmentResults({
     }, RESULTS_POLL_INTERVAL_MS);
 
     return () => clearInterval(timer);
-  }, [apiKey, expandedId, loadAssessments, loadChildRuns]);
+  }, [expandedId, isAuthenticated, loadAssessments, loadChildRuns]);
 
   useEffect(() => {
     if (expandedId === null) return;
@@ -201,7 +201,7 @@ export default function useAssessmentResults({
 
   const triggerDownload = useCallback(
     async (url: string, format: ExportFormat, key: string) => {
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
       setDownloadingId(key);
       try {
         const response = await fetch(`${url}?export_format=${format}`, {
@@ -240,7 +240,7 @@ export default function useAssessmentResults({
         setDownloadingId(null);
       }
     },
-    [apiKey, buildAuthHeaders, onForbidden, toast],
+    [buildAuthHeaders, isAuthenticated, onForbidden, toast],
   );
 
   const handleAssessmentDownload = useCallback(
@@ -265,8 +265,8 @@ export default function useAssessmentResults({
 
   const handleRerun = useCallback(
     async (run: AssessmentChildRun) => {
-      if (!apiKey) {
-        toast.error("Cannot retry without an API key");
+      if (!isAuthenticated) {
+        toast.error("Please sign in to retry this run");
         return;
       }
 
@@ -288,13 +288,20 @@ export default function useAssessmentResults({
         setRerunningId(null);
       }
     },
-    [apiKey, loadAssessments, loadChildRuns, onForbidden, toast],
+    [
+      apiKey,
+      isAuthenticated,
+      loadAssessments,
+      loadChildRuns,
+      onForbidden,
+      toast,
+    ],
   );
 
   const handleRetryAssessment = useCallback(
     async (assessmentId: number) => {
-      if (!apiKey) {
-        toast.error("Cannot retry without an API key");
+      if (!isAuthenticated) {
+        toast.error("Please sign in to retry this assessment");
         return;
       }
 
@@ -320,7 +327,15 @@ export default function useAssessmentResults({
         setRetryingAssessmentId(null);
       }
     },
-    [apiKey, expandedId, loadAssessments, loadChildRuns, onForbidden, toast],
+    [
+      apiKey,
+      expandedId,
+      isAuthenticated,
+      loadAssessments,
+      loadChildRuns,
+      onForbidden,
+      toast,
+    ],
   );
 
   const handleExpand = useCallback(
@@ -336,7 +351,7 @@ export default function useAssessmentResults({
 
   const handlePreview = useCallback(
     async (runId: number, label: string) => {
-      if (!apiKey) return;
+      if (!isAuthenticated) return;
       setPreviewLoading(runId);
       try {
         const json = await apiFetch<
@@ -354,7 +369,7 @@ export default function useAssessmentResults({
         setPreviewLoading(null);
       }
     },
-    [apiKey, onForbidden, toast],
+    [apiKey, isAuthenticated, onForbidden, toast],
   );
 
   return {

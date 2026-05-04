@@ -32,13 +32,15 @@ export default function PageHeader({
     <>
       <div className="border-b px-4 py-3 flex items-center justify-between shrink-0 bg-bg-primary border-border">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-1.5 rounded-md text-text-secondary"
-            aria-label="Toggle sidebar"
-          >
-            <MenuIcon className="w-5 h-5" />
-          </button>
+          {sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 transition-colors cursor-pointer"
+              aria-label="Open sidebar"
+            >
+              <MenuIcon className="w-5 h-5" />
+            </button>
+          )}
           {children ?? (
             <div>
               {title && (

@@ -6,8 +6,8 @@
   --foreground: #171717;
   --muted: #737373;
   --border: #e5e5e5;
-  --accent: #0070f3;
-  --accent-hover: #0761d1;
+  --accent: #1f4496;
+  --accent-hover: #173574;
   --success: #16a34a;
   --error: #dc2626;
 }
@@ -38,8 +38,13 @@
 
 /* Accent colors */
 @theme inline {
-  --color-accent-primary: #171717;
-  --color-accent-hover: #404040;
+  --color-accent-primary: #1f4496;
+  --color-accent-hover: #173574;
+  --color-accent-muted: #8fa1cb;
+  --color-accent-subtle: #bcc7df;
+
+  --color-accent-secondary: #ffce00;
+  --color-accent-secondary-hover: #e6b800;
 }
 
 /* Status colors */
@@ -75,16 +80,6 @@
   --color-status-default-bg: hsl(0, 0%, 100%);
   --color-status-default-border: hsl(0, 0%, 85%);
   --color-status-default-text: hsl(330, 3%, 49%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #000000;
-    --background-secondary: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a1a1a1;
-    --border: #262626;
-  }
 }
 
 body {
@@ -220,5 +215,17 @@ a {
   }
   to {
     width: 100%;
+  }
+}
+
+@keyframes chat-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
   }
 }

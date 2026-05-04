@@ -1,8 +1,3 @@
-/**
- * Types for Config Management
- * These types represent configs as they are consumed by the frontend,
- */
-
 export interface SavedConfig {
   id: string;
   config_id: string;

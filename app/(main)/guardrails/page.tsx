@@ -16,6 +16,7 @@ import {
   Validator,
   SavedValidatorConfig,
   OrgContext,
+  buildValidatorUpdatePayload,
 } from "@/app/lib/types/guardrails";
 import ValidatorConfigPanel from "@/app/components/guardrails/ValidatorConfigPanel";
 import SavedConfigsList from "@/app/components/guardrails/SavedConfigsList";
@@ -74,28 +75,34 @@ export default function GuardrailsPage() {
     ? `?organization_id=${parseInt(String(orgContext.organization_id), 10)}&project_id=${parseInt(String(orgContext.project_id), 10)}`
     : null;
 
-  const fetchSavedConfigs = useCallback(() => {
-    if (!configsQueryString) return;
+  const fetchSavedConfigs = useCallback(async (): Promise<
+    SavedValidatorConfig[]
+  > => {
+    if (!configsQueryString) return [];
     setSavedConfigsLoading(true);
-    guardrailsFetch<{
-      data?: { configs?: SavedValidatorConfig[] } | SavedValidatorConfig[];
-      configs?: SavedValidatorConfig[];
-    }>(`/api/guardrails/validators/configs${configsQueryString}`, apiKey)
-      .then((data) => {
-        const nested = data?.data;
-        const list: SavedValidatorConfig[] = Array.isArray(
-          (nested as { configs?: SavedValidatorConfig[] })?.configs,
-        )
-          ? (nested as { configs: SavedValidatorConfig[] }).configs
-          : Array.isArray(nested)
-            ? (nested as SavedValidatorConfig[])
-            : Array.isArray(data?.configs)
-              ? data.configs!
-              : [];
-        setSavedConfigs(list);
-      })
-      .catch(() => toast.error("Failed to load saved configs"))
-      .finally(() => setSavedConfigsLoading(false));
+    try {
+      const data = await guardrailsFetch<{
+        data?: { configs?: SavedValidatorConfig[] } | SavedValidatorConfig[];
+        configs?: SavedValidatorConfig[];
+      }>(`/api/guardrails/validators/configs${configsQueryString}`, apiKey);
+      const nested = data?.data;
+      const list: SavedValidatorConfig[] = Array.isArray(
+        (nested as { configs?: SavedValidatorConfig[] })?.configs,
+      )
+        ? (nested as { configs: SavedValidatorConfig[] }).configs
+        : Array.isArray(nested)
+          ? (nested as SavedValidatorConfig[])
+          : Array.isArray(data?.configs)
+            ? data.configs!
+            : [];
+      setSavedConfigs(list);
+      return list;
+    } catch {
+      toast.error("Failed to load saved configs");
+      return [];
+    } finally {
+      setSavedConfigsLoading(false);
+    }
   }, [configsQueryString, apiKey]);
 
   useEffect(() => {
@@ -150,7 +157,9 @@ export default function GuardrailsPage() {
         ? `${base}/${selectedSavedConfig!.id}${configsQueryString}`
         : `${base}${configsQueryString}`;
 
-      const body = configValues;
+      const body = isUpdate
+        ? buildValidatorUpdatePayload(configValues)
+        : configValues;
 
       await guardrailsFetch(url, apiKey, {
         method: isUpdate ? "PATCH" : "POST",
@@ -159,8 +168,15 @@ export default function GuardrailsPage() {
       toast.success(
         isUpdate ? `Config "${name}" updated` : `Config "${name}" saved`,
       );
-      fetchSavedConfigs();
-      setSelectedSavedConfig(null);
+      const savedConfigId = selectedSavedConfig?.id;
+      const freshList = await fetchSavedConfigs();
+      if (isUpdate && savedConfigId) {
+        setSelectedSavedConfig(
+          freshList.find((c) => c.id === savedConfigId) ?? null,
+        );
+      } else {
+        setSelectedSavedConfig(null);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save config");
     } finally {

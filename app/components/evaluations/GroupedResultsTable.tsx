@@ -4,27 +4,16 @@
  * Displays multiple LLM answers per question in a grouped table format
  */
 
-import { useState, useEffect, Fragment } from "react";
+import { Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
 import { formatScoreValue } from "@/app/lib/utils";
+import { InfoTooltip } from "@/app/components";
 
 export default function GroupedResultsTable({
   traces,
 }: {
   traces: GroupedTraceItem[];
 }) {
-  const [openCommentId, setOpenCommentId] = useState<string | null>(null);
-  const [commentPos, setCommentPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (!openCommentId) return;
-    const handleScroll = () => setOpenCommentId(null);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [openCommentId]);
-
   if (!traces || traces.length === 0) {
     return (
       <div className="border rounded-lg p-6 text-center bg-[#fef3c7] border-[#fbbf24]">
@@ -33,7 +22,6 @@ export default function GroupedResultsTable({
     );
   }
 
-  // Get max answers count
   const maxAnswers = Math.max(...traces.map((t) => t.llm_answers.length));
 
   // Fixed column widths (in pixels) for predictable layout
@@ -58,9 +46,9 @@ export default function GroupedResultsTable({
           style={{ minWidth: `${tableMinWidth}px` }}
         >
           <thead>
-            <tr className="bg-bg-secondary border-b border-border">
+            <tr className="bg-accent-primary border-b border-border">
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{
                   width: `${COLUMN_WIDTHS.qId}px`,
                   minWidth: `${COLUMN_WIDTHS.qId}px`,
@@ -69,7 +57,7 @@ export default function GroupedResultsTable({
                 Q.ID
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{
                   width: `${COLUMN_WIDTHS.question}px`,
                   minWidth: `${COLUMN_WIDTHS.question}px`,
@@ -78,7 +66,7 @@ export default function GroupedResultsTable({
                 Question
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{
                   width: `${COLUMN_WIDTHS.groundTruth}px`,
                   minWidth: `${COLUMN_WIDTHS.groundTruth}px`,
@@ -89,7 +77,7 @@ export default function GroupedResultsTable({
               {Array.from({ length: maxAnswers }, (_, i) => (
                 <th
                   key={`answer-${i}`}
-                  className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                  className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                   style={{
                     width: `${COLUMN_WIDTHS.answer}px`,
                     minWidth: `${COLUMN_WIDTHS.answer}px`,
@@ -124,7 +112,6 @@ export default function GroupedResultsTable({
                     </div>
                   </td>
 
-                  {/* Answer */}
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
                     const answer = group.llm_answers[answerIndex];
                     return (
@@ -187,59 +174,9 @@ export default function GroupedResultsTable({
                                       >
                                         {value}
                                       </div>
-                                      {score?.comment &&
-                                        (() => {
-                                          const commentId = `g${index}-a${answerIndex}-s${scoreIdx}`;
-                                          return (
-                                            <>
-                                              <div
-                                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-normal ${
-                                                  openCommentId === commentId
-                                                    ? "bg-text-primary text-white"
-                                                    : "bg-bg-secondary text-text-secondary"
-                                                }`}
-                                                onMouseEnter={(e) => {
-                                                  const rect =
-                                                    e.currentTarget.getBoundingClientRect();
-                                                  const tooltipWidth = 300;
-                                                  const centerX =
-                                                    rect.left + rect.width / 2;
-                                                  const clampedLeft = Math.min(
-                                                    Math.max(
-                                                      centerX -
-                                                        tooltipWidth / 2,
-                                                      8,
-                                                    ),
-                                                    window.innerWidth -
-                                                      tooltipWidth -
-                                                      8,
-                                                  );
-                                                  setCommentPos({
-                                                    top: rect.top - 8,
-                                                    left: clampedLeft,
-                                                  });
-                                                  setOpenCommentId(commentId);
-                                                }}
-                                                onMouseLeave={() =>
-                                                  setOpenCommentId(null)
-                                                }
-                                              >
-                                                i
-                                              </div>
-                                              {openCommentId === commentId && (
-                                                <div
-                                                  className="fixed z-50 px-3 py-2 rounded-md text-xs whitespace-normal pointer-events-none bg-[#171717] text-white w-[300px] shadow-[0_4px_6px_rgba(0,0,0,0.1)] -translate-y-full"
-                                                  style={{
-                                                    top: commentPos.top,
-                                                    left: commentPos.left,
-                                                  }}
-                                                >
-                                                  {score.comment}
-                                                </div>
-                                              )}
-                                            </>
-                                          );
-                                        })()}
+                                      {score?.comment && (
+                                        <InfoTooltip text={score.comment} />
+                                      )}
                                     </div>
                                   </div>
                                 );

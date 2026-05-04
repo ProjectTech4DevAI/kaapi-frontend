@@ -85,25 +85,25 @@ export default function DetailedResultsTable({
           style={{ minWidth: `${tableMinWidth}px` }}
         >
           <thead>
-            <tr className="bg-bg-secondary border-b border-border">
+            <tr className="bg-accent-primary border-b border-border">
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.index}px` }}
               ></th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.question}px` }}
               >
                 Question
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.groundTruth}px` }}
               >
                 Ground Truth
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold uppercase text-text-primary"
+                className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.answer}px` }}
               >
                 Answer
@@ -111,7 +111,7 @@ export default function DetailedResultsTable({
               {scoreNames.map((scoreName) => (
                 <th
                   key={scoreName}
-                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-text-primary whitespace-normal wrap-break-word"
+                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-bg-primary whitespace-normal wrap-break-word"
                   style={{ width: `${COLUMN_WIDTHS.score}px` }}
                 >
                   {scoreName}

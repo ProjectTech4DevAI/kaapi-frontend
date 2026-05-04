@@ -1,8 +1,3 @@
-/**
- * Types for Config Management
- * These types represent configs as they are consumed by the frontend,
- */
-
 import type { AssessmentConfigTag } from "@/app/lib/assessment/constants";
 
 export interface SavedConfig {

@@ -7,6 +7,8 @@ import { OnboardResponseData } from "@/app/lib/types/onboarding";
 
 interface OnboardingSuccessProps {
   data: OnboardResponseData;
+  onOnboardAnother?: () => void;
+  onBackToList?: () => void;
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
@@ -18,7 +20,11 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function OnboardingSuccess({ data }: OnboardingSuccessProps) {
+export default function OnboardingSuccess({
+  data,
+  onOnboardAnother,
+  onBackToList,
+}: OnboardingSuccessProps) {
   const toast = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -88,6 +94,21 @@ export default function OnboardingSuccess({ data }: OnboardingSuccessProps) {
           to start using configurations, evaluations, and other features.
         </p>
       </div>
+
+      {(onOnboardAnother || onBackToList) && (
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          {onOnboardAnother && (
+            <Button variant="primary" onClick={onOnboardAnother}>
+              Onboard another organization
+            </Button>
+          )}
+          {onBackToList && (
+            <Button variant="outline" onClick={onBackToList}>
+              Back to organizations
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

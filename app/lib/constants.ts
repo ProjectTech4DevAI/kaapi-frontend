@@ -21,6 +21,7 @@ export const STORAGE_KEYS = {
   COLLECTION_CACHE: "collection_job_cache",
   DOCUMENT_SIZES: "document_file_sizes",
   SIDEBAR_MENUS: "sidebar-expanded-menus",
+  CHAT_STATE: "kaapi_chat_state",
 } as const;
 
 export const COOKIE_KEYS = {

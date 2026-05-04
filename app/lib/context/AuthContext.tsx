@@ -20,6 +20,7 @@ import {
   FEATURES_UPDATED_EVENT,
   STORAGE_KEYS,
 } from "@/app/lib/constants";
+import { useChatStore } from "@/app/lib/store/chat";
 import { clearAllStorage } from "@/app/lib/utils";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
 
@@ -139,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setCurrentUser(null);
     clearAllStorage();
+    useChatStore.getState().reset();
     setApiKeys([]);
     window.dispatchEvent(new Event("kaapi-auth-changed"));
     window.location.replace("/evaluations");

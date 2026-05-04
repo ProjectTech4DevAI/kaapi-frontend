@@ -6,7 +6,8 @@ import {
 } from "@/app/lib/constants";
 
 const PUBLIC_ROUTES = new Set<string>([
-  "/evaluations",
+  "/",
+  "/chat",
   "/invite",
   "/verify",
   "/coming-soon/guardrails",
@@ -22,7 +23,7 @@ const FEATURE_GATED_PREFIXES: Array<{
 
 const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
 
-const HOME_ROUTE = "/evaluations";
+const HOME_ROUTE = "/chat";
 const PATHNAME_STARTS_WITH = ["/settings"];
 function parseFeatures(raw: string | undefined): Set<string> {
   if (!raw) return new Set();

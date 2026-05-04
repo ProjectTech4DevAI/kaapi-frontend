@@ -41,6 +41,8 @@ export { default as SlidersIcon } from "./sidebar/SlidersIcon";
 export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
 export { default as LogoutIcon } from "./sidebar/LogoutIcon";
 export { default as AssessmentIcon } from "./sidebar/AssessmentIcon";
+export { default as ChatIcon } from "./sidebar/ChatIcon";
+export { default as SendIcon } from "./sidebar/SendIcon";
 
 // Prompt Editor Icons
 export { default as ChevronRightIcon } from "./prompt-editor/ChevronRightIcon";

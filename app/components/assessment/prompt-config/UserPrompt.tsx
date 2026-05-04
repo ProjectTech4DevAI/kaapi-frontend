@@ -13,7 +13,7 @@ export default function UserPrompt({
   setPromptTemplate,
   previewMode,
 }: UserPromptProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div

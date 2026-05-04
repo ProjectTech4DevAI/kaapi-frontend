@@ -11,7 +11,7 @@ export default function SystemPrompt({
   onChange,
   previewMode,
 }: SystemPromptProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <div

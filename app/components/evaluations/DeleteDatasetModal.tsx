@@ -26,7 +26,7 @@ export default function DeleteDatasetModal({
     >
       <div className="px-6 py-5">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-status-error-bg">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0">
             <WarningIcon className="w-5 h-5 text-status-error-text" />
           </div>
           <div>

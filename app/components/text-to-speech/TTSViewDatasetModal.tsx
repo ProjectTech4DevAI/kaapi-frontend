@@ -70,20 +70,26 @@ export default function TTSViewDatasetModal({
           </tr>
         </thead>
         <tbody>
-          {data.rows.map((row, rowIdx) => (
-            <tr key={rowIdx} className="border-b border-border">
-              <td className="px-4 py-2.5 text-xs text-text-secondary">
-                {rowIdx + 1}
-              </td>
-              {row.map((cell, cellIdx) => (
-                <td key={cellIdx} className="px-4 py-2.5 text-text-primary">
-                  <div className="text-sm max-h-[120px] overflow-auto leading-relaxed">
-                    {cell || <span className="text-text-secondary">—</span>}
-                  </div>
+          {data.rows.map((row, rowIdx) => {
+            const isLast = rowIdx === data.rows.length - 1;
+            return (
+              <tr
+                key={rowIdx}
+                className={isLast ? "" : "border-b border-border"}
+              >
+                <td className="px-4 py-2.5 text-xs text-text-secondary">
+                  {rowIdx + 1}
                 </td>
-              ))}
-            </tr>
-          ))}
+                {row.map((cell, cellIdx) => (
+                  <td key={cellIdx} className="px-4 py-2.5 text-text-primary">
+                    <div className="text-sm max-h-[120px] overflow-auto leading-relaxed">
+                      {cell || <span className="text-text-secondary">—</span>}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </Modal>

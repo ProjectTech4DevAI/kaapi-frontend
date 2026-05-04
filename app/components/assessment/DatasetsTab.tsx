@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
-import { Dataset } from "@/app/lib/types/datasets";
+import { Dataset } from "@/app/lib/types/dataset";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { handleForbiddenError } from "@/app/lib/assessment/access";

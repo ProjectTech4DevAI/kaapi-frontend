@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { colors } from "@/app/lib/colors";
-import { Dataset } from "@/app/lib/types/datasets";
+import { Dataset } from "@/app/lib/types/dataset";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";

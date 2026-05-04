@@ -5,7 +5,7 @@ import Loader from "@/app/components/Loader";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import type { ValueSetter } from "@/app/lib/types/assessment";
-import type { Dataset } from "@/app/lib/types/datasets";
+import type { Dataset } from "@/app/lib/types/dataset";
 
 interface DatasetsListProps {
   datasets: Dataset[];

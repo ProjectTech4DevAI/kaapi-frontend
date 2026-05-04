@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import { Dataset } from "@/app/lib/types/datasets";
+import { Dataset } from "@/app/lib/types/dataset";
 import { apiFetch } from "@/app/lib/apiClient";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";

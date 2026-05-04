@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { Dataset } from "@/app/lib/types/datasets";
+import type { Dataset } from "@/app/lib/types/dataset";
 import type { ConfigVersionItems } from "@/app/lib/types/configs";
 
 export type ValueSetter<T> = (value: T) => void;

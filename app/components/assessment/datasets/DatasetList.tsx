@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
-import Loader from "@/app/components/Loader";
+import { Button, DatasetListSkeleton } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import type { ValueSetter } from "@/app/lib/types/assessment";
@@ -47,9 +46,7 @@ export default function DatasetList({
         </div>
 
         {isLoading ? (
-          <div className="p-16 text-center">
-            <Loader size="sm" message="Loading datasets..." />
-          </div>
+          <DatasetListSkeleton count={4} />
         ) : datasets.length === 0 ? (
           <div className="p-16 text-center">
             <DatabaseIcon className="mx-auto mb-3 h-12 w-12 text-border" />

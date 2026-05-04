@@ -1,15 +1,8 @@
 "use client";
 
-export interface Tab {
-  id: string;
-  label: string;
-}
+import type { TabNavigationProps } from "@/app/lib/types/nav";
 
-interface TabNavigationProps {
-  tabs: Tab[];
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-}
+export type { Tab } from "@/app/lib/types/nav";
 
 export default function TabNavigation({
   tabs,

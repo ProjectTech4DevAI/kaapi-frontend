@@ -115,3 +115,9 @@ export interface TTSFeedbackPayload {
   comment?: string;
   score?: TTSScore;
 }
+
+export interface TTSViewDatasetModalData {
+  name: string;
+  headers: string[];
+  rows: string[][];
+}

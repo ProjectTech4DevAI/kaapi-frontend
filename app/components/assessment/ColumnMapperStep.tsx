@@ -60,10 +60,6 @@ function buildColumnConfigs(
       return { role: "text" };
     }
 
-    if (columnMapping.groundTruthColumns.includes(column)) {
-      return { role: "ground_truth" };
-    }
-
     const attachment = columnMapping.attachments.find(
       (item) => item.column === column,
     );
@@ -93,6 +89,10 @@ export default function ColumnMapperStep({
   }, [columns, columnMapping]);
 
   const updateRole = (index: number, role: ColumnRole) => {
+    if (role === "ground_truth") {
+      return;
+    }
+
     setColumnConfigs((prev) => {
       const current = prev[index];
       const next = [...prev];
@@ -139,7 +139,6 @@ export default function ColumnMapperStep({
   const handleNext = () => {
     const textColumns: string[] = [];
     const attachments: Attachment[] = [];
-    const groundTruthColumns: string[] = [];
 
     columnConfigs.forEach((config, index) => {
       const column = columns[index];
@@ -147,8 +146,6 @@ export default function ColumnMapperStep({
 
       if (config.role === "text") {
         textColumns.push(column);
-      } else if (config.role === "ground_truth") {
-        groundTruthColumns.push(column);
       } else if (
         config.role === "attachment" &&
         config.attachmentType &&
@@ -162,7 +159,7 @@ export default function ColumnMapperStep({
       }
     });
 
-    setColumnMapping({ textColumns, attachments, groundTruthColumns });
+    setColumnMapping({ textColumns, attachments, groundTruthColumns: [] });
     onNext();
   };
 
@@ -222,7 +219,7 @@ export default function ColumnMapperStep({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`h-2.5 w-2.5 rounded-full ${roleVisuals.dotClass}`}
+                            className={`h-2 w-2 rounded-full ${roleVisuals.dotClass}`}
                           />
                           <span className="font-mono text-sm font-semibold text-text-primary">
                             {column}
@@ -232,21 +229,39 @@ export default function ColumnMapperStep({
 
                       <div className="flex flex-wrap gap-2">
                         {ASSESSMENT_ROLE_OPTIONS.map((option) => {
+                          const isGroundTruth = option.value === "ground_truth";
                           const isActive = config.role === option.value;
                           return (
                             <Button
                               key={option.value}
                               type="button"
-                              variant="outline"
+                              variant={isGroundTruth ? "ghost" : "outline"}
                               size="sm"
-                              onClick={() => updateRole(index, option.value)}
+                              onClick={() => {
+                                if (!isGroundTruth) {
+                                  updateRole(index, option.value);
+                                }
+                              }}
+                              aria-disabled={isGroundTruth}
+                              title={
+                                isGroundTruth
+                                  ? "Ground Truth mapping is coming soon"
+                                  : undefined
+                              }
                               className={`!rounded-full !px-4 !py-2 ${
-                                isActive
-                                  ? roleVisuals.activeButtonClass
-                                  : "!bg-bg-primary !text-text-secondary hover:!bg-bg-secondary"
+                                isGroundTruth
+                                  ? "!cursor-not-allowed !bg-transparent !text-text-secondary hover:!bg-transparent hover:!text-text-secondary"
+                                  : isActive
+                                    ? roleVisuals.activeButtonClass
+                                    : "!bg-bg-primary !text-text-secondary hover:!bg-bg-secondary"
                               }`}
                             >
-                              {option.label}
+                              <span>{option.label}</span>
+                              {isGroundTruth && (
+                                <span className="rounded-full bg-bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
+                                  Soon
+                                </span>
+                              )}
                             </Button>
                           );
                         })}

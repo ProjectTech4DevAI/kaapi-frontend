@@ -20,7 +20,6 @@ import ErrorModal from "@/app/components/ErrorModal";
 import DatasetsTab from "@/app/components/speech-to-text/DatasetsTab";
 import EvaluationsTab from "@/app/components/speech-to-text/EvaluationsTab";
 import {
-  Tab,
   AudioFile,
   Dataset,
   STTRun,
@@ -36,6 +35,7 @@ import {
   CreateDatasetResponse,
   CreateRunResponse,
 } from "@/app/lib/types/speechToText";
+import { Tab } from "@/app/lib/types/evaluation";
 
 export default function SpeechToTextPage() {
   const toast = useToast();

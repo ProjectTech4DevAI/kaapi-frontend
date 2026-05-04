@@ -128,8 +128,6 @@ export default function Sidebar({
     assessment: <AssessmentIcon />,
   };
 
-  // Feature-gated items are deferred until after mount so the sidebar
-  // structure is identical between SSR and the first client render.
   const navItems: MenuItem[] = NAV_ITEMS.filter((item) => {
     if (item.superuserOnly && !currentUser?.is_superuser) return false;
     if (item.featureFlag) {

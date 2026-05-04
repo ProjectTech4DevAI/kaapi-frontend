@@ -8,3 +8,10 @@ export interface Dataset {
   langfuse_dataset_id: string;
   object_store_url: string;
 }
+
+export interface ViewDatasetModalData {
+  name: string;
+  headers: string[];
+  rows: string[][];
+  signedUrl: string;
+}

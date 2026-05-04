@@ -14,6 +14,7 @@ This is a thin frontend UI for [Kaapi backend](https://github.com/ProjectTech4De
   - [Software Dependencies](#software-dependencies)
     - [npm (via asdf)](#npm-via-asdf)
   - [Kaapi Backend](#kaapi-backend)
+  - [Kaapi Guardrails Service](#kaapi-guardrails-service)
 - [Clone Frontend Repo](#clone-frontend-repo)
   - [Git commands to clone](#git-commands-to-clone)
 - [Installation](#installation)
@@ -52,11 +53,11 @@ You need to set up the [Kaapi backend](https://github.com/ProjectTech4DevAI/kaap
 
 > 💡 Note: Ensure the backend is running and accessible before starting the frontend.
 
-### Kaapi Guardrails Service _(coming soon)_
+### Kaapi Guardrails Service
 
-The Guardrails UI (currently in development) will require the Kaapi Guardrails service to be running alongside the backend. Setup instructions will be added here once the service is available.
+You need to set up the [Kaapi Guardrails](https://github.com/ProjectTech4DevAI/kaapi-guardrails) service and follow the instructions there.
 
-> 🚧 No action needed for now — this is a placeholder for when the Guardrails feature lands in `main`.
+> 💡 Note: The Guardrails service must be running and accessible whenever you use the Guardrails module in the frontend.
 
 ---
 
@@ -149,14 +150,14 @@ Deployments are automated via a GitHub Actions CD pipeline that SSHes into the E
 1. SSHes into the EC2 instance
 2. Runs `git pull` to fetch the latest code
 3. Runs `npm run build` to create an optimized production build
-4. Restarts the server to apply the new build
+4. Restarts the pm2 server to apply the new build
 
 **Production** — on every version tag (e.g. `v1.0.0`, `v2.1.0`), the pipeline automatically:
 
 1. SSHes into the EC2 instance
 2. Runs `git fetch --tags` and checks out the tag
 3. Runs `npm run build` to create an optimized production build
-4. Restarts the server to apply the new build
+4. Restarts the pm2 server to apply the new build
 
 ---
 
@@ -169,4 +170,4 @@ Deployments are automated via a GitHub Actions CD pipeline that SSHes into the E
 
 ### Chat With Us
 
-- 💬 [Discord](https://discord.gg/BRYzSYha)
+- 💬 [Discord](https://discord.gg/s7e2UBFku)

@@ -53,7 +53,7 @@ export default function TextToSpeechPage() {
   const [textSamples, setTextSamples] = useState<TextSample[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [datasets, setDatasets] = useState<TTSDataset[]>([]);
-  const [isLoadingDatasets, setIsLoadingDatasets] = useState(false);
+  const [isLoadingDatasets, setIsLoadingDatasets] = useState(true);
   const [evaluationName, setEvaluationName] = useState("");
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
     null,
@@ -63,7 +63,7 @@ export default function TextToSpeechPage() {
   );
   const [isRunning, setIsRunning] = useState(false);
   const [runs, setRuns] = useState<TTSRun[]>([]);
-  const [isLoadingRuns, setIsLoadingRuns] = useState(false);
+  const [isLoadingRuns, setIsLoadingRuns] = useState(true);
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
   const [results, setResults] = useState<TTSResult[]>([]);
   const [isLoadingResults, setIsLoadingResults] = useState(false);

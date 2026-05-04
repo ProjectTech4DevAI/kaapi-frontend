@@ -7,7 +7,6 @@ export async function GET(request: Request) {
     const queryString = searchParams.toString();
     const endpoint = `/api/v1/configs/${queryString ? `?${queryString}` : ""}`;
     const { status, data } = await apiClient(request, endpoint);
-
     return NextResponse.json(data, { status });
   } catch (error) {
     return NextResponse.json(
@@ -24,15 +23,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
     const { status, data } = await apiClient(request, "/api/v1/configs/", {
       method: "POST",
       body: JSON.stringify(body),
     });
-
     return NextResponse.json(data, { status });
   } catch (error) {
     console.error("Proxy error:", error);
-
     return NextResponse.json(
       {
         error: "Failed to forward request",

@@ -34,8 +34,10 @@ export default function SelectedConfigs({
               : ""}
           </span>
           <button
+            type="button"
             onClick={() => onRemove(config.config_id, config.config_version)}
-            className="inline-flex h-5.5 w-5.5 cursor-pointer items-center justify-center rounded-full text-text-secondary"
+            className="inline-flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-primary"
+            aria-label={`Remove ${config.name}`}
           >
             <CloseIcon className="h-3 w-3" />
           </button>

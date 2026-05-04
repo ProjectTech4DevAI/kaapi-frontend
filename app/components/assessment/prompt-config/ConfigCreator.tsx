@@ -1,12 +1,14 @@
-import { PROVIDER_OPTIONS } from "@/app/lib/assessment/config";
+import { Button, Field } from "@/app/components";
+import Select from "@/app/components/Select";
+import { PROVIDER_OPTIONS } from "@/app/lib/assessment/constants";
 import type {
   ConfigCreatorProps,
   ConfigParamControlProps,
 } from "@/app/lib/types/assessment";
 
-const labelClass = "mb-2 block text-xs font-semibold text-text-primary";
-const inputClass =
-  "w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm text-text-primary outline-none";
+const inputClass = "!rounded-xl !bg-bg-primary !px-4 !py-3";
+const selectClass =
+  "w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm text-text-primary outline-none focus:ring-1";
 
 export default function ConfigCreator({
   currentProvider,
@@ -30,32 +32,26 @@ export default function ConfigCreator({
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className={labelClass}>Provider</label>
-          <select
+          <label className="mb-2 block text-xs font-semibold text-text-primary">
+            Provider
+          </label>
+          <Select
             value={currentProvider}
             onChange={(e) => onProviderChange(e.target.value as "openai")}
-            className={inputClass}
-          >
-            {PROVIDER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            className={selectClass}
+            options={PROVIDER_OPTIONS}
+          />
         </div>
         <div>
-          <label className={labelClass}>Model</label>
-          <select
+          <label className="mb-2 block text-xs font-semibold text-text-primary">
+            Model
+          </label>
+          <Select
             value={currentModel}
             onChange={(e) => onModelChange(e.target.value)}
-            className={inputClass}
-          >
-            {providerModels.map((model) => (
-              <option key={model.value} value={model.value}>
-                {model.label}
-              </option>
-            ))}
-          </select>
+            className={selectClass}
+            options={providerModels}
+          />
         </div>
       </div>
 
@@ -93,37 +89,31 @@ export default function ConfigCreator({
       </details>
 
       <div className="grid gap-3">
-        <div>
-          <label className={labelClass}>AI Configuration name</label>
-          <input
-            value={configName}
-            onChange={(e) => setConfigName(e.target.value)}
-            placeholder="Helpful grader"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Save note</label>
-          <input
-            value={commitMessage}
-            onChange={(e) => setCommitMessage(e.target.value)}
-            placeholder="Optional"
-            className={inputClass}
-          />
-        </div>
+        <Field
+          label="AI Configuration name"
+          value={configName}
+          onChange={setConfigName}
+          placeholder="Helpful grader"
+          className={inputClass}
+        />
+        <Field
+          label="Save note"
+          value={commitMessage}
+          onChange={setCommitMessage}
+          placeholder="Optional"
+          className={inputClass}
+        />
       </div>
 
-      <button
+      <Button
+        type="button"
+        fullWidth
         onClick={() => void onSave()}
         disabled={saveDisabled}
-        className={`w-full rounded-xl px-4 py-3 text-sm font-semibold ${
-          saveDisabled
-            ? "cursor-not-allowed bg-neutral-200 text-text-secondary"
-            : "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
-        }`}
+        className="!rounded-xl !py-3 !font-semibold"
       >
         {isSaving ? "Saving..." : "Save behavior"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -135,17 +125,15 @@ function ConfigParamControl({
 }: ConfigParamControlProps) {
   if (definition.type === "enum" && definition.options) {
     return (
-      <select
+      <Select
         value={String(value)}
         onChange={(e) => onChange(e.target.value)}
-        className={inputClass}
-      >
-        {definition.options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+        className={selectClass}
+        options={definition.options.map((option) => ({
+          value: option,
+          label: option,
+        }))}
+      />
     );
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { Modal } from "@/app/components";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
 import type { DataViewModalProps } from "@/app/lib/types/assessment";
 
@@ -14,60 +15,63 @@ export default function DataViewModal({
   onClose,
 }: DataViewModalProps) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="w-[85vw] max-w-[1100px]"
+      maxHeight="max-h-[80vh]"
+      showClose={false}
     >
-      <div
-        className="flex max-h-[80vh] w-[85vw] max-w-[1100px] flex-col rounded-lg bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
-          <div>
-            <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
-            <p className="mt-0.5 text-xs text-neutral-500">
-              {subtitle ?? `${rows.length} rows · ${headers.length} columns`}
-            </p>
-          </div>
-          <button onClick={onClose} className="rounded p-1.5 text-neutral-500">
-            <CloseIcon className="w-5 h-5" />
-          </button>
+      <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4">
+        <div>
+          <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
+          <p className="mt-0.5 text-xs text-neutral-500">
+            {subtitle ?? `${rows.length} rows · ${headers.length} columns`}
+          </p>
         </div>
-        <div className="flex-1 overflow-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-neutral-200 bg-neutral-50">
-                <th className="sticky top-0 w-10 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"></th>
-                {headers.map((header, i) => (
-                  <th
-                    key={i}
-                    className="sticky top-0 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"
-                  >
-                    {header}
-                  </th>
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer rounded p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Close"
+        >
+          <CloseIcon className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="flex-1 overflow-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-neutral-200 bg-neutral-50">
+              <th className="sticky top-0 w-10 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"></th>
+              {headers.map((header, i) => (
+                <th
+                  key={i}
+                  className="sticky top-0 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"
+                >
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIdx) => (
+              <tr key={rowIdx} className="border-b border-neutral-200">
+                <td className="px-4 py-2.5 text-xs text-neutral-500">
+                  {rowIdx + 1}
+                </td>
+                {row.map((cell, cellIdx) => (
+                  <td key={cellIdx} className="px-4 py-2.5 text-neutral-900">
+                    <div className="max-h-[120px] overflow-auto text-sm leading-6">
+                      {cell || <span className="text-neutral-500">—</span>}
+                    </div>
+                  </td>
                 ))}
               </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, rowIdx) => (
-                <tr key={rowIdx} className="border-b border-neutral-200">
-                  <td className="px-4 py-2.5 text-xs text-neutral-500">
-                    {rowIdx + 1}
-                  </td>
-                  {row.map((cell, cellIdx) => (
-                    <td key={cellIdx} className="px-4 py-2.5 text-neutral-900">
-                      <div className="max-h-[120px] overflow-auto text-sm leading-6">
-                        {cell || <span className="text-neutral-500">—</span>}
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </Modal>
   );
 }
 

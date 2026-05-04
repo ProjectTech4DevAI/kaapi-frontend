@@ -1,17 +1,13 @@
 "use client";
 
+import { Button } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
-import type { ConfigPanelProps, Step } from "@/app/lib/types/assessment";
+import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";
+import type { ConfigPanelProps } from "@/app/lib/types/assessment";
 import ColumnMapperStep from "./ColumnMapperStep";
 import PromptAndConfigStep from "./PromptAndConfigStep";
 import ReviewStep from "./ReviewStep";
 import Stepper from "./Stepper";
-
-const CONFIG_STEPS: Step[] = [
-  { id: 1, label: "Mapper" },
-  { id: 2, label: "Prompt & Config" },
-  { id: 3, label: "Review" },
-];
 
 export default function ConfigPanel({
   apiKey,
@@ -53,12 +49,13 @@ export default function ConfigPanel({
           <p className="mb-4 text-xs text-neutral-500">
             Select a dataset first from the Datasets tab
           </p>
-          <button
+          <Button
+            type="button"
             onClick={setActiveTabToDatasets}
-            className="cursor-pointer rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
+            className="!rounded-md"
           >
             Go to Datasets
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -67,7 +64,7 @@ export default function ConfigPanel({
   return (
     <>
       <Stepper
-        steps={CONFIG_STEPS}
+        steps={ASSESSMENT_CONFIG_STEPS}
         currentStep={configStep}
         onStepClick={setConfigStep}
         completedSteps={completedSteps}

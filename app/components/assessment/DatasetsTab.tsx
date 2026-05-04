@@ -247,6 +247,19 @@ export default function DatasetsTab({
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
+      <DatasetList
+        datasets={datasets}
+        datasetId={datasetId}
+        isLoading={isLoading}
+        isLoadingColumns={isLoadingColumns}
+        viewingId={viewingId}
+        canProceed={canProceed}
+        onSelectDataset={handleDatasetSelect}
+        onViewDataset={handleViewDataset}
+        onRequestDelete={setConfirmDeleteId}
+        onNext={onNext}
+      />
+
       <CreatePanel
         datasetName={datasetName}
         datasetDescription={datasetDescription}
@@ -269,19 +282,6 @@ export default function DatasetsTab({
         }}
         onResetForm={resetForm}
         onCreateDataset={handleCreateDataset}
-      />
-
-      <DatasetList
-        datasets={datasets}
-        datasetId={datasetId}
-        isLoading={isLoading}
-        isLoadingColumns={isLoadingColumns}
-        viewingId={viewingId}
-        canProceed={canProceed}
-        onSelectDataset={handleDatasetSelect}
-        onViewDataset={handleViewDataset}
-        onRequestDelete={setConfirmDeleteId}
-        onNext={onNext}
       />
 
       {viewModalData && (

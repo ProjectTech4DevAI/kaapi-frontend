@@ -1,13 +1,11 @@
 import * as XLSX from "xlsx";
 import { apiFetch } from "@/app/lib/apiClient";
+import { ALLOWED_DATASET_EXTENSIONS } from "@/app/lib/assessment/constants";
 import type {
   CreateDatasetResponse,
   DatasetFileResponse,
   ParsedDatasetFile,
 } from "@/app/lib/types/assessment";
-
-export const LEFT_PANEL_CLASSES = "w-[40%] min-w-[360px] max-w-[500px]";
-export const ALLOWED_DATASET_EXTENSIONS = [".csv", ".xlsx", ".xls"] as const;
 
 export function isAllowedDatasetFile(fileName: string): boolean {
   const normalizedName = fileName.toLowerCase();

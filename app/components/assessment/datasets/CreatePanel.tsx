@@ -1,8 +1,9 @@
 "use client";
 
+import { Button, Field } from "@/app/components";
 import { CheckIcon, CloseIcon, CloudUploadIcon } from "@/app/components/icons";
+import { DATASET_LEFT_PANEL_CLASSES } from "@/app/lib/assessment/constants";
 import type { DatasetsCreatePanelProps } from "@/app/lib/types/assessment";
-import { LEFT_PANEL_CLASSES } from "./utils";
 
 export default function CreatePanel({
   datasetName,
@@ -23,7 +24,7 @@ export default function CreatePanel({
 }: DatasetsCreatePanelProps) {
   return (
     <div
-      className={`${LEFT_PANEL_CLASSES} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-bg-primary`}
+      className={`${DATASET_LEFT_PANEL_CLASSES} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-bg-primary`}
     >
       <div className="flex-1 space-y-4 overflow-auto p-4">
         <div>
@@ -35,40 +36,21 @@ export default function CreatePanel({
           </p>
         </div>
 
-        <div>
-          <label
-            htmlFor="dataset-name"
-            className="mb-1.5 block text-xs font-medium text-text-secondary"
-          >
-            Name *
-          </label>
-          <input
-            id="dataset-name"
-            type="text"
-            value={datasetName}
-            onChange={(event) => onDatasetNameChange(event.target.value)}
-            placeholder="e.g., Hindi QnA Dataset"
-            className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary"
-          />
-        </div>
+        <Field
+          label="Name *"
+          value={datasetName}
+          onChange={onDatasetNameChange}
+          placeholder="e.g., Hindi QnA Dataset"
+          className="!rounded-md !bg-bg-primary"
+        />
 
-        <div>
-          <label
-            htmlFor="dataset-description"
-            className="mb-1.5 block text-xs font-medium text-text-secondary"
-          >
-            Description
-          </label>
-          <input
-            id="dataset-description"
-            type="text"
-            value={datasetDescription}
-            onChange={(event) => onDatasetDescriptionChange(event.target.value)}
-            placeholder="Optional description"
-            className="w-full rounded-md border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary"
-          />
-        </div>
-
+        <Field
+          label="Description"
+          value={datasetDescription}
+          onChange={onDatasetDescriptionChange}
+          placeholder="Optional description"
+          className="!rounded-md !bg-bg-primary"
+        />
         <div>
           <label className="mb-1.5 block text-xs font-medium text-text-secondary">
             Upload CSV *
@@ -100,7 +82,7 @@ export default function CreatePanel({
                   type="button"
                   onClick={onRemoveFile}
                   aria-label="Remove file"
-                  className="rounded p-1 text-text-secondary"
+                  className="cursor-pointer rounded p-1 text-text-secondary transition-colors hover:bg-bg-primary hover:text-text-primary"
                 >
                   <CloseIcon className="h-4 w-4" />
                 </button>
@@ -133,22 +115,19 @@ export default function CreatePanel({
       </div>
 
       <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t border-border bg-bg-primary px-4 py-3">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onResetForm}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-text-secondary"
+          className="!rounded-lg"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onCreateDataset}
           disabled={!uploadedFile || !datasetName.trim() || isUploading}
-          className={`flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium ${
-            !uploadedFile || !datasetName.trim() || isUploading
-              ? "cursor-not-allowed bg-neutral-200 text-text-secondary"
-              : "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
-          }`}
+          className="!rounded-lg"
         >
           {isUploading ? (
             <>
@@ -158,7 +137,7 @@ export default function CreatePanel({
           ) : (
             "Create Dataset"
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

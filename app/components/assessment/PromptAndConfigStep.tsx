@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/app/components";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import {
@@ -428,30 +429,31 @@ export default function PromptAndConfigStep({
 
       <div className="sticky bottom-0 z-10 mt-auto -mx-6 flex items-center justify-between border-t border-border bg-bg-secondary px-6 py-2">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <button
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
             onClick={onBack}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-bg-primary px-6 py-2.5 text-sm font-medium text-text-primary"
+            className="!rounded-lg !px-6"
           >
             <ChevronLeftIcon className="h-3.5 w-3.5" />
             Back
-          </button>
+          </Button>
           <div className="flex items-center gap-3">
             {!canProceed && (
               <span className="text-xs text-text-secondary">
                 {nextBlockerMessage}
               </span>
             )}
-            <button
+            <Button
+              type="button"
+              size="lg"
               onClick={onNext}
               disabled={!canProceed}
-              className={`rounded-lg px-6 py-2.5 text-sm font-medium ${
-                canProceed
-                  ? "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
-                  : "cursor-not-allowed bg-neutral-200 text-text-secondary"
-              }`}
+              className="!rounded-lg !px-6"
             >
               Next: Review
-            </button>
+            </Button>
           </div>
         </div>
       </div>

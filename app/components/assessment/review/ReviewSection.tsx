@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/app/components";
 import { ChevronRightIcon } from "@/app/components/icons";
 import type { ReviewSectionProps } from "@/app/lib/types/assessment";
 
@@ -50,16 +51,18 @@ export default function ReviewSection({
         <div className="flex items-center gap-2">
           {headerAction}
           {onEdit && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={(event) => {
                 event.stopPropagation();
                 onEdit();
               }}
-              className="cursor-pointer rounded-md bg-bg-secondary px-2.5 py-1 text-xs font-medium text-text-primary transition-colors"
+              className="!rounded-md !px-2.5 !py-1 !text-xs"
             >
               Edit
-            </button>
+            </Button>
           )}
         </div>
       </div>

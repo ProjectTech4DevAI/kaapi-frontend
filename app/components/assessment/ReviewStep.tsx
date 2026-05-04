@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import {
+  INITIAL_REVIEW_OPEN_SECTIONS,
+  REVIEW_SECTIONS,
+} from "@/app/lib/assessment/constants";
 import type { ReviewColumn, ReviewStepProps } from "@/app/lib/types/assessment";
 import ColumnsReview from "./review/ColumnsReview";
 import ConfigsReview from "./review/ConfigsReview";
@@ -10,16 +14,6 @@ import InputReview from "./review/InputReview";
 import PayloadReview from "./review/PayloadReview";
 import SchemaReview from "./review/SchemaReview";
 import SubmitReview from "./review/SubmitReview";
-
-const REVIEW_SECTIONS = {
-  dataset: 1,
-  columns: 2,
-  input: 3,
-  configs: 4,
-  schema: 5,
-} as const;
-
-const INITIAL_OPEN_SECTIONS = new Set<number>(Object.values(REVIEW_SECTIONS));
 
 function buildMappedColumns({
   textColumns,
@@ -70,7 +64,7 @@ export default function ReviewStep({
     configs,
   } = formState;
   const [openSections, setOpenSections] = useState<Set<number>>(
-    () => new Set(INITIAL_OPEN_SECTIONS),
+    () => new Set(INITIAL_REVIEW_OPEN_SECTIONS),
   );
 
   const mappedColumns = buildMappedColumns(columnMapping);

@@ -1,17 +1,12 @@
 "use client";
 
 import { useRef, useCallback, useId } from "react";
+import { Button } from "@/app/components";
+import {
+  JSON_EDITOR_FONT_CLASSES,
+  JSON_TOKEN_CLASSES,
+} from "@/app/lib/assessment/constants";
 import type { JsonEditorProps } from "@/app/lib/types/assessment";
-
-/* JSON token colors — light background */
-const C = {
-  key: "text-[#0550ae]",
-  string: "text-[#116329]",
-  number: "text-[#953800]",
-  boolean: "text-[#8250df]",
-  null: "text-[#8250df]",
-  punct: "text-[#6e7781]",
-};
 
 function highlight(code: string): string {
   if (!code) return "";
@@ -28,31 +23,30 @@ function highlight(code: string): string {
   while ((m = re.exec(code)) !== null) {
     // punctuation / whitespace between tokens
     if (cursor < m.index) {
-      result += `<span class="${C.punct}">${escHtml(code.slice(cursor, m.index))}</span>`;
+      result += `<span class="${JSON_TOKEN_CLASSES.punct}">${escHtml(code.slice(cursor, m.index))}</span>`;
     }
 
     if (m[1] !== undefined) {
       const isKey = !!m[2];
-      result += `<span class="${isKey ? C.key : C.string}">${escHtml(m[1])}</span>`;
-      if (m[2]) result += `<span class="${C.punct}">${escHtml(m[2])}</span>`;
+      result += `<span class="${isKey ? JSON_TOKEN_CLASSES.key : JSON_TOKEN_CLASSES.string}">${escHtml(m[1])}</span>`;
+      if (m[2])
+        result += `<span class="${JSON_TOKEN_CLASSES.punct}">${escHtml(m[2])}</span>`;
       cursor = m.index + m[0].length;
     } else if (m[3] !== undefined) {
-      result += `<span class="${m[3] === "null" ? C.null : C.boolean}">${escHtml(m[3])}</span>`;
+      result += `<span class="${m[3] === "null" ? JSON_TOKEN_CLASSES.null : JSON_TOKEN_CLASSES.boolean}">${escHtml(m[3])}</span>`;
       cursor = m.index + m[3].length;
     } else if (m[4] !== undefined) {
-      result += `<span class="${C.number}">${escHtml(m[4])}</span>`;
+      result += `<span class="${JSON_TOKEN_CLASSES.number}">${escHtml(m[4])}</span>`;
       cursor = m.index + m[4].length;
     }
   }
 
   if (cursor < code.length) {
-    result += `<span class="${C.punct}">${escHtml(code.slice(cursor))}</span>`;
+    result += `<span class="${JSON_TOKEN_CLASSES.punct}">${escHtml(code.slice(cursor))}</span>`;
   }
 
   return result;
 }
-
-const EDITOR_FONT_CLASSES = "font-mono text-[13px] leading-[1.7] [tab-size:2]";
 
 export default function JsonEditor({
   value,
@@ -121,7 +115,7 @@ export default function JsonEditor({
       <div className="flex items-center justify-between border-b border-border bg-bg-secondary px-4 py-2">
         <div className="flex items-center gap-2">
           <span
-            className={`${EDITOR_FONT_CLASSES} text-[11px] text-text-secondary`}
+            className={`${JSON_EDITOR_FONT_CLASSES} text-[11px] text-text-secondary`}
           >
             JSON
           </span>
@@ -145,13 +139,15 @@ export default function JsonEditor({
             </span>
           )}
           {value.trim() && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => onChange("")}
-              className="cursor-pointer text-xs text-text-secondary"
+              className="!px-2 !py-1 !text-xs"
             >
               Clear
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -162,7 +158,7 @@ export default function JsonEditor({
         {!value && placeholder && (
           <pre
             aria-hidden
-            className={`pointer-events-none absolute inset-0 z-0 m-0 px-5 py-4 text-border ${EDITOR_FONT_CLASSES}`}
+            className={`pointer-events-none absolute inset-0 z-0 m-0 px-5 py-4 text-border ${JSON_EDITOR_FONT_CLASSES}`}
           >
             {placeholder}
           </pre>
@@ -172,7 +168,7 @@ export default function JsonEditor({
         <pre
           ref={preRef}
           aria-hidden
-          className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre break-normal px-5 py-4 ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
+          className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre break-normal px-5 py-4 ${JSON_EDITOR_FONT_CLASSES} ${minHeightClass}`}
           dangerouslySetInnerHTML={{ __html: highlight(value) + "\n" }}
         />
 
@@ -191,7 +187,7 @@ export default function JsonEditor({
           aria-label="JSON editor"
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`relative z-20 block w-full resize-none border-none bg-transparent px-5 py-4 text-transparent outline-none caret-text-primary whitespace-pre break-normal ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
+          className={`relative z-20 block w-full resize-none border-none bg-transparent px-5 py-4 text-transparent outline-none caret-text-primary whitespace-pre break-normal ${JSON_EDITOR_FONT_CLASSES} ${minHeightClass}`}
         />
       </div>
     </div>

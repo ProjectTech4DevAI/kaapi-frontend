@@ -8,6 +8,7 @@ import type {
 } from "react";
 import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
 import type { Dataset } from "@/app/lib/types/datasets";
+import type { ToastContextType } from "@/app/lib/types/toast";
 
 export type ValueSetter<T> = (value: T) => void;
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
@@ -285,8 +286,50 @@ export interface ConfigRunDetail {
 
 export type StatusFilter = "all" | "processing" | "completed" | "failed";
 export type ExportFormat = "csv" | "xlsx";
+export type ResultTone = "default" | "warning" | "success" | "error";
+export type AssessmentTag = "ASSESSMENT";
+export type AssessmentConfigTag = AssessmentTag;
+export type AssessmentFeatureFlag = AssessmentTag;
 export type AssessmentListResponse = ListResponse<AssessmentRun>;
 export type AssessmentChildRunListResponse = ListResponse<AssessmentChildRun>;
+
+export interface ResultsCounts {
+  total: number;
+  processing: number;
+  completed: number;
+  failed: number;
+}
+
+export interface ResultsHeaderProps {
+  counts: ResultsCounts;
+  statusFilter: StatusFilter;
+  isLoading: boolean;
+  onStatusFilterChange: ValueSetter<StatusFilter>;
+  onRefresh: () => void;
+}
+
+export interface LoadingSpinnerProps {
+  className: string;
+  centered?: boolean;
+}
+
+export interface DownloadDropdownProps {
+  onDownload: (format: ExportFormat) => void;
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+export interface AssessmentResultsPreview {
+  title: string;
+  headers: string[];
+  rows: string[][];
+}
+
+export interface UseAssessmentResultsParams {
+  apiKey: string;
+  onForbidden?: () => void;
+  toast: ToastContextType;
+}
 
 export interface DataViewModalProps {
   title: string;

@@ -7,9 +7,10 @@ export default function PageHeader({ onToggleSidebar }: PageHeaderProps) {
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-neutral-200 bg-white px-4 py-3">
       <button
+        type="button"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
-        className="cursor-pointer rounded-md p-1.5 text-neutral-500"
+        className="cursor-pointer rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
       >
         <MenuIcon className="h-5 w-5 text-neutral-500" />
       </button>

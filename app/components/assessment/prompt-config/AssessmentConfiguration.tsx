@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/app/components";
 import {
   MAX_CONFIGS,
   type AssessmentConfigurationProps,
@@ -42,13 +43,6 @@ export default function AssessmentConfiguration({
   onParamChange,
   onSaveConfig,
 }: AssessmentConfigurationProps) {
-  const modeToggleClass = (active: boolean) =>
-    `cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-      active
-        ? "bg-accent-primary text-white"
-        : "bg-transparent text-text-secondary"
-    }`;
-
   return (
     <details open className="rounded-2xl border border-border bg-bg-primary">
       <summary className="flex cursor-pointer items-center justify-between px-4 py-3">
@@ -63,16 +57,18 @@ export default function AssessmentConfiguration({
           </div>
         </div>
         {configs.length > 0 && configs.length < MAX_CONFIGS && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={(event) => {
               event.preventDefault();
               setConfigMode("existing");
             }}
-            className="min-w-[64px] cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-1.5 text-xs font-semibold text-text-primary"
+            className="!min-w-[64px] !rounded-lg !px-3 !py-1.5 !text-xs !font-semibold"
           >
             Add more
-          </button>
+          </Button>
         )}
       </summary>
 
@@ -84,18 +80,24 @@ export default function AssessmentConfiguration({
 
       <div className="border-t border-border px-4 py-4">
         <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-bg-secondary p-1">
-          <button
+          <Button
+            type="button"
+            variant={configMode === "existing" ? "primary" : "ghost"}
+            size="sm"
             onClick={() => setConfigMode("existing")}
-            className={modeToggleClass(configMode === "existing")}
+            className="!rounded-lg !px-3 !py-1.5 !text-xs"
           >
             Saved
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant={configMode === "create" ? "primary" : "ghost"}
+            size="sm"
             onClick={() => setConfigMode("create")}
-            className={modeToggleClass(configMode === "create")}
+            className="!rounded-lg !px-3 !py-1.5 !text-xs"
           >
             New
-          </button>
+          </Button>
         </div>
 
         {configMode === "existing" && (

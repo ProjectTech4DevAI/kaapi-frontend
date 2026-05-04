@@ -1,4 +1,4 @@
-import type { AssessmentTag } from "@/app/lib/assessment/constants";
+import type { AssessmentTag } from "@/app/lib/types/assessment";
 
 export interface SavedConfig {
   id: string;

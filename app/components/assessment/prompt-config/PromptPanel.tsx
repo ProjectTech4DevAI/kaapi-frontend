@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/app/components";
 import type { PromptPanelProps } from "@/app/lib/types/assessment";
 import UserPrompt from "./UserPrompt";
 import SystemPrompt from "./SystemPrompt";
@@ -15,29 +16,28 @@ export default function PromptPanel({
 }: PromptPanelProps) {
   const [previewMode, setPreviewMode] = useState(false);
 
-  const toggleClass = (active: boolean) =>
-    `cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-      active
-        ? "bg-accent-primary text-white"
-        : "bg-transparent text-text-secondary"
-    }`;
-
   return (
     <section className="min-w-0 space-y-4">
       <div className="flex justify-end">
         <div className="flex items-center gap-1 rounded-xl border border-border bg-bg-secondary p-1">
-          <button
+          <Button
+            type="button"
+            variant={!previewMode ? "primary" : "ghost"}
+            size="sm"
             onClick={() => setPreviewMode(false)}
-            className={toggleClass(!previewMode)}
+            className="!rounded-lg !px-3 !py-1.5 !text-xs"
           >
             Edit
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant={previewMode ? "primary" : "ghost"}
+            size="sm"
             onClick={() => setPreviewMode(true)}
-            className={toggleClass(previewMode)}
+            className="!rounded-lg !px-3 !py-1.5 !text-xs"
           >
             Preview
-          </button>
+          </Button>
         </div>
       </div>
 

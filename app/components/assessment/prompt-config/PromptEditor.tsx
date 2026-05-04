@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Button } from "@/app/components";
 import type { PromptEditorProps } from "@/app/lib/types/assessment";
 
 export default function PromptEditor({
@@ -276,18 +277,20 @@ export default function PromptEditor({
             {orderedColumns.map((col) => {
               const isUsed = usedColumns.includes(col);
               return (
-                <button
+                <Button
                   key={col}
                   type="button"
+                  variant={isUsed ? "secondary" : "outline"}
+                  size="sm"
                   onClick={() => insertPlaceholder(col)}
-                  className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-mono transition-colors ${
+                  className={`!rounded-full !px-3 !py-1.5 !font-mono !text-xs ${
                     isUsed
-                      ? "border-status-success-border bg-status-success-bg text-status-success-text"
-                      : "border-border bg-bg-primary text-text-primary"
+                      ? "!border-status-success-border !bg-status-success-bg !text-status-success-text"
+                      : "!bg-bg-primary"
                   }`}
                 >
                   {`{${col}}`}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -322,11 +325,14 @@ export default function PromptEditor({
             }}
           >
             {mentionOptions.map((col, idx) => (
-              <button
+              <Button
                 key={col}
                 type="button"
-                className={`flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-mono text-text-primary ${
-                  idx === mentionIndex ? "bg-bg-secondary" : "bg-bg-primary"
+                variant="ghost"
+                size="sm"
+                fullWidth
+                className={`!justify-start !rounded-none !px-3 !py-2 !text-left !font-mono !text-sm !text-text-primary ${
+                  idx === mentionIndex ? "!bg-bg-secondary" : "!bg-bg-primary"
                 }`}
                 onMouseEnter={() => setMentionIndex(idx)}
                 onMouseDown={(event) => {
@@ -338,7 +344,7 @@ export default function PromptEditor({
                   @
                 </span>
                 {col}
-              </button>
+              </Button>
             ))}
           </div>
         )}

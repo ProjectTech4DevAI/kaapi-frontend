@@ -1,16 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronRightIcon, CloseIcon } from "@/app/components/icons";
+import { Modal } from "@/app/components";
+import { ChevronRightIcon } from "@/app/components/icons";
+import {
+  DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_USER_PROMPT,
+} from "@/app/lib/assessment/constants";
 import type {
   InputReviewProps,
   PromptNodeProps,
 } from "@/app/lib/types/assessment";
 import ReviewSection from "./ReviewSection";
-
-const DEFAULT_SYSTEM_PROMPT = "(not set)";
-const DEFAULT_USER_PROMPT =
-  "(not set: backend concatenates mapped text columns)";
 
 function PromptNode({
   title,
@@ -25,7 +26,7 @@ function PromptNode({
         <button
           type="button"
           onClick={onToggle}
-          className="flex h-5 w-5 cursor-pointer items-center justify-center rounded hover:bg-neutral-100"
+          className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
           aria-label={`Toggle ${title}`}
         >
           <ChevronRightIcon
@@ -76,7 +77,7 @@ export default function InputReview({
               event.stopPropagation();
               setIsModalOpen(true);
             }}
-            className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+            className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
             aria-label="Expand LLM input"
             title="Expand LLM input"
           >
@@ -123,43 +124,31 @@ export default function InputReview({
         </div>
       </ReviewSection>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4">
-          <div className="w-full max-w-3xl rounded-lg border border-neutral-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-              <h3 className="text-sm font-semibold text-neutral-900">
-                LLM Input
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-              >
-                <CloseIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="max-h-[72vh] overflow-y-auto px-4 py-3">
-              <div className="space-y-3">
-                <PromptNode
-                  title="System Prompt"
-                  value={systemInstruction}
-                  fallback={DEFAULT_SYSTEM_PROMPT}
-                  isOpen={isSystemNodeOpen}
-                  onToggle={() => setIsSystemNodeOpen((prev) => !prev)}
-                />
-                <PromptNode
-                  title="User Prompt"
-                  value={promptTemplate}
-                  fallback={DEFAULT_USER_PROMPT}
-                  isOpen={isUserNodeOpen}
-                  onToggle={() => setIsUserNodeOpen((prev) => !prev)}
-                />
-              </div>
-            </div>
+      <Modal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="LLM Input"
+        maxWidth="max-w-3xl"
+      >
+        <div className="max-h-[72vh] overflow-y-auto px-4 py-3">
+          <div className="space-y-3">
+            <PromptNode
+              title="System Prompt"
+              value={systemInstruction}
+              fallback={DEFAULT_SYSTEM_PROMPT}
+              isOpen={isSystemNodeOpen}
+              onToggle={() => setIsSystemNodeOpen((prev) => !prev)}
+            />
+            <PromptNode
+              title="User Prompt"
+              value={promptTemplate}
+              fallback={DEFAULT_USER_PROMPT}
+              isOpen={isUserNodeOpen}
+              onToggle={() => setIsUserNodeOpen((prev) => !prev)}
+            />
           </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

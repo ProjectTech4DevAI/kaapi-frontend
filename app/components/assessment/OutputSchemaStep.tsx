@@ -3,12 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import JsonEditor from "./JsonEditor";
-import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  CloseIcon,
-  TrashIcon,
-} from "@/app/components/icons";
+import { Button, Modal } from "@/app/components";
+import Select from "@/app/components/Select";
+import { ChevronLeftIcon, CloseIcon, TrashIcon } from "@/app/components/icons";
+import { SCHEMA_TYPE_OPTIONS } from "@/app/lib/assessment/constants";
 import {
   type OutputSchemaEditorProps,
   type OutputSchemaModalProps,
@@ -18,15 +16,6 @@ import {
   type SchemaPropertyType,
 } from "@/app/lib/types/assessment";
 import CompactToggleSwitch from "./CompactToggleSwitch";
-
-const TYPE_OPTIONS: Array<{ value: SchemaPropertyType; label: string }> = [
-  { value: "string", label: "Text" },
-  { value: "number", label: "Number" },
-  { value: "integer", label: "Whole number" },
-  { value: "boolean", label: "Yes / No" },
-  { value: "enum", label: "Choice" },
-  { value: "object", label: "Group" },
-];
 
 let idCounter = 0;
 function genId() {
@@ -204,8 +193,8 @@ function PropertyRow({
           placeholder="name"
           className="h-9 min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900"
         />
-        <div className="relative min-w-0">
-          <select
+        <div className="min-w-0">
+          <Select
             value={property.type}
             onChange={(e) => {
               const t = e.target.value as SchemaPropertyType;
@@ -221,15 +210,9 @@ function PropertyRow({
                     : [],
               }));
             }}
-            className="h-9 w-full cursor-pointer appearance-none rounded-md border border-neutral-200 bg-white pl-3 pr-10 text-sm text-neutral-900"
-          >
-            {TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" />
+            options={SCHEMA_TYPE_OPTIONS}
+            className="h-9 w-full cursor-pointer rounded-md border border-neutral-200 bg-white px-2.5 py-1.5 text-sm text-neutral-900 outline-none focus:ring-1"
+          />
         </div>
         <CompactToggleSwitch
           checked={property.isArray}
@@ -246,8 +229,9 @@ function PropertyRow({
           title={property.isRequired ? "Mark optional" : "Mark required"}
         />
         <button
+          type="button"
           onClick={() => onRemove(property.id)}
-          className="flex h-8 w-8 cursor-pointer justify-self-center items-center justify-center rounded-md text-neutral-500 transition-colors"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center justify-self-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
           aria-label={`Delete ${property.name.trim() || "field"}`}
           title="Delete"
         >
@@ -269,20 +253,24 @@ function PropertyRow({
                 className="h-8 max-w-[240px] rounded-md border border-neutral-200 bg-white px-3 text-sm text-neutral-900"
               />
               <button
+                type="button"
                 onClick={() => onRemoveEnumValue(property.id, idx)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-neutral-500"
+                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
                 aria-label={`Remove enum value ${idx + 1} from ${property.name.trim() || "field"}`}
               >
                 <CloseIcon className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => onAddEnumValue(property.id)}
-            className="mt-0.5 cursor-pointer text-sm font-bold text-neutral-900"
+            className="mt-0.5 !justify-start !px-0 text-neutral-900"
           >
             + Add enum value
-          </button>
+          </Button>
         </div>
       )}
 
@@ -301,12 +289,15 @@ function PropertyRow({
               onRemoveEnumValue={onRemoveEnumValue}
             />
           ))}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => onAddChild(property.id)}
-            className="cursor-pointer text-sm font-bold text-neutral-900"
+            className="!justify-start !px-0 text-neutral-900"
           >
             + Add nested property
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -351,52 +342,48 @@ export function OutputSchemaModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-      <div className="relative flex max-h-[85vh] w-[720px] max-w-[90vw] flex-col rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between px-6 pt-6 pb-2">
-          <h2 className="text-lg font-semibold text-neutral-900">
-            Response format
-          </h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-neutral-500"
-          >
-            <CloseIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        <p className="px-6 text-sm text-neutral-500">
-          Define the structure of the AI response. Use the visual editor or
-          switch to JSON.
-        </p>
-
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <OutputSchemaEditorInner
-            schema={draftSchema}
-            setSchema={setDraftSchema}
-          />
-        </div>
-
-        <div className="flex items-center justify-end gap-3 border-t border-neutral-200 px-6 py-4">
-          <button
-            onClick={handleReset}
-            className="cursor-pointer rounded-lg border border-neutral-200 bg-white px-5 py-2 text-sm font-medium text-neutral-900"
-          >
-            Reset
-          </button>
-          <button
-            onClick={handleSave}
-            className="cursor-pointer rounded-lg bg-neutral-900 px-5 py-2 text-sm font-medium text-white"
-          >
-            Save
-          </button>
-        </div>
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="w-[720px] max-w-[90vw]"
+      maxHeight="max-h-[85vh]"
+      showClose={false}
+    >
+      <div className="flex items-center justify-between px-6 pt-6 pb-2">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          Response format
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Close response format"
+        >
+          <CloseIcon className="w-5 h-5" />
+        </button>
       </div>
-    </div>,
+
+      <p className="px-6 text-sm text-neutral-500">
+        Define the structure of the AI response. Use the visual editor or switch
+        to JSON.
+      </p>
+
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <OutputSchemaEditorInner
+          schema={draftSchema}
+          setSchema={setDraftSchema}
+        />
+      </div>
+
+      <div className="flex items-center justify-end gap-3 border-t border-neutral-200 px-6 py-4">
+        <Button type="button" variant="outline" onClick={handleReset}>
+          Reset
+        </Button>
+        <Button type="button" onClick={handleSave}>
+          Save
+        </Button>
+      </div>
+    </Modal>,
     document.body,
   );
 }
@@ -546,26 +533,32 @@ function OutputSchemaEditorInner({
   return (
     <div className="space-y-5">
       <div className="flex w-fit items-center gap-1 rounded-lg bg-neutral-50 p-1">
-        <button
+        <Button
+          type="button"
+          variant={editorMode === "visual" ? "outline" : "ghost"}
+          size="sm"
           onClick={() => (editorMode === "code" ? switchToVisual() : undefined)}
-          className={`cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+          className={`!rounded-md !px-4 !py-1.5 ${
             editorMode === "visual"
-              ? "bg-white text-neutral-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-              : "bg-transparent text-neutral-500"
+              ? "!bg-white text-neutral-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+              : "!bg-transparent text-neutral-500"
           }`}
         >
           Visual Editor
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant={editorMode === "code" ? "outline" : "ghost"}
+          size="sm"
           onClick={() => (editorMode !== "code" ? switchToCode() : undefined)}
-          className={`cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-all ${
+          className={`!rounded-md !px-4 !py-1.5 ${
             editorMode === "code"
-              ? "bg-white text-neutral-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-              : "bg-transparent text-neutral-500"
+              ? "!bg-white text-neutral-900 shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+              : "!bg-transparent text-neutral-500"
           }`}
         >
           JSON
-        </button>
+        </Button>
       </div>
 
       {editorMode === "visual" && (
@@ -590,12 +583,13 @@ function OutputSchemaEditorInner({
               onRemoveEnumValue={handleRemoveEnumValue}
             />
           ))}
-          <button
+          <Button
+            type="button"
             onClick={() => setSchema([...schema, createProperty()])}
-            className="cursor-pointer rounded-lg bg-neutral-900 px-4 py-2 text-sm font-bold text-white"
+            className="!rounded-lg !font-bold"
           >
             + Add field
-          </button>
+          </Button>
         </div>
       )}
 
@@ -654,19 +648,18 @@ export default function OutputSchemaStep({
       {/* Navigation */}
       <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex items-center justify-between border-t border-neutral-200 bg-neutral-50 px-6 py-2">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <button
+          <Button
+            type="button"
+            variant="outline"
             onClick={onBack}
-            className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-neutral-900"
+            className="!rounded-lg"
           >
             <ChevronLeftIcon className="w-3.5 h-3.5" />
             Back
-          </button>
-          <button
-            onClick={onNext}
-            className="cursor-pointer rounded-lg border border-neutral-900 bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white"
-          >
+          </Button>
+          <Button type="button" onClick={onNext} className="!rounded-lg">
             Next: Review
-          </button>
+          </Button>
         </div>
       </div>
     </div>

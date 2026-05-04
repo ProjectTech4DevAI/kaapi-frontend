@@ -1,3 +1,5 @@
+import { Button } from "@/app/components";
+import Loader from "@/app/components/Loader";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { buildInitialAssessmentVersionState } from "@/app/lib/assessment/config";
 import type {
@@ -37,8 +39,8 @@ export default function SavedConfigs({
       </div>
 
       {isLoadingConfigs ? (
-        <div className="py-8 text-center text-sm text-text-secondary">
-          Loading behaviors...
+        <div className="py-8">
+          <Loader size="sm" message="Loading behaviors..." />
         </div>
       ) : configCards.length === 0 ? (
         <div className="py-8 text-center text-sm text-text-secondary">
@@ -65,12 +67,16 @@ export default function SavedConfigs({
             />
           ))}
           {hasMoreConfigs && (
-            <button
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              fullWidth
               onClick={() => onLoadMoreConfigs(nextConfigSkip)}
-              className="w-full cursor-pointer rounded-xl border border-border bg-bg-primary py-2 text-xs font-medium text-text-primary"
+              className="!rounded-xl !py-2 !text-xs"
             >
               Load more
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -144,35 +150,36 @@ function SavedConfigCard({
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <button
+        <Button
+          type="button"
+          variant={defaultSelected ? "outline" : "primary"}
+          size="sm"
           onClick={() => void onToggleVersionSelection(config, latestVersion)}
           disabled={Boolean(defaultLoading)}
-          className={`inline-flex min-w-[126px] items-center justify-center rounded-full border px-3.5 py-2 text-[12px] font-medium ${
-            defaultLoading ? "cursor-progress" : "cursor-pointer"
-          } ${
-            defaultSelected
-              ? "border-border bg-bg-secondary text-text-primary"
-              : "border-accent-primary bg-accent-primary text-white hover:bg-accent-hover"
-          }`}
+          className={`!min-w-[126px] !rounded-full !px-3.5 !py-2 !text-[12px] ${
+            defaultLoading ? "cursor-progress" : ""
+          } ${defaultSelected ? "!bg-bg-secondary" : ""}`}
         >
           {defaultLoading
             ? "Working..."
             : defaultSelected
               ? "Added"
               : "Use this behavior"}
-        </button>
+        </Button>
 
         {hasVersionsPanel && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => onToggleExpansion(config.id)}
             aria-label={
               expanded ? "Hide saved versions" : "View saved versions"
             }
-            className={`inline-flex min-w-[146px] items-center justify-center gap-2 rounded-full border px-3.5 py-2 text-[12px] font-medium text-text-primary transition-colors ${
+            className={`!min-w-[146px] !rounded-full !px-3.5 !py-2 !text-[12px] ${
               expanded
-                ? "border-accent-primary bg-bg-secondary"
-                : "border-border bg-bg-primary"
+                ? "!border-accent-primary !bg-bg-secondary"
+                : "!bg-bg-primary"
             }`}
           >
             <span className="font-semibold">
@@ -186,7 +193,7 @@ function SavedConfigCard({
                 expanded ? "rotate-180" : "rotate-0"
               }`}
             />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -297,29 +304,34 @@ function VersionPanel({
                       </div>
                     )}
                   </div>
-                  <button
+                  <Button
+                    type="button"
+                    variant={selected ? "outline" : "primary"}
+                    size="sm"
                     onClick={() =>
                       void onToggleVersionSelection(config, version.version)
                     }
                     disabled={Boolean(loading)}
-                    className={`cursor-pointer rounded-full border px-3 py-1.5 text-[11px] font-medium ${
-                      selected
-                        ? "border-border bg-bg-secondary text-text-primary"
-                        : "border-accent-primary bg-accent-primary text-white hover:bg-accent-hover"
+                    className={`!rounded-full !px-3 !py-1.5 !text-[11px] ${
+                      selected ? "!bg-bg-secondary" : ""
                     }`}
                   >
                     {loading ? "..." : selected ? "Added" : "Use"}
-                  </button>
+                  </Button>
                 </div>
               );
             })}
             {versions.hasMore && !versions.isLoading && (
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth
                 onClick={() => onLoadVersions(config.id, versions.nextSkip)}
-                className="w-full cursor-pointer py-1.5 text-xs font-medium text-accent-primary"
+                className="!py-1.5 !text-xs !text-accent-primary"
               >
                 Load more
-              </button>
+              </Button>
             )}
           </div>
         )}

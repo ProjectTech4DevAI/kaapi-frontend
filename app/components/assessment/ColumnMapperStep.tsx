@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/app/components";
+import Select from "@/app/components/Select";
+import {
+  ASSESSMENT_ROLE_OPTION_MAP,
+  ASSESSMENT_ROLE_OPTIONS,
+} from "@/app/lib/assessment/constants";
 import {
   ATTACHMENT_FORMATS,
   type Attachment,
@@ -8,30 +14,8 @@ import {
   type ColumnRole,
   type ColumnMapping,
   type ColumnMapperStepProps,
-  type RoleOption,
   type RoleVisuals,
 } from "@/app/lib/types/assessment";
-
-const roleOptionMap: Record<ColumnRole, RoleOption> = {
-  text: {
-    value: "text",
-    label: "Text",
-  },
-  attachment: {
-    value: "attachment",
-    label: "Attachment",
-  },
-  ground_truth: {
-    value: "ground_truth",
-    label: "Ground Truth",
-  },
-  unmapped: {
-    value: "unmapped",
-    label: "Skip",
-  },
-};
-
-const ROLE_OPTIONS = Object.values(roleOptionMap);
 
 function colorMapping(role: ColumnRole): RoleVisuals {
   switch (role) {
@@ -220,7 +204,8 @@ export default function ColumnMapperStep({
                 role: "unmapped" as ColumnRole,
               };
               const activeOption =
-                roleOptionMap[config.role] || roleOptionMap.unmapped;
+                ASSESSMENT_ROLE_OPTION_MAP[config.role] ||
+                ASSESSMENT_ROLE_OPTION_MAP.unmapped;
               const roleVisuals = colorMapping(activeOption.value);
 
               return (
@@ -246,21 +231,23 @@ export default function ColumnMapperStep({
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        {ROLE_OPTIONS.map((option) => {
+                        {ASSESSMENT_ROLE_OPTIONS.map((option) => {
                           const isActive = config.role === option.value;
                           return (
-                            <button
+                            <Button
                               key={option.value}
                               type="button"
+                              variant={isActive ? "secondary" : "outline"}
+                              size="sm"
                               onClick={() => updateRole(index, option.value)}
-                              className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                              className={`!rounded-full !px-4 !py-2 ${
                                 isActive
                                   ? roleVisuals.activeButtonClass
-                                  : "border-border bg-bg-primary text-text-secondary hover:bg-bg-secondary"
+                                  : "!bg-bg-primary text-text-secondary hover:!bg-bg-secondary"
                               }`}
                             >
                               {option.label}
-                            </button>
+                            </Button>
                           );
                         })}
                       </div>
@@ -272,7 +259,7 @@ export default function ColumnMapperStep({
                           <span className="mb-1 block text-xs font-medium text-text-secondary">
                             Attachment Type
                           </span>
-                          <select
+                          <Select
                             value={config.attachmentType || "image"}
                             onChange={(event) =>
                               updateAttachmentType(
@@ -280,32 +267,31 @@ export default function ColumnMapperStep({
                                 event.target.value as "image" | "pdf",
                               )
                             }
-                            className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none"
-                          >
-                            <option value="image">Image</option>
-                            <option value="pdf">PDF</option>
-                          </select>
+                            options={[
+                              { value: "image", label: "Image" },
+                              { value: "pdf", label: "PDF" },
+                            ]}
+                            className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                          />
                         </label>
 
                         <label className="flex-1">
                           <span className="mb-1 block text-xs font-medium text-text-secondary">
                             Source
                           </span>
-                          <select
+                          <Select
                             value={config.attachmentFormat || "url"}
                             onChange={(event) =>
                               updateAttachmentFormat(index, event.target.value)
                             }
-                            className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none"
-                          >
-                            {ATTACHMENT_FORMATS[
+                            options={ATTACHMENT_FORMATS[
                               config.attachmentType || "image"
-                            ].map((format) => (
-                              <option key={format} value={format}>
-                                {format}
-                              </option>
-                            ))}
-                          </select>
+                            ].map((format) => ({
+                              value: format,
+                              label: format,
+                            }))}
+                            className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                          />
                         </label>
                       </div>
                     )}
@@ -319,13 +305,14 @@ export default function ColumnMapperStep({
 
       <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex flex-col gap-3 border-t border-border bg-bg-secondary px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onBack}
-            className="rounded-lg border border-border bg-bg-primary px-5 py-2.5 text-sm font-medium text-text-primary"
+            className="!rounded-lg"
           >
             Back
-          </button>
+          </Button>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <span
@@ -337,18 +324,14 @@ export default function ColumnMapperStep({
                 ? "Ready to continue."
                 : "Select at least one Text column."}
             </span>
-            <button
+            <Button
               type="button"
               onClick={handleNext}
               disabled={!hasText}
-              className={`rounded-lg px-5 py-2.5 text-sm font-medium ${
-                hasText
-                  ? "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
-                  : "cursor-not-allowed bg-neutral-200 text-text-secondary"
-              }`}
+              className="!rounded-lg"
             >
               Next: Prompt Editor
-            </button>
+            </Button>
           </div>
         </div>
       </div>

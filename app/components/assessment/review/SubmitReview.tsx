@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/app/components";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import PlayIcon from "@/app/components/icons/assessment/PlayIcon";
 import type { SubmitReviewProps } from "@/app/lib/types/assessment";
@@ -14,30 +15,29 @@ export default function SubmitReview({
   return (
     <div className="sticky bottom-0 z-10 mt-auto border-t border-neutral-200 bg-neutral-50 py-2">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="lg"
           onClick={onBack}
           disabled={isSubmitting}
-          className="flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-200 bg-white px-6 py-2.5 text-sm font-medium text-neutral-900"
+          className="!rounded-lg !px-6"
         >
           <ChevronLeftIcon className="h-3.5 w-3.5" />
           Back
-        </button>
+        </Button>
         <div className="flex items-center gap-3">
           {!isSubmitting && !canSubmit && (
             <span className="text-xs text-neutral-500">
               {submitBlockerMessage}
             </span>
           )}
-          <button
+          <Button
             type="button"
+            size="lg"
             onClick={onSubmit}
             disabled={isSubmitting || !canSubmit}
-            className={`flex items-center gap-2 rounded-lg border px-8 py-2.5 text-sm font-medium ${
-              isSubmitting || !canSubmit
-                ? "cursor-not-allowed border-neutral-200 bg-neutral-50 text-neutral-500"
-                : "cursor-pointer border-neutral-900 bg-neutral-900 text-white"
-            }`}
+            className="!rounded-lg !px-8"
           >
             {isSubmitting ? (
               <>
@@ -50,7 +50,7 @@ export default function SubmitReview({
                 Submit Evaluation
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

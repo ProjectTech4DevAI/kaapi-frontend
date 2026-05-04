@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/app/components";
 import type { ResponseSchemaProps } from "@/app/lib/types/assessment";
 import { OutputSchemaModal } from "../OutputSchemaStep";
 
@@ -22,16 +23,17 @@ export default function ResponseSchema({
             </div>
             <div className="mt-1 text-xs text-text-secondary">{summary}</div>
           </div>
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={(event) => {
               event.preventDefault();
               setSchemaModalOpen(true);
             }}
-            className="min-w-[64px] cursor-pointer rounded-lg bg-accent-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-hover"
+            className="!min-w-[64px] !rounded-lg !px-3 !py-1.5 !text-xs !font-semibold"
           >
             {hasFields ? "Edit" : "Set"}
-          </button>
+          </Button>
         </summary>
       </details>
 

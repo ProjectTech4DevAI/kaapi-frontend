@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/app/components";
+import Loader from "@/app/components/Loader";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import type { DatasetsListProps } from "@/app/lib/types/assessment";
@@ -32,8 +34,7 @@ export default function DatasetList({
 
         {isLoading ? (
           <div className="p-16 text-center">
-            <div className="mx-auto mb-3 h-6 w-6 animate-spin rounded-full border-2 border-accent-primary border-t-transparent" />
-            <p className="text-sm text-text-secondary">Loading datasets...</p>
+            <Loader size="sm" message="Loading datasets..." />
           </div>
         ) : datasets.length === 0 ? (
           <div className="p-16 text-center">
@@ -54,8 +55,8 @@ export default function DatasetList({
                   key={dataset.dataset_id}
                   className={`cursor-pointer overflow-hidden rounded-lg border-l-[3px] bg-bg-primary transition-all ${
                     isSelected
-                      ? "border-l-accent-primary ring-2 ring-accent-primary shadow-sm"
-                      : "border-l-accent-subtle shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                      ? "border-l-accent-primary ring-1 ring-accent-primary shadow-sm"
+                      : "border-l-accent-secondary shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                   }`}
                   onClick={() =>
                     onSelectDataset(
@@ -89,8 +90,10 @@ export default function DatasetList({
                         </div>
                       </div>
                       <div className="flex flex-shrink-0 items-center gap-2">
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={(event) => {
                             event.stopPropagation();
                             onViewDataset(
@@ -99,25 +102,27 @@ export default function DatasetList({
                             );
                           }}
                           disabled={viewingId === dataset.dataset_id}
-                          className={`rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-text-primary ${
+                          className={`!rounded-lg !px-3 !py-1.5 !text-xs ${
                             viewingId === dataset.dataset_id ? "opacity-50" : ""
                           }`}
                         >
                           {viewingId === dataset.dataset_id
                             ? "Loading..."
                             : "View"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={(event) => {
                             event.stopPropagation();
                             onRequestDelete(dataset.dataset_id);
                           }}
                           aria-label={`Delete ${dataset.dataset_name}`}
-                          className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-status-error"
+                          className="!rounded-lg !px-3 !py-1.5 !text-xs !text-status-error"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -135,18 +140,14 @@ export default function DatasetList({
               ? "Dataset selected. Continue to AI configuration."
               : "Select a dataset to continue."}
           </span>
-          <button
+          <Button
             type="button"
             onClick={onNext}
             disabled={!canProceed}
-            className={`rounded-lg px-5 py-2 text-sm font-medium ${
-              canProceed
-                ? "cursor-pointer bg-accent-primary text-white hover:bg-accent-hover"
-                : "cursor-not-allowed bg-neutral-200 text-text-secondary"
-            }`}
+            className="!rounded-lg"
           >
             Next: AI Configuration
-          </button>
+          </Button>
         </div>
       </div>
     </div>

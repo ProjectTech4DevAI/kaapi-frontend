@@ -19,7 +19,7 @@ export default function SystemPrompt({
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md text-left"
         >
           <ChevronDownIcon
             className={`h-4 w-4 text-text-secondary transition-transform ${

@@ -9,7 +9,18 @@ import {
   useState,
 } from "react";
 import { Button } from "@/app/components";
-import type { PromptEditorProps } from "@/app/lib/types/assessment";
+import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
+
+interface PromptEditorProps {
+  value: string;
+  onChange: ValueSetter<string>;
+  previewMode: boolean;
+  placeholder: string;
+  emptyPreviewText: string;
+  textColumns?: string[];
+  sampleRow?: SampleRow;
+  enablePlaceholders?: boolean;
+}
 
 export default function PromptEditor({
   value,

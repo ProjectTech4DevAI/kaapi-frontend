@@ -1,20 +1,14 @@
 "use client";
 
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Loader from "@/app/components/Loader";
 import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { handleForbiddenError } from "@/app/lib/assessment/access";
-import { FeatureFlag, STORAGE_KEYS } from "@/app/lib/constants";
+import { FeatureFlag } from "@/app/lib/constants";
 import { removeFeatureFromClient } from "@/app/lib/featureState";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import type {
   AssessmentFormState,
@@ -23,7 +17,6 @@ import type {
   ConfigSelection,
   SchemaProperty,
 } from "@/app/lib/types/assessment";
-import type { APIKey } from "@/app/lib/types/credentials";
 import PageLayout from "@/app/components/assessment/PageLayout";
 
 function schemaToJsonSchema(properties: SchemaProperty[]): object | null {
@@ -81,15 +74,13 @@ declare global {
 function PageContent() {
   const router = useRouter();
   const toast = useToast();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { activeKey } = useAuth();
   const [activeTab, setActiveTab] = useState<AssessmentTabId>("datasets");
   const [configStep, setConfigStep] = useState(1);
   const [completedConfigSteps, setCompletedConfigSteps] = useState<Set<number>>(
     new Set(),
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-  const [selectedKeyId, setSelectedKeyId] = useState("");
   const [experimentName, setExperimentName] = useState("");
   const featureRedirectingRef = useRef(false);
   const {
@@ -108,24 +99,6 @@ function PageContent() {
   const [systemInstruction, setSystemInstruction] = useState("");
   const [outputSchema, setOutputSchema] = useState<SchemaProperty[]>([]);
   const [configs, setConfigs] = useState<ConfigSelection[]>([]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.API_KEYS);
-    if (!stored) return;
-
-    try {
-      const keys = JSON.parse(stored);
-      setApiKeys(keys);
-      if (keys.length > 0) {
-        setSelectedKeyId(keys[0].id);
-      }
-    } catch (error) {
-      console.error("Failed to load API keys:", error);
-    }
-  }, []);
-
-  const selectedKey = apiKeys.find((key) => key.id === selectedKeyId);
-  const selectedApiKey = selectedKey?.key || "";
 
   const handleForbidden = useCallback(
     (options?: { notify?: boolean }) => {
@@ -192,7 +165,7 @@ function PageContent() {
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedKey) {
+    if (!activeKey) {
       toast.error("No API key selected");
       return;
     }
@@ -223,7 +196,7 @@ function PageContent() {
 
     setIsSubmitting(true);
     try {
-      await apiFetch("/api/assessment/runs", selectedKey.key, {
+      await apiFetch("/api/assessment/runs", activeKey.key, {
         method: "POST",
         body: JSON.stringify({
           experiment_name: experimentName.trim(),
@@ -270,7 +243,7 @@ function PageContent() {
     outputSchema,
     outputSchemaJson,
     promptTemplate,
-    selectedKey,
+    activeKey,
     systemInstruction,
     toast,
   ]);
@@ -297,7 +270,7 @@ function PageContent() {
   const canReachReview =
     hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
   const canSubmitAssessment =
-    !!selectedKey &&
+    !!activeKey &&
     !!datasetId &&
     hasMapperSelection &&
     hasPromptTemplate &&
@@ -305,7 +278,7 @@ function PageContent() {
     configs.length > 0 &&
     experimentName.trim().length > 0 &&
     !isSubmitting;
-  const submitBlockerMessage = !selectedKey
+  const submitBlockerMessage = !activeKey
     ? "Select an API key to submit"
     : !datasetId
       ? "Select a dataset to submit"
@@ -329,14 +302,10 @@ function PageContent() {
 
   return (
     <PageLayout
-      sidebarCollapsed={sidebarCollapsed}
-      onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-      hasApiKeys={apiKeys.length > 0}
       activeTab={activeTab}
       tabs={[...PAGE_TABS]}
       onTabSwitch={setActiveTab}
       datasetsTabProps={{
-        apiKey: selectedApiKey,
         onForbidden: handleForbiddenWithNotify,
         datasetId,
         setDatasetId,
@@ -348,7 +317,6 @@ function PageContent() {
         },
       }}
       configPanelProps={{
-        apiKey: selectedApiKey,
         canSubmitAssessment,
         columns,
         columnMapping,
@@ -377,7 +345,6 @@ function PageContent() {
         onStepComplete: handleConfigNext,
       }}
       evaluationsTabProps={{
-        apiKey: selectedApiKey,
         onForbidden: handleForbiddenWithNotify,
       }}
     />

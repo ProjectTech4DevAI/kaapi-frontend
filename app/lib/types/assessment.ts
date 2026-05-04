@@ -1,14 +1,6 @@
-import type {
-  ChangeEvent,
-  Dispatch,
-  DragEvent,
-  ReactNode,
-  RefObject,
-  SetStateAction,
-} from "react";
-import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
+import type { Dispatch, SetStateAction } from "react";
 import type { Dataset } from "@/app/lib/types/datasets";
-import type { ToastContextType } from "@/app/lib/types/toast";
+import type { ConfigVersionItems } from "@/app/lib/types/configs";
 
 export type ValueSetter<T> = (value: T) => void;
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
@@ -163,19 +155,7 @@ export interface ColumnMapperStepProps extends StepNavigationProps {
   setColumnMapping: ValueSetter<ColumnMapping>;
 }
 
-export interface PageHeaderProps {
-  onToggleSidebar: () => void;
-}
-
-export interface StepperProps {
-  steps: Step[];
-  currentStep: number;
-  onStepClick: ValueSetter<number>;
-  completedSteps: Set<number>;
-}
-
 export interface ConfigPanelProps {
-  apiKey: string;
   canSubmitAssessment: boolean;
   columns: string[];
   columnMapping: ColumnMapping;
@@ -204,23 +184,17 @@ export interface ConfigPanelProps {
   onStepComplete: ValueSetter<number>;
 }
 
-export interface JsonEditorProps {
-  value: string;
-  onChange: ValueSetter<string>;
-  error?: string | null;
-  isValid?: boolean;
-  placeholder?: string;
-  minHeight?: number;
-}
+export type EvaluationsTabProps = WithForbiddenHandler;
 
-export interface EvaluationsTabProps extends WithForbiddenHandler {
-  apiKey: string;
+export interface DatasetsTabProps extends WithForbiddenHandler {
+  datasetId: string;
+  setDatasetId: ValueSetter<string>;
+  setSelectedDatasetName: ValueSetter<string>;
+  onColumnsLoaded: (columns: string[], sampleRow?: SampleRow) => void;
+  onNext: () => void;
 }
 
 export interface PageLayoutProps {
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-  hasApiKeys: boolean;
   activeTab: AssessmentTabId;
   tabs: AssessmentTab[];
   onTabSwitch: ValueSetter<AssessmentTabId>;
@@ -300,148 +274,10 @@ export interface ResultsCounts {
   failed: number;
 }
 
-export interface ResultsHeaderProps {
-  counts: ResultsCounts;
-  statusFilter: StatusFilter;
-  isLoading: boolean;
-  onStatusFilterChange: ValueSetter<StatusFilter>;
-  onRefresh: () => void;
-}
-
-export interface LoadingSpinnerProps {
-  className: string;
-  centered?: boolean;
-}
-
-export interface DownloadDropdownProps {
-  onDownload: (format: ExportFormat) => void;
-  disabled?: boolean;
-  loading?: boolean;
-}
-
 export interface AssessmentResultsPreview {
   title: string;
   headers: string[];
   rows: string[][];
-}
-
-export interface UseAssessmentResultsParams {
-  apiKey: string;
-  onForbidden?: () => void;
-  toast: ToastContextType;
-}
-
-export interface DataViewModalProps {
-  title: string;
-  subtitle?: string;
-  headers: string[];
-  rows: string[][];
-  onClose: () => void;
-}
-
-export interface ReviewStepProps {
-  formState: AssessmentFormState;
-  experimentName: string;
-  setExperimentName: ValueSetter<string>;
-  isSubmitting: boolean;
-  canSubmit: boolean;
-  outputSchemaJson: JsonSchemaValue;
-  submitBlockerMessage: string;
-  onSubmit: () => void;
-  onBack: () => void;
-  onEditStep: ValueSetter<number>;
-}
-
-export interface ReviewSectionProps {
-  title: string;
-  isOpen: boolean;
-  onToggle: () => void;
-  onEdit?: () => void;
-  headerAction?: ReactNode;
-  badge?: string;
-  children: ReactNode;
-}
-
-export interface ExperimentReviewProps {
-  experimentName: string;
-  setExperimentName: ValueSetter<string>;
-}
-
-export interface DatasetReviewProps {
-  datasetName: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-export type ReviewColumnRole = "text" | "attachment" | "ground truth";
-
-export interface ReviewColumn {
-  key: string;
-  column: string;
-  role: ReviewColumnRole;
-  badgeClass: string;
-}
-
-export interface ColumnsReviewProps {
-  mappedColumns: ReviewColumn[];
-  mappedCount: number;
-  isOpen: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-}
-
-export interface InputReviewProps {
-  systemInstruction: string;
-  promptTemplate: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-export interface PromptNodeProps {
-  title: string;
-  value: string;
-  fallback: string;
-  isOpen: boolean;
-  onToggle: () => void;
-}
-
-export interface ConfigsReviewProps {
-  configs: ConfigSelection[];
-  isOpen: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-}
-
-export interface SchemaReviewProps {
-  outputSchema: SchemaProperty[];
-  isOpen: boolean;
-  onToggle: () => void;
-  onEdit: () => void;
-}
-
-export interface PayloadReviewProps {
-  experimentName: string;
-  datasetId: string;
-  systemInstruction: string;
-  promptTemplate: string;
-  columnMapping: ColumnMapping;
-  outputSchemaJson: JsonSchemaValue;
-  configs: ConfigSelection[];
-}
-
-export interface SubmitReviewProps {
-  isSubmitting: boolean;
-  canSubmit: boolean;
-  submitBlockerMessage: string;
-  onSubmit: () => void;
-  onBack: () => void;
-}
-
-export interface DatasetsDeleteModalProps {
-  datasetName?: string;
-  isDeleting: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
 }
 
 export interface AssessmentDatasetSummary {
@@ -464,126 +300,7 @@ export interface DatasetViewModalData extends ParsedDatasetFile {
   name: string;
 }
 
-export interface DatasetsTabProps extends WithForbiddenHandler {
-  apiKey: string;
-  datasetId: string;
-  setDatasetId: ValueSetter<string>;
-  setSelectedDatasetName: ValueSetter<string>;
-  onColumnsLoaded: (columns: string[], sampleRow?: SampleRow) => void;
-  onNext: () => void;
-}
-
-export interface DatasetsCreatePanelProps {
-  datasetName: string;
-  datasetDescription: string;
-  uploadedFile: File | null;
-  isDragging: boolean;
-  isUploading: boolean;
-  fileInputRef: RefObject<HTMLInputElement | null>;
-  onDatasetNameChange: ValueSetter<string>;
-  onDatasetDescriptionChange: ValueSetter<string>;
-  onFileSelect: (event: ChangeEvent<HTMLInputElement>) => void;
-  onDragOver: (event: DragEvent<HTMLDivElement>) => void;
-  onDragLeave: () => void;
-  onDrop: (event: DragEvent<HTMLDivElement>) => void;
-  onRemoveFile: () => void;
-  onResetForm: () => void;
-  onCreateDataset: () => void;
-}
-
-export interface DatasetsListProps {
-  datasets: Dataset[];
-  datasetId: string;
-  isLoading: boolean;
-  isLoadingColumns: boolean;
-  viewingId: number | null;
-  canProceed: boolean;
-  onSelectDataset: (id: string, name?: string) => void;
-  onViewDataset: (datasetId: number, name: string) => void;
-  onRequestDelete: ValueSetter<number>;
-  onNext: () => void;
-}
-
-export interface OutputSchemaStepProps extends StepNavigationProps {
-  schema: SchemaProperty[];
-  setSchema: ValueSetter<SchemaProperty[]>;
-}
-
-export interface OutputSchemaEditorProps {
-  schema: SchemaProperty[];
-  setSchema: ValueSetter<SchemaProperty[]>;
-  title?: string;
-  description?: ReactNode;
-}
-
-export interface PropertyRowProps {
-  property: SchemaProperty;
-  depth: number;
-  onUpdate: (
-    id: string,
-    updater: (property: SchemaProperty) => SchemaProperty,
-  ) => void;
-  onRemove: ValueSetter<string>;
-  onAddChild: ValueSetter<string>;
-  onAddEnumValue: ValueSetter<string>;
-  onUpdateEnumValue: (id: string, index: number, value: string) => void;
-  onRemoveEnumValue: (id: string, index: number) => void;
-}
-
-export interface OutputSchemaModalProps {
-  open: boolean;
-  onClose: () => void;
-  schema: SchemaProperty[];
-  setSchema: ValueSetter<SchemaProperty[]>;
-}
-
-export interface PromptAndConfigStepProps extends StepNavigationProps {
-  apiKey: string;
-  textColumns: string[];
-  sampleRow: SampleRow;
-  systemInstruction: string;
-  setSystemInstruction: ValueSetter<string>;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-  configs: ConfigSelection[];
-  setConfigs: StateSetter<ConfigSelection[]>;
-  outputSchema: SchemaProperty[];
-  setOutputSchema: ValueSetter<SchemaProperty[]>;
-}
-
-export interface PromptPanelProps {
-  textColumns: string[];
-  sampleRow: SampleRow;
-  systemInstruction: string;
-  setSystemInstruction: ValueSetter<string>;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-}
-
-export interface SystemPromptProps {
-  value: string;
-  onChange: ValueSetter<string>;
-  previewMode: boolean;
-}
-
-export interface PromptEditorProps {
-  value: string;
-  onChange: ValueSetter<string>;
-  previewMode: boolean;
-  placeholder: string;
-  emptyPreviewText: string;
-  textColumns?: string[];
-  sampleRow?: SampleRow;
-  enablePlaceholders?: boolean;
-}
-
-export interface UserPromptProps {
-  textColumns: string[];
-  sampleRow: SampleRow;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-  previewMode: boolean;
-}
+export type ConfigMode = "existing" | "create";
 
 export interface VersionListState {
   items: ConfigVersionItems[];
@@ -591,140 +308,6 @@ export interface VersionListState {
   error: string | null;
   hasMore: boolean;
   nextSkip: number;
-}
-
-export type ConfigMode = "existing" | "create";
-
-export interface SetupProgressProps {
-  promptStatus: string;
-  selectedConfigCount: number;
-  responseSummary: string;
-}
-
-export interface StatusPillProps {
-  label: string;
-  value: string;
-}
-
-export interface ResponseSchemaProps {
-  schema: SchemaProperty[];
-  setSchema: ValueSetter<SchemaProperty[]>;
-  summary: string;
-  hasFields: boolean;
-}
-
-export interface SelectedConfigsProps {
-  configs: ConfigSelection[];
-  onRemove: (configId: string, version: number) => void;
-}
-
-export interface ConfigCreatorProps {
-  currentProvider: string;
-  currentModel: string;
-  providerModels: ModelOption[];
-  currentParamDefs: Record<string, ConfigParamDefinition>;
-  draftParams: Record<string, string | number | undefined>;
-  configName: string;
-  commitMessage: string;
-  isSaving: boolean;
-  setConfigName: ValueSetter<string>;
-  setCommitMessage: ValueSetter<string>;
-  onProviderChange: ValueSetter<"openai">;
-  onModelChange: ValueSetter<string>;
-  onParamChange: (key: string, value: string | number) => void;
-  onSave: () => void | Promise<void>;
-}
-
-export interface ConfigParamControlProps {
-  value: string | number;
-  definition: ConfigParamDefinition;
-  onChange: (value: string | number) => void;
-}
-
-export interface SavedConfigsProps {
-  configCards: ConfigPublic[];
-  searchQuery: string;
-  setSearchQuery: ValueSetter<string>;
-  isLoadingConfigs: boolean;
-  hasMoreConfigs: boolean;
-  nextConfigSkip: number;
-  expandedConfigId: string | null;
-  versionStateByConfig: Record<string, VersionListState>;
-  loadingSelectionKeys: Record<string, boolean>;
-  isSelected: (configId: string, version: number) => boolean;
-  onLoadMoreConfigs: (skip: number) => void;
-  onLoadVersions: (configId: string, skip: number) => void;
-  onToggleConfigExpansion: ValueSetter<string>;
-  onToggleVersionSelection: (
-    config: ConfigPublic,
-    version: number,
-  ) => void | Promise<void>;
-}
-
-export interface SavedConfigCardProps {
-  config: ConfigPublic;
-  versions: VersionListState;
-  expanded: boolean;
-  loadingSelectionKeys: Record<string, boolean>;
-  isSelected: (configId: string, version: number) => boolean;
-  onLoadVersions: (configId: string, skip: number) => void;
-  onToggleExpansion: ValueSetter<string>;
-  onToggleVersionSelection: (
-    config: ConfigPublic,
-    version: number,
-  ) => void | Promise<void>;
-}
-
-export interface VersionSummaryProps {
-  previewVersions: ConfigVersionItems[];
-  knownVersionCount: number;
-}
-
-export interface VersionPanelProps {
-  config: ConfigPublic;
-  versions: VersionListState;
-  expanded: boolean;
-  loadingSelectionKeys: Record<string, boolean>;
-  isSelected: (configId: string, version: number) => boolean;
-  onLoadVersions: (configId: string, skip: number) => void;
-  onToggleVersionSelection: (
-    config: ConfigPublic,
-    version: number,
-  ) => void | Promise<void>;
-}
-
-export interface AssessmentConfigurationProps extends Omit<
-  ConfigCreatorProps,
-  "onSave"
-> {
-  configMode: ConfigMode;
-  setConfigMode: ValueSetter<ConfigMode>;
-  configs: ConfigSelection[];
-  onRemoveConfig: (configId: string, version: number) => void;
-  configCards: ConfigPublic[];
-  searchQuery: string;
-  setSearchQuery: ValueSetter<string>;
-  isLoadingConfigs: boolean;
-  hasMoreConfigs: boolean;
-  nextConfigSkip: number;
-  expandedConfigId: string | null;
-  versionStateByConfig: Record<string, VersionListState>;
-  loadingSelectionKeys: Record<string, boolean>;
-  isSelected: (configId: string, version: number) => boolean;
-  onLoadMoreConfigs: (skip: number) => void;
-  onLoadVersions: (configId: string, skip: number) => void;
-  onToggleConfigExpansion: ValueSetter<string>;
-  onToggleVersionSelection: (
-    config: ConfigPublic,
-    version: number,
-  ) => void | Promise<void>;
-  onSaveConfig: () => void | Promise<void>;
-}
-
-export interface CompactToggleSwitchProps {
-  checked: boolean;
-  onChange: () => void;
-  title: string;
 }
 
 export const ATTACHMENT_FORMATS: Record<string, string[]> = {

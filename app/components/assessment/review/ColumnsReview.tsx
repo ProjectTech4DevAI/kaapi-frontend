@@ -1,6 +1,14 @@
 "use client";
 
-import type { ColumnsReviewProps } from "@/app/lib/types/assessment";
+import type { ReviewColumn } from "../ReviewStep";
+
+interface ColumnsReviewProps {
+  mappedColumns: ReviewColumn[];
+  mappedCount: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  onEdit: () => void;
+}
 import ReviewSection from "./ReviewSection";
 
 export default function ColumnsReview({

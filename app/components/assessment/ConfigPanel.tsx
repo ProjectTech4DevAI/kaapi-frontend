@@ -10,7 +10,6 @@ import ReviewStep from "./ReviewStep";
 import Stepper from "./Stepper";
 
 export default function ConfigPanel({
-  apiKey,
   canSubmitAssessment,
   columns,
   columnMapping,
@@ -42,11 +41,11 @@ export default function ConfigPanel({
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <DatabaseIcon className="mx-auto mb-4 h-12 w-12 text-neutral-200" />
-          <p className="mb-1 text-sm font-medium text-neutral-900">
+          <DatabaseIcon className="mx-auto mb-4 h-12 w-12 text-border" />
+          <p className="mb-1 text-sm font-medium text-text-primary">
             No dataset selected
           </p>
-          <p className="mb-4 text-xs text-neutral-500">
+          <p className="mb-4 text-xs text-text-secondary">
             Select a dataset first from the Datasets tab
           </p>
           <Button
@@ -89,7 +88,6 @@ export default function ConfigPanel({
           }
         >
           <PromptAndConfigStep
-            apiKey={apiKey}
             textColumns={columnMapping.textColumns}
             sampleRow={sampleRow}
             systemInstruction={systemInstruction}

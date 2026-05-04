@@ -2,12 +2,62 @@ import { Button } from "@/app/components";
 import Loader from "@/app/components/Loader";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { buildInitialAssessmentVersionState } from "@/app/lib/assessment/config";
-import type {
-  SavedConfigCardProps,
-  SavedConfigsProps,
-  VersionPanelProps,
-  VersionSummaryProps,
-} from "@/app/lib/types/assessment";
+import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
+import type { ValueSetter, VersionListState } from "@/app/lib/types/assessment";
+
+export type { VersionListState };
+
+interface SavedConfigsProps {
+  configCards: ConfigPublic[];
+  searchQuery: string;
+  setSearchQuery: ValueSetter<string>;
+  isLoadingConfigs: boolean;
+  hasMoreConfigs: boolean;
+  nextConfigSkip: number;
+  expandedConfigId: string | null;
+  versionStateByConfig: Record<string, VersionListState>;
+  loadingSelectionKeys: Record<string, boolean>;
+  isSelected: (configId: string, version: number) => boolean;
+  onLoadMoreConfigs: (skip: number) => void;
+  onLoadVersions: (configId: string, skip: number) => void;
+  onToggleConfigExpansion: ValueSetter<string>;
+  onToggleVersionSelection: (
+    config: ConfigPublic,
+    version: number,
+  ) => void | Promise<void>;
+}
+
+interface SavedConfigCardProps {
+  config: ConfigPublic;
+  versions: VersionListState;
+  expanded: boolean;
+  loadingSelectionKeys: Record<string, boolean>;
+  isSelected: (configId: string, version: number) => boolean;
+  onLoadVersions: (configId: string, skip: number) => void;
+  onToggleExpansion: ValueSetter<string>;
+  onToggleVersionSelection: (
+    config: ConfigPublic,
+    version: number,
+  ) => void | Promise<void>;
+}
+
+interface VersionSummaryProps {
+  previewVersions: ConfigVersionItems[];
+  knownVersionCount: number;
+}
+
+interface VersionPanelProps {
+  config: ConfigPublic;
+  versions: VersionListState;
+  expanded: boolean;
+  loadingSelectionKeys: Record<string, boolean>;
+  isSelected: (configId: string, version: number) => boolean;
+  onLoadVersions: (configId: string, skip: number) => void;
+  onToggleVersionSelection: (
+    config: ConfigPublic,
+    version: number,
+  ) => void | Promise<void>;
+}
 import { formatRelativeTime } from "@/app/lib/utils";
 
 export default function SavedConfigs({

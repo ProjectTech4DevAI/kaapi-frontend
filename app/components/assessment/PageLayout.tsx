@@ -2,6 +2,8 @@
 
 import Sidebar from "@/app/components/Sidebar";
 import TabNavigation from "@/app/components/TabNavigation";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useApp } from "@/app/lib/context/AppContext";
 import type { PageLayoutProps } from "@/app/lib/types/assessment";
 import ApiKeyRequired from "./ApiKeyRequired";
 import ConfigPanel from "./ConfigPanel";
@@ -10,9 +12,6 @@ import EvaluationsTab from "./EvaluationsTab";
 import PageHeader from "./PageHeader";
 
 export default function PageLayout({
-  sidebarCollapsed,
-  onToggleSidebar,
-  hasApiKeys,
   activeTab,
   tabs,
   onTabSwitch,
@@ -20,15 +19,18 @@ export default function PageLayout({
   configPanelProps,
   evaluationsTabProps,
 }: PageLayoutProps) {
+  const { activeKey } = useAuth();
+  const { sidebarCollapsed } = useApp();
+
   return (
     <div className="flex h-screen w-full flex-col bg-neutral-50">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/assessment" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <PageHeader onToggleSidebar={onToggleSidebar} />
+          <PageHeader />
 
-          {!hasApiKeys ? (
+          {!activeKey ? (
             <ApiKeyRequired />
           ) : (
             <>

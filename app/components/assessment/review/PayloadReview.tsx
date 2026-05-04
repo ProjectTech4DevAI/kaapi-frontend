@@ -1,7 +1,21 @@
 "use client";
 
 import { ChevronRightIcon } from "@/app/components/icons";
-import type { PayloadReviewProps } from "@/app/lib/types/assessment";
+import type {
+  ColumnMapping,
+  ConfigSelection,
+  JsonSchemaValue,
+} from "@/app/lib/types/assessment";
+
+interface PayloadReviewProps {
+  experimentName: string;
+  datasetId: string;
+  systemInstruction: string;
+  promptTemplate: string;
+  columnMapping: ColumnMapping;
+  outputSchemaJson: JsonSchemaValue;
+  configs: ConfigSelection[];
+}
 
 export default function PayloadReview({
   experimentName,

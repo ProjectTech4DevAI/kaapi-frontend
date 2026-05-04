@@ -5,7 +5,33 @@ import {
   INITIAL_REVIEW_OPEN_SECTIONS,
   REVIEW_SECTIONS,
 } from "@/app/lib/assessment/constants";
-import type { ReviewColumn, ReviewStepProps } from "@/app/lib/types/assessment";
+import type {
+  AssessmentFormState,
+  JsonSchemaValue,
+  ValueSetter,
+} from "@/app/lib/types/assessment";
+
+export type ReviewColumnRole = "text" | "attachment" | "ground truth";
+
+export interface ReviewColumn {
+  key: string;
+  column: string;
+  role: ReviewColumnRole;
+  badgeClass: string;
+}
+
+interface ReviewStepProps {
+  formState: AssessmentFormState;
+  experimentName: string;
+  setExperimentName: ValueSetter<string>;
+  isSubmitting: boolean;
+  canSubmit: boolean;
+  outputSchemaJson: JsonSchemaValue;
+  submitBlockerMessage: string;
+  onSubmit: () => void;
+  onBack: () => void;
+  onEditStep: ValueSetter<number>;
+}
 import ColumnsReview from "./review/ColumnsReview";
 import ConfigsReview from "./review/ConfigsReview";
 import DatasetReview from "./review/DatasetReview";

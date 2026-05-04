@@ -3,7 +3,26 @@
 import { Button, Field } from "@/app/components";
 import { CheckIcon, CloseIcon, CloudUploadIcon } from "@/app/components/icons";
 import { DATASET_LEFT_PANEL_CLASSES } from "@/app/lib/assessment/constants";
-import type { DatasetsCreatePanelProps } from "@/app/lib/types/assessment";
+import type { ChangeEvent, DragEvent, RefObject } from "react";
+import type { ValueSetter } from "@/app/lib/types/assessment";
+
+interface DatasetsCreatePanelProps {
+  datasetName: string;
+  datasetDescription: string;
+  uploadedFile: File | null;
+  isDragging: boolean;
+  isUploading: boolean;
+  fileInputRef: RefObject<HTMLInputElement | null>;
+  onDatasetNameChange: ValueSetter<string>;
+  onDatasetDescriptionChange: ValueSetter<string>;
+  onFileSelect: (event: ChangeEvent<HTMLInputElement>) => void;
+  onDragOver: (event: DragEvent<HTMLDivElement>) => void;
+  onDragLeave: () => void;
+  onDrop: (event: DragEvent<HTMLDivElement>) => void;
+  onRemoveFile: () => void;
+  onResetForm: () => void;
+  onCreateDataset: () => void;
+}
 
 export default function CreatePanel({
   datasetName,

@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/app/components";
-import type { ResponseSchemaProps } from "@/app/lib/types/assessment";
+import type { SchemaProperty, ValueSetter } from "@/app/lib/types/assessment";
+
+interface ResponseSchemaProps {
+  schema: SchemaProperty[];
+  setSchema: ValueSetter<SchemaProperty[]>;
+  summary: string;
+  hasFields: boolean;
+}
 import { OutputSchemaModal } from "../OutputSchemaStep";
 
 export default function ResponseSchema({

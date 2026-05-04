@@ -1,8 +1,15 @@
-import {
-  MAX_CONFIGS,
-  type SetupProgressProps,
-  type StatusPillProps,
-} from "@/app/lib/types/assessment";
+import { MAX_CONFIGS } from "@/app/lib/types/assessment";
+
+interface StatusPillProps {
+  label: string;
+  value: string;
+}
+
+interface SetupProgressProps {
+  promptStatus: string;
+  selectedConfigCount: number;
+  responseSummary: string;
+}
 
 function StatusPill({ label, value }: StatusPillProps) {
   return (

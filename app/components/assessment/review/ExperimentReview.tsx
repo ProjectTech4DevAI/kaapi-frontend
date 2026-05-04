@@ -1,7 +1,12 @@
 "use client";
 
 import { Field } from "@/app/components";
-import type { ExperimentReviewProps } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
+
+interface ExperimentReviewProps {
+  experimentName: string;
+  setExperimentName: ValueSetter<string>;
+}
 
 export default function ExperimentReview({
   experimentName,

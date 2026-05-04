@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import { Button } from "@/app/components";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
@@ -8,9 +9,27 @@ import {
   MAX_CONFIGS,
   type ConfigMode,
   type ConfigSelection,
-  type PromptAndConfigStepProps,
-  type VersionListState,
+  type SampleRow,
+  type SchemaProperty,
+  type StateSetter,
+  type ValueSetter,
 } from "@/app/lib/types/assessment";
+
+interface PromptAndConfigStepProps {
+  onNext: () => void;
+  onBack: () => void;
+  textColumns: string[];
+  sampleRow: SampleRow;
+  systemInstruction: string;
+  setSystemInstruction: ValueSetter<string>;
+  promptTemplate: string;
+  setPromptTemplate: ValueSetter<string>;
+  configs: ConfigSelection[];
+  setConfigs: StateSetter<ConfigSelection[]>;
+  outputSchema: SchemaProperty[];
+  setOutputSchema: ValueSetter<SchemaProperty[]>;
+}
+import type { VersionListState } from "./prompt-config/SavedConfigs";
 import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
 import { ASSESSMENT_CONFIG_VERSION_PAGE_SIZE } from "@/app/lib/assessment/constants";
 import {
@@ -33,7 +52,6 @@ import PromptPanel from "./prompt-config/PromptPanel";
 import ResponseSchema from "./prompt-config/ResponseSchema";
 
 export default function PromptAndConfigStep({
-  apiKey,
   textColumns,
   sampleRow,
   systemInstruction,
@@ -48,6 +66,8 @@ export default function PromptAndConfigStep({
   onBack,
 }: PromptAndConfigStepProps) {
   const toast = useToast();
+  const { activeKey } = useAuth();
+  const apiKey = activeKey?.key ?? "";
 
   const [configMode, setConfigMode] = useState<ConfigMode>("existing");
   const [configCards, setConfigCards] = useState<ConfigPublic[]>([]);

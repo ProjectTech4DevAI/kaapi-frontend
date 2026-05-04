@@ -2,7 +2,14 @@
 
 import { Button } from "@/app/components";
 import { CheckIcon } from "@/app/components/icons";
-import type { StepperProps } from "@/app/lib/types/assessment";
+import type { Step, ValueSetter } from "@/app/lib/types/assessment";
+
+interface StepperProps {
+  steps: Step[];
+  currentStep: number;
+  onStepClick: ValueSetter<number>;
+  completedSteps: Set<number>;
+}
 
 export default function Stepper({
   steps,

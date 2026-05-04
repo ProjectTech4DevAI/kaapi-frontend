@@ -6,9 +6,18 @@ import {
   STATUS_FILTER_OPTIONS,
 } from "@/app/lib/assessment/constants";
 import type {
-  ResultsHeaderProps,
+  ResultsCounts,
   StatusFilter,
+  ValueSetter,
 } from "@/app/lib/types/assessment";
+
+interface ResultsHeaderProps {
+  counts: ResultsCounts;
+  statusFilter: StatusFilter;
+  isLoading: boolean;
+  onStatusFilterChange: ValueSetter<StatusFilter>;
+  onRefresh: () => void;
+}
 
 export default function ResultsHeader({
   counts,

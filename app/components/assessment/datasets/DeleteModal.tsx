@@ -2,7 +2,12 @@
 
 import { Button, Modal } from "@/app/components";
 import { WarningIcon } from "@/app/components/icons";
-import type { DatasetsDeleteModalProps } from "@/app/lib/types/assessment";
+interface DatasetsDeleteModalProps {
+  datasetName?: string;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
 
 export default function DeleteModal({
   datasetName,

@@ -3,7 +3,13 @@
 import { Button } from "@/app/components";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import PlayIcon from "@/app/components/icons/assessment/PlayIcon";
-import type { SubmitReviewProps } from "@/app/lib/types/assessment";
+interface SubmitReviewProps {
+  isSubmitting: boolean;
+  canSubmit: boolean;
+  submitBlockerMessage: string;
+  onSubmit: () => void;
+  onBack: () => void;
+}
 
 export default function SubmitReview({
   isSubmitting,

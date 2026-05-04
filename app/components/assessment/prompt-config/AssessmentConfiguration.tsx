@@ -3,11 +3,42 @@
 import { Button } from "@/app/components";
 import {
   MAX_CONFIGS,
-  type AssessmentConfigurationProps,
+  type ConfigMode,
+  type ConfigSelection,
+  type ValueSetter,
 } from "@/app/lib/types/assessment";
-import ConfigCreator from "./ConfigCreator";
-import SavedConfigs from "./SavedConfigs";
+import type { ConfigPublic } from "@/app/lib/types/configs";
+import ConfigCreator, { type ConfigCreatorProps } from "./ConfigCreator";
+import SavedConfigs, { type VersionListState } from "./SavedConfigs";
 import SelectedConfigs from "./SelectedConfigs";
+
+interface AssessmentConfigurationProps extends Omit<
+  ConfigCreatorProps,
+  "onSave"
+> {
+  configMode: ConfigMode;
+  setConfigMode: ValueSetter<ConfigMode>;
+  configs: ConfigSelection[];
+  onRemoveConfig: (configId: string, version: number) => void;
+  configCards: ConfigPublic[];
+  searchQuery: string;
+  setSearchQuery: ValueSetter<string>;
+  isLoadingConfigs: boolean;
+  hasMoreConfigs: boolean;
+  nextConfigSkip: number;
+  expandedConfigId: string | null;
+  versionStateByConfig: Record<string, VersionListState>;
+  loadingSelectionKeys: Record<string, boolean>;
+  isSelected: (configId: string, version: number) => boolean;
+  onLoadMoreConfigs: (skip: number) => void;
+  onLoadVersions: (configId: string, skip: number) => void;
+  onToggleConfigExpansion: ValueSetter<string>;
+  onToggleVersionSelection: (
+    config: ConfigPublic,
+    version: number,
+  ) => void | Promise<void>;
+  onSaveConfig: () => void | Promise<void>;
+}
 
 export default function AssessmentConfiguration({
   configMode,

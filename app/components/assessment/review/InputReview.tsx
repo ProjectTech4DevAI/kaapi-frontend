@@ -7,10 +7,20 @@ import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
 } from "@/app/lib/assessment/constants";
-import type {
-  InputReviewProps,
-  PromptNodeProps,
-} from "@/app/lib/types/assessment";
+interface InputReviewProps {
+  systemInstruction: string;
+  promptTemplate: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}
+
+interface PromptNodeProps {
+  title: string;
+  value: string;
+  fallback: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}
 import ReviewSection from "./ReviewSection";
 
 function PromptNode({

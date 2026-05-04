@@ -2,7 +2,13 @@
 
 import { Modal } from "@/app/components";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
-import type { DataViewModalProps } from "@/app/lib/types/assessment";
+interface DataViewModalProps {
+  title: string;
+  subtitle?: string;
+  headers: string[];
+  rows: string[][];
+  onClose: () => void;
+}
 
 /**
  * Reusable modal for viewing tabular data (dataset preview, result preview).

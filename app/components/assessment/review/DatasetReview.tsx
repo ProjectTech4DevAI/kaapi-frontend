@@ -1,6 +1,10 @@
 "use client";
 
-import type { DatasetReviewProps } from "@/app/lib/types/assessment";
+interface DatasetReviewProps {
+  datasetName: string;
+  isOpen: boolean;
+  onToggle: () => void;
+}
 import ReviewSection from "./ReviewSection";
 
 export default function DatasetReview({

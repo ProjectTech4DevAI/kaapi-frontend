@@ -6,7 +6,16 @@ import {
   JSON_EDITOR_FONT_CLASSES,
   JSON_TOKEN_CLASSES,
 } from "@/app/lib/assessment/constants";
-import type { JsonEditorProps } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
+
+interface JsonEditorProps {
+  value: string;
+  onChange: ValueSetter<string>;
+  error?: string | null;
+  isValid?: boolean;
+  placeholder?: string;
+  minHeight?: number;
+}
 
 function highlight(code: string): string {
   if (!code) return "";

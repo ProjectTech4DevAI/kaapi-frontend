@@ -4,7 +4,21 @@ import { Button } from "@/app/components";
 import Loader from "@/app/components/Loader";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
-import type { DatasetsListProps } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
+import type { Dataset } from "@/app/lib/types/datasets";
+
+interface DatasetsListProps {
+  datasets: Dataset[];
+  datasetId: string;
+  isLoading: boolean;
+  isLoadingColumns: boolean;
+  viewingId: number | null;
+  canProceed: boolean;
+  onSelectDataset: (id: string, name?: string) => void;
+  onViewDataset: (datasetId: number, name: string) => void;
+  onRequestDelete: ValueSetter<number>;
+  onNext: () => void;
+}
 
 export default function DatasetList({
   datasets,

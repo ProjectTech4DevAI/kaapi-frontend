@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/datasets";
 import { useToast } from "@/app/components/Toast";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import { handleForbiddenError } from "@/app/lib/assessment/access";
 import type {
   CreateDatasetResponse,
@@ -22,7 +23,6 @@ import {
 } from "./datasets/utils";
 
 export default function DatasetsTab({
-  apiKey,
   onForbidden,
   datasetId,
   setDatasetId,
@@ -31,6 +31,8 @@ export default function DatasetsTab({
   onNext,
 }: DatasetsTabProps) {
   const toast = useToast();
+  const { activeKey } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);

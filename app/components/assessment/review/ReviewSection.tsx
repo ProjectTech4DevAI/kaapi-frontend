@@ -2,7 +2,17 @@
 
 import { Button } from "@/app/components";
 import { ChevronRightIcon } from "@/app/components/icons";
-import type { ReviewSectionProps } from "@/app/lib/types/assessment";
+import type { ReactNode } from "react";
+
+interface ReviewSectionProps {
+  title: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  onEdit?: () => void;
+  headerAction?: ReactNode;
+  badge?: string;
+  children: ReactNode;
+}
 
 export default function ReviewSection({
   title,

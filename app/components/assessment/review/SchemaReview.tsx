@@ -1,6 +1,13 @@
 "use client";
 
-import type { SchemaReviewProps } from "@/app/lib/types/assessment";
+import type { SchemaProperty } from "@/app/lib/types/assessment";
+
+interface SchemaReviewProps {
+  outputSchema: SchemaProperty[];
+  isOpen: boolean;
+  onToggle: () => void;
+  onEdit: () => void;
+}
 import ReviewSection from "./ReviewSection";
 
 export default function SchemaReview({

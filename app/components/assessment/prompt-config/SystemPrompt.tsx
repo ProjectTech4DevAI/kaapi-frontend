@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { ChevronDownIcon } from "@/app/components/icons";
 import InfoTooltip from "@/app/components/InfoTooltip";
-import type { SystemPromptProps } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
+
+interface SystemPromptProps {
+  value: string;
+  onChange: ValueSetter<string>;
+  previewMode: boolean;
+}
 import PromptEditor from "./PromptEditor";
 
 export default function SystemPrompt({

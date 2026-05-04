@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
+import { useAuth } from "@/app/lib/context/AuthContext";
 import { handleForbiddenError } from "@/app/lib/assessment/access";
 import {
   filterAssessments,
@@ -22,15 +23,21 @@ import type {
   ConfigRunDetail,
   ExportFormat,
   StatusFilter,
-  UseAssessmentResultsParams,
 } from "@/app/lib/types/assessment";
+import type { ToastContextType } from "@/app/lib/types/toast";
+
+interface UseAssessmentResultsParams {
+  onForbidden?: () => void;
+  toast: ToastContextType;
+}
 import { jsonResultsToTableData } from "../DataViewModal";
 
 export default function useAssessmentResults({
-  apiKey,
   onForbidden,
   toast,
 }: UseAssessmentResultsParams) {
+  const { activeKey } = useAuth();
+  const apiKey = activeKey?.key ?? "";
   const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
   const [childRunsByAssessment, setChildRunsByAssessment] = useState<
     Record<number, AssessmentChildRun[]>

@@ -24,10 +24,20 @@ import {
 } from "@/app/lib/assessment/constants";
 import { formatRelativeTime } from "@/app/lib/utils";
 import type {
-  DownloadDropdownProps,
   EvaluationsTabProps,
-  LoadingSpinnerProps,
+  ExportFormat,
 } from "@/app/lib/types/assessment";
+
+interface LoadingSpinnerProps {
+  className: string;
+  centered?: boolean;
+}
+
+interface DownloadDropdownProps {
+  onDownload: (format: ExportFormat) => void;
+  disabled?: boolean;
+  loading?: boolean;
+}
 import ResultsHeader from "./results/ResultsHeader";
 import useAssessmentResults from "./results/useAssessmentResults";
 
@@ -107,10 +117,7 @@ function DownloadDropdown({
   );
 }
 
-export default function EvaluationsTab({
-  apiKey,
-  onForbidden,
-}: EvaluationsTabProps) {
+export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
   const toast = useToast();
   const {
     assessments,
@@ -137,7 +144,7 @@ export default function EvaluationsTab({
     handlePreview,
     handleAssessmentDownload,
     handleRunDownload,
-  } = useAssessmentResults({ apiKey, onForbidden, toast });
+  } = useAssessmentResults({ onForbidden, toast });
 
   return (
     <div className="flex-1 overflow-auto">

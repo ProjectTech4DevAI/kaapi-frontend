@@ -1,5 +1,10 @@
 import { CloseIcon } from "@/app/components/icons";
-import type { SelectedConfigsProps } from "@/app/lib/types/assessment";
+import type { ConfigSelection } from "@/app/lib/types/assessment";
+
+interface SelectedConfigsProps {
+  configs: ConfigSelection[];
+  onRemove: (configId: string, version: number) => void;
+}
 
 export default function SelectedConfigs({
   configs,

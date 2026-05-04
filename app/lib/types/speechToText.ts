@@ -1,5 +1,3 @@
-export type Tab = "datasets" | "evaluations";
-
 export interface AudioFile {
   id: string;
   file: File;

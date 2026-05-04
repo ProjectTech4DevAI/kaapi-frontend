@@ -1,3 +1,5 @@
+export type Tab = "datasets" | "evaluations";
+
 export interface TraceScore {
   name: string;
   value: number | string;

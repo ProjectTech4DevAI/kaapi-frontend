@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
-import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
+import { EvalJob, AssistantConfig, Tab } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import EvalRunsList from "./EvalRunsList";
 import RunEvaluationForm from "./RunEvaluationForm";
-
-type Tab = "datasets" | "evaluations";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;

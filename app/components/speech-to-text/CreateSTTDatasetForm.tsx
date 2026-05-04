@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { AudioFile, Language } from "@/app/lib/types/speechToText";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Button, Field } from "@/app/components";
+import { Button, Field, InfoTooltip } from "@/app/components";
 import Select from "@/app/components/Select";
 import { MusicNoteIcon, PlusIcon } from "@/app/components/icons";
 import AudioFileItem from "./AudioFileItem";
@@ -52,20 +51,6 @@ export default function CreateSTTDatasetForm({
   languages,
 }: CreateSTTDatasetFormProps) {
   const { isAuthenticated } = useAuth();
-  const [showLanguageInfo, setShowLanguageInfo] = useState(false);
-  const [languageInfoPos, setLanguageInfoPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (!showLanguageInfo) return;
-    const handleClick = () => setShowLanguageInfo(false);
-    const handleScroll = () => setShowLanguageInfo(false);
-    document.addEventListener("click", handleClick);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      document.removeEventListener("click", handleClick);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [showLanguageInfo]);
 
   const isCreateDisabled =
     isCreating || !datasetName.trim() || audioFiles.length === 0;
@@ -100,42 +85,18 @@ export default function CreateSTTDatasetForm({
         <label className="text-xs font-medium mb-1.5 text-text-secondary">
           <span className="inline-flex items-center gap-1">
             Language *
-            <button
-              type="button"
-              aria-label="Show language information"
-              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0 p-0 leading-none bg-bg-primary border border-border text-text-secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const rect = e.currentTarget.getBoundingClientRect();
-                setLanguageInfoPos({
-                  top: rect.bottom + 4,
-                  left: rect.left,
-                });
-                setShowLanguageInfo(!showLanguageInfo);
-              }}
-            >
-              i
-            </button>
-            {showLanguageInfo && (
-              <div
-                className="fixed z-50 rounded-lg shadow-lg border text-xs p-3 bg-bg-primary border-border w-[280px]"
-                style={{
-                  top: languageInfoPos.top,
-                  left: languageInfoPos.left,
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="font-semibold mb-1 text-text-primary">
-                  Default Language
-                </div>
-                <p className="text-text-secondary leading-relaxed">
-                  This is the default language applied to all samples in the
-                  dataset. You can override the language for individual samples
-                  in the audio files section below.
-                </p>
-              </div>
-            )}
+            <InfoTooltip
+              text={
+                <>
+                  <div className="font-semibold mb-1">Default Language</div>
+                  <p className="leading-relaxed">
+                    This is the default language applied to all samples in the
+                    dataset. You can override the language for individual
+                    samples in the audio files section below.
+                  </p>
+                </>
+              }
+            />
           </span>
         </label>
         <Select

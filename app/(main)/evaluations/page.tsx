@@ -22,8 +22,7 @@ import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import Loader from "@/app/components/Loader";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
-
-type Tab = "datasets" | "evaluations";
+import { Tab } from "@/app/lib/types/evaluation";
 
 const leftPanelWidth = 450;
 
@@ -260,7 +259,6 @@ function SimplifiedEvalContent() {
             subtitle="Compare model response quality on your datasets across different configs"
           />
 
-          {/* Tab Navigation */}
           <TabNavigation
             tabs={[
               { id: "datasets", label: "Datasets" },
@@ -270,7 +268,6 @@ function SimplifiedEvalContent() {
             onTabChange={(tabId) => setActiveTab(tabId as Tab)}
           />
 
-          {/* Tab Content */}
           {!mounted || !isAuthenticated ? (
             <>
               <FeatureGateModal

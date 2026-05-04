@@ -1,11 +1,12 @@
 "use client";
 
-import { Tab, Dataset, STTRun, STTResult } from "@/app/lib/types/speechToText";
+import { Dataset, STTRun, STTResult } from "@/app/lib/types/speechToText";
 import { APIKey } from "@/app/lib/types/credentials";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import STTRunsList from "./STTRunsList";
 import RunSTTEvaluationForm from "./RunSTTEvaluationForm";
+import { Tab } from "@/app/lib/types/evaluation";
 
 export interface EvaluationsTabProps {
   leftPanelWidth: number;

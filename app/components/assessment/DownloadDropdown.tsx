@@ -12,13 +12,7 @@ interface DownloadDropdownProps {
   loading?: boolean;
 }
 
-function LoadingSpinner({ className }: { className: string }) {
-  return (
-    <div
-      className={`${className} animate-spin rounded-full border-2 border-accent-primary border-t-transparent`}
-    />
-  );
-}
+import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";
 
 export default function DownloadDropdown({
   onDownload,

@@ -167,6 +167,8 @@ export default function SavedConfigCard({
         item.version > maxVersion ? item.version : maxVersion,
       0,
     ) || 1;
+  const versionsNotYetLoaded =
+    versions.items.length === 0 && versions.isLoading;
   const defaultSelected = isSelected(config.id, latestVersion);
   const defaultLoading = loadingSelectionKeys[`${config.id}:${latestVersion}`];
   const knownVersionCount = versions.items.length;
@@ -222,7 +224,7 @@ export default function SavedConfigCard({
           variant={defaultSelected ? "outline" : "primary"}
           size="sm"
           onClick={() => void onToggleVersionSelection(config, latestVersion)}
-          disabled={Boolean(defaultLoading)}
+          disabled={versionsNotYetLoaded || Boolean(defaultLoading)}
           className={`!min-w-[126px] !rounded-full !px-3.5 !py-2 !text-[12px] ${
             defaultLoading ? "cursor-progress" : ""
           } ${defaultSelected ? "!bg-bg-secondary" : ""}`}

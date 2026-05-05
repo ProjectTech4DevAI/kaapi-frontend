@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReviewColumn } from "../ReviewStep";
+import type { ReviewColumn } from "@/app/lib/types/assessment";
 import ReviewSection from "./ReviewSection";
 
 interface ColumnsReviewProps {

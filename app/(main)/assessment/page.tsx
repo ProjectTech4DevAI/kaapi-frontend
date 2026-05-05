@@ -66,12 +66,6 @@ const PAGE_TABS: ReadonlyArray<AssessmentTab> = [
   { id: "results", label: "Result" },
 ];
 
-declare global {
-  interface Window {
-    __assessmentForbiddenNavLock?: boolean;
-  }
-}
-
 function PageContent() {
   const router = useRouter();
   const toast = useToast();
@@ -103,19 +97,7 @@ function PageContent() {
 
   const handleForbidden = useCallback(
     (options?: { notify?: boolean }) => {
-      if (
-        typeof window !== "undefined" &&
-        window.__assessmentForbiddenNavLock
-      ) {
-        return;
-      }
-      if (featureRedirectingRef.current) {
-        return;
-      }
-
-      if (typeof window !== "undefined") {
-        window.__assessmentForbiddenNavLock = true;
-      }
+      if (featureRedirectingRef.current) return;
       featureRedirectingRef.current = true;
 
       if (options?.notify) {

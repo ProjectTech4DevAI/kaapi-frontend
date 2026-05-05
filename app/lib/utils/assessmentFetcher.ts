@@ -3,8 +3,8 @@ import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/configFetchers";
 import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
 import {
+  ASSESSMENT_DEFAULT_CONFIG,
   ASSESSMENT_MODEL_CONFIGS,
-  DEFAULT_CONFIG,
   GPT4_STYLE_CONFIG,
 } from "@/app/lib/data/assessmentModels";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
@@ -62,7 +62,7 @@ export function buildDefaultParams(
 }
 
 export function buildInitialAssessmentConfigDraft(): ConfigBlob {
-  return JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as ConfigBlob;
+  return JSON.parse(JSON.stringify(ASSESSMENT_DEFAULT_CONFIG)) as ConfigBlob;
 }
 
 export function buildInitialAssessmentVersionState(): VersionListState {

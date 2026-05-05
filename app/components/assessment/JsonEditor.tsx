@@ -2,10 +2,8 @@
 
 import { useRef, useCallback, useId } from "react";
 import { Button } from "@/app/components";
-import {
-  JSON_EDITOR_FONT_CLASSES,
-  JSON_TOKEN_CLASSES,
-} from "@/app/lib/assessment/constants";
+import { JSON_EDITOR_FONT_CLASSES } from "@/app/lib/assessment/constants";
+import { highlightJson } from "@/app/lib/utils/assessment";
 import type { ValueSetter } from "@/app/lib/types/assessment";
 
 interface JsonEditorProps {
@@ -15,46 +13,6 @@ interface JsonEditorProps {
   isValid?: boolean;
   placeholder?: string;
   minHeight?: number;
-}
-
-function highlight(code: string): string {
-  if (!code) return "";
-
-  const escHtml = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-  const re =
-    /("(?:\\.|[^"\\])*")(\s*:)?|(\btrue\b|\bfalse\b|\bnull\b)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g;
-  let result = "";
-  let cursor = 0;
-  let m: RegExpExecArray | null;
-
-  while ((m = re.exec(code)) !== null) {
-    // punctuation / whitespace between tokens
-    if (cursor < m.index) {
-      result += `<span class="${JSON_TOKEN_CLASSES.punct}">${escHtml(code.slice(cursor, m.index))}</span>`;
-    }
-
-    if (m[1] !== undefined) {
-      const isKey = !!m[2];
-      result += `<span class="${isKey ? JSON_TOKEN_CLASSES.key : JSON_TOKEN_CLASSES.string}">${escHtml(m[1])}</span>`;
-      if (m[2])
-        result += `<span class="${JSON_TOKEN_CLASSES.punct}">${escHtml(m[2])}</span>`;
-      cursor = m.index + m[0].length;
-    } else if (m[3] !== undefined) {
-      result += `<span class="${m[3] === "null" ? JSON_TOKEN_CLASSES.null : JSON_TOKEN_CLASSES.boolean}">${escHtml(m[3])}</span>`;
-      cursor = m.index + m[3].length;
-    } else if (m[4] !== undefined) {
-      result += `<span class="${JSON_TOKEN_CLASSES.number}">${escHtml(m[4])}</span>`;
-      cursor = m.index + m[4].length;
-    }
-  }
-
-  if (cursor < code.length) {
-    result += `<span class="${JSON_TOKEN_CLASSES.punct}">${escHtml(code.slice(cursor))}</span>`;
-  }
-
-  return result;
 }
 
 export default function JsonEditor({
@@ -178,7 +136,7 @@ export default function JsonEditor({
           ref={preRef}
           aria-hidden
           className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre break-normal px-5 py-4 ${JSON_EDITOR_FONT_CLASSES} ${minHeightClass}`}
-          dangerouslySetInnerHTML={{ __html: highlight(value) + "\n" }}
+          dangerouslySetInnerHTML={{ __html: highlightJson(value) + "\n" }}
         />
 
         {/* Editable layer */}

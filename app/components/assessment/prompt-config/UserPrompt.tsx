@@ -31,7 +31,7 @@ export default function UserPrompt({
           type="button"
           variant="ghost"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="!min-w-0 !flex-1 !justify-start !rounded-md !p-0"
+          className="!min-w-0 !flex-1 !justify-start !rounded-md !p-0 hover:bg-transparent focus-visible:bg-transparent"
         >
           <ChevronDownIcon
             className={`h-4 w-4 text-text-secondary transition-transform ${
@@ -45,8 +45,9 @@ export default function UserPrompt({
         <InfoTooltip
           text={
             <span>
-              Example: Evaluate this response for question {"{question}"} and
-              answer {"{answer}"}.
+              Tell the AI what to check in each row. Example: Read{" "}
+              {"{question}"}
+              and {"{answer}"}, then say if the answer is good and why.
             </span>
           }
         />

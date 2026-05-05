@@ -9,15 +9,7 @@ import type {
   AssessmentFormState,
   ValueSetter,
 } from "@/app/lib/types/assessment";
-
-export type ReviewColumnRole = "text" | "attachment" | "ground truth";
-
-export interface ReviewColumn {
-  key: string;
-  column: string;
-  role: ReviewColumnRole;
-  badgeClass: string;
-}
+import { buildMappedColumns } from "@/app/lib/utils/assessment";
 
 interface ReviewStepProps {
   formState: AssessmentFormState;
@@ -37,33 +29,6 @@ import ExperimentReview from "./review/ExperimentReview";
 import InputReview from "./review/InputReview";
 import SchemaReview from "./review/SchemaReview";
 import SubmitReview from "./review/SubmitReview";
-
-function buildMappedColumns({
-  textColumns,
-  attachments,
-  groundTruthColumns,
-}: ReviewStepProps["formState"]["columnMapping"]): ReviewColumn[] {
-  return [
-    ...textColumns.map((column) => ({
-      key: `text:${column}`,
-      column,
-      role: "text" as const,
-      badgeClass: "bg-status-success-bg text-status-success-text",
-    })),
-    ...attachments.map(({ column }) => ({
-      key: `attachment:${column}`,
-      column,
-      role: "attachment" as const,
-      badgeClass: "bg-status-warning-bg text-status-warning-text",
-    })),
-    ...groundTruthColumns.map((column) => ({
-      key: `ground_truth:${column}`,
-      column,
-      role: "ground truth" as const,
-      badgeClass: "bg-accent-subtle/30 text-accent-primary",
-    })),
-  ];
-}
 
 export default function ReviewStep({
   formState,

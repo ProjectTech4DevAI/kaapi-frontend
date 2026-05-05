@@ -219,7 +219,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
 
 export const PROVIDER_OPTIONS = [{ value: "openai", label: "OpenAI" }] as const;
 
-export const DEFAULT_CONFIG: ConfigBlob = {
+export const ASSESSMENT_DEFAULT_CONFIG: ConfigBlob = {
   completion: {
     provider: "openai",
     type: "text",

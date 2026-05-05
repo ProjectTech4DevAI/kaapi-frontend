@@ -12,66 +12,9 @@ import {
   type Attachment,
   type ColumnConfig,
   type ColumnRole,
-  type ColumnMapping,
   type ColumnMapperStepProps,
-  type RoleVisuals,
 } from "@/app/lib/types/assessment";
-
-function colorMapping(role: ColumnRole): RoleVisuals {
-  switch (role) {
-    case "text":
-      return {
-        panelClass: "border-status-success-border bg-status-success-bg",
-        dotClass: "bg-status-success",
-        activeButtonClass:
-          "!border-status-success-border !bg-status-success-bg !text-status-success-text hover:!bg-status-success-bg !ring-0",
-      };
-    case "attachment":
-      return {
-        panelClass: "border-status-warning-border bg-status-warning-bg",
-        dotClass: "bg-status-warning",
-        activeButtonClass:
-          "!border-status-warning-border !bg-status-warning-bg !text-status-warning-text hover:!bg-status-warning-bg !ring-0",
-      };
-    case "ground_truth":
-      return {
-        panelClass: "border-accent-subtle bg-accent-subtle/20",
-        dotClass: "bg-accent-primary",
-        activeButtonClass:
-          "!border-accent-subtle !bg-accent-subtle/20 !text-accent-primary hover:!bg-accent-subtle/20 !ring-0",
-      };
-    case "unmapped":
-    default:
-      return {
-        panelClass: "border-border bg-bg-primary",
-        dotClass: "bg-border",
-        activeButtonClass:
-          "!border-border !bg-bg-secondary !text-text-primary hover:!bg-bg-secondary !ring-0",
-      };
-  }
-}
-
-function buildColumnConfigs(
-  columns: string[],
-  columnMapping: ColumnMapping,
-): ColumnConfig[] {
-  return columns.map((column) => {
-    if (columnMapping.textColumns.includes(column)) {
-      return { role: "text" };
-    }
-
-    const attachment = columnMapping.attachments.find(
-      (item) => item.column === column,
-    );
-    return attachment
-      ? {
-          role: "attachment",
-          attachmentType: attachment.type,
-          attachmentFormat: attachment.format,
-        }
-      : { role: "unmapped" };
-  });
-}
+import { buildColumnConfigs, colorMapping } from "@/app/lib/utils/assessment";
 
 export default function ColumnMapperStep({
   columns,

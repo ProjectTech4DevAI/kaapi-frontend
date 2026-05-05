@@ -35,9 +35,15 @@ export default function DatasetList({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-bg-secondary">
       <div className="flex-1 overflow-auto p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-text-primary">
-            Datasets
-          </h3>
+          <div>
+            <h3 className="text-base font-semibold text-text-primary">
+              Datasets
+            </h3>
+            <p className="mt-2 rounded-md border border-accent-secondary bg-accent-secondary/15 px-3 py-2 text-xs font-medium text-text-primary">
+              Use an existing dataset from the list, or create a new dataset
+              from the form on the right.
+            </p>
+          </div>
           {isLoadingColumns && (
             <span className="text-xs text-text-secondary">
               Loading columns...
@@ -54,7 +60,7 @@ export default function DatasetList({
               No datasets yet
             </p>
             <p className="text-xs text-text-secondary">
-              Create your first dataset using the form on the left
+              Create your first dataset using the form on the right
             </p>
           </div>
         ) : (

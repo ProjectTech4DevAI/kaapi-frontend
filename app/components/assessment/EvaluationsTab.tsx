@@ -28,13 +28,7 @@ import { formatRelativeTime } from "@/app/lib/utils";
 import type { EvaluationsTabProps } from "@/app/lib/types/assessment";
 import useAssessmentResults from "@/app/hooks/useAssessmentResults";
 
-function LoadingSpinner({ className }: { className: string }) {
-  return (
-    <div
-      className={`${className} animate-spin rounded-full border-2 border-accent-primary border-t-transparent`}
-    />
-  );
-}
+import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";
 
 export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
   const toast = useToast();
@@ -79,17 +73,18 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
               }
               options={STATUS_FILTER_OPTIONS}
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={loadAssessments}
               disabled={isLoading}
-              className="p-1.5 rounded text-text-secondary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Refresh assessments"
+              className="!p-1.5 !rounded !rounded-md"
             >
               <RefreshIcon
                 className={`w-4 h-4 -scale-x-100 ${isLoading ? "animate-spin" : ""}`}
               />
-            </button>
+            </Button>
           </div>
         </div>
 

@@ -2,15 +2,8 @@ import { Button } from "@/app/components";
 import Loader from "@/app/components/Loader";
 import type { ConfigPublic } from "@/app/lib/types/configs";
 import type { ValueSetter, VersionListState } from "@/app/lib/types/assessment";
+import { buildInitialAssessmentVersionState } from "@/app/lib/utils/assessmentFetcher";
 import SavedConfigCard from "./SavedConfigCard";
-
-const INITIAL_VERSION_STATE: VersionListState = {
-  items: [],
-  isLoading: false,
-  error: null,
-  hasMore: true,
-  nextSkip: 0,
-};
 
 interface SavedConfigsProps {
   configCards: ConfigPublic[];
@@ -77,7 +70,8 @@ export default function SavedConfigs({
               key={config.id}
               config={config}
               versions={
-                versionStateByConfig[config.id] ?? INITIAL_VERSION_STATE
+                versionStateByConfig[config.id] ??
+                buildInitialAssessmentVersionState()
               }
               expanded={expandedConfigId === config.id}
               loadingSelectionKeys={loadingSelectionKeys}

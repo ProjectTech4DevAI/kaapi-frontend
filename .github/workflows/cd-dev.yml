@@ -1,4 +1,4 @@
-name: Deploy Kaapi to EC2 Dev
+name: Deploy Kaapi Dev to EC2
 
 on:
   push:

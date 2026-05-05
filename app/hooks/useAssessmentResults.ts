@@ -4,11 +4,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { handleForbiddenError } from "@/app/lib/utils/assessment";
+import {
+  getConfigDetailErrorMessage,
+  handleForbiddenError,
+  isAbortError,
+} from "@/app/lib/utils/assessment";
 import {
   filterAssessments,
   getAsyncErrorMessage,
   getResultsCounts,
+  isActiveStatus,
+  isCompletedStatus,
+  isFailedStatus,
   jsonResultsToTableData,
 } from "@/app/lib/assessment/results";
 import {
@@ -36,27 +43,46 @@ interface UseAssessmentResultsParams {
   toast: ToastContextType;
 }
 
-const CONFIG_VERSION_UNAVAILABLE_MESSAGE =
-  "Config version was tampered or changed.";
-
-function isAbortError(error: unknown): boolean {
-  return (
-    (error instanceof DOMException && error.name === "AbortError") ||
-    (error instanceof Error && error.name === "AbortError")
-  );
+function safeCount(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function getConfigDetailErrorMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : "";
-  const normalized = message.toLowerCase();
-  if (
-    message.includes("404") ||
-    normalized.includes("not found") ||
-    normalized.includes("unavailable")
-  ) {
-    return CONFIG_VERSION_UNAVAILABLE_MESSAGE;
-  }
-  return message || "Failed to load configuration details";
+function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
+  const runStats = Array.isArray(run.run_stats) ? run.run_stats : [];
+  const pendingRuns = safeCount(
+    run.pending_runs,
+    runStats.filter((item) => item.status === "pending").length,
+  );
+  const processingRuns = safeCount(
+    run.processing_runs,
+    Math.max(
+      0,
+      runStats.filter((item) => isActiveStatus(item.status)).length -
+        pendingRuns,
+    ),
+  );
+  const completedRuns = safeCount(
+    run.completed_runs,
+    runStats.filter((item) => isCompletedStatus(item.status)).length,
+  );
+  const failedRuns = safeCount(
+    run.failed_runs,
+    runStats.filter((item) => isFailedStatus(item.status)).length,
+  );
+  const totalRuns = safeCount(
+    run.total_runs,
+    runStats.length ||
+      pendingRuns + processingRuns + completedRuns + failedRuns,
+  );
+
+  return {
+    ...run,
+    total_runs: totalRuns,
+    pending_runs: pendingRuns,
+    processing_runs: processingRuns,
+    completed_runs: completedRuns,
+    failed_runs: failedRuns,
+  };
 }
 
 export default function useAssessmentResults({
@@ -92,6 +118,7 @@ export default function useAssessmentResults({
   const configDetailControllersRef = useRef<Record<string, AbortController>>(
     {},
   );
+  const configDetailFetchedRef = useRef<Record<string, boolean>>({});
 
   const buildAuthHeaders = useCallback(() => {
     const headers = new Headers();
@@ -108,7 +135,7 @@ export default function useAssessmentResults({
         apiKey,
       );
       const list = Array.isArray(data) ? data : data.data || [];
-      setAssessments(list);
+      setAssessments(list.map(normalizeAssessmentRun));
     } catch (e) {
       if (handleForbiddenError(e, onForbidden)) return;
       console.error("Failed to load assessments:", e);
@@ -140,13 +167,8 @@ export default function useAssessmentResults({
       if (!isAuthenticated) return;
 
       const key = `${configId}:${version}`;
-      if (
-        configDetailsByKey[key] ||
-        configLoadingKeys[key] ||
-        configErrorKeys[key]
-      ) {
-        return;
-      }
+      if (configDetailFetchedRef.current[key]) return;
+      configDetailFetchedRef.current[key] = true;
 
       setConfigLoadingKeys((prev) => ({ ...prev, [key]: true }));
       setConfigErrorKeys((prev) => {
@@ -217,13 +239,7 @@ export default function useAssessmentResults({
         });
       }
     },
-    [
-      apiKey,
-      configDetailsByKey,
-      configErrorKeys,
-      configLoadingKeys,
-      isAuthenticated,
-    ],
+    [apiKey, isAuthenticated],
   );
 
   useEffect(() => {
@@ -337,9 +353,9 @@ export default function useAssessmentResults({
         });
 
         toast.success("Run re-submitted successfully!");
-        loadAssessments();
+        void loadAssessments();
         if (run.assessment_id) {
-          loadChildRuns(run.assessment_id);
+          void loadChildRuns(run.assessment_id);
         }
       } catch (error) {
         if (handleForbiddenError(error, onForbidden)) return;

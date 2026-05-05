@@ -314,3 +314,12 @@ export const ATTACHMENT_FORMATS: Record<string, string[]> = {
 };
 
 export const MAX_CONFIGS = 4;
+
+export type ReviewColumnRole = "text" | "attachment" | "ground truth";
+
+export interface ReviewColumn {
+  key: string;
+  column: string;
+  role: ReviewColumnRole;
+  badgeClass: string;
+}

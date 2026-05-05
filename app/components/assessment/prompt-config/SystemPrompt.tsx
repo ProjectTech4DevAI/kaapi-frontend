@@ -39,8 +39,8 @@ export default function SystemPrompt({
         <InfoTooltip
           text={
             <span>
-              Example: You are an evaluator. Score responses strictly and return
-              concise feedback.
+              Set the evaluation rules. Example: judge every answer fairly,
+              follow the scoring format, and explain the result briefly.
             </span>
           }
         />
@@ -54,7 +54,7 @@ export default function SystemPrompt({
             previewMode={previewMode}
             enablePlaceholders={false}
             emptyPreviewText="Example system prompt preview appears here."
-            placeholder={`Example:\nYou are an evaluator. Judge answer quality.\nKeep reasoning concise and return strict output.`}
+            placeholder={`Describe how AI should behave:\n\nYou are an evaluator. Judge answer quality.\nKeep reasoning concise and return strict output.`}
           />
         </div>
       )}

@@ -66,11 +66,11 @@ export default function EvalRunCard({
             {job.dataset_name && (
               <span className="flex items-center gap-1.5 min-w-0">
                 <DatabaseIcon className="shrink-0" />
-                <span className="truncate">{job.dataset_name}</span>
+                <span className="block truncate">{job.dataset_name}</span>
               </span>
             )}
             {job.assistant_id && assistantConfig?.name && (
-              <span className="px-1.5 py-0.5 rounded bg-bg-secondary truncate max-w-40">
+              <span className="inline-block px-1.5 py-0.5 rounded bg-bg-secondary truncate max-w-40">
                 {assistantConfig.name}
               </span>
             )}

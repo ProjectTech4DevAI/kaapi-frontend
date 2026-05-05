@@ -46,18 +46,6 @@ export function resolveRef(
  * Builds the initial form values from a validator's config schema by
  * pulling each property's `default` (skipping `type`).
  */
-export function buildValidatorUpdatePayload(
-  configValues: Record<string, unknown>,
-): ValidatorUpdatePayload {
-  const { name, type, stage, on_fail_action, is_enabled } = configValues;
-  return {
-    name: name as string,
-    type: type as string,
-    stage: stage as string,
-    on_fail_action: on_fail_action as string,
-    is_enabled: is_enabled as boolean,
-  };
-}
 
 export function buildDefaultValues(
   schema: ValidatorConfigSchema,
@@ -70,4 +58,17 @@ export function buildDefaultValues(
     }
   }
   return values;
+}
+
+export function buildValidatorUpdatePayload(
+  configValues: Record<string, unknown>,
+): ValidatorUpdatePayload {
+  const { name, type, stage, on_fail_action, is_enabled } = configValues;
+  return {
+    name: name as string,
+    type: type as string,
+    stage: stage as string,
+    on_fail_action: on_fail_action as string,
+    is_enabled: is_enabled as boolean,
+  };
 }

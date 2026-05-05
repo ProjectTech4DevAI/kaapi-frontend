@@ -1,6 +1,6 @@
 import { Button, Field } from "@/app/components";
 import Select from "@/app/components/Select";
-import { PROVIDER_OPTIONS } from "@/app/lib/assessment/constants";
+import { PROVIDER_OPTIONS } from "@/app/lib/data/assessmentModels";
 import type {
   ConfigParamDefinition,
   ModelOption,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/app/components";
 import { ChevronDownIcon } from "@/app/components/icons";
 import InfoTooltip from "@/app/components/InfoTooltip";
 import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
@@ -26,10 +27,11 @@ export default function UserPrompt({
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-bg-primary">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setIsOpen((prev) => !prev)}
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md text-left"
+          className="!min-w-0 !flex-1 !justify-start !rounded-md !p-0"
         >
           <ChevronDownIcon
             className={`h-4 w-4 text-text-secondary transition-transform ${
@@ -39,7 +41,7 @@ export default function UserPrompt({
           <span className="text-base font-semibold text-text-primary">
             User prompt
           </span>
-        </button>
+        </Button>
         <InfoTooltip
           text={
             <span>

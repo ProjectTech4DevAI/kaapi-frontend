@@ -1,6 +1,5 @@
 "use client";
 
-// Assessment Datasets tab — list, upload, delete, and preview datasets.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
@@ -20,9 +19,9 @@ import type {
 } from "@/app/lib/types/assessment";
 import { Button, Modal } from "@/app/components";
 import { WarningIcon } from "@/app/components/icons";
-import DataViewModal from "./DataViewModal";
-import CreatePanel from "./datasets/CreatePanel";
-import DatasetList from "./datasets/DatasetList";
+import DataViewModal from "@/app/components/assessment/DataViewModal";
+import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
+import DatasetList from "@/app/components/assessment/datasets/DatasetList";
 
 export default function DatasetsTab({
   onForbidden,

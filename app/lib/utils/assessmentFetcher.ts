@@ -1,12 +1,12 @@
 // Assessment-scoped config fetchers, model helpers, and save logic.
 import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/configFetchers";
+import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
 import {
   ASSESSMENT_MODEL_CONFIGS,
-  ASSESSMENT_TAG,
   DEFAULT_CONFIG,
   GPT4_STYLE_CONFIG,
-} from "@/app/lib/assessment/constants";
+} from "@/app/lib/data/assessmentModels";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import type {
   ConfigParamDefinition,

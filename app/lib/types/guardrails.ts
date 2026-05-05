@@ -64,16 +64,9 @@ export interface OrgContext {
 }
 
 export interface ValidatorUpdatePayload {
-  name?: unknown;
-  type?: unknown;
-  stage?: unknown;
-  on_fail_action?: unknown;
-  is_enabled?: unknown;
-}
-
-export function buildValidatorUpdatePayload(
-  configValues: Record<string, unknown>,
-): ValidatorUpdatePayload {
-  const { name, type, stage, on_fail_action, is_enabled } = configValues;
-  return { name, type, stage, on_fail_action, is_enabled };
+  name?: string;
+  type?: string;
+  stage?: string;
+  on_fail_action?: string;
+  is_enabled?: boolean;
 }

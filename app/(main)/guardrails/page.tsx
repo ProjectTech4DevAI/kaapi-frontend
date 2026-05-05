@@ -16,8 +16,8 @@ import {
   Validator,
   SavedValidatorConfig,
   OrgContext,
-  buildValidatorUpdatePayload,
 } from "@/app/lib/types/guardrails";
+import { buildValidatorUpdatePayload } from "@/app/lib/utils/guardrails";
 import ValidatorConfigPanel from "@/app/components/guardrails/ValidatorConfigPanel";
 import SavedConfigsList from "@/app/components/guardrails/SavedConfigsList";
 
@@ -62,9 +62,9 @@ export default function GuardrailsPage() {
     setValidatorsLoading(true);
     guardrailsFetch<{ validators?: Validator[] }>("/api/guardrails", apiKey)
       .then((data) => {
-        const list: Validator[] = Array.isArray(data?.validators)
-          ? data.validators
-          : [];
+        const list: Validator[] = (
+          Array.isArray(data?.validators) ? data.validators : []
+        ).filter((v) => v.type !== "llm_critic");
         setValidators(list);
       })
       .catch(() => toast.error("Failed to load validators"))

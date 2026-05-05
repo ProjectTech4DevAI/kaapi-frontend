@@ -18,7 +18,7 @@ import {
   getModelConfigDefinition,
   getModelsByProvider,
   saveAssessmentConfig,
-} from "@/app/lib/assessmentFetcher";
+} from "@/app/lib/utils/assessmentFetcher";
 import {
   MAX_CONFIGS,
   type ConfigMode,

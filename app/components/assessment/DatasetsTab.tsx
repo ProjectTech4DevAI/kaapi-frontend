@@ -18,8 +18,9 @@ import type {
   DatasetsTabProps,
   DatasetViewModalData,
 } from "@/app/lib/types/assessment";
+import { Button, Modal } from "@/app/components";
+import { WarningIcon } from "@/app/components/icons";
 import DataViewModal from "./DataViewModal";
-import DeleteModal from "./datasets/DeleteModal";
 import CreatePanel from "./datasets/CreatePanel";
 import DatasetList from "./datasets/DatasetList";
 
@@ -297,15 +298,55 @@ export default function DatasetsTab({
       )}
 
       {confirmDeleteId !== null && (
-        <DeleteModal
-          datasetName={datasetPendingDelete?.dataset_name}
-          isDeleting={deletingId === confirmDeleteId}
-          onCancel={() => setConfirmDeleteId(null)}
-          onConfirm={() => {
-            void handleDeleteDataset(confirmDeleteId);
-            setConfirmDeleteId(null);
-          }}
-        />
+        <Modal
+          open
+          onClose={() => setConfirmDeleteId(null)}
+          maxWidth="max-w-md"
+          maxHeight="max-h-[90vh]"
+          showClose={false}
+        >
+          <div className="px-6 py-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-status-error-bg">
+                <span className="text-status-error">
+                  <WarningIcon className="w-5 h-5" />
+                </span>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Delete dataset
+                </h3>
+                <p className="mt-1 text-sm text-text-secondary">
+                  Are you sure you want to delete{" "}
+                  <strong className="text-text-primary">
+                    {datasetPendingDelete?.dataset_name}
+                  </strong>
+                  ? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                void handleDeleteDataset(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+              disabled={deletingId === confirmDeleteId}
+            >
+              {deletingId === confirmDeleteId ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </Modal>
       )}
     </div>
   );

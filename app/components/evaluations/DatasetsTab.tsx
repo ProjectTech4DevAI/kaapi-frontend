@@ -24,7 +24,7 @@ export interface DatasetsTabProps {
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: () => void;
   isUploading: boolean;
-  handleCreateDataset: () => void;
+  handleCreateDataset: () => Promise<boolean>;
   resetForm: () => void;
   storedDatasets: Dataset[];
   isDatasetsLoading: boolean;
@@ -147,6 +147,12 @@ export default function DatasetsTab({
       ? storedDatasets.find((d) => d.dataset_id === confirmDeleteId)
       : undefined;
 
+  const handleCreate = async (): Promise<boolean> => {
+    const success = await handleCreateDataset();
+    if (success) setIsFormModalOpen(false);
+    return success;
+  };
+
   const formProps = {
     datasetName,
     setDatasetName,
@@ -158,7 +164,7 @@ export default function DatasetsTab({
     onFileSelect,
     onRemoveFile,
     isUploading,
-    handleCreateDataset,
+    handleCreateDataset: handleCreate,
     resetForm,
   };
 

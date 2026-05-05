@@ -46,7 +46,6 @@ export function resolveRef(
  * Builds the initial form values from a validator's config schema by
  * pulling each property's `default` (skipping `type`).
  */
-
 export function buildDefaultValues(
   schema: ValidatorConfigSchema,
 ): Record<string, unknown> {

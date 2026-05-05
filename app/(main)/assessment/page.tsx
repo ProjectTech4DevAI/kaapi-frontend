@@ -1,6 +1,5 @@
 "use client";
 
-// Assessment page entry point — owns all run state and submits via POST /api/assessment/runs.
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Loader from "@/app/components/Loader";

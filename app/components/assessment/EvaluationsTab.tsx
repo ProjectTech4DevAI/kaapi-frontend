@@ -1,19 +1,17 @@
 "use client";
 
 // Assessment Evaluations tab — shows run cards with status, retry, and CSV export.
-import { useEffect, useRef, useState } from "react";
 import { Button, RunsListSkeleton } from "@/app/components";
 import Select from "@/app/components/Select";
 import { useToast } from "@/app/components/Toast";
 import {
   DatabaseIcon,
   ClipboardIcon,
-  ChevronDownIcon,
   EyeIcon,
   RefreshIcon,
 } from "@/app/components/icons";
-import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
 import DataViewModal from "./DataViewModal";
+import DownloadDropdown from "./DownloadDropdown";
 import {
   canRetryStatus,
   formatStatusLabel,
@@ -27,96 +25,14 @@ import {
   STATUS_FILTER_OPTIONS,
 } from "@/app/lib/assessment/constants";
 import { formatRelativeTime } from "@/app/lib/utils";
-import type {
-  EvaluationsTabProps,
-  ExportFormat,
-} from "@/app/lib/types/assessment";
+import type { EvaluationsTabProps } from "@/app/lib/types/assessment";
+import useAssessmentResults from "@/app/hooks/useAssessmentResults";
 
-interface LoadingSpinnerProps {
-  className: string;
-  centered?: boolean;
-}
-
-interface DownloadDropdownProps {
-  onDownload: (format: ExportFormat) => void;
-  disabled?: boolean;
-  loading?: boolean;
-}
-import useAssessmentResults from "./results/useAssessmentResults";
-
-function LoadingSpinner({ className, centered = false }: LoadingSpinnerProps) {
+function LoadingSpinner({ className }: { className: string }) {
   return (
     <div
-      className={`${className} rounded-full border-2 border-accent-primary border-t-transparent animate-spin ${
-        centered ? "mx-auto" : ""
-      }`}
+      className={`${className} animate-spin rounded-full border-2 border-accent-primary border-t-transparent`}
     />
-  );
-}
-
-function DownloadDropdown({
-  onDownload,
-  disabled,
-  loading,
-}: DownloadDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen(!open)}
-        disabled={disabled || loading}
-        className="!rounded-md !px-2.5 !py-1.5 !text-xs"
-        aria-label="Download results"
-        aria-expanded={open}
-      >
-        {loading ? (
-          <LoadingSpinner className="w-3.5 h-3.5" />
-        ) : (
-          <DownloadIcon className="w-3.5 h-3.5" />
-        )}
-        Export
-        <ChevronDownIcon className="w-3 h-3" />
-      </Button>
-      {open && (
-        <div className="absolute right-0 z-10 mt-1 w-36 rounded-md border border-border bg-bg-primary py-1 shadow-lg">
-          {(
-            [
-              ["csv", "CSV File"],
-              ["xlsx", "Excel Sheet"],
-            ] as const
-          ).map(([fmt, label]) => (
-            <Button
-              key={fmt}
-              type="button"
-              variant="ghost"
-              size="sm"
-              fullWidth
-              onClick={() => {
-                onDownload(fmt);
-                setOpen(false);
-              }}
-              className="!justify-start !rounded-none !px-3 !py-2 !text-xs !text-text-primary"
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 

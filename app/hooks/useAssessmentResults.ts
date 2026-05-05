@@ -9,6 +9,7 @@ import {
   filterAssessments,
   getAsyncErrorMessage,
   getResultsCounts,
+  jsonResultsToTableData,
 } from "@/app/lib/assessment/results";
 import {
   ASSESSMENT_TAG,
@@ -34,7 +35,6 @@ interface UseAssessmentResultsParams {
   onForbidden?: () => void;
   toast: ToastContextType;
 }
-import { jsonResultsToTableData } from "../DataViewModal";
 
 const CONFIG_VERSION_UNAVAILABLE_MESSAGE =
   "Config version was tampered or changed.";

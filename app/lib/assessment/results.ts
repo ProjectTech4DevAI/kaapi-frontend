@@ -66,3 +66,53 @@ export function filterAssessments(
     return run.status === statusFilter;
   });
 }
+
+export function jsonResultsToTableData(
+  results: Record<string, unknown>[],
+  opts?: { skipFields?: Set<string> },
+): { headers: string[]; rows: string[][] } {
+  if (results.length === 0) return { headers: [], rows: [] };
+
+  const skipFields =
+    opts?.skipFields ??
+    new Set([
+      "assessment_id",
+      "dataset_id",
+      "dataset_name",
+      "run_id",
+      "run_name",
+      "run_status",
+      "config_id",
+      "config_version",
+      "response_id",
+      "input_tokens",
+      "output_tokens",
+      "total_tokens",
+      "updated_at",
+      "result_status",
+      "error",
+      "row_id",
+      "experiment_name",
+    ]);
+
+  const allKeys = Array.from(new Set(results.flatMap((r) => Object.keys(r))));
+  const displayKeys = allKeys.filter((k) => !skipFields.has(k));
+
+  const nonEmptyKeys = displayKeys.filter((key) =>
+    results.some((r) => {
+      const v = r[key];
+      return v != null && String(v).trim() !== "";
+    }),
+  );
+
+  const rows = results.map((r) =>
+    nonEmptyKeys.map((key) => {
+      const v = r[key];
+      if (v == null) return "";
+      if (typeof v === "object") return JSON.stringify(v);
+      return String(v);
+    }),
+  );
+
+  return { headers: nonEmptyKeys, rows };
+}

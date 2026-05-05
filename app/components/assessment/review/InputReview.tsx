@@ -7,6 +7,8 @@ import {
   DEFAULT_SYSTEM_PROMPT,
   DEFAULT_USER_PROMPT,
 } from "@/app/lib/assessment/constants";
+import ReviewSection from "./ReviewSection";
+
 interface InputReviewProps {
   systemInstruction: string;
   promptTemplate: string;
@@ -21,7 +23,6 @@ interface PromptNodeProps {
   isOpen: boolean;
   onToggle: () => void;
 }
-import ReviewSection from "./ReviewSection";
 
 function PromptNode({
   title,

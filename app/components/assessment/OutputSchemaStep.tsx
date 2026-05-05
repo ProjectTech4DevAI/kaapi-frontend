@@ -3,6 +3,7 @@
 import { Button } from "@/app/components";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import type { SchemaProperty, ValueSetter } from "@/app/lib/types/assessment";
+import { OutputSchemaEditor } from "./OutputSchemaEditor";
 
 interface OutputSchemaStepProps {
   onNext: () => void;
@@ -10,9 +11,6 @@ interface OutputSchemaStepProps {
   schema: SchemaProperty[];
   setSchema: ValueSetter<SchemaProperty[]>;
 }
-import { OutputSchemaEditor } from "./OutputSchemaEditor";
-
-export { OutputSchemaModal } from "./OutputSchemaEditor";
 
 export default function OutputSchemaStep({
   schema,

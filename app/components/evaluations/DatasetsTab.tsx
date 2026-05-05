@@ -11,6 +11,7 @@ import DatasetCard from "./DatasetCard";
 import CreateDatasetForm from "./CreateDatasetForm";
 import ViewDatasetModal from "./ViewDatasetModal";
 import DeleteDatasetModal from "./DeleteDatasetModal";
+import { parseCsvRow } from "@/app/lib/utils";
 
 export interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -32,29 +33,6 @@ export interface DatasetsTabProps {
   loadStoredDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
-
-const parseCsvRow = (line: string): string[] => {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (line[i] === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += line[i];
-    }
-  }
-  result.push(current.trim());
-  return result;
-};
 
 export default function DatasetsTab({
   leftPanelWidth,

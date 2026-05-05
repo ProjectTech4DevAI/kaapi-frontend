@@ -157,4 +157,4 @@ export type ConfigResponse = APIResponse<ConfigPublic>;
 export type ConfigWithVersionResponse = APIResponse<ConfigWithVersion>;
 export type ConfigVersionListResponse = APIResponse<ConfigVersionItems[]>;
 export type ConfigVersionResponse = APIResponse<ConfigVersionPublic>;
-export type ConfigTag = "DEFAULT" | AssessmentTag;
+export type ConfigTag = AssessmentTag;

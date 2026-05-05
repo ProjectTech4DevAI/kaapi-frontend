@@ -1,9 +1,9 @@
 import type { NextResponse } from "next/server";
-import { COOKIE_KEYS } from "@/app/lib/constants";
+import { COOKIE_KEYS, type FeatureFlagKey } from "@/app/lib/constants";
 
 interface UserLike {
   is_superuser?: boolean;
-  features?: unknown;
+  features?: FeatureFlagKey[];
 }
 
 /** Set the role cookie by appending a raw Set-Cookie header (won't overwrite existing cookies). */
@@ -39,9 +39,7 @@ export function setFeaturesCookieFromBody(
   const user = extractUser(body);
   if (!user || !Array.isArray(user.features)) return;
 
-  const features = user.features.filter(
-    (f): f is string => typeof f === "string",
-  );
+  const features = user.features.filter((f) => typeof f === "string");
   const value = encodeURIComponent(JSON.stringify(features));
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   const cookie = `${COOKIE_KEYS.FEATURES}=${value}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;

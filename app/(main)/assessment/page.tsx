@@ -8,7 +8,7 @@ import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { handleForbiddenError } from "@/app/lib/utils/assessment";
 import { FeatureFlag } from "@/app/lib/constants";
-import { removeFeatureFromClient } from "@/app/lib/featureState";
+import { removeFeatureFromClient } from "@/app/lib/utils/features";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import type {

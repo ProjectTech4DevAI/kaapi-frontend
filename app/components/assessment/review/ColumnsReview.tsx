@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReviewColumn } from "../ReviewStep";
+import ReviewSection from "./ReviewSection";
 
 interface ColumnsReviewProps {
   mappedColumns: ReviewColumn[];
@@ -9,7 +10,6 @@ interface ColumnsReviewProps {
   onToggle: () => void;
   onEdit: () => void;
 }
-import ReviewSection from "./ReviewSection";
 
 export default function ColumnsReview({
   mappedColumns,

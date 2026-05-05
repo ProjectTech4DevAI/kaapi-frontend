@@ -2,9 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
+import { useToast } from "@/app/components/Toast";
 import { Button } from "@/app/components";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
+import { ASSESSMENT_CONFIG_VERSION_PAGE_SIZE } from "@/app/lib/assessment/constants";
+import {
+  buildDefaultParams,
+  buildInitialAssessmentConfigDraft,
+  buildInitialAssessmentVersionState,
+  fetchConfigPage,
+  fetchConfigSelection,
+  fetchConfigVersionsPage,
+  getDefaultModelForProvider,
+  getModelConfigDefinition,
+  getModelsByProvider,
+  saveAssessmentConfig,
+} from "@/app/lib/assessmentFetcher";
 import {
   MAX_CONFIGS,
   type ConfigMode,
@@ -15,6 +29,11 @@ import {
   type ValueSetter,
   type VersionListState,
 } from "@/app/lib/types/assessment";
+import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
+import AssessmentConfiguration from "./prompt-config/AssessmentConfiguration";
+import SetupProgress from "./prompt-config/SetupProgress";
+import PromptPanel from "./prompt-config/PromptPanel";
+import ResponseSchema from "./prompt-config/ResponseSchema";
 
 interface PromptAndConfigStepProps {
   onNext: () => void;
@@ -30,26 +49,6 @@ interface PromptAndConfigStepProps {
   outputSchema: SchemaProperty[];
   setOutputSchema: ValueSetter<SchemaProperty[]>;
 }
-import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
-import { ASSESSMENT_CONFIG_VERSION_PAGE_SIZE } from "@/app/lib/assessment/constants";
-import {
-  buildDefaultParams,
-  buildInitialAssessmentConfigDraft,
-  buildInitialAssessmentVersionState,
-  fetchConfigPage,
-  fetchConfigSelection,
-  fetchConfigVersionsPage,
-  getDefaultModelForProvider,
-  getModelConfigDefinition,
-  getModelsByProvider,
-  invalidateConfigCache,
-  saveConfig,
-} from "@/app/lib/assessment/config";
-import { useToast } from "@/app/components/Toast";
-import AssessmentConfiguration from "./prompt-config/AssessmentConfiguration";
-import SetupProgress from "./prompt-config/SetupProgress";
-import PromptPanel from "./prompt-config/PromptPanel";
-import ResponseSchema from "./prompt-config/ResponseSchema";
 
 export default function PromptAndConfigStep({
   textColumns,
@@ -352,13 +351,20 @@ export default function PromptAndConfigStep({
     }
     setIsSaving(true);
     try {
-      const saved = await saveConfig({
+      const existingConfig =
+        configCards.find(
+          (c) =>
+            c.name.trim().toLowerCase() === configName.trim().toLowerCase(),
+        ) ?? null;
+      const saved = await saveAssessmentConfig({
         apiKey,
         configName: configName.trim(),
         commitMessage: commitMessage.trim(),
         configBlob: draft,
+        existingConfig: existingConfig
+          ? { id: existingConfig.id, name: existingConfig.name }
+          : null,
       });
-      invalidateConfigCache();
       addSelection({
         config_id: saved.config_id,
         config_version: saved.config_version,

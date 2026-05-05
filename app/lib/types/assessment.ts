@@ -262,8 +262,6 @@ export type StatusFilter = "all" | "processing" | "completed" | "failed";
 export type ExportFormat = "csv" | "xlsx";
 export type ResultTone = "default" | "warning" | "success" | "error";
 export type AssessmentTag = "ASSESSMENT";
-export type AssessmentConfigTag = AssessmentTag;
-export type AssessmentFeatureFlag = AssessmentTag;
 export type AssessmentListResponse = ListResponse<AssessmentRun>;
 export type AssessmentChildRunListResponse = ListResponse<AssessmentChildRun>;
 

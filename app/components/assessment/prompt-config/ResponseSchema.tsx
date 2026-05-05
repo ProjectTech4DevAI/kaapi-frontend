@@ -10,7 +10,7 @@ interface ResponseSchemaProps {
   summary: string;
   hasFields: boolean;
 }
-import { OutputSchemaModal } from "../OutputSchemaStep";
+import { OutputSchemaModal } from "../OutputSchemaEditor";
 
 export default function ResponseSchema({
   schema,

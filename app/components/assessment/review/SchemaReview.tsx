@@ -1,6 +1,7 @@
 "use client";
 
 import type { SchemaProperty } from "@/app/lib/types/assessment";
+import ReviewSection from "./ReviewSection";
 
 interface SchemaReviewProps {
   outputSchema: SchemaProperty[];
@@ -8,7 +9,6 @@ interface SchemaReviewProps {
   onToggle: () => void;
   onEdit: () => void;
 }
-import ReviewSection from "./ReviewSection";
 
 export default function SchemaReview({
   outputSchema,

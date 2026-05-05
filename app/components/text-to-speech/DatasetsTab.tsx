@@ -17,6 +17,7 @@ import { DatasetListSkeleton } from "@/app/components";
 import TTSDatasetCard from "./TTSDatasetCard";
 import CreateTTSDatasetForm from "./CreateTTSDatasetForm";
 import TTSViewDatasetModal from "./TTSViewDatasetModal";
+import { parseCsvRow } from "@/app/lib/utils";
 
 export interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -62,29 +63,6 @@ const splitCSVRecords = (text: string): string[] => {
   }
   if (current.trim()) records.push(current);
   return records;
-};
-
-const parseCsvRow = (line: string): string[] => {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (line[i] === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += line[i];
-    }
-  }
-  result.push(current.trim());
-  return result;
 };
 
 export default function DatasetsTab({

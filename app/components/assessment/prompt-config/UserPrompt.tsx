@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDownIcon } from "@/app/components/icons";
 import InfoTooltip from "@/app/components/InfoTooltip";
 import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
+import PromptEditor from "./PromptEditor";
 
 interface UserPromptProps {
   textColumns: string[];
@@ -12,7 +13,6 @@ interface UserPromptProps {
   setPromptTemplate: ValueSetter<string>;
   previewMode: boolean;
 }
-import PromptEditor from "./PromptEditor";
 
 export default function UserPrompt({
   textColumns,

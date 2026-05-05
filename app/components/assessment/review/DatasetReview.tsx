@@ -1,11 +1,12 @@
 "use client";
 
+import ReviewSection from "./ReviewSection";
+
 interface DatasetReviewProps {
   datasetName: string;
   isOpen: boolean;
   onToggle: () => void;
 }
-import ReviewSection from "./ReviewSection";
 
 export default function DatasetReview({
   datasetName,

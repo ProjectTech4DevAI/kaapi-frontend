@@ -1,6 +1,7 @@
 "use client";
 
 import type { ConfigSelection } from "@/app/lib/types/assessment";
+import ReviewSection from "./ReviewSection";
 
 interface ConfigsReviewProps {
   configs: ConfigSelection[];
@@ -8,7 +9,6 @@ interface ConfigsReviewProps {
   onToggle: () => void;
   onEdit: () => void;
 }
-import ReviewSection from "./ReviewSection";
 
 export default function ConfigsReview({
   configs,

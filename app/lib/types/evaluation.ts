@@ -1,3 +1,5 @@
+export type Tab = "datasets" | "evaluations";
+
 export interface TraceScore {
   name: string;
   value: number | string;
@@ -138,4 +140,10 @@ export interface EvalJob {
   cost?: EvalCost | null;
   inserted_at: string;
   updated_at: string;
+}
+
+export interface EvalJobApiResponse {
+  success?: boolean;
+  error?: string;
+  data?: EvalJob;
 }

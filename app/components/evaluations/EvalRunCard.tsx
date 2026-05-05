@@ -6,7 +6,7 @@ import type { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import { getScoreObject } from "@/app/lib/utils/evaluation";
 import { getStatusColor } from "@/app/components/utils";
 import { timeAgo, formatCostUSD } from "@/app/lib/utils";
-import { ConfigModal, InfoTooltip } from "@/app/components";
+import { Button, ConfigModal, InfoTooltip } from "@/app/components";
 import ScoreDisplay from "@/app/components/evaluations/ScoreDisplay";
 import CostIcon from "@/app/components/icons/evaluations/CostIcon";
 import DatabaseIcon from "@/app/components/icons/evaluations/DatabaseIcon";
@@ -42,7 +42,6 @@ export default function EvalRunCard({
                 {timeAgo(job.inserted_at)}
               </div>
             )}
-            {/* Error message (if failed) */}
             {job.error_message && (
               <div className="mt-2 text-xs wrap-break-word overflow-hidden text-status-error-text">
                 {job.error_message}
@@ -50,7 +49,7 @@ export default function EvalRunCard({
             )}
           </div>
           <span
-            className={`px-2.5 py-1 rounded text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide shrink-0 ${statusColor.bg} ${statusColor.text}`}
           >
             {job.status}
           </span>
@@ -105,23 +104,21 @@ export default function EvalRunCard({
             )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setIsConfigModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-transparent text-text-primary"
             >
               View Config
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => router.push(`/evaluations/${job.id}`)}
               disabled={!isCompleted}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-transparent cursor-pointer disabled:cursor-not-allowed ${
-                isCompleted
-                  ? "text-text-primary opacity-100"
-                  : "text-text-secondary opacity-50"
-              }`}
             >
               View Results
-            </button>
+            </Button>
           </div>
         </div>
       </div>

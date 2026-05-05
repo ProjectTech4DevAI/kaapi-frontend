@@ -260,8 +260,8 @@ export default function EvaluationReport() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b px-4 py-3.5 flex items-center justify-between shrink-0 bg-bg-primary border-border">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="border-b px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-bg-primary border-border">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               {sidebarCollapsed && (
                 <button
                   onClick={() => setSidebarCollapsed(false)}
@@ -278,18 +278,20 @@ export default function EvaluationReport() {
               >
                 <ChevronLeftIcon />
               </button>
-              <div className="min-w-0 flex-1 flex items-center gap-3 overflow-hidden">
+              <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-3 gap-y-1 overflow-hidden">
                 <h1 className="text-base font-semibold truncate min-w-0 text-text-primary tracking-[-0.01em]">
                   {job.run_name}
                 </h1>
                 <span className="flex items-center gap-1 text-xs shrink-0 text-text-secondary">
                   <DatabaseIcon className="shrink-0" />
-                  {job.dataset_name}
+                  <span className="truncate max-w-[200px]">
+                    {job.dataset_name}
+                  </span>
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0 relative z-10">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 relative z-10">
               <div className="inline-flex rounded-lg p-0.5 bg-bg-secondary">
                 <button
                   type="button"
@@ -299,7 +301,8 @@ export default function EvaluationReport() {
                   className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
-                  Individual Rows
+                  <span className="hidden sm:inline">Individual Rows</span>
+                  <span className="sm:hidden">Rows</span>
                 </button>
                 <button
                   type="button"
@@ -309,7 +312,8 @@ export default function EvaluationReport() {
                   className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <GroupIcon className="pointer-events-none" />
-                  Group by Questions
+                  <span className="hidden sm:inline">Group by Questions</span>
+                  <span className="sm:hidden">Grouped</span>
                 </button>
               </div>
               <Button
@@ -317,7 +321,8 @@ export default function EvaluationReport() {
                 size="sm"
                 onClick={() => setIsConfigModalOpen(true)}
               >
-                View Config
+                <span className="hidden sm:inline">View Config</span>
+                <span className="sm:hidden">Config</span>
               </Button>
               <Button
                 variant="primary"
@@ -325,7 +330,8 @@ export default function EvaluationReport() {
                 onClick={handleExportCSV}
                 disabled={!hasScore || isFormatSwitching || isResyncing}
               >
-                Export CSV
+                <span className="hidden sm:inline">Export CSV</span>
+                <span className="sm:hidden">Export</span>
               </Button>
             </div>
           </div>

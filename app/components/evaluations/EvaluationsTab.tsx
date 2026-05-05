@@ -5,6 +5,7 @@ import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
 import { EvalJob, AssistantConfig, Tab } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
+import { Modal } from "@/app/components";
 import EvalRunsList from "./EvalRunsList";
 import RunEvaluationForm from "./RunEvaluationForm";
 
@@ -46,6 +47,7 @@ export default function EvaluationsTab({
     Map<string, AssistantConfig>
   >(new Map());
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   const selectedDataset = storedDatasets.find(
     (d) => d.dataset_id.toString() === selectedDatasetId,
@@ -120,7 +122,26 @@ export default function EvaluationsTab({
 
   const handleRun = async () => {
     const success = await handleRunEvaluation();
-    if (success) fetchEvaluations();
+    if (success) {
+      fetchEvaluations();
+      setIsFormModalOpen(false);
+    }
+  };
+
+  const formProps = {
+    storedDatasets,
+    selectedDataset,
+    selectedDatasetId,
+    setSelectedDatasetId,
+    selectedConfigId,
+    selectedConfigVersion,
+    onConfigSelect,
+    experimentName,
+    setExperimentName,
+    isEvaluating,
+    canRun,
+    onRun: handleRun,
+    setActiveTab,
   };
 
   return (
@@ -134,29 +155,27 @@ export default function EvaluationsTab({
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
         onRefresh={fetchEvaluations}
+        onCreateNew={() => setIsFormModalOpen(true)}
       />
 
-      {/* Right Panel - Configuration */}
+      {/* Right Panel - Configuration (lg+ only) */}
       <div
-        className="shrink-0 border-l flex flex-col overflow-hidden bg-bg-primary border-border"
+        className="hidden lg:flex shrink-0 border-l flex-col overflow-hidden bg-bg-primary border-border"
         style={{ width: `${leftPanelWidth}px` }}
       >
-        <RunEvaluationForm
-          storedDatasets={storedDatasets}
-          selectedDataset={selectedDataset}
-          selectedDatasetId={selectedDatasetId}
-          setSelectedDatasetId={setSelectedDatasetId}
-          selectedConfigId={selectedConfigId}
-          selectedConfigVersion={selectedConfigVersion}
-          onConfigSelect={onConfigSelect}
-          experimentName={experimentName}
-          setExperimentName={setExperimentName}
-          isEvaluating={isEvaluating}
-          canRun={canRun}
-          onRun={handleRun}
-          setActiveTab={setActiveTab}
-        />
+        <RunEvaluationForm {...formProps} />
       </div>
+
+      {/* Mobile/tablet — form rendered in a modal */}
+      <Modal
+        open={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        title="Run New Evaluation"
+        maxWidth="max-w-2xl"
+        maxHeight="max-h-[90vh]"
+      >
+        <RunEvaluationForm {...formProps} />
+      </Modal>
     </div>
   );
 }

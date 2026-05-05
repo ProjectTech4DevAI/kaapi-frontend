@@ -1,4 +1,5 @@
 import React from "react";
+import type { FeatureFlagKey } from "@/app/lib/constants";
 
 export interface NavSubItem {
   name: string;
@@ -12,6 +13,7 @@ export interface NavItemConfig {
   submenu?: NavSubItem[];
   gateDescription?: string;
   superuserOnly?: boolean;
+  featureFlag?: FeatureFlagKey;
 }
 
 export interface SubMenuItem {
@@ -27,6 +29,7 @@ export interface MenuItem {
   icon: React.ReactNode;
   submenu?: SubMenuItem[];
   gateDescription?: string;
+  featureFlag?: FeatureFlagKey;
 }
 
 export interface SidebarProps {
@@ -50,4 +53,15 @@ export interface SettingsNavItem extends NavSubItem {
 export interface SettingsNavSection {
   label: string;
   items: SettingsNavItem[];
+}
+
+export interface Tab {
+  id: string;
+  label: string;
+}
+
+export interface TabNavigationProps {
+  tabs: Tab[];
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
 }

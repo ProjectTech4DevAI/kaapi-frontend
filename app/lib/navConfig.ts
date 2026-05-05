@@ -1,3 +1,4 @@
+import { FeatureFlag } from "@/app/lib/constants";
 import { NavItemConfig, SettingsNavSection } from "@/app/lib/types/nav";
 
 export const SETTINGS_NAV: SettingsNavSection[] = [
@@ -55,5 +56,12 @@ export const NAV_ITEMS: NavItemConfig[] = [
     ],
     gateDescription:
       "Log in to compare model response quality across different configs.",
+  },
+  {
+    name: "Assessment",
+    route: "/assessment",
+    icon: "assessment",
+    featureFlag: FeatureFlag.ASSESSMENT,
+    gateDescription: "Log in to run assessments.",
   },
 ];

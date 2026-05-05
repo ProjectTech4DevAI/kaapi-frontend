@@ -21,6 +21,7 @@
     "react-dom": "19.2.0",
     "react-router-dom": "^7.9.5",
     "swr": "^2.3.6",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

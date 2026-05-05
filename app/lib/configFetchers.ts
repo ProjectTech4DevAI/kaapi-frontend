@@ -14,7 +14,7 @@ import {
   FetchResult,
 } from "@/app/lib/types/configs";
 import { CACHE_INVALIDATED_EVENT } from "@/app/lib/constants";
-import { configState } from "@/app/lib/store/configStore";
+import { configState } from "@/app/lib/store/config";
 import { flattenConfigVersion } from "@/app/lib/utils";
 import { apiFetch } from "@/app/lib/apiClient";
 
@@ -302,4 +302,13 @@ export async function fetchNextConfigBatch(
   }
 
   return { newVersions, newVersionCounts, newConfigMeta };
+}
+
+export function invalidateConfigCache(): void {
+  configState.inMemoryCache = null;
+  configState.versionItemsCache = {};
+  configState.allConfigMeta = null;
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CACHE_INVALIDATED_EVENT));
+  }
 }

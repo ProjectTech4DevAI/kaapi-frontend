@@ -27,7 +27,7 @@ import {
   ConfigVersionItems,
 } from "@/app/lib/types/configs";
 import { invalidateConfigCache } from "@/app/lib/utils";
-import { configState } from "@/app/lib/store/configStore";
+import { configState } from "@/app/lib/store/config";
 import { apiFetch } from "@/app/lib/apiClient";
 import { isGpt5Model } from "@/app/lib/models";
 import { DEFAULT_CONFIG } from "@/app/lib/constants";

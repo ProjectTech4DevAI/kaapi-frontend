@@ -1,5 +1,3 @@
-export type Tab = "datasets" | "evaluations";
-
 export interface AudioFile {
   id: string;
   file: File;
@@ -145,4 +143,10 @@ export interface CreateDatasetResponse {
 export interface CreateRunResponse {
   id: number;
   run_name: string;
+}
+
+export interface STTViewDatasetModalData {
+  name: string;
+  datasetId: number;
+  samples: STTSample[];
 }

@@ -13,8 +13,6 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { APIKey } from "@/app/lib/types/credentials";
 
-export const STORAGE_KEY = "kaapi_api_keys";
-
 export default function KaapiKeystore() {
   const { sidebarCollapsed } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);

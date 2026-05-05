@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withQueryParams } from "@/app/api/_routeProxy";
 import { apiClient } from "@/app/lib/apiClient";
 
 export async function GET(
@@ -10,9 +11,13 @@ export async function GET(
   const { config_id, version_number } = await params;
 
   try {
+    const { searchParams } = new URL(request.url);
     const { status, data } = await apiClient(
       request,
-      `/api/v1/configs/${config_id}/versions/${version_number}`,
+      withQueryParams(
+        `/api/v1/configs/${config_id}/versions/${version_number}`,
+        searchParams,
+      ),
     );
     return NextResponse.json(data, { status });
   } catch (_error) {

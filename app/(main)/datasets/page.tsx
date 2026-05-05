@@ -10,11 +10,11 @@ import { useState, useEffect } from "react";
 
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
+import { Dataset } from "@/app/lib/types/dataset";
 import { apiFetch } from "@/app/lib/apiClient";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useToast } from "@/app/components/Toast";
-import { Dataset } from "@/app/lib/types/dataset";
 
 export const DATASETS_STORAGE_KEY = "kaapi_datasets";
 

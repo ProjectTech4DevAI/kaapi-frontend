@@ -4,28 +4,28 @@
  */
 
 "use client";
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import {
-  ClipboardIcon,
-  DocumentFileIcon,
+  AssessmentIcon,
   BookOpenIcon,
-  GearIcon,
-  SlidersIcon,
-  ShieldCheckIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
+  ClipboardIcon,
+  DocumentFileIcon,
+  GearIcon,
+  ShieldCheckIcon,
+  SlidersIcon,
   ChatIcon,
 } from "@/app/components/icons";
+import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 import { LoginModal } from "@/app/components/auth";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
 import GatePopover from "@/app/components/GatePopover";
 import { NAV_ITEMS } from "@/app/lib/navConfig";
-import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 
 const PUBLIC_ROUTES = new Set(["/", "/chat"]);
 
@@ -34,7 +34,9 @@ export default function Sidebar({
   activeRoute = "/chat",
 }: SidebarProps) {
   const router = useRouter();
-  const { currentUser, googleProfile, isAuthenticated, logout } = useAuth();
+  const [hasMounted, setHasMounted] = useState(false);
+  const { currentUser, googleProfile, isAuthenticated, logout, hasFeature } =
+    useAuth();
   const { setSidebarCollapsed } = useApp();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     Evaluations: true,
@@ -46,6 +48,10 @@ export default function Sidebar({
   const [hoveredGate, setHoveredGate] = useState<string | null>(null);
   const [gateRect, setGateRect] = useState<DOMRect | null>(null);
   const gateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-expanded-menus");
@@ -119,16 +125,23 @@ export default function Sidebar({
     gear: <GearIcon className="w-5 h-5" />,
     shield: <ShieldCheckIcon />,
     sliders: <SlidersIcon />,
+    assessment: <AssessmentIcon />,
   };
 
-  const navItems: MenuItem[] = NAV_ITEMS.filter(
-    (item) => !item.superuserOnly || currentUser?.is_superuser,
-  ).map((item) => ({
+  const navItems: MenuItem[] = NAV_ITEMS.filter((item) => {
+    if (item.superuserOnly && !currentUser?.is_superuser) return false;
+    if (item.featureFlag) {
+      if (!hasMounted) return false;
+      if (!hasFeature(item.featureFlag)) return false;
+    }
+    return true;
+  }).map((item) => ({
     name: item.name,
     route: item.route,
     icon: iconMap[item.icon],
     submenu: item.submenu,
     gateDescription: item.gateDescription,
+    featureFlag: item.featureFlag,
   }));
 
   const getGateDescription = (name: string): string => {

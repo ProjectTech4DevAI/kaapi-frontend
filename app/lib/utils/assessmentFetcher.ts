@@ -242,6 +242,7 @@ export async function saveAssessmentConfig(params: {
   const configCreate: ConfigCreate = {
     name: trimmedName,
     description: "Assessment configuration",
+    tag: ASSESSMENT_TAG,
     config_blob: normalizedBlob,
     commit_message:
       params.commitMessage.trim() || "Initial assessment configuration",

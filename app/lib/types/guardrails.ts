@@ -71,5 +71,3 @@ export interface ValidatorUpdatePayload {
   is_enabled?: boolean;
 }
 
-//todo: to consider in future if "on_fail_action" variable should be renamed
-// as "on" prefix makes it seems like it is a function

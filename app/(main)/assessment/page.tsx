@@ -67,7 +67,7 @@ const PAGE_TABS: ReadonlyArray<AssessmentTab> = [
 
 function PageContent() {
   const router = useRouter();
-  const toast = useToast();
+  const { error: showToastError, success: showToastSuccess } = useToast();
   const { activeKey } = useAuth();
   const [activeTab, setActiveTab] = useState<AssessmentTabId>("datasets");
   const [configStep, setConfigStep] = useState(1);
@@ -100,7 +100,7 @@ function PageContent() {
       featureRedirectingRef.current = true;
 
       if (options?.notify) {
-        toast.error(
+        showToastError(
           "Assessment feature is disabled for this organization/project.",
         );
       }
@@ -113,7 +113,7 @@ function PageContent() {
         router.replace("/");
       }
     },
-    [router, toast],
+    [router, showToastError],
   );
 
   const handleForbiddenWithNotify = useCallback(() => {
@@ -148,27 +148,27 @@ function PageContent() {
 
   const handleSubmit = useCallback(async () => {
     if (!datasetId) {
-      toast.error("Dataset is required");
+      showToastError("Dataset is required");
       return;
     }
     if (columnMapping.textColumns.length === 0) {
-      toast.error("Map at least one text column");
+      showToastError("Map at least one text column");
       return;
     }
     if (!promptTemplate.trim()) {
-      toast.error("Prompt is required");
+      showToastError("Prompt is required");
       return;
     }
     if (!outputSchema.some((field) => field.name.trim())) {
-      toast.error("Response format is required");
+      showToastError("Response format is required");
       return;
     }
     if (configs.length === 0) {
-      toast.error("Select at least one configuration");
+      showToastError("Select at least one configuration");
       return;
     }
     if (!experimentName.trim()) {
-      toast.error("Experiment name is required");
+      showToastError("Experiment name is required");
       return;
     }
 
@@ -193,7 +193,7 @@ function PageContent() {
         }),
       });
 
-      toast.success("Assessment submitted!");
+      showToastSuccess("Assessment submitted!");
       setConfigStep(1);
       setCompletedConfigSteps(new Set());
       setExperimentName("");
@@ -205,7 +205,7 @@ function PageContent() {
       setActiveTab("results");
     } catch (error) {
       if (handleForbiddenError(error, handleForbiddenWithNotify)) return;
-      toast.error(
+      showToastError(
         `Failed to submit: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
@@ -223,7 +223,8 @@ function PageContent() {
     promptTemplate,
     activeKey,
     systemInstruction,
-    toast,
+    showToastError,
+    showToastSuccess,
   ]);
 
   const formState: AssessmentFormState = {

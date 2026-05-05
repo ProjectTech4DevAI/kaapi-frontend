@@ -1,9 +1,12 @@
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/app/components";
 import Loader from "@/app/components/Loader";
 import type { ConfigPublic } from "@/app/lib/types/configs";
 import type { ValueSetter, VersionListState } from "@/app/lib/types/assessment";
 import { buildInitialAssessmentVersionState } from "@/app/lib/utils/assessmentFetcher";
 import SavedConfigCard from "./SavedConfigCard";
+
+const CONFIGS_VISIBLE_BATCH_SIZE = 2;
 
 interface SavedConfigsProps {
   configCards: ConfigPublic[];
@@ -16,7 +19,7 @@ interface SavedConfigsProps {
   versionStateByConfig: Record<string, VersionListState>;
   loadingSelectionKeys: Record<string, boolean>;
   isSelected: (configId: string, version: number) => boolean;
-  onLoadMoreConfigs: (skip: number) => void;
+  onLoadMoreConfigs: (skip: number) => void | Promise<void>;
   onLoadVersions: (configId: string, skip: number) => void;
   onToggleConfigExpansion: ValueSetter<string>;
   onToggleVersionSelection: (
@@ -41,6 +44,51 @@ export default function SavedConfigs({
   onToggleConfigExpansion,
   onToggleVersionSelection,
 }: SavedConfigsProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [visibleConfigCount, setVisibleConfigCount] = useState(
+    CONFIGS_VISIBLE_BATCH_SIZE,
+  );
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const visibleConfigCards = configCards.slice(0, visibleConfigCount);
+  const hasHiddenLoadedConfigs = visibleConfigCount < configCards.length;
+  const canViewMoreConfigs = hasHiddenLoadedConfigs || hasMoreConfigs;
+
+  useEffect(() => {
+    setVisibleConfigCount(CONFIGS_VISIBLE_BATCH_SIZE);
+  }, [searchQuery]);
+
+  const scrollToListEnd = () => {
+    requestAnimationFrame(() => {
+      const listElement = listRef.current;
+      if (!listElement) return;
+      listElement.scrollTo({
+        top: listElement.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  };
+
+  const handleViewMore = async () => {
+    if (isLoadingMore) return;
+    if (hasHiddenLoadedConfigs) {
+      setVisibleConfigCount((prev) =>
+        Math.min(prev + CONFIGS_VISIBLE_BATCH_SIZE, configCards.length),
+      );
+      scrollToListEnd();
+      return;
+    }
+    if (!hasMoreConfigs) return;
+
+    setIsLoadingMore(true);
+    try {
+      await onLoadMoreConfigs(nextConfigSkip);
+      setVisibleConfigCount((prev) => prev + CONFIGS_VISIBLE_BATCH_SIZE);
+      scrollToListEnd();
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-3">
@@ -64,8 +112,11 @@ export default function SavedConfigs({
             : "No saved behaviors found."}
         </div>
       ) : (
-        <div className="max-h-[560px] space-y-3 overflow-y-auto pr-1">
-          {configCards.map((config) => (
+        <div
+          ref={listRef}
+          className="max-h-[560px] space-y-3 overflow-y-auto pr-1"
+        >
+          {visibleConfigCards.map((config) => (
             <SavedConfigCard
               key={config.id}
               config={config}
@@ -81,16 +132,17 @@ export default function SavedConfigs({
               onToggleVersionSelection={onToggleVersionSelection}
             />
           ))}
-          {hasMoreConfigs && (
+          {canViewMoreConfigs && (
             <Button
               type="button"
-              variant="outline"
+              variant="primary"
               size="sm"
               fullWidth
-              onClick={() => onLoadMoreConfigs(nextConfigSkip)}
+              onClick={() => void handleViewMore()}
+              disabled={isLoadingMore}
               className="!rounded-xl !py-2 !text-xs"
             >
-              Load more
+              {isLoadingMore ? "Loading..." : "View more"}
             </Button>
           )}
         </div>

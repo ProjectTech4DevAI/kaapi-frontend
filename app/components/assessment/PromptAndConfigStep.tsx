@@ -439,7 +439,7 @@ export default function PromptAndConfigStep({
               versionStateByConfig={versionStateByConfig}
               loadingSelectionKeys={loadingSelectionKeys}
               isSelected={isSelected}
-              onLoadMoreConfigs={(skip) => void loadConfigs(skip, false)}
+              onLoadMoreConfigs={(skip) => loadConfigs(skip, false)}
               onLoadVersions={(configId, skip) =>
                 void loadVersions(configId, skip)
               }

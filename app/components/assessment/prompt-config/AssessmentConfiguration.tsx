@@ -30,7 +30,7 @@ interface AssessmentConfigurationProps extends Omit<
   versionStateByConfig: Record<string, VersionListState>;
   loadingSelectionKeys: Record<string, boolean>;
   isSelected: (configId: string, version: number) => boolean;
-  onLoadMoreConfigs: (skip: number) => void;
+  onLoadMoreConfigs: (skip: number) => void | Promise<void>;
   onLoadVersions: (configId: string, skip: number) => void;
   onToggleConfigExpansion: ValueSetter<string>;
   onToggleVersionSelection: (

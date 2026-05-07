@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { colors } from "@/app/lib/colors";
 import { SavedConfig, ConfigPublic } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
+import { CheckIcon, CopyIcon } from "@/app/components/icons";
+import { useToast } from "@/app/hooks/useToast";
 
 interface ConfigCardProps {
   config: ConfigPublic;
@@ -28,12 +30,29 @@ export default function ConfigCard({
   onLoadSingleVersion,
 }: ConfigCardProps) {
   const router = useRouter();
+  const toast = useToast();
   const [expanded, setExpanded] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [latestVersion, setLatestVersion] = useState<SavedConfig | null>(null);
   const [totalVersions, setTotalVersions] = useState<number>(0);
   const [showTools, setShowTools] = useState(false);
   const [showVectorStores, setShowVectorStores] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+
+  const handleCopyId = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(config.id);
+        setCopiedId(true);
+        toast.success("Config ID copied to clipboard");
+        setTimeout(() => setCopiedId(false), 2000);
+      } catch {
+        toast.error("Failed to copy");
+      }
+    },
+    [config.id, toast],
+  );
 
   const handleToggleExpand = useCallback(async () => {
     if (expanded) {
@@ -219,6 +238,30 @@ export default function ConfigCard({
             </div>
           ) : latestVersion ? (
             <div className="pt-4">
+              <div className="flex items-center gap-2 mb-3 px-2.5 py-1.5 rounded-md bg-bg-secondary">
+                <span className="text-xs shrink-0 text-text-secondary">
+                  Config ID:
+                </span>
+                <span
+                  className="text-xs font-mono truncate text-text-primary"
+                  title={config.id}
+                >
+                  {config.id}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  className="ml-auto p-1 rounded-md transition-colors shrink-0 cursor-pointer hover:bg-neutral-200"
+                  title="Copy Config ID"
+                >
+                  {copiedId ? (
+                    <CheckIcon className="w-3.5 h-3.5 text-status-success" />
+                  ) : (
+                    <CopyIcon className="w-3.5 h-3.5 text-text-secondary" />
+                  )}
+                </button>
+              </div>
+
               {/* Config Details */}
               <div className="flex flex-wrap gap-3 mb-4">
                 <div

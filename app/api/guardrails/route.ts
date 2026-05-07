@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { status, data } = await guardrailsClient(
       request,
-      "/api/v1/guardrails",
+      "/api/v1/guardrails/",
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {

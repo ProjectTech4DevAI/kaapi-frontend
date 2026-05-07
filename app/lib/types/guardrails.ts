@@ -62,3 +62,11 @@ export interface OrgContext {
   organization_id: number;
   project_id: number;
 }
+
+export interface ValidatorUpdatePayload {
+  name?: string;
+  type?: string;
+  stage?: string;
+  on_fail_action?: string; //todo: to consider in future if this variable should be renamed as "on" prefix makes it seems like it is a function
+  is_enabled?: boolean;
+}

@@ -85,11 +85,11 @@ export default function CreatePanel({
 
           {uploadedFile ? (
             <div className="rounded-lg bg-bg-secondary p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-1 items-start gap-2.5">
                   <CheckIcon className="h-4 w-4 flex-shrink-0 text-status-success" />
-                  <div>
-                    <p className="text-sm font-medium text-text-primary">
+                  <div className="min-w-0 flex-1">
+                    <p className="whitespace-normal break-words text-sm font-medium text-text-primary [overflow-wrap:anywhere]">
                       {uploadedFile.name}
                     </p>
                     <p className="text-xs text-text-secondary">
@@ -101,7 +101,7 @@ export default function CreatePanel({
                   type="button"
                   onClick={onRemoveFile}
                   aria-label="Remove file"
-                  className="cursor-pointer rounded p-1 text-text-secondary transition-colors hover:bg-bg-primary hover:text-text-primary"
+                  className="flex-shrink-0 cursor-pointer rounded p-1 text-text-secondary transition-colors hover:bg-bg-primary hover:text-text-primary"
                 >
                   <CloseIcon className="h-4 w-4" />
                 </button>

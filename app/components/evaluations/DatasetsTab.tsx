@@ -5,13 +5,12 @@ import { Dataset, ViewDatasetModalData } from "@/app/lib/types/dataset";
 import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import { DatabaseIcon } from "@/app/components/icons";
-import { DatasetListSkeleton } from "@/app/components";
+import { DatabaseIcon, PlusIcon } from "@/app/components/icons";
+import { Button, DatasetListSkeleton, Modal } from "@/app/components";
 import DatasetCard from "./DatasetCard";
 import CreateDatasetForm from "./CreateDatasetForm";
 import ViewDatasetModal from "./ViewDatasetModal";
 import DeleteDatasetModal from "./DeleteDatasetModal";
-import { parseCsvRow } from "@/app/lib/utils";
 
 export interface DatasetsTabProps {
   leftPanelWidth: number;
@@ -25,7 +24,7 @@ export interface DatasetsTabProps {
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: () => void;
   isUploading: boolean;
-  handleCreateDataset: () => void;
+  handleCreateDataset: () => Promise<boolean>;
   resetForm: () => void;
   storedDatasets: Dataset[];
   isDatasetsLoading: boolean;
@@ -33,6 +32,29 @@ export interface DatasetsTabProps {
   loadStoredDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
+
+const parseCsvRow = (line: string): string[] => {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (line[i] === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += line[i];
+    }
+  }
+  result.push(current.trim());
+  return result;
+};
 
 export default function DatasetsTab({
   leftPanelWidth,
@@ -58,6 +80,7 @@ export default function DatasetsTab({
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [viewModalData, setViewModalData] =
     useState<ViewDatasetModalData | null>(null);
 
@@ -124,14 +147,44 @@ export default function DatasetsTab({
       ? storedDatasets.find((d) => d.dataset_id === confirmDeleteId)
       : undefined;
 
+  const handleCreate = async (): Promise<boolean> => {
+    const success = await handleCreateDataset();
+    if (success) setIsFormModalOpen(false);
+    return success;
+  };
+
+  const formProps = {
+    datasetName,
+    setDatasetName,
+    datasetDescription,
+    setDatasetDescription,
+    duplicationFactor,
+    setDuplicationFactor,
+    uploadedFile,
+    onFileSelect,
+    onRemoveFile,
+    isUploading,
+    handleCreateDataset: handleCreate,
+    resetForm,
+  };
+
   return (
     <div className="flex-1 flex overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden bg-bg-secondary">
         <div className="flex-1 overflow-auto p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <h3 className="text-base font-semibold text-text-primary">
               Datasets
             </h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsFormModalOpen(true)}
+              className="lg:hidden"
+            >
+              <PlusIcon className="w-4 h-4" />
+              New
+            </Button>
           </div>
 
           {isDatasetsLoading ? (
@@ -143,7 +196,12 @@ export default function DatasetsTab({
                 No datasets yet
               </p>
               <p className="text-xs text-text-secondary">
-                Create your first dataset using the form on the right
+                <span className="hidden lg:inline">
+                  Create your first dataset using the form on the right
+                </span>
+                <span className="lg:hidden">
+                  Tap <strong>New</strong> to create your first dataset
+                </span>
               </p>
             </div>
           ) : (
@@ -164,25 +222,24 @@ export default function DatasetsTab({
         </div>
       </div>
 
+      {/* Right Panel - Create Dataset Form (lg+ only) */}
       <div
-        className="shrink-0 border-l flex flex-col overflow-hidden bg-bg-primary border-border"
+        className="hidden lg:flex shrink-0 border-l flex-col overflow-hidden bg-bg-primary border-border"
         style={{ width: `${leftPanelWidth}px` }}
       >
-        <CreateDatasetForm
-          datasetName={datasetName}
-          setDatasetName={setDatasetName}
-          datasetDescription={datasetDescription}
-          setDatasetDescription={setDatasetDescription}
-          duplicationFactor={duplicationFactor}
-          setDuplicationFactor={setDuplicationFactor}
-          uploadedFile={uploadedFile}
-          onFileSelect={onFileSelect}
-          onRemoveFile={onRemoveFile}
-          isUploading={isUploading}
-          handleCreateDataset={handleCreateDataset}
-          resetForm={resetForm}
-        />
+        <CreateDatasetForm {...formProps} />
       </div>
+
+      {/* Mobile/tablet — form rendered in a modal */}
+      <Modal
+        open={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        title="Create New Dataset"
+        maxWidth="max-w-2xl"
+        maxHeight="max-h-[90vh]"
+      >
+        <CreateDatasetForm {...formProps} />
+      </Modal>
 
       {viewModalData && (
         <ViewDatasetModal

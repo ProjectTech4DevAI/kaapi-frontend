@@ -40,8 +40,7 @@ export default function DatasetList({
               Datasets
             </h3>
             <p className="mt-2 rounded-md border border-accent-secondary bg-accent-secondary/15 px-3 py-2 text-xs font-medium text-text-primary">
-              Use an existing dataset from the list, or create a new dataset
-              from the form on the right.
+              Select dataset from the left or create new dataset from the right.
             </p>
           </div>
           {isLoadingColumns && (

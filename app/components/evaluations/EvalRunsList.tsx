@@ -1,9 +1,9 @@
 "use client";
 
-import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
-import { ClipboardIcon, RefreshIcon } from "@/app/components/icons";
-import { RunsListSkeleton } from "@/app/components";
+import { ClipboardIcon, PlusIcon, RefreshIcon } from "@/app/components/icons";
+import { Button, RunsListSkeleton } from "@/app/components";
 import Select from "@/app/components/Select";
+import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import EvalRunCard from "./EvalRunCard";
 
 interface EvalRunsListProps {
@@ -14,6 +14,7 @@ interface EvalRunsListProps {
   statusFilter: string;
   onStatusFilterChange: (filter: string) => void;
   onRefresh: () => void;
+  onCreateNew?: () => void;
 }
 
 export default function EvalRunsList({
@@ -24,6 +25,7 @@ export default function EvalRunsList({
   statusFilter,
   onStatusFilterChange,
   onRefresh,
+  onCreateNew,
 }: EvalRunsListProps) {
   const filteredJobs =
     statusFilter === "all"
@@ -33,7 +35,7 @@ export default function EvalRunsList({
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-bg-secondary">
       <div className="flex-1 overflow-auto p-4">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-text-primary">
             Evaluation Runs
           </h2>
@@ -59,6 +61,17 @@ export default function EvalRunsList({
                 className={`w-4 h-4 -scale-x-100 ${isLoading ? "animate-spin" : ""}`}
               />
             </button>
+            {onCreateNew && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={onCreateNew}
+                className="lg:hidden"
+              >
+                <PlusIcon className="w-4 h-4" />
+                New
+              </Button>
+            )}
           </div>
         </div>
 

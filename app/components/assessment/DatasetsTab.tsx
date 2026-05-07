@@ -31,7 +31,7 @@ export default function DatasetsTab({
   onColumnsLoaded,
   onNext,
 }: DatasetsTabProps) {
-  const toast = useToast();
+  const { error: toastError, success: toastSuccess } = useToast();
   const { activeKey, isAuthenticated } = useAuth();
   const apiKey = activeKey?.key ?? "";
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,7 +86,7 @@ export default function DatasetsTab({
     if (!file) return;
 
     if (!isAllowedDatasetFile(file.name)) {
-      toast.error("Please select a CSV or Excel (.xlsx, .xls) file");
+      toastError("Please select a CSV or Excel (.xlsx, .xls) file");
       event.target.value = "";
       return;
     }
@@ -135,10 +135,10 @@ export default function DatasetsTab({
       }
 
       resetForm();
-      toast.success("Dataset created successfully!");
+      toastSuccess("Dataset created successfully!");
     } catch (error) {
       if (handleForbiddenError(error, onForbidden)) return;
-      toast.error(
+      toastError(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
@@ -181,7 +181,7 @@ export default function DatasetsTab({
       onColumnsLoaded([]);
       setDatasetId("");
       setSelectedDatasetName("");
-      toast.error(message);
+      toastError(message);
     } finally {
       setIsLoadingColumns(false);
     }
@@ -198,7 +198,7 @@ export default function DatasetsTab({
       });
     } catch (error) {
       if (handleForbiddenError(error, onForbidden)) return;
-      toast.error(
+      toastError(
         error instanceof Error ? error.message : "Failed to view dataset",
       );
     } finally {
@@ -212,7 +212,7 @@ export default function DatasetsTab({
       await apiFetch(`/api/assessment/datasets/${id}`, apiKey, {
         method: "DELETE",
       });
-      toast.success("Dataset deleted");
+      toastSuccess("Dataset deleted");
       if (datasetId === id.toString()) {
         setDatasetId("");
         setSelectedDatasetName("");
@@ -220,7 +220,7 @@ export default function DatasetsTab({
       void loadDatasets();
     } catch (error) {
       if (handleForbiddenError(error, onForbidden)) return;
-      toast.error(
+      toastError(
         error instanceof Error ? error.message : "Failed to delete dataset",
       );
     } finally {
@@ -311,16 +311,19 @@ export default function DatasetsTab({
                   <WarningIcon className="w-5 h-5" />
                 </span>
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-semibold text-text-primary">
                   Delete dataset
                 </h3>
-                <p className="mt-1 text-sm text-text-secondary">
+                <p className="mt-2 whitespace-normal break-words text-sm leading-6 text-text-secondary [overflow-wrap:anywhere]">
                   Are you sure you want to delete{" "}
-                  <strong className="text-text-primary">
+                  <strong className="font-semibold text-text-primary">
                     {datasetPendingDelete?.dataset_name}
                   </strong>
-                  ? This action cannot be undone.
+                  ?
+                </p>
+                <p className="mt-1 text-sm leading-6 text-text-secondary">
+                  This action cannot be undone.
                 </p>
               </div>
             </div>

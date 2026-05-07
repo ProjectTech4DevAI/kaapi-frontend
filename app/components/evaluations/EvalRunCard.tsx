@@ -61,16 +61,16 @@ export default function EvalRunCard({
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-4 mt-3">
-          <div className="flex items-center gap-3 text-xs text-text-secondary">
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary min-w-0">
             {job.dataset_name && (
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 min-w-0">
                 <DatabaseIcon className="shrink-0" />
-                {job.dataset_name}
+                <span className="block truncate">{job.dataset_name}</span>
               </span>
             )}
             {job.assistant_id && assistantConfig?.name && (
-              <span className="px-1.5 py-0.5 rounded bg-bg-secondary">
+              <span className="inline-block px-1.5 py-0.5 rounded bg-bg-secondary truncate max-w-40">
                 {assistantConfig.name}
               </span>
             )}
@@ -103,7 +103,7 @@ export default function EvalRunCard({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             <Button
               variant="outline"
               size="sm"

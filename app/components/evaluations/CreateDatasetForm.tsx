@@ -20,7 +20,7 @@ interface CreateDatasetFormProps {
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: () => void;
   isUploading: boolean;
-  handleCreateDataset: () => void;
+  handleCreateDataset: () => void | Promise<boolean>;
   resetForm: () => void;
 }
 

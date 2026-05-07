@@ -145,18 +145,18 @@ function SimplifiedEvalContent() {
     reader.readAsText(file);
   };
 
-  const handleCreateDataset = async () => {
+  const handleCreateDataset = async (): Promise<boolean> => {
     if (!uploadedFile) {
       toast.error("Please select a CSV file");
-      return;
+      return false;
     }
     if (!datasetName.trim()) {
       toast.error("Please enter a dataset name");
-      return;
+      return false;
     }
     if (!isAuthenticated) {
       toast.error("Please log in to create datasets.");
-      return;
+      return false;
     }
 
     setIsUploading(true);
@@ -188,10 +188,12 @@ function SimplifiedEvalContent() {
       setDuplicationFactor("1");
 
       toast.success("Dataset created successfully!");
+      return true;
     } catch (error: unknown) {
       toast.error(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
+      return false;
     } finally {
       setIsUploading(false);
     }

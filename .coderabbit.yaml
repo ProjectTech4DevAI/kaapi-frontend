@@ -4,4 +4,4 @@ reviews:
     labels:
       - "ready-for-review"
     base_branches:
-      - ".*"  # allows all branches
+      - ".*" # allows all branches

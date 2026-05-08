@@ -15,10 +15,12 @@ import {
 import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
+import DeleteDocumentModal from "@/app/components/document/DeleteDocumentModal";
 import {
   DEFAULT_PAGE_LIMIT,
   MAX_DOCUMENT_SIZE_BYTES,
   MAX_DOCUMENT_SIZE_MB,
+  MAX_DOCUMENT_UPLOAD_BATCH,
 } from "@/app/lib/constants";
 import { Document } from "@/app/lib/types/document";
 
@@ -30,10 +32,14 @@ export default function DocumentPage() {
     null,
   );
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<UploadPhase>("uploading");
+  const [currentUploadIndex, setCurrentUploadIndex] = useState(0);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
+    null,
+  );
   const abortUploadRef = useRef<(() => void) | null>(null);
   const { activeKey: apiKey, isAuthenticated } = useAuth();
 
@@ -57,78 +63,126 @@ export default function DocumentPage() {
   });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (files.length === 0) return;
 
-    if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
-      toast.error(
-        `File size exceeds ${MAX_DOCUMENT_SIZE_MB} MB limit. Please select a smaller file within ${MAX_DOCUMENT_SIZE_MB} MB.`,
-      );
-      event.target.value = "";
-      return;
+    const remaining = MAX_DOCUMENT_UPLOAD_BATCH - selectedFiles.length;
+    if (remaining <= 0) return;
+
+    const accepted: File[] = [];
+    let oversizedCount = 0;
+    for (const file of files.slice(0, remaining)) {
+      if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+        oversizedCount += 1;
+        continue;
+      }
+      accepted.push(file);
     }
 
-    setSelectedFile(file);
+    if (oversizedCount > 0) {
+      toast.error(
+        `${oversizedCount} file${oversizedCount > 1 ? "s" : ""} exceed the ${MAX_DOCUMENT_SIZE_MB} MB limit and were skipped.`,
+      );
+    }
+    if (files.length > remaining) {
+      toast.warning(
+        `You can upload up to ${MAX_DOCUMENT_UPLOAD_BATCH} documents at a time.`,
+      );
+    }
+
+    if (accepted.length > 0) {
+      setSelectedFiles((prev) => [...prev, ...accepted]);
+    }
   };
 
-  const handleUpload = async () => {
-    if (!isAuthenticated || !selectedFile) return;
+  const handleRemoveSelectedFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
-    setIsUploading(true);
+  const uploadOneFile = async (file: File): Promise<boolean> => {
     setUploadProgress(0);
     setUploadPhase("uploading");
 
-    try {
-      const formData = new FormData();
-      formData.append("src", selectedFile);
+    const formData = new FormData();
+    formData.append("src", file);
 
-      const { promise, abort } = uploadWithProgress<{ data?: { id: string } }>(
-        "/api/document",
-        apiKey?.key ?? "",
-        formData,
-        (percent, phase) => {
-          setUploadProgress(percent);
-          setUploadPhase(phase);
-        },
-      );
-      abortUploadRef.current = abort;
+    const { promise, abort } = uploadWithProgress<{ data?: { id: string } }>(
+      "/api/document",
+      apiKey?.key ?? "",
+      formData,
+      (percent, phase) => {
+        setUploadProgress(percent);
+        setUploadPhase(phase);
+      },
+    );
+    abortUploadRef.current = abort;
+
+    try {
       const data = await promise;
-      if (selectedFile && data.data?.id) {
+      if (data.data?.id) {
         const fileSizeMap = JSON.parse(
           localStorage.getItem("document_file_sizes") || "{}",
         );
-        fileSizeMap[data.data.id] = selectedFile.size;
+        fileSizeMap[data.data.id] = file.size;
         localStorage.setItem(
           "document_file_sizes",
           JSON.stringify(fileSizeMap),
         );
       }
-
-      refetch();
-      setSelectedFile(null);
-      setIsModalOpen(false);
-
-      toast.success("Document uploaded successfully!");
+      return true;
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(
-        `Failed to upload document: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to upload "${file.name}": ${error instanceof Error ? error.message : "Unknown error"}`,
       );
+      return false;
     } finally {
-      setIsUploading(false);
       abortUploadRef.current = null;
     }
   };
 
-  const handleDeleteDocument = async (documentId: string) => {
+  const handleUpload = async () => {
+    if (!isAuthenticated || selectedFiles.length === 0) return;
+
+    setIsUploading(true);
+    setCurrentUploadIndex(0);
+
+    let successCount = 0;
+    for (let i = 0; i < selectedFiles.length; i += 1) {
+      setCurrentUploadIndex(i);
+      const ok = await uploadOneFile(selectedFiles[i]);
+      if (ok) successCount += 1;
+    }
+
+    refetch();
+    setSelectedFiles([]);
+    setIsModalOpen(false);
+    setIsUploading(false);
+    setCurrentUploadIndex(0);
+
+    if (successCount > 0) {
+      toast.success(
+        successCount === 1
+          ? "Document uploaded successfully!"
+          : `${successCount} documents uploaded successfully!`,
+      );
+    }
+  };
+
+  const handleRequestDelete = (documentId: string) => {
     if (!isAuthenticated) {
       toast.error("Please log in to continue");
       return;
     }
+    const doc = documents.find((d) => d.id === documentId);
+    if (doc) setDocumentToDelete(doc);
+  };
 
-    if (!confirm("Are you sure you want to delete this document?")) {
-      return;
-    }
+  const handleConfirmDelete = async () => {
+    if (!documentToDelete) return;
+    const documentId = documentToDelete.id;
+    setDocumentToDelete(null);
 
     try {
       await apiFetch(`/api/document/${documentId}`, apiKey?.key ?? "", {
@@ -180,7 +234,7 @@ export default function DocumentPage() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-bg-secondary">
+    <div className="w-full h-screen flex flex-col bg-bg-primary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/document" />
 
@@ -190,13 +244,13 @@ export default function DocumentPage() {
             subtitle="Manage your uploaded documents"
           />
 
-          <div className="flex-1 overflow-hidden flex bg-bg-secondary">
-            <div className="w-1/3 border-r border-r-status-default-border overflow-hidden">
+          <div className="flex-1 overflow-hidden flex bg-bg-primary">
+            <div className="w-1/3 border-r border-border overflow-hidden">
               <DocumentListing
                 documents={documents}
                 selectedDocument={selectedDocument}
                 onSelect={handleSelectDocument}
-                onDelete={handleDeleteDocument}
+                onDelete={handleRequestDelete}
                 onUploadNew={() => setIsModalOpen(true)}
                 isLoading={isLoading}
                 isLoadingMore={isLoadingMore}
@@ -217,19 +271,30 @@ export default function DocumentPage() {
 
       <UploadDocumentModal
         open={isModalOpen}
-        selectedFile={selectedFile}
+        selectedFiles={selectedFiles}
         isUploading={isUploading}
         uploadProgress={uploadProgress}
         uploadPhase={uploadPhase}
+        currentUploadIndex={currentUploadIndex}
         onFileSelect={handleFileSelect}
+        onRemoveFile={handleRemoveSelectedFile}
+        onClearFiles={() => setSelectedFiles([])}
         onUpload={handleUpload}
         onClose={() => {
           abortUploadRef.current?.();
           setIsModalOpen(false);
-          setSelectedFile(null);
+          setSelectedFiles([]);
           setUploadProgress(0);
           setUploadPhase("uploading");
+          setCurrentUploadIndex(0);
         }}
+      />
+
+      <DeleteDocumentModal
+        open={!!documentToDelete}
+        fileName={documentToDelete?.fname}
+        onClose={() => setDocumentToDelete(null)}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

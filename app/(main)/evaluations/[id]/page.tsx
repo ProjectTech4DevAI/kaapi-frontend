@@ -252,7 +252,7 @@ export default function EvaluationReport() {
     job.status.toLowerCase() !== "failed";
 
   const segmentedClass =
-    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]";
+    "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all cursor-pointer border border-border bg-bg-primary text-text-primary shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-neutral-50 hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:bg-accent-primary data-[selected=true]:border-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] data-[selected=true]:hover:bg-accent-hover data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.12)]";
 
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
@@ -298,7 +298,7 @@ export default function EvaluationReport() {
                   onClick={() => setExportFormat("row")}
                   disabled={isFormatSwitching || isResyncing}
                   data-selected={exportFormat === "row"}
-                  className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`${segmentedClass} rounded-l-md rounded-r-none -mr-px disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
                   <span className="hidden sm:inline">Individual Rows</span>
@@ -309,7 +309,7 @@ export default function EvaluationReport() {
                   onClick={() => setExportFormat("grouped")}
                   disabled={isFormatSwitching || isResyncing}
                   data-selected={exportFormat === "grouped"}
-                  className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`${segmentedClass} rounded-r-md rounded-l-none disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <GroupIcon className="pointer-events-none" />
                   <span className="hidden sm:inline">Group by Questions</span>

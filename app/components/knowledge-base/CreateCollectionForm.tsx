@@ -55,12 +55,12 @@ export default function CreateCollectionForm({
 
       <div>
         <label className="block text-xs font-medium mb-1 text-text-secondary">
-          Description
+          Description (Optional)
         </label>
         <textarea
           value={collectionDescription}
           onChange={(e) => setCollectionDescription(e.target.value)}
-          placeholder="Optional description"
+          placeholder="Description..."
           rows={3}
           className="w-full px-3 py-2 rounded-lg border border-border bg-white text-text-primary text-sm placeholder:text-neutral-400 resize-none focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors"
         />

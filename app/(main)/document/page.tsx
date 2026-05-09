@@ -16,6 +16,7 @@ import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
 import DeleteDocumentModal from "@/app/components/document/DeleteDocumentModal";
+import Modal from "@/app/components/Modal";
 import {
   DEFAULT_PAGE_LIMIT,
   MAX_DOCUMENT_SIZE_BYTES,
@@ -245,7 +246,7 @@ export default function DocumentPage() {
           />
 
           <div className="flex-1 overflow-hidden flex bg-bg-primary">
-            <div className="w-1/3 border-r border-border overflow-hidden">
+            <div className="w-full lg:w-1/3 lg:border-r border-border overflow-hidden">
               <DocumentListing
                 documents={documents}
                 selectedDocument={selectedDocument}
@@ -259,7 +260,7 @@ export default function DocumentPage() {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="hidden lg:block flex-1 overflow-y-auto">
               <DocumentPreview
                 document={selectedDocument}
                 isLoading={isLoadingDocument}
@@ -267,6 +268,24 @@ export default function DocumentPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile/tablet — preview rendered in a modal */}
+      <div className="lg:hidden">
+        <Modal
+          open={!!selectedDocument || isLoadingDocument}
+          onClose={() => setSelectedDocument(null)}
+          title={selectedDocument?.fname ?? "Document Preview"}
+          maxWidth="max-w-3xl"
+          maxHeight="max-h-[90vh]"
+        >
+          <div className="h-[80vh]">
+            <DocumentPreview
+              document={selectedDocument}
+              isLoading={isLoadingDocument}
+            />
+          </div>
+        </Modal>
       </div>
 
       <UploadDocumentModal

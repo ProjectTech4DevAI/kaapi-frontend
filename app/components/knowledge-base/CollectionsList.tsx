@@ -24,7 +24,7 @@ export default function CollectionsList({
   onCreateNew,
 }: CollectionsListProps) {
   return (
-    <div className="w-1/3 border-r border-border flex flex-col">
+    <div className="w-full lg:w-1/3 lg:border-r border-border flex flex-col">
       <div className="px-6 py-4 flex justify-end">
         <Button variant="primary" size="sm" onClick={onCreateNew}>
           + Create
@@ -63,7 +63,7 @@ export default function CollectionsList({
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded bg-accent-primary/10 text-accent-primary">
+                    <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-primary/10 text-accent-primary">
                       <BookOpenIcon className="w-3.5 h-3.5" />
                     </span>
                     <div className="flex-1 min-w-0">

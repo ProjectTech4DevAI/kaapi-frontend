@@ -9,6 +9,7 @@ import CollectionDetail from "@/app/components/knowledge-base/CollectionDetail";
 import DocumentPickerModal from "@/app/components/knowledge-base/DocumentPickerModal";
 import DeleteCollectionModal from "@/app/components/knowledge-base/DeleteCollectionModal";
 import DocumentPreviewModal from "@/app/components/knowledge-base/DocumentPreviewModal";
+import Modal from "@/app/components/Modal";
 import { BookOpenIcon } from "@/app/components/icons";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useCollections } from "@/app/hooks/useCollections";
@@ -133,7 +134,7 @@ export default function KnowledgeBasePage() {
             onCreateNew={handleCreateNew}
           />
 
-          <div className="w-2/3 flex flex-col">
+          <div className="w-2/3 hidden lg:flex flex-col">
             {showCreateForm ? (
               <CreateCollectionForm
                 collectionName={collectionName}
@@ -172,6 +173,48 @@ export default function KnowledgeBasePage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Mobile/tablet — create form rendered in a modal */}
+      <div className="lg:hidden">
+        <Modal
+          open={showCreateForm}
+          onClose={handleCancelCreate}
+          maxWidth="max-w-2xl"
+          maxHeight="max-h-[90vh]"
+        >
+          <CreateCollectionForm
+            collectionName={collectionName}
+            setCollectionName={setCollectionName}
+            collectionDescription={collectionDescription}
+            setCollectionDescription={setCollectionDescription}
+            selectedDocuments={selectedDocuments}
+            availableDocuments={availableDocuments}
+            onToggleDocument={toggleDocumentSelection}
+            onOpenDocumentPicker={() => setShowDocumentPicker(true)}
+            isCreating={isCreating}
+            onCancel={handleCancelCreate}
+            onCreate={handleCreateClick}
+          />
+        </Modal>
+
+        <Modal
+          open={!showCreateForm && !!selectedCollection}
+          onClose={() => setSelectedCollection(null)}
+          maxWidth="max-w-2xl"
+          maxHeight="max-h-[90vh]"
+        >
+          {selectedCollection && (
+            <CollectionDetail
+              collection={selectedCollection}
+              onRequestDelete={(id) => {
+                setSelectedCollection(null);
+                handleRequestDelete(id);
+              }}
+              onPreviewDocument={handlePreviewDocument}
+            />
+          )}
+        </Modal>
       </div>
 
       <DeleteCollectionModal

@@ -105,7 +105,7 @@ export interface ConfigParamDefinition {
 }
 
 export interface AssessmentModelConfig {
-  provider: "openai";
+  provider: "openai" | "google";
   model_name: string;
   config: Record<string, ConfigParamDefinition>;
 }

@@ -7,7 +7,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
-import { colors } from "@/app/lib/colors";
 import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
 import { hasConfigChanges } from "@/app/lib/promptEditorUtils";
 import Header from "@/app/components/prompt-editor/Header";
@@ -78,8 +77,6 @@ function PromptEditorContent() {
   );
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>("");
-  const [showHistorySidebar, setShowHistorySidebar] = useState<boolean>(true);
-  const [showConfigPane, setShowConfigPane] = useState<boolean>(true);
   const [selectedVersion, setSelectedVersion] = useState<SavedConfig | null>(
     null,
   );
@@ -379,6 +376,52 @@ function PromptEditorContent() {
     }
   };
 
+  const handleRenameConfig = async (
+    configId: string,
+    newName: string,
+  ): Promise<boolean> => {
+    const apiKey = activeKey?.key ?? "";
+    if (!isAuthenticated) {
+      toast.error("Please log in to rename configurations.");
+      return false;
+    }
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      toast.error("Name cannot be empty.");
+      return false;
+    }
+    if (trimmed === currentConfigName) return true;
+
+    const conflict = allConfigMeta.find(
+      (m) => m.name === trimmed && m.id !== configId,
+    );
+    if (conflict) {
+      toast.error(`A configuration named "${trimmed}" already exists.`);
+      return false;
+    }
+
+    try {
+      const data = await apiFetch<{ success: boolean; error?: string }>(
+        `/api/configs/${configId}`,
+        apiKey,
+        { method: "PATCH", body: JSON.stringify({ name: trimmed }) },
+      );
+      if (!data.success) {
+        toast.error(`Failed to rename: ${data.error || "Unknown error"}`);
+        return false;
+      }
+      setCurrentConfigName(trimmed);
+      invalidateConfigCache();
+      await refetchConfigs(true);
+      toast.success(`Renamed to "${trimmed}"`);
+      return true;
+    } catch (e) {
+      console.error("Failed to rename config:", e);
+      toast.error("Failed to rename configuration.");
+      return false;
+    }
+  };
+
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
@@ -400,16 +443,8 @@ function PromptEditorContent() {
 
           <div className="flex flex-1 overflow-hidden">
             {!editorReady ? (
-              <div
-                className="flex-1 flex items-center justify-center"
-                style={{ backgroundColor: colors.bg.secondary }}
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <div className="animate-spin rounded-full border-4 border-solid w-9 h-9 border-bg-primary border-t-accent-primary" />
-                  <p className="text-sm text-text-secondary">
-                    Loading configuration...
-                  </p>
-                </div>
+              <div className="flex-1 flex items-center justify-center bg-bg-secondary">
+                <Loader size="md" message="Loading configuration..." />
               </div>
             ) : (
               <>
@@ -419,8 +454,6 @@ function PromptEditorContent() {
                   currentConfigId={currentConfigParentId || undefined}
                   expandedConfigs={expandedConfigs}
                   setExpandedConfigs={setExpandedConfigs}
-                  collapsed={!showHistorySidebar}
-                  onToggle={() => setShowHistorySidebar(!showHistorySidebar)}
                   onSelectVersion={(version) => {
                     setSelectedVersion(version);
                     setCompareWith(null);
@@ -450,7 +483,7 @@ function PromptEditorContent() {
                   loadSingleVersionForConfig={loadSingleVersion}
                 />
 
-                {showHistorySidebar && selectedVersion ? (
+                {selectedVersion ? (
                   <DiffView
                     selectedCommit={selectedVersion}
                     compareWith={compareWith}
@@ -469,7 +502,7 @@ function PromptEditorContent() {
                   <div className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex flex-1 overflow-hidden">
                       <div
-                        className="flex"
+                        className="flex min-w-0"
                         style={{
                           flex: "1 1 0%",
                           transition: "flex 0.2s ease-in-out",
@@ -488,6 +521,8 @@ function PromptEditorContent() {
                         onConfigNameChange={setCurrentConfigName}
                         savedConfigs={savedConfigs}
                         selectedConfigId={selectedConfigId}
+                        boundConfigId={currentConfigParentId}
+                        onRenameConfig={handleRenameConfig}
                         onLoadConfig={handleLoadConfig}
                         allConfigMeta={allConfigMeta}
                         loadVersionsForConfig={loadVersionsForConfig}
@@ -497,8 +532,6 @@ function PromptEditorContent() {
                         onCommitMessageChange={setCommitMessage}
                         onSave={handleSaveConfig}
                         isSaving={isSaving}
-                        collapsed={!showConfigPane}
-                        onToggle={() => setShowConfigPane(!showConfigPane)}
                         apiKey={activeKey?.key ?? ""}
                       />
                     </div>

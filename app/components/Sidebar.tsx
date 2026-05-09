@@ -313,7 +313,7 @@ export default function Sidebar({
       <div className="w-60">
         {isAuthenticated && (currentUser || googleProfile) ? (
           <div
-            className="px-3 pb-3 pt-1 border-t border-border relative"
+            className="h-16 px-3 flex items-center border-t border-border relative"
             ref={userMenuRef}
           >
             {showUserMenu && (

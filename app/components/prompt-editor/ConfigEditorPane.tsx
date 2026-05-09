@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
 import {
@@ -10,7 +10,6 @@ import {
 import { formatRelativeTime } from "@/app/lib/utils";
 import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
 import {
-  ChevronRightIcon,
   ChevronDownIcon,
   CheckIcon,
   PlusIcon,
@@ -19,6 +18,8 @@ import {
 } from "@/app/components/icons";
 import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
 import GuardrailsSection from "./GuardrailsSection";
+import SaveConfigModal from "./SaveConfigModal";
+import { Button, Field, VersionPill } from "@/app/components";
 
 const inputClass =
   "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
@@ -30,13 +31,22 @@ interface ConfigEditorPaneProps {
   onConfigNameChange: (name: string) => void;
   savedConfigs: SavedConfig[];
   selectedConfigId: string;
+  /**
+   * The parent config_id this version belongs to. When set, the name is
+   * locked and can only be changed via an explicit Rename action that PATCHes
+   * the config metadata (no version is created).
+   */
+  boundConfigId?: string;
+  /**
+   * Renames the config metadata only — does not create a new version.
+   * Returns true on success, false on failure (parent shows toast).
+   */
+  onRenameConfig?: (configId: string, newName: string) => Promise<boolean>;
   onLoadConfig: (config: SavedConfig | null) => void;
   commitMessage: string;
   onCommitMessageChange: (message: string) => void;
   onSave: () => void;
   isSaving?: boolean;
-  collapsed?: boolean;
-  onToggle?: () => void;
   allConfigMeta?: ConfigPublic[];
   versionItemsMap?: Record<string, ConfigVersionItems[]>;
   loadVersionsForConfig?: (config_id: string) => Promise<void>;
@@ -54,13 +64,13 @@ export default function ConfigEditorPane({
   onConfigNameChange,
   savedConfigs,
   selectedConfigId,
+  boundConfigId,
+  onRenameConfig,
   onLoadConfig,
   commitMessage,
   onCommitMessageChange,
   onSave,
   isSaving = false,
-  collapsed = false,
-  onToggle,
   allConfigMeta = [],
   versionItemsMap = {},
   loadVersionsForConfig,
@@ -93,6 +103,49 @@ export default function ConfigEditorPane({
   const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
     new Set(),
   );
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameDraft, setRenameDraft] = useState("");
+  const [isApplyingRename, setIsApplyingRename] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const wasSavingRef = useRef(false);
+
+  // Close the save modal when a save just completed successfully.
+  // Parent clears commitMessage on success and keeps it on failure, so we
+  // use that as the success signal.
+  useEffect(() => {
+    if (wasSavingRef.current && !isSaving && commitMessage === "") {
+      setShowSaveModal(false);
+    }
+    wasSavingRef.current = isSaving;
+  }, [isSaving, commitMessage]);
+
+  const isBoundToSavedConfig = !!boundConfigId;
+
+  const handleStartRename = () => {
+    setRenameDraft(configName);
+    setIsRenaming(true);
+  };
+
+  const handleCancelRename = () => {
+    setIsRenaming(false);
+    setRenameDraft("");
+  };
+
+  const handleApplyRename = async () => {
+    if (!boundConfigId || !onRenameConfig) return;
+    const trimmed = renameDraft.trim();
+    if (!trimmed || trimmed === configName) {
+      handleCancelRename();
+      return;
+    }
+    setIsApplyingRename(true);
+    const ok = await onRenameConfig(boundConfigId, trimmed);
+    setIsApplyingRename(false);
+    if (ok) {
+      setIsRenaming(false);
+      setRenameDraft("");
+    }
+  };
 
   const handleOpenLoadDropdown = () => {
     if (!isDropdownOpen) {
@@ -246,59 +299,14 @@ export default function ConfigEditorPane({
   const saveDisabled = !configName.trim() || isSaving;
 
   return (
-    <div
-      className={`flex flex-col overflow-hidden shrink-0 border-l border-border bg-bg-primary ${
-        collapsed ? "w-10 flex-[0_0_40px]" : "w-full flex-1"
-      }`}
-      style={{ transition: "width 0.2s ease-in-out, flex 0.2s ease-in-out" }}
-    >
-      <div
-        className={`border-b border-border flex items-center shrink-0 ${
-          collapsed ? "justify-center h-10 p-0" : "justify-between px-4 py-3"
-        }`}
-        style={{ transition: "padding 0.2s ease-in-out" }}
-      >
-        {!collapsed && (
-          <h3 className="text-sm font-semibold flex-1 text-text-primary">
-            Configuration
-          </h3>
-        )}
-        {onToggle && (
-          <button
-            onClick={onToggle}
-            className="rounded shrink-0 flex items-center justify-center w-7 h-7 border border-border bg-bg-primary text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-colors"
-            title={collapsed ? "Show configuration" : "Hide configuration"}
-          >
-            <ChevronRightIcon
-              className="w-4 h-4"
-              style={{
-                transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
-                transition: "transform 0.2s ease-in-out",
-              }}
-            />
-          </button>
-        )}
+    <div className="flex flex-col overflow-hidden border-l border-border bg-bg-primary flex-1 min-w-0">
+      <div className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0">
+        <h3 className="text-sm font-semibold flex-1 text-text-primary">
+          Configuration
+        </h3>
       </div>
 
-      {collapsed && (
-        <div
-          className="flex items-start justify-center pt-4 cursor-pointer text-text-secondary"
-          onClick={onToggle}
-          title="Show configuration"
-        >
-          <span
-            className="text-xs font-medium whitespace-nowrap"
-            style={{
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-            }}
-          >
-            Configuration
-          </span>
-        </div>
-      )}
-
-      {!collapsed && (
+      {
         <div className="flex-1 overflow-auto p-4">
           <div className="space-y-4">
             <div className="relative">
@@ -314,20 +322,25 @@ export default function ConfigEditorPane({
                 {selectedConfig ? (
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">
+                      <span
+                        className="font-medium text-sm truncate"
+                        title={selectedConfig.name}
+                      >
                         {selectedConfig.name}
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded shrink-0 bg-bg-secondary text-text-secondary">
-                        v{selectedConfig.version}
-                      </span>
+                      <VersionPill
+                        version={selectedConfig.version}
+                        size="sm"
+                        className="shrink-0"
+                      />
                     </div>
-                    <div className="text-xs mt-0.5 text-text-secondary">
+                    <div className="text-xs mt-0.5 text-text-secondary truncate">
                       {selectedConfig.provider}/{selectedConfig.modelName} •{" "}
                       {selectedConfig.type}
                     </div>
                   </div>
                 ) : (
-                  <span className="text-sm text-text-secondary">
+                  <span className="text-sm text-text-secondary whitespace-nowrap truncate">
                     + New Configuration
                   </span>
                 )}
@@ -429,9 +442,10 @@ export default function ConfigEditorPane({
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs px-1.5 py-0.5 rounded bg-bg-secondary text-text-secondary">
-                                      v{item.version}
-                                    </span>
+                                    <VersionPill
+                                      version={item.version}
+                                      size="sm"
+                                    />
                                     <span className="text-sm truncate text-text-primary">
                                       {item.commit_message || "No message"}
                                     </span>
@@ -465,25 +479,90 @@ export default function ConfigEditorPane({
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Configuration Name
-              </label>
-              <input
-                type="text"
-                value={configName}
-                onChange={(e) => onConfigNameChange(e.target.value)}
-                placeholder="e.g., my-config"
-                className={inputClass}
-              />
-              {configName.trim() && (
-                <p className="text-xs mt-1.5 text-text-secondary">
-                  {existingConfigForHint
-                    ? `💡 Will create a new version for "${configName}"`
-                    : `✨ Will create a new config "${configName}"`}
+            {isBoundToSavedConfig && !isRenaming && (
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1">
+                  Configuration Name
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-text-primary text-sm truncate">
+                    {configName || "Untitled"}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartRename}
+                    title="Rename this configuration (does not create a new version)"
+                  >
+                    Rename
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {isBoundToSavedConfig && isRenaming && (
+              <div className="space-y-2">
+                <Field
+                  label="New Configuration Name"
+                  value={renameDraft}
+                  onChange={setRenameDraft}
+                  placeholder="New name"
+                  autoFocus
+                  disabled={isApplyingRename}
+                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleApplyRename}
+                    disabled={
+                      isApplyingRename ||
+                      !renameDraft.trim() ||
+                      renameDraft.trim() === configName
+                    }
+                  >
+                    {isApplyingRename ? "Renaming…" : "Apply rename"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelRename}
+                    disabled={isApplyingRename}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                <p className="text-xs text-text-secondary">
+                  ✏️ Renames the configuration metadata only — no new version is
+                  created.
                 </p>
-              )}
-            </div>
+              </div>
+            )}
+
+            {!isBoundToSavedConfig && (
+              <div>
+                <Field
+                  label="Configuration Name *"
+                  value={configName}
+                  onChange={onConfigNameChange}
+                  placeholder="e.g., my-config"
+                />
+                {configName.trim() && (
+                  <p
+                    className="text-xs mt-1.5 text-text-secondary truncate"
+                    title={
+                      existingConfigForHint
+                        ? `Will create a new version for "${configName}"`
+                        : `Will create a new config "${configName}"`
+                    }
+                  >
+                    {existingConfigForHint
+                      ? `💡 Will create a new version for "${configName}"`
+                      : `✨ Will create a new config "${configName}"`}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold mb-2 text-text-primary">
@@ -595,27 +674,21 @@ export default function ConfigEditorPane({
                       Remove
                     </button>
                   </div>
-                  <div className="mb-2">
-                    <label className="block text-xs mb-1 text-text-primary">
-                      Knowledge Base ID
-                    </label>
-                    <input
-                      type="text"
+                  <div className="mb-3">
+                    <Field
+                      label="Knowledge Base ID"
                       value={tool.knowledge_base_ids[0] || ""}
-                      onChange={(e) =>
-                        handleUpdateTool(index, "knowledge_base_ids", [
-                          e.target.value,
-                        ])
+                      onChange={(v) =>
+                        handleUpdateTool(index, "knowledge_base_ids", [v])
                       }
                       placeholder="vs_abc123"
-                      className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-gray-300 bg-bg-primary text-text-primary"
                     />
                   </div>
 
                   {!isGpt5 && (
                     <div>
                       <div className="flex items-center gap-1 mb-1">
-                        <label className="text-xs text-text-primary">
+                        <label className="text-xs font-medium text-text-secondary">
                           Max Results
                         </label>
                         <div
@@ -625,11 +698,11 @@ export default function ConfigEditorPane({
                         >
                           <InfoIcon className="w-3.5 h-3.5 text-text-secondary" />
                           {showTooltip === index && (
-                            <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-[#1f2937] text-white top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
+                            <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-text-primary text-bg-primary top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
                               Controls how many matching results are returned
                               <br />
                               from the search
-                              <div className="absolute right-full top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#1f2937]" />
+                              <div className="absolute right-full top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-text-primary" />
                             </div>
                           )}
                         </div>
@@ -644,7 +717,7 @@ export default function ConfigEditorPane({
                             parseInt(e.target.value) || 20,
                           )
                         }
-                        className="w-full px-2 py-1 rounded text-xs focus:outline-none border border-border bg-bg-primary text-text-primary"
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-white text-text-primary text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors"
                       />
                     </div>
                   )}
@@ -674,33 +747,29 @@ export default function ConfigEditorPane({
               stage="output"
             />
 
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Commit Message (Optional)
-              </label>
-              <input
-                type="text"
-                value={commitMessage}
-                onChange={(e) => onCommitMessageChange(e.target.value)}
-                placeholder="Describe your changes..."
-                className={inputClass}
-              />
-            </div>
-
-            <button
-              onClick={onSave}
+            <Button
+              variant="primary"
+              size="md"
+              fullWidth
+              onClick={() => setShowSaveModal(true)}
               disabled={saveDisabled}
-              className={`w-full px-4 py-2 rounded-md text-sm font-semibold border-0 transition-colors ${
-                saveDisabled
-                  ? "bg-bg-secondary text-text-secondary cursor-not-allowed"
-                  : "bg-status-success text-bg-primary cursor-pointer"
-              }`}
             >
               {isSaving ? "Saving..." : "Save Configuration"}
-            </button>
+            </Button>
           </div>
         </div>
-      )}
+      }
+
+      <SaveConfigModal
+        open={showSaveModal}
+        configName={configName}
+        isUpdate={isBoundToSavedConfig || !!existingConfigForHint}
+        commitMessage={commitMessage}
+        onCommitMessageChange={onCommitMessageChange}
+        isSaving={isSaving}
+        onClose={() => setShowSaveModal(false)}
+        onConfirm={onSave}
+      />
     </div>
   );
 }

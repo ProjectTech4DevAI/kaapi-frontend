@@ -9,10 +9,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { colors } from "@/app/lib/colors";
-import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
+import { Button } from "@/app/components";
+import Loader from "@/app/components/Loader";
 import ConfigCard from "@/app/components/ConfigCard";
-import Loader, { LoaderBox } from "@/app/components/Loader";
+import ConfigLibrarySkeleton from "@/app/components/ConfigLibrarySkeleton";
+import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import { EvalJob } from "@/app/lib/types/evaluation";
 import {
   ConfigPublic,
@@ -68,7 +69,6 @@ export default function ConfigLibraryPage() {
     isLoading: isLoading || isLoadingMore,
   });
 
-  // Responsive column count (matches Tailwind lg/xl breakpoints)
   useEffect(() => {
     const update = () => {
       if (window.innerWidth >= 1280) setColumnCount(3);
@@ -80,7 +80,6 @@ export default function ConfigLibraryPage() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Distribute configs into fixed columns so items never shift between columns
   const columns = useMemo(() => {
     const cols: ConfigPublic[][] = Array.from(
       { length: columnCount },
@@ -99,13 +98,16 @@ export default function ConfigLibraryPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    if (!isAuthenticated || !apiKey) return;
+
+    let cancelled = false;
     const fetchEvaluationCounts = async () => {
-      if (!isAuthenticated) return;
       try {
         const data = await apiFetch<EvalJob[] | { data: EvalJob[] }>(
           "/api/evaluations",
           apiKey,
         );
+        if (cancelled) return;
         const jobs: EvalJob[] = Array.isArray(data) ? data : data.data || [];
         const counts: Record<string, number> = {};
         jobs.forEach((job) => {
@@ -115,11 +117,20 @@ export default function ConfigLibraryPage() {
         });
         setEvaluationCounts(counts);
       } catch (e) {
-        console.error("Failed to fetch evaluation counts:", e);
+        if (!cancelled) {
+          // Non-critical enrichment — log a warning instead of an error so it
+          // doesn't surface as a red console banner when the evals endpoint is
+          // briefly unavailable (e.g. backend warm-up, 5xx).
+          console.warn("Could not fetch evaluation counts:", e);
+        }
       }
     };
     fetchEvaluationCounts();
-  }, [activeKey]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey, isAuthenticated]);
 
   const loadVersionsForConfig = useCallback(
     async (configId: string) => {
@@ -187,88 +198,44 @@ export default function ConfigLibraryPage() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/configurations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
             title="Configuration Library"
-            subtitle="Manage your prompts and model configurations"
+            subtitle="Browse, version, and edit your prompts and model setups"
           />
 
-          {/* Toolbar */}
-          <div
-            className="px-6 py-4 flex items-center gap-4"
-            style={{
-              borderBottom: `1px solid ${colors.border}`,
-              backgroundColor: colors.bg.primary,
-            }}
-          >
+          <div className="px-6 py-4 flex items-center gap-2 border-b border-border bg-bg-primary">
             <div className="flex-1 relative">
-              <SearchIcon
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4"
-                style={{ color: colors.text.secondary }}
-              />
+              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search configs..."
-                className="w-full pl-10 pr-4 py-2 rounded-md text-sm focus:outline-none transition-colors"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  border: `1px solid ${colors.border}`,
-                  color: colors.text.primary,
-                }}
+                className="w-full pl-11 pr-4 py-2 rounded-full bg-bg-secondary text-text-primary text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:bg-bg-primary transition-colors"
               />
             </div>
 
             <button
               onClick={refetch}
               disabled={isLoading}
-              className="p-2 rounded-md transition-colors flex items-center gap-1"
-              style={{
-                backgroundColor: colors.bg.primary,
-                border: `1px solid ${colors.border}`,
-                color: colors.text.secondary,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = colors.bg.secondary;
-                e.currentTarget.style.color = colors.text.primary;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = colors.bg.primary;
-                e.currentTarget.style.color = colors.text.secondary;
-              }}
-              title="Force refresh from server"
+              className="p-2 rounded-full text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              title="Refresh from server"
+              aria-label="Refresh"
             >
               <RefreshIcon
                 className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
               />
             </button>
 
-            <button
-              onClick={handleCreateNew}
-              className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
-              style={{
-                backgroundColor: colors.accent.primary,
-                color: colors.bg.primary,
-                border: "none",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = colors.accent.hover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = colors.accent.primary)
-              }
-            >
+            <Button variant="primary" size="md" onClick={handleCreateNew}>
               <PlusIcon className="w-4 h-4" />
               New Config
-            </button>
+            </Button>
           </div>
 
           <div
@@ -276,68 +243,51 @@ export default function ConfigLibraryPage() {
             className="flex-1 overflow-y-auto overflow-x-hidden p-6"
           >
             {isLoading ? (
-              <LoaderBox message="Loading configurations..." size="md" />
+              <ConfigLibrarySkeleton columnCount={columnCount} />
             ) : error ? (
-              <div className="rounded-lg p-6 text-center bg-[#fef2f2] border border-[#fecaca]">
-                <WarningTriangleIcon className="w-12 h-12 mx-auto mb-3 text-[#dc2626]" />
-                <p className="text-sm font-medium text-status-error">{error}</p>
+              <div className="rounded-lg p-8 text-center bg-status-error-bg border border-status-error-border">
+                <WarningTriangleIcon className="w-12 h-12 mx-auto mb-3 text-status-error" />
+                <p className="text-sm font-medium text-status-error-text">
+                  {error}
+                </p>
               </div>
             ) : configs.length === 0 ? (
-              <div
-                className="rounded-lg p-8 text-center"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  border: `2px dashed ${colors.border}`,
-                }}
-              >
+              <div className="rounded-lg p-12 text-center bg-bg-primary border-2 border-dashed border-border">
                 {debouncedQuery ? (
                   <>
-                    <SearchIcon
-                      className="w-12 h-12 mx-auto mb-3"
-                      style={{ color: colors.text.secondary }}
-                    />
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: colors.text.primary }}
-                    >
-                      No configs match &quot;{debouncedQuery}&quot;
+                    <div className="mx-auto mb-4 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent-primary/10">
+                      <SearchIcon className="w-7 h-7 text-accent-primary" />
+                    </div>
+                    <p className="text-base font-semibold text-text-primary mb-1">
+                      No configs match &ldquo;{debouncedQuery}&rdquo;
                     </p>
                     <button
                       onClick={() => setSearchInput("")}
-                      className="mt-2 text-sm underline"
-                      style={{ color: colors.text.secondary }}
+                      className="mt-2 text-sm text-accent-primary hover:underline cursor-pointer"
                     >
                       Clear search
                     </button>
                   </>
                 ) : (
                   <>
-                    <GearIcon
-                      className="w-12 h-12 mx-auto mb-3"
-                      style={{ color: colors.text.secondary }}
-                    />
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: colors.text.primary }}
-                    >
+                    <div className="mx-auto mb-4 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent-primary/10">
+                      <GearIcon className="w-7 h-7 text-accent-primary" />
+                    </div>
+                    <p className="text-base font-semibold text-text-primary mb-1">
                       No configurations yet
                     </p>
-                    <p
-                      className="text-sm mt-1"
-                      style={{ color: colors.text.secondary }}
-                    >
-                      Create your first configuration to get started
+                    <p className="text-sm text-text-secondary mb-5">
+                      Create your first configuration to start building prompts
+                      and model setups.
                     </p>
-                    <button
+                    <Button
+                      variant="primary"
+                      size="md"
                       onClick={handleCreateNew}
-                      className="mt-4 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                      style={{
-                        backgroundColor: colors.accent.primary,
-                        color: colors.bg.primary,
-                      }}
                     >
-                      Create Config
-                    </button>
+                      <PlusIcon className="w-4 h-4" />
+                      Create Configuration
+                    </Button>
                   </>
                 )}
               </div>

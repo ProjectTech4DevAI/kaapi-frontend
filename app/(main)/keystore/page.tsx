@@ -1,52 +1,69 @@
 /**
- * KaapiKeystore.tsx - API Key Management Interface
- *
- * Allows users to securely store and manage API keys for various LLM providers
+ * Keystore: API Key Management Interface
+ * Allows users to securely store and manage API keys for various LLM providers.
  */
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Sidebar from "@/app/components/Sidebar";
-import PageHeader from "@/app/components/PageHeader";
+import { Button, Field, Modal, PageHeader } from "@/app/components";
+import Select from "@/app/components/Select";
+import {
+  EyeIcon,
+  EyeOffIcon,
+  CopyIcon,
+  TrashIcon,
+  KeyIcon,
+  InfoIcon,
+  PlusIcon,
+  CheckLineIcon,
+} from "@/app/components/icons";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
+import { useToast } from "@/app/components/Toast";
 import { APIKey } from "@/app/lib/types/credentials";
 
 export const STORAGE_KEY = "kaapi_api_keys";
 
+const PROVIDERS = [{ value: "Kaapi", label: "Kaapi" }];
+
 export default function KaapiKeystore() {
   const { sidebarCollapsed } = useApp();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { apiKeys, addKey, removeKey: removeApiKey } = useAuth();
+  const toast = useToast();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [newKeyValue, setNewKeyValue] = useState("");
   const [newKeyProvider, setNewKeyProvider] = useState("Kaapi");
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
-  const providers = ["Kaapi"];
+  const resetForm = () => {
+    setNewKeyLabel("");
+    setNewKeyValue("");
+    setNewKeyProvider("Kaapi");
+  };
 
   const handleAddKey = () => {
     if (!newKeyLabel.trim() || !newKeyValue.trim()) {
-      alert("Please provide both label and API key");
+      toast.error("Please provide both a label and an API key");
       return;
     }
 
     const newKey: APIKey = {
       id: Date.now().toString(),
-      label: newKeyLabel,
-      key: newKeyValue,
+      label: newKeyLabel.trim(),
+      key: newKeyValue.trim(),
       provider: newKeyProvider,
       createdAt: new Date().toISOString(),
     };
 
     addKey(newKey);
-    setNewKeyLabel("");
-    setNewKeyValue("");
-    setNewKeyProvider("Kaapi");
-
-    // Close modal after adding
+    resetForm();
     setIsModalOpen(false);
+    toast.success("API key added successfully");
   };
 
   const handleDeleteKey = (id: string) => {
@@ -56,44 +73,51 @@ export default function KaapiKeystore() {
       next.delete(id);
       return next;
     });
+    toast.success("API key removed");
   };
 
   const toggleKeyVisibility = (id: string) => {
     setVisibleKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert("API key copied to clipboard!");
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKeyId(id);
+      toast.success("API key copied to clipboard");
+      setTimeout(() => setCopiedKeyId(null), 1500);
+    } catch {
+      toast.error("Failed to copy API key");
+    }
+  };
+
+  const closeAddModal = () => {
+    setIsModalOpen(false);
+    resetForm();
   };
 
   return (
-    <div className="w-full h-screen flex flex-col bg-[#fafafa]">
+    <div className="w-full h-screen flex flex-col bg-bg-primary">
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/keystore" />
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
             title="Keystore"
             subtitle="Manage your API keys securely"
           />
 
-          {/* Content Area */}
-          <div className="flex-1 overflow-auto p-6 bg-[#fafafa]">
-            <div className="max-w-4xl mx-auto space-y-6">
-              <StoredKeysTab
+          <div className="flex-1 overflow-auto p-6 bg-bg-primary">
+            <div className="max-w-3xl mx-auto">
+              <KeysCard
                 apiKeys={apiKeys}
                 visibleKeys={visibleKeys}
+                copiedKeyId={copiedKeyId}
                 onToggleVisibility={toggleKeyVisibility}
                 onCopy={copyToClipboard}
                 onDelete={handleDeleteKey}
@@ -104,287 +128,169 @@ export default function KaapiKeystore() {
         </div>
       </div>
 
-      {/* Add Key Modal */}
-      {isModalOpen && (
-        <AddKeyModal
-          newKeyLabel={newKeyLabel}
-          newKeyValue={newKeyValue}
-          newKeyProvider={newKeyProvider}
-          providers={providers}
-          onLabelChange={setNewKeyLabel}
-          onValueChange={setNewKeyValue}
-          onProviderChange={setNewKeyProvider}
-          onAddKey={handleAddKey}
-          onClose={() => setIsModalOpen(false)}
-        />
+      <AddKeyModal
+        open={isModalOpen}
+        newKeyLabel={newKeyLabel}
+        newKeyValue={newKeyValue}
+        newKeyProvider={newKeyProvider}
+        onLabelChange={setNewKeyLabel}
+        onValueChange={setNewKeyValue}
+        onProviderChange={setNewKeyProvider}
+        onAddKey={handleAddKey}
+        onClose={closeAddModal}
+      />
+    </div>
+  );
+}
+
+interface KeysCardProps {
+  apiKeys: APIKey[];
+  visibleKeys: Set<string>;
+  copiedKeyId: string | null;
+  onToggleVisibility: (id: string) => void;
+  onCopy: (text: string, id: string) => void;
+  onDelete: (id: string) => void;
+  onAddNew: () => void;
+}
+
+function KeysCard({
+  apiKeys,
+  visibleKeys,
+  copiedKeyId,
+  onToggleVisibility,
+  onCopy,
+  onDelete,
+  onAddNew,
+}: KeysCardProps) {
+  return (
+    <div className="rounded-lg p-6 bg-bg-primary shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="mb-4">
+        <h2 className="text-base font-semibold text-text-primary">
+          Your API Key
+        </h2>
+      </div>
+
+      {apiKeys.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="mx-auto mb-4 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent-primary/10">
+            <KeyIcon className="w-7 h-7 text-accent-primary" />
+          </div>
+          <p className="text-base font-semibold text-text-primary mb-1">
+            No API key stored yet
+          </p>
+          <p className="text-sm text-text-secondary mb-5">
+            Add your API key to get started with evaluations.
+          </p>
+          <Button variant="primary" size="md" onClick={onAddNew}>
+            <PlusIcon className="w-4 h-4" />
+            Add API Key
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <InlineNotice>
+            Only one API key can be stored at a time. Delete this key to add a
+            different one.
+          </InlineNotice>
+
+          {apiKeys.map((apiKey) => (
+            <div key={apiKey.id} className="rounded-lg p-4 bg-bg-secondary">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-text-primary text-bg-primary">
+                      {apiKey.provider}
+                    </span>
+                    <h3 className="text-sm font-semibold text-text-primary truncate">
+                      {apiKey.label}
+                    </h3>
+                  </div>
+                  <code className="block text-xs px-3 py-1.5 rounded-md font-mono break-all bg-bg-primary border border-border text-text-primary">
+                    {visibleKeys.has(apiKey.id) ? apiKey.key : "•".repeat(32)}
+                  </code>
+                  <p className="text-xs mt-2 text-text-secondary">
+                    Added {new Date(apiKey.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <IconButton
+                    onClick={() => onToggleVisibility(apiKey.id)}
+                    title={visibleKeys.has(apiKey.id) ? "Hide" : "Show"}
+                  >
+                    {visibleKeys.has(apiKey.id) ? <EyeOffIcon /> : <EyeIcon />}
+                  </IconButton>
+                  <IconButton
+                    onClick={() => onCopy(apiKey.key, apiKey.id)}
+                    title={copiedKeyId === apiKey.id ? "Copied" : "Copy"}
+                  >
+                    {copiedKeyId === apiKey.id ? (
+                      <CheckLineIcon className="w-4 h-4 text-status-success" />
+                    ) : (
+                      <CopyIcon className="w-4 h-4" />
+                    )}
+                  </IconButton>
+                  <IconButton
+                    onClick={() => onDelete(apiKey.id)}
+                    tone="danger"
+                    title="Delete"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </IconButton>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-// ============ STORED KEYS TAB ============
-interface StoredKeysTabProps {
-  apiKeys: APIKey[];
-  visibleKeys: Set<string>;
-  onToggleVisibility: (id: string) => void;
-  onCopy: (text: string) => void;
-  onDelete: (id: string) => void;
-  onAddNew: () => void;
-}
-
-function StoredKeysTab({
-  apiKeys,
-  visibleKeys,
-  onToggleVisibility,
-  onCopy,
-  onDelete,
-  onAddNew,
-}: StoredKeysTabProps) {
+function InlineNotice({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      {/* Stored Keys List */}
-      <div className="border rounded-lg p-6 bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[hsl(330,3%,19%)]">
-            Your API Key
-          </h2>
-          {apiKeys.length === 0 && (
-            <button
-              onClick={onAddNew}
-              className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-[#171717] text-[hsl(0,0%,100%)]"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#404040")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#171717")
-              }
-            >
-              + Add New Key
-            </button>
-          )}
-        </div>
-
-        {apiKeys.length === 0 ? (
-          <div className="text-center py-12 text-[hsl(330,3%,49%)]">
-            <svg
-              className="mx-auto h-12 w-12 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-              />
-            </svg>
-            <p className="font-medium mb-2 text-[hsl(330,3%,19%)]">
-              No API key stored yet
-            </p>
-            <p className="text-sm mb-4">
-              Add your API key to get started with evaluations
-            </p>
-            <button
-              onClick={onAddNew}
-              className="px-6 py-2 rounded-md text-sm font-medium transition-colors bg-[#171717] text-[hsl(0,0%,100%)]"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = "#404040")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "#171717")
-              }
-            >
-              Add API Key
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Info Message */}
-            <div className="border rounded-lg p-3 bg-[hsl(202,100%,95%)] border-[hsl(202,100%,80%)]">
-              <div className="flex gap-2">
-                <svg
-                  className="w-4 h-4 flex-shrink-0 mt-0.5 text-[hsl(202,100%,35%)]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <p className="text-xs text-[hsl(202,100%,30%)]">
-                  Only one API key can be stored at a time. Delete this key to
-                  add a different one.
-                </p>
-              </div>
-            </div>
-
-            {apiKeys.map((apiKey) => (
-              <div
-                key={apiKey.id}
-                className="border rounded-lg p-4 bg-[hsl(0,0%,96.5%)] border-[hsl(0,0%,85%)]"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs px-2 py-1 rounded bg-[#171717] text-[hsl(0,0%,100%)]">
-                        {apiKey.provider}
-                      </span>
-                      <h3 className="font-semibold text-[hsl(330,3%,19%)]">
-                        {apiKey.label}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <code className="text-sm px-3 py-1 rounded font-mono bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]">
-                        {visibleKeys.has(apiKey.id)
-                          ? apiKey.key
-                          : "•".repeat(32)}
-                      </code>
-                    </div>
-                    <p className="text-xs mt-2 text-[hsl(330,3%,49%)]">
-                      Added {new Date(apiKey.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => onToggleVisibility(apiKey.id)}
-                      className="p-2 rounded-md transition-colors border border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "hsl(0, 0%, 95%)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "hsl(0, 0%, 100%)")
-                      }
-                      title={visibleKeys.has(apiKey.id) ? "Hide" : "Show"}
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        {visibleKeys.has(apiKey.id) ? (
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                          />
-                        ) : (
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        )}
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => onCopy(apiKey.key)}
-                      className="p-2 rounded-md transition-colors border border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "hsl(0, 0%, 95%)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.backgroundColor =
-                          "hsl(0, 0%, 100%)")
-                      }
-                      title="Copy"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => onDelete(apiKey.id)}
-                      className="p-2 rounded-md transition-colors border border-[hsl(8,86%,80%)] bg-[hsl(0,0%,100%)] text-[hsl(8,86%,40%)]"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "hsl(8, 86%, 95%)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "hsl(0, 0%, 100%)";
-                      }}
-                      title="Delete"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+    <div className="rounded-md p-3 bg-status-warning-bg border border-status-warning-border">
+      <div className="flex gap-2">
+        <InfoIcon className="w-4 h-4 shrink-0 mt-0.5 text-status-warning-text" />
+        <p className="text-xs text-status-warning-text">{children}</p>
       </div>
-
-      {/* Info Card */}
-      <div className="border rounded-lg p-6 bg-[hsl(202,100%,95%)] border-[hsl(202,100%,80%)]">
-        <div className="flex gap-3">
-          <svg
-            className="w-5 h-5 flex-shrink-0 mt-0.5 text-[hsl(202,100%,35%)]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-[hsl(202,100%,25%)]">
-              Security Note
-            </p>
-            <p className="text-sm mt-1 text-[hsl(202,100%,30%)]">
-              API keys are stored in your browser&apos;s local storage. For
-              production use, consider implementing secure server-side storage.
-            </p>
-          </div>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
 
-// ============ ADD KEY MODAL ============
+function IconButton({
+  onClick,
+  title,
+  tone = "default",
+  children,
+}: {
+  onClick: () => void;
+  title: string;
+  tone?: "default" | "danger";
+  children: React.ReactNode;
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-status-error-border bg-bg-primary text-status-error-text hover:bg-status-error-bg"
+      : "border-border bg-bg-primary text-text-secondary hover:bg-neutral-50 hover:text-text-primary";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className={`p-1.5 rounded-md border transition-colors cursor-pointer ${toneClass}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 interface AddKeyModalProps {
+  open: boolean;
   newKeyLabel: string;
   newKeyValue: string;
   newKeyProvider: string;
-  providers: string[];
   onLabelChange: (value: string) => void;
   onValueChange: (value: string) => void;
   onProviderChange: (value: string) => void;
@@ -393,177 +299,77 @@ interface AddKeyModalProps {
 }
 
 function AddKeyModal({
+  open,
   newKeyLabel,
   newKeyValue,
   newKeyProvider,
-  providers,
   onLabelChange,
   onValueChange,
   onProviderChange,
   onAddKey,
   onClose,
 }: AddKeyModalProps) {
-  // Handle backdrop click
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
+  const isDisabled = !newKeyLabel.trim() || !newKeyValue.trim();
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modalBackdrop bg-black/50"
-      onClick={handleBackdropClick}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Add New API Key"
+      maxWidth="max-w-lg"
     >
-      <div
-        className="border rounded-lg shadow-lg max-w-lg w-full max-h-[90vh] overflow-y-auto animate-modalContent bg-[hsl(0,0%,100%)] border-[hsl(0,0%,85%)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div className="border-b px-6 py-4 flex items-center justify-between border-[hsl(0,0%,85%)]">
-          <h2 className="text-lg font-semibold text-[hsl(330,3%,19%)]">
-            Add New API Key
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md transition-colors text-[hsl(330,3%,49%)]"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 95%)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "transparent")
-            }
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+      <div className="px-6 pb-2">
+        <p className="text-sm mb-5 text-text-secondary">
+          Add a new API key to use in your evaluation workflows. Keys are stored
+          locally in your browser.
+        </p>
 
-        {/* Modal Body */}
-        <div className="p-6">
-          <p className="text-sm mb-6 text-[hsl(330,3%,49%)]">
-            Add a new API key to use in your evaluation workflows. All keys are
-            stored securely in your browser.
-          </p>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-[hsl(330,3%,19%)]">
-                Provider
-              </label>
-              <select
-                value={newKeyProvider}
-                onChange={(e) => onProviderChange(e.target.value)}
-                className="w-full px-4 py-2 rounded-md border focus:outline-none focus:ring-2 border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-              >
-                {providers.map((provider) => (
-                  <option key={provider} value={provider}>
-                    {provider}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2 text-[hsl(330,3%,19%)]">
-                Label
-              </label>
-              <input
-                type="text"
-                value={newKeyLabel}
-                onChange={(e) => onLabelChange(e.target.value)}
-                placeholder="e.g., Production Key"
-                className="w-full px-4 py-2 rounded-md border focus:outline-none focus:ring-2 border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2 text-[hsl(330,3%,19%)]">
-                API Key
-              </label>
-              <input
-                type="password"
-                value={newKeyValue}
-                onChange={(e) => onValueChange(e.target.value)}
-                placeholder="Paste your API key here"
-                className="w-full px-4 py-2 rounded-md border focus:outline-none focus:ring-2 font-mono text-sm border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-              />
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Provider
+            </label>
+            <Select
+              value={newKeyProvider}
+              onChange={(e) => onProviderChange(e.target.value)}
+              options={PROVIDERS}
+            />
           </div>
 
-          {/* Info Card */}
-          <div className="mt-6 border rounded-lg p-3 bg-[hsl(202,100%,95%)] border-[hsl(202,100%,80%)]">
-            <div className="flex gap-2">
-              <svg
-                className="w-4 h-4 flex-shrink-0 mt-0.5 text-[hsl(202,100%,35%)]"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-xs text-[hsl(202,100%,30%)]">
-                API keys are stored in your browser&apos;s local storage.
-              </p>
-            </div>
-          </div>
+          <Field
+            label="Label"
+            value={newKeyLabel}
+            onChange={onLabelChange}
+            placeholder="e.g., Production Key"
+          />
+
+          <Field
+            label="API Key"
+            type="password"
+            value={newKeyValue}
+            onChange={onValueChange}
+            placeholder="Paste your API key here"
+          />
         </div>
 
-        {/* Modal Footer */}
-        <div className="border-t px-6 py-4 flex items-center justify-end gap-3 border-[hsl(0,0%,85%)]">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-md text-sm font-medium transition-colors border border-[hsl(0,0%,85%)] bg-[hsl(0,0%,100%)] text-[hsl(330,3%,19%)]"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 95%)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "hsl(0, 0%, 100%)")
-            }
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onAddKey}
-            className="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-[#171717] text-[hsl(0,0%,100%)]"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#404040")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#171717")
-            }
-          >
-            Add API Key
-          </button>
+        <div className="mt-5 rounded-md p-3 bg-accent-primary/5 border border-accent-primary/20">
+          <div className="flex gap-2">
+            <InfoIcon className="w-4 h-4 shrink-0 mt-0.5 text-accent-primary" />
+            <p className="text-xs text-text-secondary">
+              API keys are stored in your browser&apos;s local storage.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div className="border-t border-border px-6 py-4 flex items-center justify-end gap-3 shrink-0">
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={onAddKey} disabled={isDisabled}>
+          Add API Key
+        </Button>
+      </div>
+    </Modal>
   );
 }

@@ -9,7 +9,6 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
 import { Dataset } from "@/app/lib/types/dataset";
 import Sidebar from "@/app/components/Sidebar";
@@ -248,10 +247,7 @@ function SimplifiedEvalContent() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 

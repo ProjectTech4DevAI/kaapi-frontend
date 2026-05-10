@@ -1,18 +1,27 @@
 /**
  * WaveformVisualizer Component
  *
- * Real-time audio waveform visualization using Web Audio API
- * Shows animated frequency bars when playing, static bars when paused
+ * Real-time audio waveform visualization using Web Audio API.
+ * Shows animated frequency bars when playing, static bars when paused.
  */
 
 import { useRef, useEffect, useCallback } from "react";
-import { colors } from "@/app/lib/colors";
 
 interface WaveformVisualizerProps {
   audioElement: HTMLAudioElement | null;
   isPlaying: boolean;
   width?: number;
   height?: number;
+}
+
+// Canvas requires literal color strings, so we resolve theme tokens from CSS
+// variables at draw time. This keeps the waveform in sync with theme changes.
+function readThemeColor(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return value || fallback;
 }
 
 export default function WaveformVisualizer({
@@ -28,7 +37,6 @@ export default function WaveformVisualizer({
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const isInitialized = useRef(false);
 
-  // Initialize audio context and analyser
   const initAudioContext = useCallback(() => {
     if (!audioElement || isInitialized.current) return;
 
@@ -38,7 +46,7 @@ export default function WaveformVisualizer({
         window.AudioContext || (window as any).webkitAudioContext;
       const audioContext = new AudioContextClass();
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 64; // Higher = more frequency bins, smoother visualization
+      analyser.fftSize = 64;
 
       const source = audioContext.createMediaElementSource(audioElement);
       source.connect(analyser);
@@ -53,7 +61,6 @@ export default function WaveformVisualizer({
     }
   }, [audioElement]);
 
-  // Draw waveform visualization
   const drawWaveform = useCallback(() => {
     if (!canvasRef.current) return;
 
@@ -61,20 +68,22 @@ export default function WaveformVisualizer({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const borderColor = readThemeColor("--color-border", "#e5e5e5");
+    const accentPrimary = readThemeColor("--color-accent-primary", "#1f4496");
+    const accentHover = readThemeColor("--color-accent-hover", "#173574");
+
     if (!isPlaying || !analyserRef.current) {
-      // Draw static bars when not playing - nice wave pattern
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const barCount = 40;
       const barWidth = canvas.width / barCount;
       const gap = 2;
 
       for (let i = 0; i < barCount; i++) {
-        // Create a nice wave pattern using sine wave
         const wavePhase = (i / barCount) * Math.PI * 2;
-        const waveHeight = Math.sin(wavePhase) * 0.5 + 0.5; // Normalize to 0-1
+        const waveHeight = Math.sin(wavePhase) * 0.5 + 0.5;
         const barHeight = 3 + waveHeight * (canvas.height * 0.6);
 
-        ctx.fillStyle = colors.border;
+        ctx.fillStyle = borderColor;
         ctx.fillRect(
           i * barWidth + gap / 2,
           (canvas.height - barHeight) / 2,
@@ -111,10 +120,9 @@ export default function WaveformVisualizer({
         const x = i * barWidth + gap / 2;
         const y = (canvas.height - barHeight) / 2;
 
-        // Gradient from accent to hover
         const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
-        gradient.addColorStop(0, colors.accent.primary);
-        gradient.addColorStop(1, colors.accent.hover);
+        gradient.addColorStop(0, accentPrimary);
+        gradient.addColorStop(1, accentHover);
         ctx.fillStyle = gradient;
         ctx.fillRect(x, y, barWidth - gap, barHeight);
       }
@@ -123,21 +131,18 @@ export default function WaveformVisualizer({
     draw();
   }, [isPlaying]);
 
-  // Initialize on first play
   useEffect(() => {
     if (isPlaying && !isInitialized.current) {
       initAudioContext();
     }
   }, [isPlaying, initAudioContext]);
 
-  // Resume audio context if suspended
   useEffect(() => {
     if (isPlaying && audioContextRef.current?.state === "suspended") {
       audioContextRef.current.resume();
     }
   }, [isPlaying]);
 
-  // Draw waveform when play state changes
   useEffect(() => {
     drawWaveform();
 
@@ -154,6 +159,7 @@ export default function WaveformVisualizer({
       ref={canvasRef}
       width={width}
       height={height}
+      // Canvas needs an intrinsic height; CSS scales the bitmap to container width.
       style={{ width: "100%", height: `${height}px` }}
     />
   );

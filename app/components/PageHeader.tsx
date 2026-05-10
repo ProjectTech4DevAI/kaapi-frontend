@@ -30,31 +30,33 @@ export default function PageHeader({
 
   return (
     <>
-      <div className="border-b px-4 py-3 flex items-center justify-between shrink-0 bg-bg-primary border-border">
-        <div className="flex items-center gap-3">
+      <div className="border-b h-16 px-4 flex items-center justify-between gap-3 shrink-0 bg-bg-primary border-border">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           {sidebarCollapsed && (
             <button
               onClick={() => setSidebarCollapsed(false)}
-              className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 transition-colors cursor-pointer shrink-0"
               aria-label="Open sidebar"
             >
               <MenuIcon className="w-5 h-5" />
             </button>
           )}
           {children ?? (
-            <div>
+            <div className="min-w-0">
               {title && (
-                <h1 className="text-base font-semibold text-text-primary tracking-[-0.01em]">
+                <h1 className="text-base font-semibold text-text-primary tracking-[-0.01em] truncate">
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p className="text-xs text-text-secondary">{subtitle}</p>
+                <p className="text-xs text-text-secondary truncate">
+                  {subtitle}
+                </p>
               )}
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {actions}
           {!isAuthenticated && (
             <Button size="sm" onClick={() => setShowLoginModal(true)}>

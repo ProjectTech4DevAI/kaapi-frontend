@@ -1,5 +1,4 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
-import { colors } from "@/app/lib/colors";
 import Loader from "@/app/components/Loader";
 import { Button, VersionPill } from "@/app/components";
 import { ArrowLeftIcon } from "@/app/components/icons";
@@ -31,22 +30,15 @@ function VersionRow({
 }: VersionRowProps) {
   return (
     <div
-      className="p-3 border-l-2"
-      style={{
-        backgroundColor: isSelected
-          ? "#f0fdf4"
+      className={`p-3 ml-3 border-l-2 transition-colors ${
+        isFirst ? "" : "border-t border-border"
+      } ${
+        isSelected
+          ? "bg-status-success-bg border-l-status-success"
           : isFirst
-            ? "#fafafa"
-            : colors.bg.primary,
-        borderLeftColor: isSelected
-          ? colors.status.success
-          : isFirst
-            ? colors.accent.primary
-            : colors.border,
-        marginLeft: "12px",
-        borderTop: isFirst ? "none" : `1px solid ${colors.border}`,
-        transition: "all 0.15s ease",
-      }}
+            ? "bg-bg-secondary border-l-accent-primary"
+            : "bg-bg-primary border-l-border"
+      }`}
     >
       <div className="flex items-center gap-2 mb-2">
         <VersionPill
@@ -61,12 +53,12 @@ function VersionRow({
       </div>
 
       {item.commit_message && (
-        <div className="text-xs mb-1" style={{ color: colors.text.primary }}>
+        <div className="text-xs mb-1 text-text-primary">
           {item.commit_message}
         </div>
       )}
 
-      <div className="text-xs mb-2" style={{ color: colors.text.secondary }}>
+      <div className="text-xs mb-2 text-text-secondary">
         {timeAgo(item.inserted_at)}
         {fullConfig ? ` • ${fullConfig.provider}/${fullConfig.modelName}` : ""}
       </div>
@@ -153,10 +145,10 @@ function SingleConfigHistory({
   );
 
   return (
-    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow">
+    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow">
       <div
         onClick={onToggle}
-        className="p-3 cursor-pointer bg-bg-secondary hover:bg-neutral-100 transition-colors"
+        className="p-3 cursor-pointer bg-bg-primary hover:bg-neutral-50 transition-colors"
       >
         <div className="flex items-start gap-2">
           <span className="text-sm text-text-secondary">
@@ -262,10 +254,10 @@ function AllConfigsGroup({
     : timeAgo(meta.updated_at);
 
   return (
-    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow">
+    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow">
       <div
         onClick={onToggle}
-        className="p-3 cursor-pointer bg-bg-secondary hover:bg-neutral-100 transition-colors"
+        className="p-3 cursor-pointer bg-bg-primary hover:bg-neutral-50 transition-colors"
       >
         <div className="flex items-start gap-2">
           <span className="text-sm text-text-secondary">
@@ -277,11 +269,6 @@ function AllConfigsGroup({
             </div>
             <div className="text-xs mt-0.5 text-text-secondary">{subtitle}</div>
           </div>
-          {isLoadingGroup && (
-            <div className="shrink-0 mt-0.5">
-              <div className="w-3.5 h-3.5 rounded-full animate-spin border-2 border-border border-t-accent-primary border-b-accent-primary [animation-duration:0.9s]" />
-            </div>
-          )}
         </div>
       </div>
 
@@ -315,8 +302,6 @@ function AllConfigsGroup({
     </div>
   );
 }
-
-// ─── Main component ──────────────────────────────────────────────────────────
 
 interface HistorySidebarProps {
   savedConfigs: SavedConfig[];
@@ -428,17 +413,11 @@ export default function HistorySidebar({
               <Loader size="md" message="Loading configs..." />
             </div>
           ) : isEmpty ? (
-            <div
-              className="border-2 border-dashed rounded-lg p-6 text-center"
-              style={{ borderColor: colors.border }}
-            >
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <p className="text-sm text-text-secondary">
                 No saved configurations yet
               </p>
-              <p
-                className="text-xs mt-2"
-                style={{ color: colors.text.secondary }}
-              >
+              <p className="text-xs mt-2 text-text-secondary">
                 Create and save your first config to see version history
               </p>
             </div>

@@ -63,7 +63,7 @@ export default function CollectionsList({
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-primary/10 text-accent-primary">
+                    <span className="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full text-accent-primary">
                       <BookOpenIcon className="w-3.5 h-3.5" />
                     </span>
                     <div className="flex-1 min-w-0">

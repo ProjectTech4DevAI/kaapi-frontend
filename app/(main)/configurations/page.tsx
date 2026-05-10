@@ -117,9 +117,6 @@ export default function ConfigLibraryPage() {
         setEvaluationCounts(counts);
       } catch (e) {
         if (!cancelled) {
-          // Non-critical enrichment — log a warning instead of an error so it
-          // doesn't surface as a red console banner when the evals endpoint is
-          // briefly unavailable (e.g. backend warm-up, 5xx).
           console.warn("Could not fetch evaluation counts:", e);
         }
       }

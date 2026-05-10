@@ -405,10 +405,7 @@ function PromptEditorContent() {
                 style={{ backgroundColor: colors.bg.secondary }}
               >
                 <div className="flex flex-col items-center gap-3">
-                  <div className="animate-spin rounded-full border-4 border-solid w-9 h-9 border-bg-primary border-t-accent-primary" />
-                  <p className="text-sm text-text-secondary">
-                    Loading configuration...
-                  </p>
+                  <Loader size="sm" message="Loading configuration..." />
                 </div>
               </div>
             ) : (

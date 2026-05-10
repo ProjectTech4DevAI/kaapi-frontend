@@ -72,17 +72,17 @@ export function DocumentListing({
             </Button>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2.5">
             {documents.map((doc) => {
               const isSelected = selectedDocument?.id === doc.id;
               return (
                 <button
                   key={doc.id}
                   onClick={() => onSelect(doc)}
-                  className={`w-full text-left rounded-lg p-3 transition-all duration-150 border cursor-pointer ${
+                  className={`w-full text-left rounded-lg p-3 transition-shadow cursor-pointer ${
                     isSelected
-                      ? "bg-accent-primary/5 border-accent-primary"
-                      : "bg-bg-primary border-border hover:bg-neutral-50"
+                      ? "bg-accent-primary/5 shadow-[0_2px_6px_rgba(31,68,150,0.12),0_1px_2px_rgba(0,0,0,0.04)]"
+                      : "bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">

@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import CopyableCodeBlock from "@/app/components/CopyableCodeBlock";
 import CodeBlock from "@/app/components/CodeBlock";
 import Tag from "@/app/components/Tag";
-import Modal from "@/app/components/Modal";
+import { Modal } from "@/app/components";
 import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
@@ -18,6 +18,7 @@ import {
   ConfigVersionPublic,
   CompletionParams,
 } from "@/app/lib/types/configs";
+import Loader from "@/app/components/Loader";
 
 interface ConfigModalProps {
   isOpen: boolean;
@@ -160,10 +161,7 @@ export default function ConfigModal({
       <div className="px-6 py-5 space-y-5">
         {isLoadingConfig ? (
           <div className="py-8 text-center">
-            <div className="w-5 h-5 border-2 border-text-secondary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-xs text-text-secondary">
-              Loading configuration...
-            </p>
+            <Loader size="sm" message="Loading configuration..." />
           </div>
         ) : (
           <>

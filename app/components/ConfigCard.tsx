@@ -16,8 +16,7 @@ import {
   EditIcon,
   PlayIcon,
 } from "@/app/components/icons";
-import { Button, VersionPill } from "@/app/components";
-import Loader from "@/app/components/Loader";
+import { Button, VersionPill, Loader } from "@/app/components";
 import { useToast } from "@/app/hooks/useToast";
 
 interface ConfigCardProps {

@@ -9,8 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { Button } from "@/app/components";
-import Loader from "@/app/components/Loader";
+import { Button, Loader } from "@/app/components";
 import ConfigCard from "@/app/components/ConfigCard";
 import ConfigLibrarySkeleton from "@/app/components/ConfigLibrarySkeleton";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
@@ -208,7 +207,7 @@ export default function ConfigLibraryPage() {
             subtitle="Browse, version, and edit your prompts and model setups"
           />
 
-          <div className="px-6 py-4 flex items-center gap-2 border-b border-border bg-bg-primary">
+          <div className="px-6 py-4 flex items-center gap-2 bg-bg-primary">
             <div className="flex-1 relative">
               <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
               <input
@@ -216,7 +215,7 @@ export default function ConfigLibraryPage() {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search configs..."
-                className="w-full pl-11 pr-4 py-2 rounded-full bg-bg-secondary text-text-primary text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:bg-bg-primary transition-colors"
+                className="w-full pl-11 pr-4 py-3 rounded-full bg-bg-secondary text-text-primary text-sm placeholder:text-neutral focus:outline-none focus:ring-1 focus:ring-accent-primary focus:bg-bg-primary transition-colors"
               />
             </div>
 

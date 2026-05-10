@@ -12,3 +12,4 @@ export { default as VersionPill } from "./configurations/VersionPill";
 export { default as DatasetListSkeleton } from "./DatasetListSkeleton";
 export { default as RunsListSkeleton } from "./RunsListSkeleton";
 export { default as ResultsTableSkeleton } from "./ResultsTableSkeleton";
+export { default as Loader } from "./Loader";

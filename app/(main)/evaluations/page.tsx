@@ -19,7 +19,7 @@ import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { FeatureGateModal, LoginModal } from "@/app/components/auth";
-import Loader from "@/app/components/Loader";
+import { Loader } from "@/app/components";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
 import { Tab } from "@/app/lib/types/evaluation";

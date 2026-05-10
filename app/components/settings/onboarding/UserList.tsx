@@ -25,7 +25,7 @@ function UserListSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+          className="flex items-center justify-between p-4 rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
         >
           <div className="flex-1">
             <div className="h-4 w-40 bg-neutral-200 rounded mb-2" />
@@ -148,25 +148,25 @@ export default function UserList({
           {users.map((user) => (
             <div
               key={user.user_id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+              className="flex items-center justify-between gap-3 p-4 rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow"
             >
-              <div>
-                <p className="text-sm font-medium text-text-primary">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-text-primary truncate">
                   {user.full_name}
                 </p>
-                <p className="text-xs text-text-secondary mt-0.5">
+                <p className="text-xs text-text-secondary mt-0.5 truncate">
                   {user.email}
                 </p>
                 <p className="text-xs text-text-secondary mt-0.5">
                   Added {formatRelativeTime(user.inserted_at)}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${
+                  className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${
                     user.is_active
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-neutral-100 text-text-secondary border border-border"
+                      ? "bg-status-success-bg text-status-success-text border-status-success-border"
+                      : "bg-bg-secondary text-text-secondary border-border"
                   }`}
                 >
                   <CheckCircleIcon className="w-3.5 h-3.5" />
@@ -176,7 +176,7 @@ export default function UserList({
                   <button
                     onClick={() => handleRemoveUser(user.user_id)}
                     disabled={removingId === user.user_id}
-                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 font-medium rounded-lg border border-red bg-white text-red-600 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 font-medium rounded-lg border border-status-error-border bg-bg-primary text-status-error-text hover:bg-status-error-bg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <TrashIcon className="w-3.5 h-3.5" />
                     {removingId === user.user_id ? "Removing..." : "Remove"}

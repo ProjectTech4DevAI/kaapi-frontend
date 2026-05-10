@@ -30,9 +30,8 @@ import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
-import { Button, Modal, ResultsTableSkeleton } from "@/app/components";
+import { Button, Modal, ResultsTableSkeleton, Loader } from "@/app/components";
 import { useToast } from "@/app/components/Toast";
-import Loader from "@/app/components/Loader";
 import {
   MenuIcon,
   ChevronLeftIcon,

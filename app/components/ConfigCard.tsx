@@ -127,11 +127,14 @@ export default function ConfigCard({
   };
 
   const handleUseInEvaluation = () => {
-    router.push(
-      latestVersion
-        ? `/evaluations?config=${config.id}&version=${latestVersion.version}`
-        : `/evaluations?config=${config.id}`,
-    );
+    const params = new URLSearchParams({
+      tab: "evaluations",
+      config: config.id,
+    });
+    if (latestVersion) {
+      params.set("version", String(latestVersion.version));
+    }
+    router.push(`/evaluations?${params.toString()}`);
   };
 
   return (

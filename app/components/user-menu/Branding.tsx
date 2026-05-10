@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const Branding = () => {
   return (
-    <div className="h-16 px-3 flex items-top border-b border-border">
+    <div className="h-16 px-3 flex items-top">
       <Image
         src="/kaapi-logo.png"
         alt="Kaapi Konsole logo"

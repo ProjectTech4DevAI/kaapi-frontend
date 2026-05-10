@@ -44,7 +44,7 @@ const eslintConfig = defineConfig([
 
       // SRP (Single Responsibility Principle) Rules
       "max-params": ["warn", 4],
-      "complexity": ["warn", 10],
+      complexity: ["warn", 10],
       "max-depth": ["warn", 4],
       "max-statements": ["warn", 20],
 

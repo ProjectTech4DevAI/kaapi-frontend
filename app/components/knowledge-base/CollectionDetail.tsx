@@ -111,12 +111,13 @@ export default function CollectionDetail({
             Documents Present ({documents.length})
           </h3>
           {documents.length > 0 && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onPreviewDocument(documents[0])}
-              className="text-xs px-3 py-1.5 rounded-md border border-border bg-bg-secondary text-text-primary hover:bg-neutral-100 transition-colors cursor-pointer"
             >
               Preview
-            </button>
+            </Button>
           )}
         </div>
 

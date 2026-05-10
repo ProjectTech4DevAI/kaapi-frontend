@@ -36,14 +36,14 @@ export default function DocumentPickerModal({
     <Modal open={open} onClose={onClose} title="Select Documents">
       <div className="p-6">
         {availableDocuments.length > 0 && (
-          <div className="relative mb-3">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-secondary pointer-events-none" />
+          <div className="relative mb-3 pr-1">
+            <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search documents by name..."
-              className="w-full pl-9 pr-3 py-2 rounded-md border border-border bg-white text-text-primary text-xs placeholder:text-neutral-400 focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors"
+              className="w-full pl-11 pr-4 py-2.5 rounded-full bg-bg-secondary text-text-primary text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-accent-primary/20 focus:bg-bg-primary transition-colors"
             />
           </div>
         )}

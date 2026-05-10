@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
+import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import {
   CollectionResponse,
@@ -30,6 +31,7 @@ interface CreateCollectionParams {
 
 export function useCollections() {
   const { activeKey: apiKey, isAuthenticated } = useAuth();
+  const toast = useToast();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [availableDocuments, setAvailableDocuments] = useState<Document[]>([]);
   const [selectedCollection, setSelectedCollection] =
@@ -41,6 +43,7 @@ export function useCollections() {
   const activeJobsRef = useRef<Map<string, string>>(new Map());
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchCollectionsRef = useRef<(() => Promise<void>) | null>(null);
+  const fetchDocumentsRef = useRef<(() => Promise<void>) | null>(null);
 
   const fetchCollectionDetails = useCallback(
     async (collectionId: string) => {
@@ -233,11 +236,11 @@ export function useCollections() {
   const createCollection = useCallback(
     async ({ name, description, documentIds }: CreateCollectionParams) => {
       if (!isAuthenticated) {
-        alert("Please log in to continue");
+        toast.error("Please log in to continue");
         return;
       }
       if (!name.trim() || documentIds.length === 0) {
-        alert("Please provide a name and select at least one document");
+        toast.error("Please provide a name and select at least one document");
         return;
       }
 
@@ -297,7 +300,7 @@ export function useCollections() {
         await fetchCollections();
       } catch (error) {
         console.error("Error creating knowledge base:", error);
-        alert(
+        toast.error(
           `Failed to create knowledge base: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         setCollections((prev) => prev.filter((c) => c.id !== optimisticId));
@@ -312,6 +315,7 @@ export function useCollections() {
       fetchCollections,
       isAuthenticated,
       startPolling,
+      toast,
     ],
   );
 
@@ -363,7 +367,7 @@ export function useCollections() {
 
           const jobData = await fetchJobStatus(jobId, currentApiKey?.key ?? "");
           if (!jobData) {
-            alert("Failed to check delete status");
+            toast.error("Failed to check delete status");
             restoreOnFailure();
             return;
           }
@@ -373,8 +377,9 @@ export function useCollections() {
             deleteCollectionFromCache(collectionId);
             setCollections((prev) => prev.filter((c) => c.id !== collectionId));
             setSelectedCollection(null);
+            toast.success("Knowledge base deleted");
           } else if (statusLower === "failed") {
-            alert("Failed to delete collection");
+            toast.error("Failed to delete collection");
             restoreOnFailure();
           } else {
             setTimeout(pollDeleteStatus, 2000);
@@ -384,11 +389,11 @@ export function useCollections() {
         pollDeleteStatus();
       } catch (error) {
         console.error("Error deleting collection:", error);
-        alert("Failed to delete collection");
+        toast.error("Failed to delete collection");
         restoreOnFailure();
       }
     },
-    [apiKey, collections, isAuthenticated],
+    [apiKey, collections, isAuthenticated, toast],
   );
 
   const fetchAndPreviewDoc = useCallback(
@@ -409,19 +414,22 @@ export function useCollections() {
   );
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCollections();
-      fetchDocuments();
-    }
-  }, [apiKey]);
+    fetchCollectionsRef.current = fetchCollections;
+  }, [fetchCollections]);
 
   useEffect(() => {
-    apiKeyRef.current = apiKey;
+    fetchDocumentsRef.current = fetchDocuments;
+  }, [fetchDocuments]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !apiKey) return;
+    fetchCollectionsRef.current?.();
+    fetchDocumentsRef.current?.();
   }, [apiKey, isAuthenticated]);
 
   useEffect(() => {
-    fetchCollectionsRef.current = fetchCollections;
-  }, [fetchCollections]);
+    apiKeyRef.current = apiKey;
+  }, [apiKey]);
 
   useEffect(() => {
     const currentIds = new Set(collections.map((c) => c.id));

@@ -6,11 +6,11 @@ export default function CollectionsListSkeleton({
   count = 5,
 }: CollectionsListSkeletonProps) {
   return (
-    <div className="space-y-1.5 animate-pulse">
+    <div className="space-y-2.5 animate-pulse">
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="rounded-lg p-3 border border-border bg-bg-primary"
+          className="rounded-lg p-3 bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
         >
           <div className="flex items-center justify-between gap-2">
             <div className="w-6 h-6 rounded bg-neutral-200 shrink-0" />

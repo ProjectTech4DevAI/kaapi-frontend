@@ -22,7 +22,7 @@ export const GPT4_STYLE_CONFIG = {
   },
 } as const satisfies Record<string, ConfigParamDefinition>;
 
-// ── Gemini param configs ─────────────────────────────────────────
+// Gemini param configs
 
 const GEMINI_TEMPERATURE_CONFIG = {
   temperature: {
@@ -53,8 +53,6 @@ const GEMINI_THINKING_NO_MINIMAL_CONFIG = {
     description: "Controls how much the model thinks before responding.",
   },
 } as const satisfies Record<string, ConfigParamDefinition>;
-
-// ── All model configs ────────────────────────────────────────────
 
 export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   // OpenAI

@@ -1,10 +1,5 @@
 /**
  * LocalStorage cache for knowledge-base collections.
- *
- * Maps `job_id` → `{ name, description, collection_id? }`. We cache user-facing
- * fields locally so that an in-flight create job can render with its name
- * before the backend echoes it back, and so we can resolve `job_id ⇄ collection_id`
- * in either direction during polling.
  */
 
 const CACHE_KEY = "collection_job_cache";

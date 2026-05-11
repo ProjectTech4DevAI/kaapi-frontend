@@ -26,16 +26,7 @@ interface ConfigEditorPaneProps {
   onConfigNameChange: (name: string) => void;
   savedConfigs: SavedConfig[];
   selectedConfigId: string;
-  /**
-   * The parent config_id this version belongs to. When set, the name is
-   * locked and can only be changed via an explicit Rename action that PATCHes
-   * the config metadata (no version is created).
-   */
   boundConfigId?: string;
-  /**
-   * Renames the config metadata only — does not create a new version.
-   * Returns true on success, false on failure (parent shows toast).
-   */
   onRenameConfig?: (configId: string, newName: string) => Promise<boolean>;
   onLoadConfig: (config: SavedConfig | null) => void;
   commitMessage: string;
@@ -96,7 +87,6 @@ export default function ConfigEditorPane({
   }, [apiKey]);
 
   // Close the save modal when a save just completed successfully.
-  // Parent clears commitMessage on success and keeps it on failure.
   useEffect(() => {
     if (wasSavingRef.current && !isSaving && commitMessage === "") {
       setShowSaveModal(false);

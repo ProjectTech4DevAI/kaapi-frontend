@@ -7,19 +7,14 @@ import {
   ConfigVersionItems,
   CompletionConfig,
 } from "@/app/lib/types/configs";
-import { formatRelativeTime } from "@/app/lib/utils";
 import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
-import {
-  ChevronDownIcon,
-  CheckIcon,
-  PlusIcon,
-  SpinnerIcon,
-  InfoIcon,
-} from "@/app/components/icons";
 import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
 import GuardrailsSection from "./GuardrailsSection";
 import SaveConfigModal from "./SaveConfigModal";
-import { Button, Field, VersionPill } from "@/app/components";
+import LoadConfigDropdown from "./LoadConfigDropdown";
+import ConfigNameSection from "./ConfigNameSection";
+import ToolsSection from "./ToolsSection";
+import { Button } from "@/app/components";
 
 const inputClass =
   "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
@@ -71,6 +66,8 @@ export default function ConfigEditorPane({
   const [guardrailsQueryString, setGuardrailsQueryString] = useState<
     string | null
   >(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const wasSavingRef = useRef(false);
 
   useEffect(() => {
     guardrailsFetch<{ data?: { organization_id: number; project_id: number } }>(
@@ -89,17 +86,6 @@ export default function ConfigEditorPane({
       .catch(() => {});
   }, [apiKey]);
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
-  const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
-    new Set(),
-  );
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [renameDraft, setRenameDraft] = useState("");
-  const [isApplyingRename, setIsApplyingRename] = useState(false);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const wasSavingRef = useRef(false);
-
   // Close the save modal when a save just completed successfully.
   useEffect(() => {
     if (wasSavingRef.current && !isSaving && commitMessage === "") {
@@ -108,88 +94,13 @@ export default function ConfigEditorPane({
     wasSavingRef.current = isSaving;
   }, [isSaving, commitMessage]);
 
-  const isBoundToSavedConfig = !!boundConfigId;
-
-  const handleStartRename = () => {
-    setRenameDraft(configName);
-    setIsRenaming(true);
-  };
-
-  const handleCancelRename = () => {
-    setIsRenaming(false);
-    setRenameDraft("");
-  };
-
-  const handleApplyRename = async () => {
-    if (!boundConfigId || !onRenameConfig) return;
-    const trimmed = renameDraft.trim();
-    if (!trimmed || trimmed === configName) {
-      handleCancelRename();
-      return;
-    }
-    setIsApplyingRename(true);
-    const ok = await onRenameConfig(boundConfigId, trimmed);
-    setIsApplyingRename(false);
-    if (ok) {
-      setIsRenaming(false);
-      setRenameDraft("");
-    }
-  };
-
-  const handleOpenLoadDropdown = () => {
-    if (!isDropdownOpen) {
-      if (selectedConfigId) {
-        const selected = savedConfigs.find((c) => c.id === selectedConfigId);
-        if (selected) {
-          setExpandedConfigId(selected.config_id);
-          if (!versionItemsMap[selected.config_id] && loadVersionsForConfig) {
-            setLoadingVersionsFor((prev) =>
-              new Set(prev).add(selected.config_id),
-            );
-            loadVersionsForConfig(selected.config_id).finally(() => {
-              setLoadingVersionsFor((prev) => {
-                const s = new Set(prev);
-                s.delete(selected.config_id);
-                return s;
-              });
-            });
-          }
-        }
-      }
-    }
-    setIsDropdownOpen((prev) => !prev);
-  };
-
-  const handleToggleGroup = (config_id: string) => {
-    if (expandedConfigId === config_id) {
-      setExpandedConfigId(null);
-      return;
-    }
-    setExpandedConfigId(config_id);
-    if (
-      !versionItemsMap[config_id] &&
-      !loadingVersionsFor.has(config_id) &&
-      loadVersionsForConfig
-    ) {
-      setLoadingVersionsFor((prev) => new Set(prev).add(config_id));
-      loadVersionsForConfig(config_id).finally(() => {
-        setLoadingVersionsFor((prev) => {
-          const s = new Set(prev);
-          s.delete(config_id);
-          return s;
-        });
-      });
-    }
-  };
-  const [showTooltip, setShowTooltip] = useState<number | null>(null);
-
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
   const isGpt5 = isGpt5Model(params.model);
   const tools = (params.tools || []) as Tool[];
 
   const selectedConfig = savedConfigs.find((c) => c.id === selectedConfigId);
-
+  const isBoundToSavedConfig = !!boundConfigId;
   const existingConfigForHint = configName.trim()
     ? allConfigMeta.find((m) => m.name === configName.trim())
     : undefined;
@@ -212,10 +123,7 @@ export default function ConfigEditorPane({
   const handleTypeChange = (newType: "text" | "stt" | "tts") => {
     onConfigChange({
       ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        type: newType,
-      },
+      completion: { ...configBlob.completion, type: newType },
     });
   };
 
@@ -295,459 +203,150 @@ export default function ConfigEditorPane({
         </h3>
       </div>
 
-      {
-        <div className="flex-1 overflow-auto p-4">
-          <div className="space-y-4">
-            <div className="relative">
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Load Configuration
-              </label>
-              <button
-                onClick={handleOpenLoadDropdown}
-                className={`w-full px-3 py-2.5 rounded-md text-left flex items-center justify-between transition-colors bg-bg-primary text-text-primary border ${
-                  selectedConfig ? "border-accent-primary" : "border-border"
-                }`}
-              >
-                {selectedConfig ? (
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="font-medium text-sm truncate"
-                        title={selectedConfig.name}
-                      >
-                        {selectedConfig.name}
-                      </span>
-                      <VersionPill
-                        version={selectedConfig.version}
-                        size="sm"
-                        className="shrink-0"
-                      />
-                    </div>
-                    <div className="text-xs mt-0.5 text-text-secondary truncate">
-                      {selectedConfig.provider}/{selectedConfig.modelName} •{" "}
-                      {selectedConfig.type}
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-sm text-text-secondary whitespace-nowrap truncate">
-                    + New Configuration
-                  </span>
-                )}
-                <ChevronDownIcon
-                  className="w-4 h-4 shrink-0 ml-2 transition-transform text-text-secondary"
-                  style={{
-                    transform: isDropdownOpen
-                      ? "rotate(180deg)"
-                      : "rotate(0deg)",
-                  }}
-                />
-              </button>
+      <div className="flex-1 overflow-auto p-4">
+        <div className="space-y-4">
+          <LoadConfigDropdown
+            selectedConfig={selectedConfig}
+            selectedConfigId={selectedConfigId}
+            savedConfigs={savedConfigs}
+            allConfigMeta={allConfigMeta}
+            versionItemsMap={versionItemsMap}
+            loadVersionsForConfig={loadVersionsForConfig}
+            loadSingleVersion={loadSingleVersion}
+            onLoadConfig={onLoadConfig}
+          />
 
-              {isDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto bg-bg-primary border border-border">
-                  <button
-                    onClick={() => {
-                      onLoadConfig(null);
-                      setIsDropdownOpen(false);
-                    }}
-                    className={`w-full px-3 py-2.5 text-left flex items-center gap-2 transition-colors border-b border-border ${
-                      !selectedConfigId
-                        ? "bg-bg-secondary"
-                        : "bg-bg-primary hover:bg-bg-secondary"
-                    }`}
-                  >
-                    <PlusIcon className="w-4 h-4 text-accent-primary" />
-                    <span className="text-sm font-medium text-text-primary">
-                      New Configuration
-                    </span>
-                  </button>
+          <ConfigNameSection
+            configName={configName}
+            onConfigNameChange={onConfigNameChange}
+            boundConfigId={boundConfigId}
+            onRenameConfig={onRenameConfig}
+            allConfigMeta={allConfigMeta}
+          />
 
-                  {allConfigMeta.map((meta) => {
-                    const isExpanded = expandedConfigId === meta.id;
-                    const isLoadingGroup = loadingVersionsFor.has(meta.id);
-                    const items = versionItemsMap[meta.id] ?? [];
-                    return (
-                      <div key={meta.id}>
-                        <button
-                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors bg-bg-secondary text-text-secondary"
-                          onClick={() => handleToggleGroup(meta.id)}
-                        >
-                          <span className="text-xs font-medium">
-                            {meta.name}
-                            {items.length > 0 && (
-                              <span className="ml-1 font-normal">
-                                ({items.length})
-                              </span>
-                            )}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            {isLoadingGroup && (
-                              <SpinnerIcon className="w-3 h-3" />
-                            )}
-                            <ChevronDownIcon
-                              className="w-3.5 h-3.5"
-                              style={{
-                                transform: isExpanded
-                                  ? "rotate(180deg)"
-                                  : "rotate(0deg)",
-                                transition: "transform 0.15s",
-                              }}
-                            />
-                          </span>
-                        </button>
-                        {isExpanded &&
-                          !isLoadingGroup &&
-                          items.map((item) => {
-                            const isSelected =
-                              selectedConfig?.config_id === meta.id &&
-                              selectedConfig?.version === item.version;
-                            return (
-                              <button
-                                key={item.id}
-                                onClick={async () => {
-                                  const full = savedConfigs.find(
-                                    (c) =>
-                                      c.config_id === item.config_id &&
-                                      c.version === item.version,
-                                  );
-                                  const config =
-                                    full ??
-                                    (loadSingleVersion
-                                      ? await loadSingleVersion(
-                                          item.config_id,
-                                          item.version,
-                                        )
-                                      : null);
-                                  if (config) {
-                                    onLoadConfig(config);
-                                    setIsDropdownOpen(false);
-                                  }
-                                }}
-                                className={`w-full px-4 py-2 text-left flex items-center justify-between transition-colors ${
-                                  isSelected
-                                    ? "bg-bg-secondary"
-                                    : "bg-bg-primary hover:bg-bg-secondary"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <VersionPill
-                                      version={item.version}
-                                      size="sm"
-                                    />
-                                    <span className="text-sm truncate text-text-primary">
-                                      {item.commit_message || "No message"}
-                                    </span>
-                                  </div>
-                                  <div className="text-xs mt-0.5 text-text-secondary">
-                                    {formatRelativeTime(item.inserted_at)}
-                                  </div>
-                                </div>
-                                {isSelected && (
-                                  <CheckIcon className="w-4 h-4 shrink-0 text-status-success" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        {isExpanded && isLoadingGroup && (
-                          <div className="px-4 py-3 text-xs text-text-secondary">
-                            Loading versions…
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {isDropdownOpen && (
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsDropdownOpen(false)}
-                />
-              )}
-            </div>
-
-            {isBoundToSavedConfig && !isRenaming && (
-              <div>
-                <label className="block text-xs font-medium text-text-secondary mb-1">
-                  Configuration Name
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-text-primary text-sm truncate">
-                    {configName || "Untitled"}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStartRename}
-                    title="Rename this configuration (does not create a new version)"
-                  >
-                    Rename
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {isBoundToSavedConfig && isRenaming && (
-              <div className="space-y-2">
-                <Field
-                  label="New Configuration Name"
-                  value={renameDraft}
-                  onChange={setRenameDraft}
-                  placeholder="New name"
-                  autoFocus
-                  disabled={isApplyingRename}
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleApplyRename}
-                    disabled={
-                      isApplyingRename ||
-                      !renameDraft.trim() ||
-                      renameDraft.trim() === configName
-                    }
-                  >
-                    {isApplyingRename ? "Renaming…" : "Apply rename"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelRename}
-                    disabled={isApplyingRename}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-                <p className="text-xs text-text-secondary">
-                  ✏️ Renames the configuration metadata only — no new version is
-                  created.
-                </p>
-              </div>
-            )}
-
-            {!isBoundToSavedConfig && (
-              <div>
-                <Field
-                  label="Configuration Name *"
-                  value={configName}
-                  onChange={onConfigNameChange}
-                  placeholder="e.g., my-config"
-                />
-                {configName.trim() && (
-                  <p
-                    className="text-xs mt-1.5 text-text-secondary truncate"
-                    title={
-                      existingConfigForHint
-                        ? `Will create a new version for "${configName}"`
-                        : `Will create a new config "${configName}"`
-                    }
-                  >
-                    {existingConfigForHint
-                      ? `💡 Will create a new version for "${configName}"`
-                      : `✨ Will create a new config "${configName}"`}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Provider
-              </label>
-              <select
-                value={provider}
-                onChange={(e) => handleProviderChange(e.target.value)}
-                className={inputClass}
-              >
-                {PROVIDES_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Type
-              </label>
-              <select
-                value={configBlob.completion.type || "text"}
-                onChange={(e) =>
-                  handleTypeChange(e.target.value as "text" | "stt" | "tts")
-                }
-                className={inputClass}
-              >
-                {PROVIDER_TYPES.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs mt-1.5 text-text-secondary">
-                Standard text-based LLM completion
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Model
-              </label>
-              <select
-                value={params.model}
-                onChange={(e) => handleModelChange(e.target.value)}
-                className={inputClass}
-              >
-                {(
-                  MODEL_OPTIONS[provider as keyof typeof MODEL_OPTIONS] ??
-                  MODEL_OPTIONS.openai
-                ).map((model) => (
-                  <option key={model.value} value={model.value}>
-                    {model.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {!isGpt5 && (
-              <div>
-                <label className="block text-xs font-semibold mb-2 text-text-primary">
-                  Temperature: {(params.temperature ?? 0.7).toFixed(2)}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="2"
-                  step="0.01"
-                  value={params.temperature ?? 0.7}
-                  onChange={(e) =>
-                    handleTemperatureChange(parseFloat(e.target.value))
-                  }
-                  className="w-full accent-accent-primary"
-                />
-                <div className="flex justify-between text-xs mt-1 text-text-secondary">
-                  <span>0</span>
-                  <span>2</span>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-semibold text-text-primary">
-                  Tools
-                </label>
-                <button
-                  onClick={handleAddTool}
-                  className="px-2 py-1 rounded text-xs font-medium bg-accent-primary text-bg-primary"
-                >
-                  + Add Tool
-                </button>
-              </div>
-              {tools.map((tool, index) => (
-                <div
-                  key={index}
-                  className="p-3 rounded mb-2 border border-border bg-bg-secondary"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-semibold text-text-primary">
-                      File Search
-                    </span>
-                    <button
-                      onClick={() => handleRemoveTool(index)}
-                      className="text-xs bg-transparent border-0 text-status-error cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="mb-3">
-                    <Field
-                      label="Knowledge Base ID"
-                      value={tool.knowledge_base_ids[0] || ""}
-                      onChange={(v) =>
-                        handleUpdateTool(index, "knowledge_base_ids", [v])
-                      }
-                      placeholder="vs_abc123"
-                    />
-                  </div>
-
-                  {!isGpt5 && (
-                    <div>
-                      <div className="flex items-center gap-1 mb-1">
-                        <label className="text-xs font-medium text-text-secondary">
-                          Max Results
-                        </label>
-                        <div
-                          className="relative inline-flex items-center justify-center cursor-help w-3.5 h-3.5"
-                          onMouseEnter={() => setShowTooltip(index)}
-                          onMouseLeave={() => setShowTooltip(null)}
-                        >
-                          <InfoIcon className="w-3.5 h-3.5 text-text-secondary" />
-                          {showTooltip === index && (
-                            <div className="absolute left-full ml-2 px-2 py-1.5 rounded text-xs z-50 bg-text-primary text-bg-primary top-1/2 transform -translate-y-1/2 shadow-lg whitespace-nowrap line-height-1.4">
-                              Controls how many matching results are returned
-                              <br />
-                              from the search
-                              <div className="absolute right-full top-[50%] transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-text-primary" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <input
-                        type="number"
-                        value={tool.max_num_results}
-                        onChange={(e) =>
-                          handleUpdateTool(
-                            index,
-                            "max_num_results",
-                            parseInt(e.target.value) || 20,
-                          )
-                        }
-                        className="w-full px-3 py-2 rounded-lg border border-border bg-white text-text-primary text-sm placeholder:text-neutral-400 focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors"
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <GuardrailsSection
-              label="Input Guardrails"
-              guardrails={configBlob.input_guardrails ?? []}
-              onChange={(refs) =>
-                onConfigChange({ ...configBlob, input_guardrails: refs })
-              }
-              apiKey={apiKey}
-              queryString={guardrailsQueryString}
-              stage="input"
-            />
-
-            <GuardrailsSection
-              label="Output Guardrails"
-              guardrails={configBlob.output_guardrails ?? []}
-              onChange={(refs) =>
-                onConfigChange({ ...configBlob, output_guardrails: refs })
-              }
-              apiKey={apiKey}
-              queryString={guardrailsQueryString}
-              stage="output"
-            />
-
-            <Button
-              variant="primary"
-              size="md"
-              fullWidth
-              onClick={() => setShowSaveModal(true)}
-              disabled={saveDisabled}
+          <div>
+            <label className="block text-xs font-semibold mb-2 text-text-primary">
+              Provider
+            </label>
+            <select
+              value={provider}
+              onChange={(e) => handleProviderChange(e.target.value)}
+              className={inputClass}
             >
-              {isSaving ? "Saving..." : "Save Configuration"}
-            </Button>
+              {PROVIDES_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-2 text-text-primary">
+              Type
+            </label>
+            <select
+              value={configBlob.completion.type || "text"}
+              onChange={(e) =>
+                handleTypeChange(e.target.value as "text" | "stt" | "tts")
+              }
+              className={inputClass}
+            >
+              {PROVIDER_TYPES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs mt-1.5 text-text-secondary">
+              Standard text-based LLM completion
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-2 text-text-primary">
+              Model
+            </label>
+            <select
+              value={params.model}
+              onChange={(e) => handleModelChange(e.target.value)}
+              className={inputClass}
+            >
+              {(
+                MODEL_OPTIONS[provider as keyof typeof MODEL_OPTIONS] ??
+                MODEL_OPTIONS.openai
+              ).map((model) => (
+                <option key={model.value} value={model.value}>
+                  {model.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {!isGpt5 && (
+            <div>
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
+                Temperature: {(params.temperature ?? 0.7).toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="2"
+                step="0.01"
+                value={params.temperature ?? 0.7}
+                onChange={(e) =>
+                  handleTemperatureChange(parseFloat(e.target.value))
+                }
+                className="w-full accent-accent-primary"
+              />
+              <div className="flex justify-between text-xs mt-1 text-text-secondary">
+                <span>0</span>
+                <span>2</span>
+              </div>
+            </div>
+          )}
+
+          <ToolsSection
+            tools={tools}
+            isGpt5={isGpt5}
+            onAddTool={handleAddTool}
+            onRemoveTool={handleRemoveTool}
+            onUpdateTool={handleUpdateTool}
+          />
+
+          <GuardrailsSection
+            label="Input Guardrails"
+            guardrails={configBlob.input_guardrails ?? []}
+            onChange={(refs) =>
+              onConfigChange({ ...configBlob, input_guardrails: refs })
+            }
+            apiKey={apiKey}
+            queryString={guardrailsQueryString}
+            stage="input"
+          />
+
+          <GuardrailsSection
+            label="Output Guardrails"
+            guardrails={configBlob.output_guardrails ?? []}
+            onChange={(refs) =>
+              onConfigChange({ ...configBlob, output_guardrails: refs })
+            }
+            apiKey={apiKey}
+            queryString={guardrailsQueryString}
+            stage="output"
+          />
+
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            onClick={() => setShowSaveModal(true)}
+            disabled={saveDisabled}
+          >
+            {isSaving ? "Saving..." : "Save Configuration"}
+          </Button>
         </div>
-      }
+      </div>
 
       <SaveConfigModal
         open={showSaveModal}

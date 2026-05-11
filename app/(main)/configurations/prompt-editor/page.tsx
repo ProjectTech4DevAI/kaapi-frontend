@@ -1,5 +1,6 @@
 /**
- * Prompt WYSIWYG Editor: Manage prompts and configs with versioning, caching, and URL-based navigation support.
+ * Prompt WYSIWYG Editor: Manage prompts and configs with versioning, caching,
+ * and URL-based navigation support.
  */
 
 "use client";
@@ -14,28 +15,19 @@ import HistorySidebar from "@/app/components/prompt-editor/HistorySidebar";
 import PromptEditorPane from "@/app/components/prompt-editor/PromptEditorPane";
 import ConfigEditorPane from "@/app/components/prompt-editor/ConfigEditorPane";
 import DiffView from "@/app/components/prompt-editor/DiffView";
-import { useToast } from "@/app/components/Toast";
 import { Loader } from "@/app/components";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useConfigs } from "@/app/hooks";
-import {
-  SavedConfig,
-  ConfigCreate,
-  ConfigVersionCreate,
-  ConfigVersionItems,
-} from "@/app/lib/types/configs";
-import { invalidateConfigCache } from "@/app/lib/utils";
+import { useConfigPersistence } from "@/app/hooks/useConfigPersistence";
+import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { configState } from "@/app/lib/store/configStore";
-import { apiFetch } from "@/app/lib/apiClient";
-import { isGpt5Model } from "@/app/lib/models";
 import { DEFAULT_CONFIG } from "@/app/lib/constants";
 
 function PromptEditorContent() {
-  const toast = useToast();
   const searchParams = useSearchParams();
   const { sidebarCollapsed } = useApp();
-  const { activeKey, isAuthenticated } = useAuth();
+  const { activeKey } = useAuth();
   const urlConfigId = searchParams.get("config");
   const urlVersion = searchParams.get("version");
   const showHistory = searchParams.get("history") === "true";
@@ -43,6 +35,7 @@ function PromptEditorContent() {
   const urlDatasetId = searchParams.get("dataset");
   const urlExperimentName = searchParams.get("experiment");
   const fromEvaluations = searchParams.get("from") === "evaluations";
+
   const {
     configs: savedConfigs,
     isLoading,
@@ -52,13 +45,14 @@ function PromptEditorContent() {
     versionItemsMap: hookVersionItemsMap,
     allConfigMeta,
   } = useConfigs({ pageSize: 0 });
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+
   const initialLoadComplete = !isLoading;
   const editorInitialized = React.useRef(false);
   const [editorReady, setEditorReady] = useState<boolean>(!urlConfigId);
   const [stableVersionItemsMap, setStableVersionItemsMap] = useState<
     Record<string, ConfigVersionItems[]>
   >({});
+
   const [currentContent, setCurrentContent] = useState<string>(
     "You are a helpful AI assistant.\nYou provide clear and concise answers.\nYou are polite and professional.",
   );
@@ -81,6 +75,11 @@ function PromptEditorContent() {
     null,
   );
   const [compareWith, setCompareWith] = useState<SavedConfig | null>(null);
+
+  const { isSaving, saveConfig, renameConfig } = useConfigPersistence({
+    allConfigMeta,
+    refetchConfigs,
+  });
 
   useEffect(() => {
     if (Object.keys(hookVersionItemsMap).length > 0) {
@@ -120,53 +119,47 @@ function PromptEditorContent() {
       setCurrentConfigVersion(config.version);
       setTools(config.tools || []);
       setExpandedConfigs((prev) =>
-        prev.has(currentConfigParentId)
+        prev.has(config.config_id)
           ? prev
-          : new Set([...prev, currentConfigParentId]),
+          : new Set([...prev, config.config_id]),
       );
       if (selectInHistory) setSelectedVersion(config);
     },
     [],
   );
 
+  const resetEditor = React.useCallback(() => {
+    setCurrentContent("");
+    setCurrentConfigBlob(DEFAULT_CONFIG);
+    setProvider("openai");
+    setTemperature(0.7);
+    setSelectedConfigId("");
+    setCurrentConfigName("");
+    setCurrentConfigParentId("");
+    setCurrentConfigVersion(0);
+    setTools([]);
+  }, []);
+
   const handleLoadConfig = React.useCallback(
     (config: SavedConfig | null) => {
       if (!config) {
-        // Reset to new config
-        setCurrentContent("");
-        setCurrentConfigBlob(DEFAULT_CONFIG);
-        setProvider("openai");
-        setTemperature(0.7);
-        setSelectedConfigId("");
-        setCurrentConfigName("");
-        setCurrentConfigParentId("");
-        setCurrentConfigVersion(0);
-        setTools([]);
+        resetEditor();
         return;
       }
       loadVersionsForConfig(config.config_id);
       applyConfig(config);
     },
-    [applyConfig, loadVersionsForConfig, DEFAULT_CONFIG],
+    [applyConfig, loadVersionsForConfig, resetEditor],
   );
 
-  // Initialize editor from URL params — runs once, on first load completion
+  // Initialize editor from URL params — runs once
   useEffect(() => {
     if (!initialLoadComplete) return;
     if (editorInitialized.current) return;
     editorInitialized.current = true;
 
-    // If new config is requested, reset to defaults
     if (isNewConfig) {
-      setCurrentContent("");
-      setCurrentConfigBlob(DEFAULT_CONFIG);
-      setProvider("openai");
-      setTemperature(0.7);
-      setSelectedConfigId("");
-      setCurrentConfigName("");
-      setCurrentConfigParentId("");
-      setCurrentConfigVersion(0);
-      setTools([]);
+      resetEditor();
       setEditorReady(true);
       return;
     }
@@ -178,17 +171,14 @@ function PromptEditorContent() {
 
     (async () => {
       await loadVersionsForConfig(urlConfigId);
-
       const items = configState.versionItemsCache[urlConfigId] ?? [];
       if (items.length === 0) {
         setEditorReady(true);
         return;
       }
-
       const versionNum = urlVersion
         ? parseInt(urlVersion)
         : items.reduce((a, b) => (b.version > a.version ? b : a)).version;
-
       const config = await loadSingleVersion(urlConfigId, versionNum);
       if (config) applyConfig(config, showHistory);
       setEditorReady(true);
@@ -202,29 +192,27 @@ function PromptEditorContent() {
     loadVersionsForConfig,
     loadSingleVersion,
     applyConfig,
-    DEFAULT_CONFIG,
+    resetEditor,
   ]);
 
-  // Re-populate version items when missing (e.g. after background cache revalidation wipes versionItemsCache)
+  // Re-populate version items when missing (e.g. after background cache wipe)
   useEffect(() => {
     if (currentConfigParentId && !versionItemsMap[currentConfigParentId]) {
       loadVersionsForConfig(currentConfigParentId);
     }
   }, [currentConfigParentId, versionItemsMap, loadVersionsForConfig]);
 
+  // Track unsaved changes by diffing against the loaded config
   useEffect(() => {
     if (!selectedConfigId) {
       setHasUnsavedChanges(true);
       return;
     }
-
     const selectedConfig = savedConfigs.find((c) => c.id === selectedConfigId);
     if (!selectedConfig) {
       setHasUnsavedChanges(true);
       return;
     }
-
-    // Compare current state with selected config
     const promptChanged = currentContent !== selectedConfig.promptContent;
     const configChanged = hasConfigChanges(currentConfigBlob, {
       completion: {
@@ -238,7 +226,6 @@ function PromptEditorContent() {
         },
       },
     });
-
     setHasUnsavedChanges(promptChanged || configChanged);
   }, [
     selectedConfigId,
@@ -250,176 +237,24 @@ function PromptEditorContent() {
     savedConfigs,
   ]);
 
-  const handleSaveConfig = async () => {
-    if (!currentConfigName.trim()) {
-      toast.error("Please enter a configuration name");
-      return;
-    }
-
-    const apiKey = activeKey?.key ?? "";
-    if (!isAuthenticated) {
-      toast.error("Please log in to save configurations.");
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const tools = currentConfigBlob.completion.params.tools || [];
-
-      const allKnowledgeBaseIds: string[] = [];
-      let maxNumResults = 20;
-
-      tools.forEach((tool) => {
-        allKnowledgeBaseIds.push(...tool.knowledge_base_ids);
-        // Use max_num_results from first tool (could be made configurable)
-        if (allKnowledgeBaseIds.length === tool.knowledge_base_ids.length) {
-          maxNumResults = tool.max_num_results;
-        }
-      });
-
-      const model = currentConfigBlob.completion.params.model;
-      const gpt5 = isGpt5Model(model);
-
-      const configBlob: ConfigBlob = {
-        completion: {
-          provider: currentConfigBlob.completion.provider,
-          type: currentConfigBlob.completion.type || "text",
-          params: {
-            model,
-            instructions: currentContent,
-            ...(!gpt5 && {
-              temperature: currentConfigBlob.completion.params.temperature,
-            }),
-            ...(allKnowledgeBaseIds.length > 0 && {
-              knowledge_base_ids: allKnowledgeBaseIds,
-              ...(!gpt5 && { max_num_results: maxNumResults }),
-            }),
-          },
-        },
-        ...(currentConfigBlob.input_guardrails?.length && {
-          input_guardrails: currentConfigBlob.input_guardrails,
-        }),
-        ...(currentConfigBlob.output_guardrails?.length && {
-          output_guardrails: currentConfigBlob.output_guardrails,
-        }),
-      };
-
-      const existingConfigMeta = allConfigMeta.find(
-        (m) => m.name === currentConfigName.trim(),
-      );
-
-      if (existingConfigMeta) {
-        const versionCreate: ConfigVersionCreate = {
-          config_blob: configBlob,
-          commit_message: commitMessage.trim() || `Updated prompt and config`,
-        };
-
-        const data = await apiFetch<{ success: boolean; error?: string }>(
-          `/api/configs/${existingConfigMeta.id}/versions`,
-          apiKey,
-          {
-            method: "POST",
-            body: JSON.stringify(versionCreate),
-          },
-        );
-
-        if (!data.success) {
-          toast.error(
-            `Failed to create version: ${data.error || "Unknown error"}`,
-          );
-          return;
-        }
-
-        toast.success(
-          `Configuration "${currentConfigName}" updated! New version created.`,
-        );
-      } else {
-        const configCreate: ConfigCreate = {
-          name: currentConfigName.trim(),
-          description: `${provider} configuration with prompt`,
-          config_blob: configBlob,
-          commit_message: commitMessage.trim() || "Initial version",
-        };
-
-        const data = await apiFetch<{
-          success: boolean;
-          data?: unknown;
-          error?: string;
-        }>("/api/configs", apiKey, {
-          method: "POST",
-          body: JSON.stringify(configCreate),
-        });
-
-        if (!data.success || !data.data) {
-          toast.error(
-            `Failed to create config: ${data.error || "Unknown error"}`,
-          );
-          return;
-        }
-
-        toast.success(
-          `Configuration "${currentConfigName}" created successfully!`,
-        );
-      }
-
-      invalidateConfigCache();
-      await refetchConfigs(true);
-
+  const handleSave = async () => {
+    const ok = await saveConfig({
+      currentConfigName,
+      currentConfigBlob,
+      currentContent,
+      commitMessage,
+      provider,
+    });
+    if (ok) {
       setHasUnsavedChanges(false);
       setCommitMessage("");
-    } catch (e) {
-      console.error("Failed to save config:", e);
-      toast.error("Failed to save configuration. Please try again.");
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  const handleRenameConfig = async (
-    configId: string,
-    newName: string,
-  ): Promise<boolean> => {
-    const apiKey = activeKey?.key ?? "";
-    if (!isAuthenticated) {
-      toast.error("Please log in to rename configurations.");
-      return false;
-    }
-    const trimmed = newName.trim();
-    if (!trimmed) {
-      toast.error("Name cannot be empty.");
-      return false;
-    }
-    if (trimmed === currentConfigName) return true;
-
-    const conflict = allConfigMeta.find(
-      (m) => m.name === trimmed && m.id !== configId,
-    );
-    if (conflict) {
-      toast.error(`A configuration named "${trimmed}" already exists.`);
-      return false;
-    }
-
-    try {
-      const data = await apiFetch<{ success: boolean; error?: string }>(
-        `/api/configs/${configId}`,
-        apiKey,
-        { method: "PATCH", body: JSON.stringify({ name: trimmed }) },
-      );
-      if (!data.success) {
-        toast.error(`Failed to rename: ${data.error || "Unknown error"}`);
-        return false;
-      }
-      setCurrentConfigName(trimmed);
-      invalidateConfigCache();
-      await refetchConfigs(true);
-      toast.success(`Renamed to "${trimmed}"`);
-      return true;
-    } catch (e) {
-      console.error("Failed to rename config:", e);
-      toast.error("Failed to rename configuration.");
-      return false;
-    }
+  const handleRename = async (configId: string, newName: string) => {
+    const ok = await renameConfig(configId, newName, currentConfigName);
+    if (ok) setCurrentConfigName(newName.trim());
+    return ok;
   };
 
   return (
@@ -458,9 +293,7 @@ function PromptEditorContent() {
                     setSelectedVersion(version);
                     setCompareWith(null);
                   }}
-                  onLoadVersion={(version) => {
-                    handleLoadConfig(version);
-                  }}
+                  onLoadVersion={handleLoadConfig}
                   onBackToEditor={() => {
                     setSelectedVersion(null);
                     setCompareWith(null);
@@ -501,13 +334,7 @@ function PromptEditorContent() {
                 ) : (
                   <div className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex flex-1 overflow-hidden">
-                      <div
-                        className="flex min-w-0"
-                        style={{
-                          flex: "1 1 0%",
-                          transition: "flex 0.2s ease-in-out",
-                        }}
-                      >
+                      <div className="flex flex-1 min-w-0 transition-[flex] duration-200 ease-in-out">
                         <PromptEditorPane
                           currentContent={currentContent}
                           onContentChange={setCurrentContent}
@@ -522,7 +349,7 @@ function PromptEditorContent() {
                         savedConfigs={savedConfigs}
                         selectedConfigId={selectedConfigId}
                         boundConfigId={currentConfigParentId}
-                        onRenameConfig={handleRenameConfig}
+                        onRenameConfig={handleRename}
                         onLoadConfig={handleLoadConfig}
                         allConfigMeta={allConfigMeta}
                         loadVersionsForConfig={loadVersionsForConfig}
@@ -530,7 +357,7 @@ function PromptEditorContent() {
                         loadSingleVersion={loadSingleVersion}
                         commitMessage={commitMessage}
                         onCommitMessageChange={setCommitMessage}
-                        onSave={handleSaveConfig}
+                        onSave={handleSave}
                         isSaving={isSaving}
                         apiKey={activeKey?.key ?? ""}
                       />

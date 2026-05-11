@@ -127,7 +127,7 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
           )}
 
           {document.signed_url ? (
-            <div className="rounded-lg border border-border bg-white overflow-hidden">
+            <div className="rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
               {mimeType.startsWith("image/") ? (
                 imageLoadError ? (
                   <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
@@ -176,7 +176,7 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-border bg-white">
+            <div className="rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
               <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
                 <WarningIcon className="mx-auto mb-3 opacity-40" />
                 <p className="text-sm font-medium text-text-primary mb-1">

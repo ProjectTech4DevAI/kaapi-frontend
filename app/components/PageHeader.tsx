@@ -30,7 +30,7 @@ export default function PageHeader({
 
   return (
     <>
-      <div className="border-b h-16 px-4 flex items-center justify-between gap-3 shrink-0 bg-bg-primary border-border">
+      <div className="h-16 border-b px-4 flex items-center justify-between gap-3 shrink-0 bg-bg-primary border-border">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {sidebarCollapsed && (
             <button

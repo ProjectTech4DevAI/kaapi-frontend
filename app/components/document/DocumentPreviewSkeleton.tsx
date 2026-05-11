@@ -19,7 +19,7 @@ export default function DocumentPreviewSkeleton() {
 
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="rounded-lg border border-border bg-bg-primary overflow-hidden">
+          <div className="rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
             <div className="h-[700px] w-full bg-neutral-100" />
           </div>
         </div>

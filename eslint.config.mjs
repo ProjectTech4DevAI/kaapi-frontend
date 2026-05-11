@@ -48,9 +48,11 @@ const eslintConfig = defineConfig([
       "max-depth": ["warn", 4],
       "max-statements": ["warn", 20],
 
-      // LOC-related — TODO: enable later
-      // "max-lines": ["warn", { max: 500, skipBlankLines: true, skipComments: true }],
-      // "max-lines-per-function": ["warn", { max: 75, skipBlankLines: true, skipComments: true }],
+      "max-lines": [
+        "error",
+        { max: 500, skipBlankLines: true, skipComments: true },
+      ],
+      // "max-lines-per-function": ["error", { max: 75, skipBlankLines: true, skipComments: true }],
     },
   },
 ]);

@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/app/components";
-import { CheckLineIcon, CopyIcon } from "@/app/components/icons";
+import {
+  CheckLineIcon,
+  ChevronDownIcon,
+  CopyIcon,
+} from "@/app/components/icons";
 import { formatDate } from "@/app/components/utils";
 import { Collection, Document } from "@/app/lib/types/document";
 
@@ -157,17 +161,21 @@ export default function CollectionDetail({
             </div>
 
             {documents.length > 3 && (
-              <div className="mt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  fullWidth
+              <div className="mt-2 flex justify-center">
+                <button
+                  type="button"
                   onClick={() => setShowAllDocs(!showAllDocs)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-text-secondary hover:text-accent-primary transition-colors cursor-pointer"
                 >
                   {showAllDocs
-                    ? "Show Less"
-                    : `Show More (${documents.length - 3} more)`}
-                </Button>
+                    ? "Show less"
+                    : `Show ${documents.length - 3} more`}
+                  <ChevronDownIcon
+                    className={`w-3.5 h-3.5 transition-transform ${
+                      showAllDocs ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
               </div>
             )}
           </div>

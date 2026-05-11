@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Sidebar from "@/app/components/Sidebar";
-import PageHeader from "@/app/components/PageHeader";
 import CollectionsList from "@/app/components/knowledge-base/CollectionsList";
 import CreateCollectionForm from "@/app/components/knowledge-base/CreateCollectionForm";
 import CollectionDetail from "@/app/components/knowledge-base/CollectionDetail";
 import DocumentPickerModal from "@/app/components/knowledge-base/DocumentPickerModal";
 import DeleteCollectionModal from "@/app/components/knowledge-base/DeleteCollectionModal";
 import DocumentPreviewModal from "@/app/components/knowledge-base/DocumentPreviewModal";
-import Modal from "@/app/components/Modal";
+import { Modal, Loader, Sidebar, PageHeader } from "@/app/components";
 import { BookOpenIcon } from "@/app/components/icons";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useCollections } from "@/app/hooks/useCollections";
@@ -22,6 +20,7 @@ export default function KnowledgeBasePage() {
     availableDocuments,
     selectedCollection,
     isLoading,
+    isLoadingDetail,
     isCreating,
     setSelectedCollection,
     fetchCollectionDetails,
@@ -149,12 +148,26 @@ export default function KnowledgeBasePage() {
                 onCancel={handleCancelCreate}
                 onCreate={handleCreateClick}
               />
+            ) : isLoadingDetail && !selectedCollection ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader size="md" message="Loading knowledge base…" />
+              </div>
             ) : selectedCollection ? (
-              <CollectionDetail
-                collection={selectedCollection}
-                onRequestDelete={handleRequestDelete}
-                onPreviewDocument={handlePreviewDocument}
-              />
+              <div className="flex-1 flex flex-col relative">
+                <CollectionDetail
+                  collection={selectedCollection}
+                  onRequestDelete={handleRequestDelete}
+                  onPreviewDocument={handlePreviewDocument}
+                />
+                {isLoadingDetail && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-bg-primary/60 backdrop-blur-[1px] pointer-events-none">
+                    <Loader
+                      size="md"
+                      message={`Loading ${selectedCollection.name}…`}
+                    />
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="flex-1 flex items-center justify-center px-6">
                 <div className="text-center max-w-sm">

@@ -37,6 +37,7 @@ export function useCollections() {
   const [selectedCollection, setSelectedCollection] =
     useState<Collection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   const apiKeyRef = useRef<typeof apiKey>(null);
@@ -49,14 +50,12 @@ export function useCollections() {
     async (collectionId: string) => {
       if (!isAuthenticated) return;
 
-      if (collectionId.startsWith("optimistic-")) {
-        setSelectedCollection(
-          (prev) => collections.find((c) => c.id === collectionId) || prev,
-        );
-        return;
-      }
+      const fromList = collections.find((c) => c.id === collectionId);
+      if (fromList) setSelectedCollection(fromList);
 
-      setIsLoading(true);
+      if (collectionId.startsWith("optimistic-")) return;
+
+      setIsLoadingDetail(true);
       try {
         const result = await apiFetch<CollectionResponse & Collection>(
           `/api/collections/${collectionId}`,
@@ -84,7 +83,7 @@ export function useCollections() {
       } catch (error) {
         console.error("Error fetching collection details:", error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingDetail(false);
       }
     },
     [apiKey, collections, isAuthenticated],
@@ -465,6 +464,7 @@ export function useCollections() {
     availableDocuments,
     selectedCollection,
     isLoading,
+    isLoadingDetail,
     isCreating,
     setSelectedCollection,
     fetchCollectionDetails,

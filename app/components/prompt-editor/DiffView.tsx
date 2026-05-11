@@ -148,7 +148,6 @@ export default function DiffView({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-bg-secondary">
-      {/* Header card */}
       <div className="px-6 py-4 border-b border-border bg-bg-primary">
         <div className="mb-3">
           <div className="flex items-baseline gap-2 mb-1 min-w-0">

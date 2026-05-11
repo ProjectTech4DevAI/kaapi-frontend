@@ -22,8 +22,6 @@ export const GPT4_STYLE_CONFIG = {
   },
 } as const satisfies Record<string, ConfigParamDefinition>;
 
-// Gemini param configs
-
 const GEMINI_TEMPERATURE_CONFIG = {
   temperature: {
     max: 2.0,

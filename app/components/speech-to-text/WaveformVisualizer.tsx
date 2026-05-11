@@ -16,12 +16,17 @@ interface WaveformVisualizerProps {
 
 // Canvas requires literal color strings, so we resolve theme tokens from CSS
 // variables at draw time. This keeps the waveform in sync with theme changes.
-function readThemeColor(name: string, fallback: string): string {
-  if (typeof window === "undefined") return fallback;
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-  return value || fallback;
+function readThemeColors<K extends string>(
+  entries: Record<K, string>,
+): Record<K, string> {
+  const result = { ...entries };
+  if (typeof window === "undefined") return result;
+  const styles = getComputedStyle(document.documentElement);
+  (Object.keys(entries) as K[]).forEach((name) => {
+    const value = styles.getPropertyValue(name).trim();
+    if (value) result[name] = value;
+  });
+  return result;
 }
 
 export default function WaveformVisualizer({
@@ -68,9 +73,15 @@ export default function WaveformVisualizer({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const borderColor = readThemeColor("--color-border", "#e5e5e5");
-    const accentPrimary = readThemeColor("--color-accent-primary", "#1f4496");
-    const accentHover = readThemeColor("--color-accent-hover", "#173574");
+    const {
+      "--color-border": borderColor,
+      "--color-accent-primary": accentPrimary,
+      "--color-accent-hover": accentHover,
+    } = readThemeColors({
+      "--color-border": "#e5e5e5",
+      "--color-accent-primary": "#1f4496",
+      "--color-accent-hover": "#173574",
+    });
 
     if (!isPlaying || !analyserRef.current) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);

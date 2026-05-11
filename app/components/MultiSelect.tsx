@@ -1,14 +1,21 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@/app/components/icons";
 
+export type MultiSelectOption = string | { value: string; label: string };
+
 interface MultiSelectProps {
-  options: string[];
+  options: MultiSelectOption[];
   value: string[];
   onChange: (value: string[]) => void;
   placeholder?: string;
 }
+
+const getValue = (opt: MultiSelectOption) =>
+  typeof opt === "string" ? opt : opt.value;
+const getLabel = (opt: MultiSelectOption) =>
+  typeof opt === "string" ? opt : opt.label;
 
 export default function MultiSelect({
   options,
@@ -16,11 +23,31 @@ export default function MultiSelect({
   onChange,
   placeholder,
 }: MultiSelectProps) {
+  const labelFor = (val: string) => {
+    const match = options.find((o) => getValue(o) === val);
+    return match ? getLabel(match) : val;
+  };
   const listboxId = useId();
   const [open, setOpen] = useState(false);
+  const [placement, setPlacement] = useState<"bottom" | "top">("bottom");
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+
+  const DROPDOWN_MAX_HEIGHT = 208; // matches max-h-52
+  const FLIP_MARGIN = 8;
+
+  useLayoutEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - FLIP_MARGIN;
+    const spaceAbove = rect.top - FLIP_MARGIN;
+    if (spaceBelow >= DROPDOWN_MAX_HEIGHT || spaceBelow >= spaceAbove) {
+      setPlacement("bottom");
+    } else {
+      setPlacement("top");
+    }
+  }, [open]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -90,7 +117,7 @@ export default function MultiSelect({
     }
   };
 
-  const unselected = options.filter((o) => !value.includes(o));
+  const unselected = options.filter((o) => !value.includes(getValue(o)));
 
   return (
     <div ref={containerRef} className="relative">
@@ -115,7 +142,7 @@ export default function MultiSelect({
             className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-bg-secondary text-text-primary border border-border"
             onClick={(e) => e.stopPropagation()}
           >
-            {v}
+            {labelFor(v)}
             <span
               role="button"
               tabIndex={0}
@@ -156,26 +183,32 @@ export default function MultiSelect({
           id={listboxId}
           role="listbox"
           aria-multiselectable="true"
-          className="absolute z-50 mt-1 w-full rounded-md shadow-md overflow-auto max-h-52 bg-bg-primary border border-border"
+          className={`absolute left-0 right-0 z-50 w-full rounded-md shadow-md overflow-auto overscroll-contain max-h-52 bg-bg-primary border border-border ${
+            placement === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5"
+          }`}
         >
           {unselected.length === 0 ? (
             <p className="px-3 py-2 text-xs text-text-secondary">
               All options selected
             </p>
           ) : (
-            unselected.map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                role="option"
-                aria-selected={false}
-                onClick={() => toggle(opt)}
-                onKeyDown={(e) => handleOptionKeyDown(e, opt)}
-                className="w-full text-left px-3 py-2 text-sm text-text-primary transition-colors hover:bg-bg-secondary focus:bg-bg-secondary focus:outline-none"
-              >
-                {opt}
-              </button>
-            ))
+            unselected.map((opt) => {
+              const optValue = getValue(opt);
+              const optLabel = getLabel(opt);
+              return (
+                <button
+                  key={optValue}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  onClick={() => toggle(optValue)}
+                  onKeyDown={(e) => handleOptionKeyDown(e, optValue)}
+                  className="w-full text-left px-3 py-2 text-sm text-text-primary transition-colors hover:bg-bg-secondary focus:bg-bg-secondary focus:outline-none"
+                >
+                  {optLabel}
+                </button>
+              );
+            })
           )}
         </div>
       )}

@@ -8,24 +8,30 @@ interface LoaderProps {
   fullScreen?: boolean;
 }
 
+const SIZE_CLASS: Record<NonNullable<LoaderProps["size"]>, string> = {
+  sm: "w-5 h-5 border-t-2 border-b-2",
+  md: "w-8 h-8 border-t-[3px] border-b-[3px]",
+  lg: "w-12 h-12 border-t-4 border-b-4",
+};
+
 export default function Loader({
   size = "md",
   message,
   fullScreen = false,
 }: LoaderProps) {
-  const sizeClass = {
-    sm: "w-5 h-5",
-    md: "w-8 h-8",
-    lg: "w-12 h-12",
-  }[size];
+  const sizeClass = SIZE_CLASS[size];
 
   const loaderContent = (
     <div className="flex flex-col items-center justify-center gap-3">
       <div
-        className={`${sizeClass} rounded-full animate-spin loader-spinner`}
+        className={`${sizeClass} animate-spin rounded-full border-border border-t-accent-primary border-b-accent-primary [animation-duration:0.9s] [animation-timing-function:cubic-bezier(0.4,0,0.2,1)]`}
+        role="status"
+        aria-label={message ?? "Loading"}
       />
       {message && (
-        <p className="text-sm font-medium text-text-secondary">{message}</p>
+        <p className="text-sm font-medium text-text-secondary tracking-[-0.005em]">
+          {message}
+        </p>
       )}
     </div>
   );
@@ -52,7 +58,7 @@ export function LoaderBox({
   size?: "sm" | "md" | "lg";
 }) {
   return (
-    <div className="border rounded-lg p-8 text-center bg-white border-gray-200">
+    <div className="border rounded-lg p-8 text-center bg-bg-primary border-border">
       <Loader size={size} message={message} />
     </div>
   );

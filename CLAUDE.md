@@ -134,6 +134,17 @@ import { useApp } from '@/app/lib/context/AppContext';
 const { sidebarCollapsed, setSidebarCollapsed, toggleSidebar } = useApp();
 ```
 
+## Code Quality Guidelines
+
+Follow these rules when writing or modifying code in this repository:
+
+- **File size limit**: Do not let any file exceed **500 LOC**. If a file is approaching or has crossed this limit, split it into smaller modules (extract sub-components, hooks, utilities, or types into their own files).
+- **Single Responsibility Principle (SRP)**: Each component, hook, function, or module should do one thing and have one reason to change. If a component handles data fetching, business logic, and UI rendering all together, split it — extract data fetching into a hook, business logic into a utility, and keep the component focused on presentation.
+- **Don't Repeat Yourself (DRY)**: Before writing new logic, search the codebase for existing implementations. Reuse and extend rather than duplicate. If you spot the same pattern emerging in 2+ places, extract it into a shared helper, hook, or component in `app/lib/` or `app/components/`.
+- **Reuse existing components and icons**: Always check `app/components/` and `app/components/icons/` before creating a new component or icon. Prefer composing or extending existing primitives over authoring new ones. New icons go in `app/components/icons/` as hand-authored React components — do not inline SVGs in feature code.
+- **Reuse existing utilities and hooks**: Check `app/lib/utils/`, `app/lib/utils.ts`, and `app/hooks/` before adding new helpers. Domain-specific utilities belong under `app/lib/utils/<domain>/`.
+- **Reuse existing types**: Shared types live in `app/lib/types/` and `app/lib/models.ts` — import from there instead of redefining shapes locally.
+
 ## API Client & Error Handling
 
 The BFF layer uses [apiClient.ts](app/lib/apiClient.ts) which forwards requests from Next.js route handlers to the backend at `BACKEND_URL` (defaults to `http://localhost:8000`). Key patterns:

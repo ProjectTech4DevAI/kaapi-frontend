@@ -7,10 +7,16 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { colors } from "@/app/lib/colors";
 import { SavedConfig, ConfigPublic } from "@/app/lib/types/configs";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { CheckIcon, CopyIcon } from "@/app/components/icons";
+import {
+  CheckIcon,
+  CopyIcon,
+  ChevronDownIcon,
+  EditIcon,
+  PlayIcon,
+} from "@/app/components/icons";
+import { Button, VersionPill, Loader } from "@/app/components";
 import { useToast } from "@/app/hooks/useToast";
 
 interface ConfigCardProps {
@@ -38,6 +44,22 @@ export default function ConfigCard({
   const [showTools, setShowTools] = useState(false);
   const [showVectorStores, setShowVectorStores] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [copiedKbId, setCopiedKbId] = useState<string | null>(null);
+
+  const handleCopyKbId = useCallback(
+    async (e: React.MouseEvent, kbId: string) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(kbId);
+        setCopiedKbId(kbId);
+        toast.success("Knowledge Base ID copied to clipboard");
+        setTimeout(() => setCopiedKbId(null), 1500);
+      } catch {
+        toast.error("Failed to copy");
+      }
+    },
+    [toast],
+  );
 
   const handleCopyId = useCallback(
     async (e: React.MouseEvent) => {
@@ -60,7 +82,6 @@ export default function ConfigCard({
       return;
     }
 
-    // If we already loaded the details, just expand
     if (latestVersion) {
       setExpanded(true);
       return;
@@ -70,11 +91,8 @@ export default function ConfigCard({
     setExpanded(true);
 
     try {
-      // 1. Fetch the version list for this config
       await onLoadVersions(config.id);
 
-      // 2. Read the cached version items to find the latest version number
-      //    (onLoadVersions populates configState.versionItemsCache)
       const { configState } = await import("@/app/lib/store/configStore");
       const versionItems = configState.versionItemsCache[config.id];
       if (!versionItems || versionItems.length === 0) {
@@ -88,7 +106,6 @@ export default function ConfigCard({
         b.version > a.version ? b : a,
       );
 
-      // 3. Fetch the full details for the latest version
       const detail = await onLoadSingleVersion(config.id, latestItem.version);
       if (detail) {
         setLatestVersion(detail);
@@ -100,7 +117,8 @@ export default function ConfigCard({
     }
   }, [expanded, latestVersion, config.id, onLoadVersions, onLoadSingleVersion]);
 
-  const handleEdit = () => {
+  const handleEdit = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     router.push(
       latestVersion
         ? `/configurations/prompt-editor?config=${config.id}&version=${latestVersion.version}`
@@ -109,88 +127,75 @@ export default function ConfigCard({
   };
 
   const handleUseInEvaluation = () => {
-    router.push(
-      latestVersion
-        ? `/evaluations?config=${config.id}&version=${latestVersion.version}`
-        : `/evaluations?config=${config.id}`,
-    );
+    const params = new URLSearchParams({
+      tab: "evaluations",
+      config: config.id,
+    });
+    if (latestVersion) {
+      params.set("version", String(latestVersion.version));
+    }
+    router.push(`/evaluations?${params.toString()}`);
   };
 
   return (
     <div
-      className="border rounded-lg overflow-hidden transition-all min-w-0"
-      style={{
-        backgroundColor: colors.bg.primary,
-        borderColor: expanded ? colors.accent.primary : colors.border,
-      }}
+      className={`relative rounded-lg overflow-hidden transition-all min-w-0 bg-bg-primary ${
+        expanded
+          ? "shadow-[0_2px_12px_rgba(0,0,0,0.06)] before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-accent-primary before:rounded-l-lg"
+          : "shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+      }`}
     >
-      <button
-        onClick={handleToggleExpand}
-        className="w-full text-left px-5 py-3 transition-colors"
-        style={{ backgroundColor: colors.bg.primary }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = colors.bg.primary)
-        }
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <h3
-              className="text-sm font-semibold truncate"
-              style={{ color: colors.text.primary }}
-            >
+      <div className="w-full text-left px-5 py-3 transition-colors hover:bg-neutral-50/60">
+        <div className="flex items-start justify-between gap-3">
+          <button
+            type="button"
+            onClick={handleToggleExpand}
+            className="flex-1 min-w-0 text-left cursor-pointer"
+            aria-expanded={expanded}
+          >
+            <h3 className="text-sm font-semibold text-text-primary truncate">
               {config.name}
             </h3>
             {config.description && (
-              <p
-                className="text-sm mt-0.5 truncate"
-                style={{ color: colors.text.secondary }}
-              >
+              <p className="text-sm mt-0.5 text-text-secondary truncate">
                 {config.description}
               </p>
             )}
-          </div>
-          <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-            {latestVersion && (
-              <div
-                className="px-2 py-0.5 rounded text-xs font-medium"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  color: colors.text.secondary,
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
-                v{latestVersion.version}
-              </div>
-            )}
-            <svg
-              className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`}
-              style={{ color: colors.text.secondary }}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {latestVersion && <VersionPill version={latestVersion.version} />}
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="p-1.5 rounded-md border border-border bg-bg-primary text-text-secondary hover:text-accent-primary hover:border-accent-primary hover:bg-accent-primary/5 transition-colors cursor-pointer"
+              title="Open in Editor"
+              aria-label="Open in Editor"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
+              <EditIcon className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleExpand}
+              className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 transition-colors cursor-pointer"
+              title={expanded ? "Collapse details" : "Expand details"}
+              aria-label={expanded ? "Collapse details" : "Expand details"}
+            >
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`}
               />
-            </svg>
+            </button>
           </div>
         </div>
 
-        {/* Collapsed meta row */}
-        <div
-          className="flex items-center gap-4 text-xs mt-2"
-          style={{ color: colors.text.secondary }}
+        <button
+          type="button"
+          onClick={handleToggleExpand}
+          className="flex items-center gap-3 text-xs mt-2 text-text-secondary cursor-pointer w-full"
         >
           <span>Updated {formatRelativeTime(config.updated_at)}</span>
           {totalVersions > 0 && (
             <>
-              <span>|</span>
+              <span aria-hidden>|</span>
               <span>
                 {totalVersions} version{totalVersions !== 1 ? "s" : ""}
               </span>
@@ -198,43 +203,20 @@ export default function ConfigCard({
           )}
           {evaluationCount > 0 && (
             <>
-              <span>|</span>
+              <span aria-hidden>|</span>
               <span>
                 {evaluationCount} evaluation{evaluationCount !== 1 ? "s" : ""}
               </span>
             </>
           )}
-        </div>
-      </button>
+        </button>
+      </div>
 
-      {/* Expanded Details */}
       {expanded && (
-        <div
-          className="px-5 pb-5"
-          style={{ borderTop: `1px solid ${colors.border}` }}
-        >
+        <div className="px-5 pb-5 border-t border-neutral-100">
           {isLoadingDetails ? (
-            <div className="flex items-center justify-center py-6 gap-2">
-              <svg
-                className="w-4 h-4 animate-spin"
-                style={{ color: colors.text.secondary }}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              <span
-                className="text-sm"
-                style={{ color: colors.text.secondary }}
-              >
-                Loading details...
-              </span>
+            <div className="py-6">
+              <Loader size="sm" message="Loading details..." />
             </div>
           ) : latestVersion ? (
             <div className="pt-4">
@@ -253,6 +235,7 @@ export default function ConfigCard({
                   onClick={handleCopyId}
                   className="ml-auto p-1 rounded-md transition-colors shrink-0 cursor-pointer hover:bg-neutral-200"
                   title="Copy Config ID"
+                  aria-label="Copy Config ID"
                 >
                   {copiedId ? (
                     <CheckIcon className="w-3.5 h-3.5 text-status-success" />
@@ -262,117 +245,64 @@ export default function ConfigCard({
                 </button>
               </div>
 
-              {/* Config Details */}
-              <div className="flex flex-wrap gap-3 mb-4">
-                <div
-                  className="px-2.5 py-1 rounded-md text-xs"
-                  style={{ backgroundColor: colors.bg.secondary }}
-                >
-                  <span style={{ color: colors.text.secondary }}>
-                    Provider:{" "}
-                  </span>
-                  <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-                    {latestVersion.provider}
-                  </span>
-                </div>
-                <div
-                  className="px-2.5 py-1 rounded-md text-xs"
-                  style={{ backgroundColor: colors.bg.secondary }}
-                >
-                  <span style={{ color: colors.text.secondary }}>Type: </span>
-                  <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-                    {latestVersion.type === "text" && "Text"}
-                    {latestVersion.type === "stt" && "STT"}
-                    {latestVersion.type === "tts" && "TTS"}
-                  </span>
-                </div>
-                <div
-                  className="px-2.5 py-1 rounded-md text-xs"
-                  style={{ backgroundColor: colors.bg.secondary }}
-                >
-                  <span style={{ color: colors.text.secondary }}>Model: </span>
-                  <span style={{ color: colors.text.primary, fontWeight: 500 }}>
-                    {latestVersion.modelName}
-                  </span>
-                </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <MetaPill label="Provider" value={latestVersion.provider} />
+                <MetaPill
+                  label="Type"
+                  value={
+                    latestVersion.type === "text"
+                      ? "Text"
+                      : latestVersion.type === "stt"
+                        ? "STT"
+                        : latestVersion.type === "tts"
+                          ? "TTS"
+                          : (latestVersion.type ?? "")
+                  }
+                />
+                <MetaPill label="Model" value={latestVersion.modelName} />
                 {latestVersion.temperature != null && (
-                  <div
-                    className="px-2.5 py-1 rounded-md text-xs"
-                    style={{ backgroundColor: colors.bg.secondary }}
-                  >
-                    <span style={{ color: colors.text.secondary }}>Temp: </span>
-                    <span
-                      style={{ color: colors.text.primary, fontWeight: 500 }}
-                    >
-                      {latestVersion.temperature.toFixed(2)}
-                    </span>
-                  </div>
+                  <MetaPill
+                    label="Temp"
+                    value={latestVersion.temperature.toFixed(2)}
+                  />
                 )}
               </div>
 
-              {/* Tools Dropdown */}
               {latestVersion.tools && latestVersion.tools.length > 0 && (
                 <div className="mb-4">
                   <button
                     onClick={() => setShowTools(!showTools)}
-                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors"
-                    style={{
-                      backgroundColor: colors.bg.secondary,
-                      border: `1px solid ${colors.border}`,
-                    }}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors bg-bg-secondary border border-border hover:bg-neutral-100 cursor-pointer"
                   >
-                    <span style={{ color: colors.text.secondary }}>
+                    <span className="text-text-secondary">
                       Tools ({latestVersion.tools.length})
                     </span>
-                    <svg
-                      className={`w-3 h-3 transition-transform ${showTools ? "rotate-180" : ""}`}
-                      style={{ color: colors.text.secondary }}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
+                    <ChevronDownIcon
+                      className={`w-3 h-3 text-text-secondary transition-transform ${showTools ? "rotate-180" : ""}`}
+                    />
                   </button>
                   {showTools && (
-                    <div
-                      className="mt-1 p-2 rounded-md text-xs space-y-2"
-                      style={{
-                        backgroundColor: colors.bg.secondary,
-                        border: `1px solid ${colors.border}`,
-                      }}
-                    >
+                    <div className="mt-1 p-2 rounded-md text-xs space-y-2 bg-bg-secondary border border-border">
                       {latestVersion.tools.map((tool, idx) => (
                         <div key={idx} className="space-y-1">
-                          <div
-                            style={{
-                              color: colors.text.primary,
-                              fontWeight: 500,
-                            }}
-                          >
+                          <div className="text-text-primary font-medium">
                             {tool.type}
                           </div>
                           {tool.knowledge_base_ids &&
                             tool.knowledge_base_ids.length > 0 && (
-                              <div style={{ color: colors.text.secondary }}>
+                              <div className="text-text-secondary">
                                 Knowledge Bases:{" "}
                                 {tool.knowledge_base_ids.length}
                               </div>
                             )}
                           {tool.max_num_results && (
-                            <div style={{ color: colors.text.secondary }}>
+                            <div className="text-text-secondary">
                               Max Results: {tool.max_num_results}
                             </div>
                           )}
                         </div>
                       ))}
 
-                      {/* Vector Stores Section inside Tools */}
                       {(() => {
                         const allVectorStoreIds = latestVersion
                           .tools!.flatMap(
@@ -382,63 +312,52 @@ export default function ConfigCard({
 
                         return (
                           allVectorStoreIds.length > 0 && (
-                            <div
-                              className="mt-3 pt-2"
-                              style={{
-                                borderTop: `1px solid ${colors.border}`,
-                              }}
-                            >
+                            <div className="mt-3 pt-2 border-t border-border">
                               <button
                                 onClick={() =>
                                   setShowVectorStores(!showVectorStores)
                                 }
-                                className="w-full flex items-center justify-between px-2 py-1 rounded-md transition-colors"
-                                style={{
-                                  backgroundColor: colors.bg.primary,
-                                }}
+                                className="w-full flex items-center justify-between px-2 py-1 rounded-md transition-colors bg-bg-primary hover:bg-neutral-100 cursor-pointer"
                               >
-                                <span
-                                  style={{
-                                    color: colors.text.secondary,
-                                    fontSize: "11px",
-                                  }}
-                                >
+                                <span className="text-[11px] text-text-secondary">
                                   Knowledge Base IDs ({allVectorStoreIds.length}
                                   )
                                 </span>
-                                <svg
-                                  className={`w-3 h-3 transition-transform ${showVectorStores ? "rotate-180" : ""}`}
-                                  style={{ color: colors.text.secondary }}
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 9l-7 7-7-7"
-                                  />
-                                </svg>
+                                <ChevronDownIcon
+                                  className={`w-3 h-3 text-text-secondary transition-transform ${showVectorStores ? "rotate-180" : ""}`}
+                                />
                               </button>
                               {showVectorStores && (
-                                <div
-                                  className="mt-1 p-2 rounded-md space-y-1"
-                                  style={{
-                                    backgroundColor: colors.bg.primary,
-                                    color: colors.text.primary,
-                                  }}
-                                >
+                                <div className="mt-1 p-2 rounded-md space-y-1 bg-bg-primary text-text-primary">
                                   {allVectorStoreIds.map((id, idx) => (
                                     <div
                                       key={idx}
-                                      className="break-all"
-                                      style={{
-                                        fontFamily: "monospace",
-                                        fontSize: "10px",
-                                      }}
+                                      className="flex items-center gap-1.5 group"
                                     >
-                                      {id}
+                                      <span className="break-all font-mono text-[10px] flex-1 min-w-0">
+                                        {id}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleCopyKbId(e, id)}
+                                        className="shrink-0 p-1 rounded text-text-secondary hover:text-text-primary hover:bg-neutral-100 transition-colors cursor-pointer"
+                                        title={
+                                          copiedKbId === id
+                                            ? "Copied"
+                                            : "Copy Knowledge Base ID"
+                                        }
+                                        aria-label={
+                                          copiedKbId === id
+                                            ? "Copied"
+                                            : "Copy Knowledge Base ID"
+                                        }
+                                      >
+                                        {copiedKbId === id ? (
+                                          <CheckIcon className="w-3 h-3 text-status-success" />
+                                        ) : (
+                                          <CopyIcon className="w-3 h-3" />
+                                        )}
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
@@ -452,104 +371,51 @@ export default function ConfigCard({
                 </div>
               )}
 
-              {/* Prompt */}
-              <div
-                className="rounded-md p-3 mb-4 text-xs font-mono overflow-y-auto overflow-x-hidden"
-                style={{
-                  backgroundColor: colors.bg.secondary,
-                  maxHeight: "200px",
-                }}
-              >
-                <p
-                  className="whitespace-pre-wrap wrap-break-word"
-                  style={{ color: colors.text.secondary }}
-                >
+              <div className="rounded-md p-3 mb-4 text-xs font-mono overflow-y-auto overflow-x-hidden bg-bg-secondary max-h-[200px]">
+                <p className="whitespace-pre-wrap wrap-break-word text-text-secondary">
                   {latestVersion.instructions || "No instructions set"}
                 </p>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="outline"
+                  size="md"
                   onClick={handleEdit}
-                  className="flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: colors.bg.primary,
-                    border: `1px solid ${colors.border}`,
-                    color: colors.text.primary,
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor =
-                      colors.bg.secondary)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = colors.bg.primary)
-                  }
+                  className="flex-1"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
+                  <EditIcon className="w-4 h-4" />
                   Open in Editor
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
                   onClick={handleUseInEvaluation}
-                  className="flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: colors.accent.primary,
-                    color: colors.bg.primary,
-                    border: "none",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor =
-                      colors.accent.hover)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor =
-                      colors.accent.primary)
-                  }
+                  className="flex-1"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <PlayIcon className="w-4 h-4" />
                   Run Evaluation
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="py-4 text-center">
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
+              <p className="text-sm text-text-secondary">
                 No version details available
               </p>
             </div>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function MetaPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-2.5 py-1 rounded-md text-xs bg-bg-secondary">
+      <span className="text-text-secondary">{label}: </span>
+      <span className="text-text-primary font-medium">{value}</span>
     </div>
   );
 }

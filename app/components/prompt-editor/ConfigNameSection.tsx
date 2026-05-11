@@ -2,17 +2,13 @@
 
 import { useState } from "react";
 import { Button, Field } from "@/app/components";
+import { EditIcon } from "@/app/components/icons";
 import { ConfigPublic } from "@/app/lib/types/configs";
 
 interface ConfigNameSectionProps {
   configName: string;
   onConfigNameChange: (name: string) => void;
-  /**
-   * The parent config_id this version belongs to. When set, the name is
-   * locked behind an explicit Rename action that doesn't create a version.
-   */
   boundConfigId?: string;
-  /** Renames the config metadata only — does not create a new version. */
   onRenameConfig?: (configId: string, newName: string) => Promise<boolean>;
   allConfigMeta: ConfigPublic[];
 }
@@ -70,14 +66,15 @@ export default function ConfigNameSection({
           <div className="flex-1 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-text-primary text-sm truncate">
             {configName || "Untitled"}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
             onClick={handleStartRename}
+            className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg text-text-secondary hover:text-accent-primary hover:bg-accent-primary/5 transition-colors cursor-pointer"
             title="Rename this configuration (does not create a new version)"
+            aria-label="Rename configuration"
           >
-            Rename
-          </Button>
+            <EditIcon className="w-5 h-5" />
+          </button>
         </div>
       </div>
     );

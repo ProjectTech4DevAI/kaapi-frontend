@@ -8,7 +8,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { colors } from "@/app/lib/colors";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";
@@ -70,7 +69,6 @@ export default function TextToSpeechPage() {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMessage, setErrorModalMessage] = useState("");
 
-  // Load languages
   const loadLanguages = async () => {
     if (!isAuthenticated) return;
 
@@ -358,10 +356,7 @@ export default function TextToSpeechPage() {
   const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/text-to-speech" />
 
@@ -381,11 +376,8 @@ export default function TextToSpeechPage() {
           />
 
           {!isAuthenticated ? (
-            <div
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
+            <div className="flex-1 flex items-center justify-center bg-bg-secondary">
+              <p className="text-sm text-text-secondary">
                 Please sign in to start creating datasets and running
                 evaluations.
               </p>

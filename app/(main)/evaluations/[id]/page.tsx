@@ -30,9 +30,8 @@ import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
-import { Button, Modal, ResultsTableSkeleton } from "@/app/components";
+import { Button, Modal, ResultsTableSkeleton, Loader } from "@/app/components";
 import { useToast } from "@/app/components/Toast";
-import Loader from "@/app/components/Loader";
 import {
   MenuIcon,
   ChevronLeftIcon,
@@ -252,7 +251,7 @@ export default function EvaluationReport() {
     job.status.toLowerCase() !== "failed";
 
   const segmentedClass =
-    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]";
+    "inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] data-[selected=true]:hover:bg-accent-hover";
 
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
@@ -292,7 +291,7 @@ export default function EvaluationReport() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 relative z-10">
-              <div className="inline-flex rounded-lg p-0.5 bg-bg-secondary">
+              <div className="inline-flex rounded-full p-1 bg-accent-primary/10">
                 <button
                   type="button"
                   onClick={() => setExportFormat("row")}

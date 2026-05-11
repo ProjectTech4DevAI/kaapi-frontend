@@ -109,8 +109,8 @@ export default function CollectionDetail({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="flex-1 min-h-0 px-6 pt-6 pb-4 flex flex-col">
+        <div className="flex items-center justify-between mb-4 shrink-0">
           <h3 className="text-sm font-semibold text-text-primary">
             Documents Present ({documents.length})
           </h3>
@@ -126,8 +126,8 @@ export default function CollectionDetail({
         </div>
 
         {documents.length > 0 ? (
-          <div>
-            <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-border shrink-0">
               <div className="flex-1">
                 <p className="text-[10px] font-semibold uppercase text-text-secondary">
                   Name
@@ -140,7 +140,11 @@ export default function CollectionDetail({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div
+              className={`space-y-2 ${
+                showAllDocs ? "flex-1 min-h-0 overflow-y-auto" : ""
+              }`}
+            >
               {visibleDocs.map((doc) => (
                 <div
                   key={doc.id}
@@ -161,7 +165,7 @@ export default function CollectionDetail({
             </div>
 
             {documents.length > 3 && (
-              <div className="mt-2 flex justify-center">
+              <div className="mt-2 flex justify-center shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAllDocs(!showAllDocs)}

@@ -362,11 +362,13 @@ export default function DatasetsTab({
                   Delete dataset
                 </h3>
                 <p className="mt-1 text-sm text-text-secondary">
-                  Are you sure you want to delete{" "}
-                  <strong className="text-text-primary">
-                    {datasetPendingDelete?.dataset_name}
-                  </strong>
-                  ? This action cannot be undone.
+                  Are you sure you want to delete
+                </p>
+                <p className="mt-1 break-all text-sm font-semibold text-text-primary">
+                  {datasetPendingDelete?.dataset_name}?
+                </p>
+                <p className="mt-2 text-sm text-text-secondary">
+                  This action cannot be undone.
                 </p>
               </div>
             </div>

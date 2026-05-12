@@ -37,6 +37,7 @@ export default function KnowledgeBasePage() {
   );
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
@@ -103,14 +104,24 @@ export default function KnowledgeBasePage() {
   const handlePreviewDocument = async (firstDocument: Document) => {
     setShowDocPreviewModal(true);
     setPreviewDoc(firstDocument);
-    const enriched = await fetchAndPreviewDoc(firstDocument);
-    setPreviewDoc(enriched);
+    setIsPreviewLoading(true);
+    try {
+      const enriched = await fetchAndPreviewDoc(firstDocument);
+      setPreviewDoc(enriched);
+    } finally {
+      setIsPreviewLoading(false);
+    }
   };
 
   const handleSelectPreviewDoc = async (doc: Document) => {
     setPreviewDoc(doc);
-    const enriched = await fetchAndPreviewDoc(doc);
-    setPreviewDoc(enriched);
+    setIsPreviewLoading(true);
+    try {
+      const enriched = await fetchAndPreviewDoc(doc);
+      setPreviewDoc(enriched);
+    } finally {
+      setIsPreviewLoading(false);
+    }
   };
 
   return (
@@ -153,7 +164,7 @@ export default function KnowledgeBasePage() {
                 <Loader size="md" message="Loading knowledge base…" />
               </div>
             ) : selectedCollection ? (
-              <div className="flex-1 flex flex-col relative">
+              <div className="flex-1 min-h-0 flex flex-col relative">
                 <CollectionDetail
                   collection={selectedCollection}
                   onRequestDelete={handleRequestDelete}
@@ -257,6 +268,7 @@ export default function KnowledgeBasePage() {
         }}
         documents={selectedCollection?.documents ?? []}
         previewDoc={previewDoc}
+        isLoading={isPreviewLoading}
         onSelectDocument={handleSelectPreviewDoc}
       />
     </div>

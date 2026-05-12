@@ -13,6 +13,7 @@ import AddKeyModal from "@/app/components/keystore/AddKeyModal";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useToast } from "@/app/components/Toast";
+import { apiFetch } from "@/app/lib/apiClient";
 import { APIKey } from "@/app/lib/types/credentials";
 
 export const STORAGE_KEY = "kaapi_api_keys";
@@ -28,6 +29,7 @@ export default function KaapiKeystore() {
   const [newKeyProvider, setNewKeyProvider] = useState("Kaapi");
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const resetForm = () => {
     setNewKeyLabel("");
@@ -35,16 +37,28 @@ export default function KaapiKeystore() {
     setNewKeyProvider("Kaapi");
   };
 
-  const handleAddKey = () => {
+  const handleAddKey = async () => {
     if (!newKeyLabel.trim() || !newKeyValue.trim()) {
       toast.error("Please provide both a label and an API key");
+      return;
+    }
+
+    const trimmedKey = newKeyValue.trim();
+    setIsValidating(true);
+
+    try {
+      await apiFetch("/api/apikeys/verify", trimmedKey);
+    } catch (err) {
+      console.error("API key validation failed:", err);
+      toast.error("Invalid API key. Please check the key and try again.");
+      setIsValidating(false);
       return;
     }
 
     const newKey: APIKey = {
       id: Date.now().toString(),
       label: newKeyLabel.trim(),
-      key: newKeyValue.trim(),
+      key: trimmedKey,
       provider: newKeyProvider,
       createdAt: new Date().toISOString(),
     };
@@ -52,6 +66,7 @@ export default function KaapiKeystore() {
     addKey(newKey);
     resetForm();
     setIsModalOpen(false);
+    setIsValidating(false);
     toast.success("API key added successfully");
   };
 
@@ -122,6 +137,7 @@ export default function KaapiKeystore() {
         newKeyLabel={newKeyLabel}
         newKeyValue={newKeyValue}
         newKeyProvider={newKeyProvider}
+        isValidating={isValidating}
         onLabelChange={setNewKeyLabel}
         onValueChange={setNewKeyValue}
         onProviderChange={setNewKeyProvider}

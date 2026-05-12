@@ -68,7 +68,7 @@ export default function KeysCard({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-text-primary text-bg-primary">
+                    <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
                       {apiKey.provider}
                     </span>
                     <h3 className="text-sm font-semibold text-text-primary truncate">

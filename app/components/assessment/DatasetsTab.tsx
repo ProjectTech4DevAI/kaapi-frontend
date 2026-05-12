@@ -187,14 +187,21 @@ export default function DatasetsTab({
       if (!cached) {
         setPreviewCache((prev) => ({ ...prev, [id]: parsed }));
       }
+      const isBlank = (cell: string | undefined) =>
+        cell == null || String(cell).trim() === "";
+      const keptIdx = parsed.headers
+        .map((_, colIdx) => colIdx)
+        .filter((colIdx) => parsed.rows.some((row) => !isBlank(row[colIdx])));
+
+      const filteredHeaders = keptIdx.map((idx) => parsed.headers[idx]);
       const firstRow = parsed.rows[0] || [];
       const sampleRow = Object.fromEntries(
-        parsed.headers.map((header, index) => [
-          header,
-          String(firstRow[index] ?? ""),
+        keptIdx.map((idx) => [
+          parsed.headers[idx],
+          String(firstRow[idx] ?? ""),
         ]),
       );
-      onColumnsLoaded(parsed.headers, sampleRow);
+      onColumnsLoaded(filteredHeaders, sampleRow);
     } catch (error) {
       if (handleForbiddenError(error, onForbidden)) return;
       const message =

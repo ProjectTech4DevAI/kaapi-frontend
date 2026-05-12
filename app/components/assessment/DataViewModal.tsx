@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Modal } from "@/app/components";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
 interface DataViewModalProps {
@@ -10,16 +11,29 @@ interface DataViewModalProps {
   onClose: () => void;
 }
 
-/**
- * Reusable modal for viewing tabular data (dataset preview, result preview).
- */
+const isBlank = (cell: string | undefined) =>
+  cell == null || String(cell).trim() === "";
+
 export default function DataViewModal({
   title,
   subtitle,
-  headers,
-  rows,
+  headers: rawHeaders,
+  rows: rawRows,
   onClose,
 }: DataViewModalProps) {
+  const { headers, rows } = useMemo(() => {
+    const keptColIdx = rawHeaders
+      .map((_, colIdx) => colIdx)
+      .filter((colIdx) => rawRows.some((row) => !isBlank(row[colIdx])));
+
+    const filteredHeaders = keptColIdx.map((idx) => rawHeaders[idx]);
+    const filteredRows = rawRows
+      .map((row) => keptColIdx.map((idx) => row[idx] ?? ""))
+      .filter((row) => row.some((cell) => !isBlank(cell)));
+
+    return { headers: filteredHeaders, rows: filteredRows };
+  }, [rawHeaders, rawRows]);
+
   return (
     <Modal
       open

@@ -11,6 +11,7 @@ interface AddKeyModalProps {
   newKeyLabel: string;
   newKeyValue: string;
   newKeyProvider: string;
+  isValidating?: boolean;
   onLabelChange: (value: string) => void;
   onValueChange: (value: string) => void;
   onProviderChange: (value: string) => void;
@@ -23,13 +24,15 @@ export default function AddKeyModal({
   newKeyLabel,
   newKeyValue,
   newKeyProvider,
+  isValidating,
   onLabelChange,
   onValueChange,
   onProviderChange,
   onAddKey,
   onClose,
 }: AddKeyModalProps) {
-  const isDisabled = !newKeyLabel.trim() || !newKeyValue.trim();
+  const isDisabled =
+    !newKeyLabel.trim() || !newKeyValue.trim() || !!isValidating;
 
   return (
     <Modal
@@ -83,11 +86,11 @@ export default function AddKeyModal({
       </div>
 
       <div className="border-t border-border px-6 py-4 flex items-center justify-end gap-3 shrink-0">
-        <Button variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={onClose} disabled={isValidating}>
           Cancel
         </Button>
         <Button variant="primary" onClick={onAddKey} disabled={isDisabled}>
-          Add API Key
+          {isValidating ? "Validating…" : "Add API Key"}
         </Button>
       </div>
     </Modal>

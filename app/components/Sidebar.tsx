@@ -360,7 +360,7 @@ export default function Sidebar({
             </button>
           </div>
         ) : !isAuthenticated ? (
-          <div className="px-4 py-4 w-60 bg-bg-secondary">
+          <div className="px-4 py-4 w-60 bg-bg-primary border-t border-r border-border">
             <div className="p-2">
               <p className="text-sm font-bold text-text-primary">
                 Get full access

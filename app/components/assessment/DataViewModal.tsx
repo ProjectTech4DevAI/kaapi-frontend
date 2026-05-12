@@ -45,14 +45,14 @@ export default function DataViewModal({
         </button>
       </div>
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50">
-              <th className="sticky top-0 w-10 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"></th>
+              <th className="sticky top-0 z-10 w-10 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"></th>
               {headers.map((header, i) => (
                 <th
                   key={i}
-                  className="sticky top-0 bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-neutral-500"
+                  className="sticky top-0 z-10 w-40 min-w-[10rem] max-w-[10rem] bg-neutral-50 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide whitespace-normal break-words text-neutral-500"
                 >
                   {header}
                 </th>
@@ -66,8 +66,11 @@ export default function DataViewModal({
                   {rowIdx + 1}
                 </td>
                 {row.map((cell, cellIdx) => (
-                  <td key={cellIdx} className="px-4 py-2.5 text-neutral-900">
-                    <div className="max-h-[120px] overflow-auto text-sm leading-6">
+                  <td
+                    key={cellIdx}
+                    className="w-40 min-w-[10rem] max-w-[10rem] px-4 py-2.5 align-top text-neutral-900"
+                  >
+                    <div className="max-h-[120px] overflow-auto whitespace-pre-wrap break-words text-sm leading-6">
                       {cell || <span className="text-neutral-500">—</span>}
                     </div>
                   </td>

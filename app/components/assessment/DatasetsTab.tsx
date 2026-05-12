@@ -7,12 +7,18 @@ import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   extractCreatedDataset,
-  fetchAndParseDatasetFile,
+  fetchDatasetPreview,
   handleForbiddenError,
   isAllowedDatasetFile,
 } from "@/app/lib/utils/assessment";
+import { PREVIEW_ROW_LIMIT } from "@/app/lib/assessment/results";
+import {
+  DATASET_SAMPLE_ROW_LIMIT,
+  MAX_DATASET_FILE_BYTES,
+} from "@/app/lib/assessment/constants";
 import type {
   CreateDatasetResponse,
+  DatasetPreview,
   DatasetResponse,
   DatasetsTabProps,
   DatasetViewModalData,
@@ -49,6 +55,9 @@ export default function DatasetsTab({
     useState<DatasetViewModalData | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [previewCache, setPreviewCache] = useState<
+    Record<string, DatasetPreview>
+  >({});
 
   const loadDatasets = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -87,6 +96,14 @@ export default function DatasetsTab({
 
     if (!isAllowedDatasetFile(file.name)) {
       toast.error("Please select a CSV or Excel (.xlsx, .xls) file");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_DATASET_FILE_BYTES) {
+      toast.error(
+        `File too large. Max ${MAX_DATASET_FILE_BYTES / (1024 * 1024)}MB allowed.`,
+      );
       event.target.value = "";
       return;
     }
@@ -163,7 +180,13 @@ export default function DatasetsTab({
 
     setIsLoadingColumns(true);
     try {
-      const parsed = await fetchAndParseDatasetFile(id, apiKey);
+      const cached = previewCache[id];
+      const parsed =
+        cached ??
+        (await fetchDatasetPreview(id, apiKey, DATASET_SAMPLE_ROW_LIMIT));
+      if (!cached) {
+        setPreviewCache((prev) => ({ ...prev, [id]: parsed }));
+      }
       const firstRow = parsed.rows[0] || [];
       const sampleRow = Object.fromEntries(
         parsed.headers.map((header, index) => [
@@ -188,9 +211,25 @@ export default function DatasetsTab({
   };
 
   const handleViewDataset = async (selectedDatasetId: number, name: string) => {
+    const cacheKey = String(selectedDatasetId);
+    const cached = previewCache[cacheKey];
+    if (cached) {
+      setViewModalData({
+        name,
+        headers: cached.headers,
+        rows: cached.rows,
+      });
+      return;
+    }
+
     setViewingId(selectedDatasetId);
     try {
-      const parsed = await fetchAndParseDatasetFile(selectedDatasetId, apiKey);
+      const parsed = await fetchDatasetPreview(
+        selectedDatasetId,
+        apiKey,
+        PREVIEW_ROW_LIMIT,
+      );
+      setPreviewCache((prev) => ({ ...prev, [cacheKey]: parsed }));
       setViewModalData({
         name,
         headers: parsed.headers,
@@ -234,6 +273,13 @@ export default function DatasetsTab({
 
     const file = event.dataTransfer.files?.[0];
     if (!file || !isAllowedDatasetFile(file.name)) return;
+
+    if (file.size > MAX_DATASET_FILE_BYTES) {
+      toast.error(
+        `File too large. Max ${MAX_DATASET_FILE_BYTES / (1024 * 1024)}MB allowed.`,
+      );
+      return;
+    }
 
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(file);

@@ -67,9 +67,11 @@ export function filterAssessments(
   });
 }
 
+export const PREVIEW_ROW_LIMIT = 10;
+
 export function jsonResultsToTableData(
   results: Record<string, unknown>[],
-  opts?: { skipFields?: Set<string> },
+  opts?: { skipFields?: Set<string>; rowLimit?: number },
 ): { headers: string[]; rows: string[][] } {
   if (results.length === 0) return { headers: [], rows: [] };
 
@@ -105,7 +107,10 @@ export function jsonResultsToTableData(
     }),
   );
 
-  const rows = results.map((r) =>
+  const limited =
+    opts?.rowLimit != null ? results.slice(0, opts.rowLimit) : results;
+
+  const rows = limited.map((r) =>
     nonEmptyKeys.map((key) => {
       const v = r[key];
       if (v == null) return "";

@@ -72,7 +72,7 @@ export default function CreatePanel({
         />
         <div>
           <label className="mb-1.5 block text-xs font-medium text-text-secondary">
-            Upload CSV *
+            Upload Dataset *
           </label>
 
           <input

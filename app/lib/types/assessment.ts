@@ -287,15 +287,32 @@ export type DatasetResponse = ListResponse<Dataset>;
 export type CreateDatasetResponse = CreateResponse<
   Partial<AssessmentDatasetSummary>
 >;
-export type DatasetFileResponse = { file_content?: string };
 
-export interface ParsedDatasetFile {
+export interface DatasetPreview {
   headers: string[];
   rows: string[][];
+  totalItems: number;
+  truncated: boolean;
 }
 
-export interface DatasetViewModalData extends ParsedDatasetFile {
+export interface DatasetPreviewPayload {
+  total_items?: number;
+  preview?: {
+    headers?: string[];
+    rows?: string[][];
+    returned_rows?: number;
+    truncated?: boolean;
+  };
+}
+
+export type DatasetPreviewResponse = DatasetPreviewPayload & {
+  data?: DatasetPreviewPayload;
+};
+
+export interface DatasetViewModalData {
   name: string;
+  headers: string[];
+  rows: string[][];
 }
 
 export type ConfigMode = "existing" | "create";

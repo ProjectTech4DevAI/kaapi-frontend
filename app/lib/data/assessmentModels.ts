@@ -1,6 +1,7 @@
 import type {
   AssessmentModelConfig,
   ConfigParamDefinition,
+  ModelOption,
 } from "@/app/lib/types/assessment";
 import type { ConfigBlob } from "@/app/lib/types/configs";
 
@@ -21,7 +22,38 @@ export const GPT4_STYLE_CONFIG = {
   },
 } as const satisfies Record<string, ConfigParamDefinition>;
 
+const GEMINI_TEMPERATURE_CONFIG = {
+  temperature: {
+    max: 2.0,
+    min: 0.0,
+    type: "float",
+    default: 0.4,
+    description: "Controls randomness. Lower = more deterministic.",
+  },
+} as const satisfies Record<string, ConfigParamDefinition>;
+
+const GEMINI_THINKING_CONFIG = {
+  ...GEMINI_TEMPERATURE_CONFIG,
+  thinking_level: {
+    type: "enum",
+    default: "LOW",
+    options: ["MINIMAL", "LOW", "MEDIUM", "HIGH"],
+    description: "Controls how much the model thinks before responding.",
+  },
+} as const satisfies Record<string, ConfigParamDefinition>;
+
+const GEMINI_THINKING_NO_MINIMAL_CONFIG = {
+  ...GEMINI_TEMPERATURE_CONFIG,
+  thinking_level: {
+    type: "enum",
+    default: "LOW",
+    options: ["LOW", "MEDIUM", "HIGH"],
+    description: "Controls how much the model thinks before responding.",
+  },
+} as const satisfies Record<string, ConfigParamDefinition>;
+
 export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
+  // OpenAI
   { provider: "openai", model_name: "gpt-4o-mini", config: GPT4_STYLE_CONFIG },
   { provider: "openai", model_name: "gpt-4o", config: GPT4_STYLE_CONFIG },
   { provider: "openai", model_name: "gpt-4.1", config: GPT4_STYLE_CONFIG },
@@ -215,9 +247,84 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
       },
     },
   },
+  // Google (Gemini)
+  {
+    provider: "google",
+    model_name: "gemini-2.0-flash-lite",
+    config: GEMINI_TEMPERATURE_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-2.0-flash",
+    config: GEMINI_TEMPERATURE_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-2.5-flash-lite",
+    config: GEMINI_TEMPERATURE_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-2.5-flash",
+    config: GEMINI_TEMPERATURE_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-2.5-pro",
+    config: GEMINI_TEMPERATURE_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-3.1-flash-lite-preview",
+    config: GEMINI_THINKING_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-3.1-pro-preview",
+    config: GEMINI_THINKING_NO_MINIMAL_CONFIG,
+  },
+  {
+    provider: "google",
+    model_name: "gemini-3-flash-preview",
+    config: GEMINI_THINKING_CONFIG,
+  },
 ];
 
-export const PROVIDER_OPTIONS = [{ value: "openai", label: "OpenAI" }] as const;
+export const PROVIDER_OPTIONS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "google", label: "Google (Gemini)" },
+] as const;
+
+export function getModelsByProvider(provider: string): ModelOption[] {
+  return ASSESSMENT_MODEL_CONFIGS.filter((m) => m.provider === provider).map(
+    ({ model_name }) => ({ value: model_name, label: model_name }),
+  );
+}
+
+export function getDefaultModelForProvider(provider: string): string {
+  return (
+    ASSESSMENT_MODEL_CONFIGS.find((m) => m.provider === provider)?.model_name ??
+    "gpt-4o-mini"
+  );
+}
+
+export function getModelConfigDefinition(
+  modelName: string,
+): Record<string, ConfigParamDefinition> {
+  return (
+    ASSESSMENT_MODEL_CONFIGS.find((item) => item.model_name === modelName)
+      ?.config ?? GPT4_STYLE_CONFIG
+  );
+}
+
+export function buildDefaultParams(
+  modelName: string,
+): Record<string, number | string> {
+  const definition = getModelConfigDefinition(modelName);
+  return Object.fromEntries(
+    Object.entries(definition).map(([key, value]) => [key, value.default]),
+  );
+}
 
 export const ASSESSMENT_DEFAULT_CONFIG: ConfigBlob = {
   completion: {
@@ -226,8 +333,7 @@ export const ASSESSMENT_DEFAULT_CONFIG: ConfigBlob = {
     params: {
       model: "gpt-4o-mini",
       instructions: "",
-      top_p: GPT4_STYLE_CONFIG.top_p.default,
-      temperature: GPT4_STYLE_CONFIG.temperature.default,
+      ...buildDefaultParams("gpt-4o-mini"),
     },
   },
 };

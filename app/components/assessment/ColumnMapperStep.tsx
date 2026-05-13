@@ -158,19 +158,19 @@ export default function ColumnMapperStep({
                   <div
                     className={`flex flex-col gap-3 rounded-xl border px-3 py-3 ${roleVisuals.panelClass}`}
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1 sm:max-w-[50%]">
+                        <div className="flex items-start gap-2">
                           <span
-                            className={`h-2 w-2 rounded-full ${roleVisuals.dotClass}`}
+                            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${roleVisuals.dotClass}`}
                           />
-                          <span className="font-mono text-sm font-semibold text-text-primary">
+                          <span className="min-w-0 break-words font-mono text-sm font-semibold text-text-primary">
                             {column}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 sm:shrink-0">
                         {ASSESSMENT_ROLE_OPTIONS.map((option) => {
                           const isGroundTruth = option.value === "ground_truth";
                           const isActive = config.role === option.value;

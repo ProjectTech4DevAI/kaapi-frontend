@@ -45,6 +45,10 @@ export default function OutputSchemaModal({
     setSchema(draftSchema);
     onClose();
   };
+  const handleClose = () => {
+    setSchema(draftSchema);
+    onClose();
+  };
   const handleReset = () => {
     setDraftSchema([createProperty()]);
   };
@@ -52,7 +56,7 @@ export default function OutputSchemaModal({
   return createPortal(
     <Modal
       open
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="!w-[760px] !max-w-[calc(100vw-2rem)]"
       maxHeight="max-h-[85vh]"
       showClose={false}
@@ -63,7 +67,7 @@ export default function OutputSchemaModal({
         </h2>
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-bg-secondary hover:text-text-primary"
           aria-label="Close response format"
         >

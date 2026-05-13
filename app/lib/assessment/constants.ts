@@ -15,6 +15,9 @@ export const ASSESSMENT_CONFIG_VERSION_PAGE_SIZE = 8;
 
 export const RESULTS_POLL_INTERVAL_MS = 60_000;
 
+export const MAX_DATASET_FILE_BYTES = 5 * 1024 * 1024;
+export const DATASET_SAMPLE_ROW_LIMIT = 10;
+
 export const ACTIVE_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "pending",
   "processing",

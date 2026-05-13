@@ -17,6 +17,7 @@ import {
   isCompletedStatus,
   isFailedStatus,
   jsonResultsToTableData,
+  PREVIEW_ROW_LIMIT,
 } from "@/app/lib/assessment/results";
 import {
   ASSESSMENT_TAG,
@@ -436,7 +437,9 @@ export default function useAssessmentResults({
         const results: Record<string, unknown>[] = Array.isArray(json)
           ? json
           : json.data || [];
-        const { headers, rows } = jsonResultsToTableData(results);
+        const { headers, rows } = jsonResultsToTableData(results, {
+          rowLimit: PREVIEW_ROW_LIMIT,
+        });
         setPreviewModal({ title: label, headers, rows });
       } catch (error) {
         if (handleForbiddenError(error, onForbidden)) return;

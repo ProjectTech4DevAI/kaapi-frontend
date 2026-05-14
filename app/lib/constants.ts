@@ -41,11 +41,7 @@ export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 /** Dispatched when the user's session is no longer valid (expired or revoked). */
 export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
 
-export const PROVIDES_OPTIONS = [
-  { value: "openai", label: "OpenAI" },
-  { value: "anthropic", label: "Anthropic" },
-  { value: "google", label: "Google" },
-];
+export const PROVIDES_OPTIONS = [{ value: "openai", label: "OpenAI" }];
 
 export const PROVIDER_TYPES = [
   { value: "text", label: "Text Completion" },

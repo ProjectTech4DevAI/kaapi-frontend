@@ -221,7 +221,6 @@ export default function GuardrailsPage() {
               selectedConfigId={selectedSavedConfig?.id ?? null}
               onSelectConfig={handleSelectSavedConfig}
               onDeleteConfig={handleDeleteConfig}
-              onNewConfig={handleClearForm}
             />
           </div>
 

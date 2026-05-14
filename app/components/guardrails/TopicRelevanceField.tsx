@@ -61,7 +61,7 @@ export default function TopicRelevanceField({
 
   useEffect(() => {
     fetchConfigs();
-  }, []);
+  }, [apiKey]);  
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (e.target.value === "__create__") {

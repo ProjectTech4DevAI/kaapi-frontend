@@ -97,7 +97,7 @@ export default function TopicRelevanceModal({
 
           <div>
             <label className="block text-xs font-medium mb-1 text-text-secondary">
-              Description *
+              Description
             </label>
             <textarea
               value={description}

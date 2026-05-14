@@ -52,7 +52,7 @@ export async function DELETE(
     const { topic_relevance_config_id } = await params;
     const { status, data } = await guardrailsUserClient(
       request,
-      `/api/v1/guardrails/ban_lists/${topic_relevance_config_id}`,
+      `/api/v1/guardrails/topic_relevance_configs/${topic_relevance_config_id}`,
       {
         method: "DELETE",
       },

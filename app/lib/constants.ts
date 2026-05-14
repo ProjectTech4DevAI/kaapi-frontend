@@ -32,17 +32,16 @@ export const ACCEPTED_DOCUMENT_TYPES =
 export const MAX_DOCUMENT_SIZE_MB = 25;
 export const MAX_DOCUMENT_SIZE_BYTES = MAX_DOCUMENT_SIZE_MB * 1024 * 1024;
 
+/** Maximum number of documents that can be selected for one upload batch */
+export const MAX_DOCUMENT_UPLOAD_BATCH = 5;
+
 /** Custom event dispatched when background validation invalidates the in-memory cache */
 export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 
 /** Dispatched when the user's session is no longer valid (expired or revoked). */
 export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
 
-export const PROVIDES_OPTIONS = [
-  { value: "openai", label: "OpenAI" },
-  { value: "anthropic", label: "Anthropic" },
-  { value: "google", label: "Google" },
-];
+export const PROVIDES_OPTIONS = [{ value: "openai", label: "OpenAI" }];
 
 export const PROVIDER_TYPES = [
   { value: "text", label: "Text Completion" },

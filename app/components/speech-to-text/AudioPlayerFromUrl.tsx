@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { colors } from "@/app/lib/colors";
 
 interface AudioPlayerFromUrlProps {
   signedUrl: string;
@@ -48,6 +47,8 @@ export default function AudioPlayerFromUrl({
     }
   }, [isPlaying]);
 
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div className="w-full">
       <audio ref={audioRef} src={signedUrl} preload="metadata" />
@@ -55,12 +56,7 @@ export default function AudioPlayerFromUrl({
       <div className="flex items-center gap-3">
         <button
           onClick={onPlayToggle}
-          className="w-6 h-6 flex items-center justify-center rounded-full flex-shrink-0 border-2"
-          style={{
-            borderColor: colors.accent.primary,
-            backgroundColor: "transparent",
-            color: colors.accent.primary,
-          }}
+          className="w-6 h-6 flex items-center justify-center rounded-full shrink-0 border-2 border-accent-primary bg-transparent text-accent-primary cursor-pointer"
         >
           {isPlaying ? (
             <svg
@@ -83,27 +79,16 @@ export default function AudioPlayerFromUrl({
         </button>
 
         {sampleName && (
-          <div
-            className="flex-1 font-medium"
-            style={{ color: colors.text.primary }}
-          >
+          <div className="flex-1 font-medium text-text-primary">
             {sampleName}
           </div>
         )}
       </div>
 
-      {/* Progress bar */}
-      <div
-        className="h-0.5 rounded-full overflow-hidden mt-1.5"
-        style={{ backgroundColor: colors.border }}
-      >
+      <div className="h-0.5 rounded-full overflow-hidden mt-1.5 bg-border">
         <div
-          className="h-full rounded-full"
-          style={{
-            width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
-            backgroundColor: colors.accent.primary,
-            transition: "width 0.05s ease-out",
-          }}
+          className="h-full rounded-full bg-accent-primary transition-[width] duration-75 ease-out"
+          style={{ width: `${progressPercent}%` }}
         />
       </div>
     </div>

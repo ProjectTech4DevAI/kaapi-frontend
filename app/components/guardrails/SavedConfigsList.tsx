@@ -7,7 +7,6 @@ import {
   GuardrailsShieldCheckIcon,
   EditIcon,
 } from "@/app/components/icons";
-import Button from "@/app/components/Button";
 import Loader from "@/app/components/Loader";
 import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
 
@@ -17,7 +16,6 @@ interface SavedConfigsListProps {
   selectedConfigId: string | null;
   onSelectConfig: (cfg: SavedValidatorConfig) => void;
   onDeleteConfig: (id: string) => void;
-  onNewConfig: () => void;
 }
 
 export default function SavedConfigsList({
@@ -26,7 +24,6 @@ export default function SavedConfigsList({
   selectedConfigId,
   onSelectConfig,
   onDeleteConfig,
-  onNewConfig,
 }: SavedConfigsListProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -41,9 +38,6 @@ export default function SavedConfigsList({
             </div>
           )}
         </div>
-        <Button onClick={onNewConfig} size="sm" className="!rounded-lg">
-          + New Config
-        </Button>
       </div>
 
       <div className="flex-1 overflow-auto p-5">

@@ -9,7 +9,6 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
 import { Dataset } from "@/app/lib/types/dataset";
 import Sidebar from "@/app/components/Sidebar";
@@ -19,7 +18,7 @@ import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { FeatureGateModal, LoginModal } from "@/app/components/auth";
-import Loader from "@/app/components/Loader";
+import { Loader } from "@/app/components";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
 import { Tab } from "@/app/lib/types/evaluation";
@@ -248,10 +247,7 @@ function SimplifiedEvalContent() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 

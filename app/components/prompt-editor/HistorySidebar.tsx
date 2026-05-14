@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
-import { colors } from "@/app/lib/colors";
-import { ChevronRightIcon } from "@/app/components/icons";
+import Loader from "@/app/components/Loader";
+import { Button, VersionPill } from "@/app/components";
+import { ArrowLeftIcon } from "@/app/components/icons";
 import {
   ConfigPublic,
   SavedConfig,
@@ -29,108 +30,64 @@ function VersionRow({
 }: VersionRowProps) {
   return (
     <div
-      className="p-3 border-l-2"
-      style={{
-        backgroundColor: isSelected
-          ? "#f0fdf4"
+      className={`p-3 ml-3 border-l-2 transition-colors ${
+        isFirst ? "" : "border-t border-border"
+      } ${
+        isSelected
+          ? "bg-status-success-bg border-l-status-success"
           : isFirst
-            ? "#fafafa"
-            : colors.bg.primary,
-        borderLeftColor: isSelected
-          ? colors.status.success
-          : isFirst
-            ? colors.accent.primary
-            : colors.border,
-        marginLeft: "12px",
-        borderTop: isFirst ? "none" : `1px solid ${colors.border}`,
-        transition: "all 0.15s ease",
-      }}
+            ? "bg-bg-secondary border-l-accent-primary"
+            : "bg-bg-primary border-l-border"
+      }`}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span
-          className="px-2 py-0.5 rounded text-xs font-medium"
-          style={{
-            backgroundColor: colors.bg.secondary,
-            color: colors.text.primary,
-            border: `1px solid ${colors.border}`,
-          }}
-        >
-          v{item.version}
-        </span>
+        <VersionPill
+          version={item.version}
+          tone={isFirst ? "accent" : "default"}
+        />
         {isFirst && (
-          <span
-            className="px-2 py-0.5 rounded text-xs font-medium"
-            style={{
-              backgroundColor: "#dcfce7",
-              color: "#15803d",
-              border: "1px solid #86efac",
-            }}
-          >
+          <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border bg-status-success-bg text-status-success-text border-status-success-border">
             Latest
           </span>
         )}
       </div>
 
       {item.commit_message && (
-        <div className="text-xs mb-1" style={{ color: colors.text.primary }}>
+        <div className="text-xs mb-1 text-text-primary">
           {item.commit_message}
         </div>
       )}
 
-      <div className="text-xs mb-2" style={{ color: colors.text.secondary }}>
+      <div className="text-xs mb-2 text-text-secondary">
         {timeAgo(item.inserted_at)}
         {fullConfig ? ` • ${fullConfig.provider}/${fullConfig.modelName}` : ""}
       </div>
 
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          variant="primary"
+          size="sm"
+          className="text-xs px-2.5 py-1"
+          disabled={isFetching}
           onClick={(e) => {
             e.stopPropagation();
             onLoad();
           }}
-          disabled={isFetching}
-          className="px-2 py-1 rounded text-xs font-medium transition-colors"
-          style={{
-            backgroundColor: colors.accent.primary,
-            color: "#ffffff",
-            border: "none",
-            opacity: isFetching ? 0.6 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!isFetching) e.currentTarget.style.opacity = "0.85";
-          }}
-          onMouseLeave={(e) => {
-            if (!isFetching) e.currentTarget.style.opacity = "1";
-          }}
         >
-          {isFetching ? "…" : "Load"}
-        </button>
-        <button
+          {isFetching ? "…" : "Load into Editor"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs px-2.5 py-1"
+          disabled={isFetching}
           onClick={(e) => {
             e.stopPropagation();
             onCompare();
           }}
-          disabled={isFetching}
-          className="px-2 py-1 rounded text-xs font-medium transition-colors"
-          style={{
-            backgroundColor: colors.bg.secondary,
-            color: colors.text.secondary,
-            border: `1px solid ${colors.border}`,
-            opacity: isFetching ? 0.6 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!isFetching) {
-              e.currentTarget.style.backgroundColor = colors.bg.primary;
-              e.currentTarget.style.color = colors.text.primary;
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = colors.bg.secondary;
-            e.currentTarget.style.color = colors.text.secondary;
-          }}
         >
           Compare
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -188,39 +145,20 @@ function SingleConfigHistory({
   );
 
   return (
-    <div
-      className="border rounded-lg overflow-hidden"
-      style={{ borderColor: colors.border, transition: "all 0.15s ease" }}
-    >
+    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow">
       <div
         onClick={onToggle}
-        className="p-3 cursor-pointer"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          transition: "all 0.15s ease",
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#f5f5f5")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-        }
+        className="p-3 cursor-pointer bg-bg-primary hover:bg-neutral-50 transition-colors"
       >
         <div className="flex items-start gap-2">
-          <span className="text-sm" style={{ color: colors.text.secondary }}>
+          <span className="text-sm text-text-secondary">
             {isExpanded ? "▼" : "▶"}
           </span>
           <div className="flex-1">
-            <div
-              className="text-sm font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <div className="text-sm font-semibold text-text-primary">
               {configName || "Config"}
             </div>
-            <div
-              className="text-xs mt-0.5"
-              style={{ color: colors.text.secondary }}
-            >
+            <div className="text-xs mt-0.5 text-text-secondary">
               {sortedItems.length} version{sortedItems.length !== 1 ? "s" : ""}{" "}
               • Latest: v{sortedItems[0]?.version}
             </div>
@@ -229,7 +167,7 @@ function SingleConfigHistory({
       </div>
 
       {isExpanded && (
-        <div className="border-t" style={{ borderColor: colors.border }}>
+        <div className="border-t border-neutral-100">
           {sortedItems.map((item, idx) => (
             <VersionRow
               key={item.id}
@@ -316,78 +254,32 @@ function AllConfigsGroup({
     : timeAgo(meta.updated_at);
 
   return (
-    <div
-      className="border rounded-lg overflow-hidden"
-      style={{ borderColor: colors.border, transition: "all 0.15s ease" }}
-    >
+    <div className="rounded-lg overflow-hidden bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow">
       <div
         onClick={onToggle}
-        className="p-3 cursor-pointer"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          transition: "all 0.15s ease",
-        }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#f5f5f5")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-        }
+        className="p-3 cursor-pointer bg-bg-primary hover:bg-neutral-50 transition-colors"
       >
         <div className="flex items-start gap-2">
-          <span className="text-sm" style={{ color: colors.text.secondary }}>
+          <span className="text-sm text-text-secondary">
             {isExpanded ? "▼" : "▶"}
           </span>
           <div className="flex-1">
-            <div
-              className="text-sm font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+            <div className="text-sm font-semibold text-text-primary">
               {meta.name}
             </div>
-            <div
-              className="text-xs mt-0.5"
-              style={{ color: colors.text.secondary }}
-            >
-              {subtitle}
-            </div>
+            <div className="text-xs mt-0.5 text-text-secondary">{subtitle}</div>
           </div>
-          {isLoadingGroup && (
-            <svg
-              className="w-3.5 h-3.5 animate-spin flex-shrink-0 mt-0.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              style={{ color: colors.text.secondary }}
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-          )}
         </div>
       </div>
 
       {isExpanded && isLoadingGroup && (
-        <div
-          className="border-t px-4 py-3 text-xs"
-          style={{ borderColor: colors.border, color: colors.text.secondary }}
-        >
-          Loading versions…
+        <div className="border-t border-neutral-100 py-3">
+          <Loader size="sm" message="Loading versions…" />
         </div>
       )}
 
       {isExpanded && !isLoadingGroup && items && (
-        <div className="border-t" style={{ borderColor: colors.border }}>
+        <div className="border-t border-neutral-100">
           {items.map((item, idx) => (
             <VersionRow
               key={item.id}
@@ -411,16 +303,12 @@ function AllConfigsGroup({
   );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
-
 interface HistorySidebarProps {
   savedConfigs: SavedConfig[];
   selectedVersion: SavedConfig | null;
   onSelectVersion: (version: SavedConfig) => void;
   onLoadVersion: (version: SavedConfig) => void;
   onBackToEditor: () => void;
-  onToggle: () => void;
-  collapsed: boolean;
   isLoading?: boolean;
   currentConfigId?: string;
   versionItems?: ConfigVersionItems[];
@@ -443,8 +331,6 @@ export default function HistorySidebar({
   onSelectVersion,
   onLoadVersion,
   onBackToEditor,
-  onToggle,
-  collapsed,
   isLoading = false,
   currentConfigId,
   versionItems,
@@ -509,124 +395,29 @@ export default function HistorySidebar({
     (currentConfigId ? !sortedVersionItems?.length : !allConfigMeta?.length);
 
   return (
-    <div
-      className="border-r flex flex-col flex-shrink-0"
-      style={{
-        width: collapsed ? "40px" : "320px",
-        backgroundColor: colors.bg.primary,
-        borderColor: colors.border,
-        transition: "width 0.2s ease-in-out",
-        overflow: "hidden",
-      }}
-    >
+    <div className="w-80 shrink-0 border-r border-border bg-bg-primary flex flex-col overflow-hidden">
       {/* Header */}
-      <div
-        className="border-b flex items-center flex-shrink-0"
-        style={{
-          borderColor: colors.border,
-          padding: collapsed ? "0" : "7px 16px",
-          justifyContent: collapsed ? "center" : "space-between",
-          height: collapsed ? "40px" : "auto",
-          transition: "padding 0.2s ease-in-out",
-        }}
-      >
-        {!collapsed && (
-          <div className="flex-1 overflow-hidden mr-2">
-            <div
-              className="text-sm font-semibold mb-0.5 whitespace-nowrap"
-              style={{ color: colors.text.primary }}
-            >
-              {titleText}
-            </div>
-            <div
-              className="text-xs whitespace-nowrap"
-              style={{ color: colors.text.secondary }}
-            >
-              {headerSubtitle}
-            </div>
-          </div>
-        )}
-        <button
-          onClick={onToggle}
-          className="rounded shrink-0 flex items-center justify-center w-7 h-7 border"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.bg.primary,
-            color: colors.text.secondary,
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = colors.bg.secondary;
-            e.currentTarget.style.color = colors.text.primary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = colors.bg.primary;
-            e.currentTarget.style.color = colors.text.secondary;
-          }}
-          title={collapsed ? "Show version history" : "Hide version history"}
-        >
-          <ChevronRightIcon
-            className="w-4 h-4"
-            style={{
-              transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease-in-out",
-            }}
-          />
-        </button>
+      <div className="h-14 border-b border-border px-4 flex flex-col justify-center shrink-0">
+        <div className="text-sm font-semibold text-text-primary whitespace-nowrap">
+          {titleText}
+        </div>
+        <div className="text-xs text-text-secondary whitespace-nowrap">
+          {headerSubtitle}
+        </div>
       </div>
 
-      {collapsed && (
-        <div
-          className="flex items-start justify-center pt-4 cursor-pointer"
-          onClick={onToggle}
-          style={{ color: colors.text.secondary }}
-          title="Show version history"
-        >
-          <span
-            className="text-xs font-medium whitespace-nowrap"
-            style={{
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-              transform: "rotate(180deg)",
-            }}
-          >
-            {titleText}
-          </span>
-        </div>
-      )}
-
-      {!collapsed && (
+      {
         <div className="flex-1 overflow-auto p-3">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center p-8">
-              <div
-                className="animate-spin rounded-full border-4 border-solid mb-3"
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderColor: colors.bg.secondary,
-                  borderTopColor: colors.accent.primary,
-                }}
-              />
-              <p
-                className="text-sm font-medium"
-                style={{ color: colors.text.primary }}
-              >
-                Loading configs...
-              </p>
+            <div className="p-8">
+              <Loader size="md" message="Loading configs..." />
             </div>
           ) : isEmpty ? (
-            <div
-              className="border-2 border-dashed rounded-lg p-6 text-center"
-              style={{ borderColor: colors.border }}
-            >
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <p className="text-sm text-text-secondary">
                 No saved configurations yet
               </p>
-              <p
-                className="text-xs mt-2"
-                style={{ color: colors.text.secondary }}
-              >
+              <p className="text-xs mt-2 text-text-secondary">
                 Create and save your first config to see version history
               </p>
             </div>
@@ -675,23 +466,19 @@ export default function HistorySidebar({
             </div>
           )}
         </div>
-      )}
+      }
 
-      {!collapsed && selectedVersion && (
-        <div className="p-3 border-t" style={{ borderColor: colors.border }}>
-          <button
+      {selectedVersion && (
+        <div className="h-16 px-3 flex items-center border-t border-border shrink-0">
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
             onClick={onBackToEditor}
-            className="w-full px-4 py-2 rounded-md text-sm font-medium text-white cursor-pointer"
-            style={{
-              backgroundColor: colors.accent.primary,
-              border: "none",
-              transition: "all 0.15s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            ← Back to Editor
-          </button>
+            <ArrowLeftIcon className="w-4 h-4" />
+            Back to Editor
+          </Button>
         </div>
       )}
     </div>

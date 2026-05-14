@@ -176,6 +176,7 @@ export default function GuardrailsPage() {
         );
       } else {
         setSelectedSavedConfig(null);
+        setSelectedValidatorType(null);
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save config");
@@ -235,6 +236,15 @@ export default function GuardrailsPage() {
               isSaving={isSaving}
               onSave={handleSaveConfig}
               onClear={handleClearForm}
+            />
+          </div>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <SavedConfigsList
+              configs={savedConfigs}
+              isLoading={savedConfigsLoading}
+              selectedConfigId={selectedSavedConfig?.id ?? null}
+              onSelectConfig={handleSelectSavedConfig}
+              onDeleteConfig={handleDeleteConfig}
             />
           </div>
         </div>

@@ -5,10 +5,11 @@
 
 "use client";
 
-import { useState, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { colors } from "@/app/lib/colors";
 import { useConfigs } from "@/app/hooks";
+import { Button, VersionPill, Loader } from "@/app/components";
+import SelectedConfigPreview from "@/app/components/configurations/SelectedConfigPreview";
 import {
   ChevronUpIcon,
   ChevronDownIcon,
@@ -51,17 +52,12 @@ export default function ConfigSelector({
   } = useConfigs({ pageSize: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [promptExpanded, setPromptExpanded] = useState(false);
-  const [isPromptOverflowing, setIsPromptOverflowing] = useState(false);
-  const promptRef = useRef<HTMLDivElement>(null);
   const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
   const [loadingVersionsFor, setLoadingVersionsFor] = useState<Set<string>>(
     new Set(),
   );
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
-  // When a config group is expanded, eagerly load full version details (provider,
-  // modelName, temperature).
   useEffect(() => {
     if (!expandedConfigId) return;
     const items = versionItemsMap[expandedConfigId];
@@ -71,17 +67,6 @@ export default function ConfigSelector({
     });
   }, [expandedConfigId, versionItemsMap]);
 
-  // Reset expanded state and recheck overflow whenever selected config changes.
-  useLayoutEffect(() => {
-    setPromptExpanded(false);
-    const el = promptRef.current;
-    if (!el) return;
-    // clientHeight is capped by max-h-12; scrollHeight is the full content height.
-    // Only show the icon when content actually overflows the collapsed box.
-    setIsPromptOverflowing(el.scrollHeight > el.clientHeight);
-  }, [selectedConfigId, selectedVersion, configs]);
-
-  // Find currently selected config (only present after loadSingleVersion has completed)
   const selectedConfig = configs.find(
     (c) => c.config_id === selectedConfigId && c.version === selectedVersion,
   );
@@ -90,7 +75,6 @@ export default function ConfigSelector({
     ? allConfigMeta.find((m) => m.id === selectedConfigId)?.name
     : undefined;
 
-  // Auto-load full config details for the preview pane whenever the selection changes
   useEffect(() => {
     if (!selectedConfigId || !selectedVersion) {
       setIsLoadingPreview(false);
@@ -111,8 +95,6 @@ export default function ConfigSelector({
       .catch(() => setIsLoadingPreview(false));
   }, [selectedConfigId, selectedVersion, configs]);
 
-  // Dropdown display list: all configs from the lightweight allConfigMeta,
-  // filtered by search query. Version details are loaded on-demand per group.
   const filteredDisplayGroups = searchQuery.trim()
     ? allConfigMeta.filter((m) =>
         m.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -127,7 +109,7 @@ export default function ConfigSelector({
 
   const handleCloseDropdown = () => {
     setIsDropdownOpen(false);
-    setSearchQuery(""); // Clear search on close
+    setSearchQuery("");
   };
 
   const handleOpenDropdown = () => {
@@ -153,7 +135,6 @@ export default function ConfigSelector({
     setIsDropdownOpen((prev) => !prev);
   };
 
-  // Toggle a config group’s expansion; load its version list on first expand
   const handleToggleGroup = (config_id: string) => {
     if (expandedConfigId === config_id) {
       setExpandedConfigId(null);
@@ -172,7 +153,6 @@ export default function ConfigSelector({
     }
   };
 
-  // Build URL params preserving evaluation context
   const buildEditorUrl = (configId?: string, version?: number) => {
     const params = new URLSearchParams();
     if (configId && version) {
@@ -181,19 +161,16 @@ export default function ConfigSelector({
     } else {
       params.set("new", "true");
     }
-    // Preserve evaluation context
     if (datasetId) params.set("dataset", datasetId);
     if (experimentName) params.set("experiment", experimentName);
-    params.set("from", "evaluations"); // Mark that we came from evaluations
+    params.set("from", "evaluations");
     return `/configurations/prompt-editor?${params.toString()}`;
   };
 
-  // Navigate to Prompt Editor to edit
   const handleEditInPromptEditor = () => {
     router.push(buildEditorUrl(selectedConfigId, selectedVersion));
   };
 
-  // Navigate to Config Library
   const handleBrowseLibrary = () => {
     const params = new URLSearchParams();
     if (datasetId) params.set("dataset", datasetId);
@@ -202,37 +179,25 @@ export default function ConfigSelector({
     router.push(`/configurations?${params.toString()}`);
   };
 
+  const cardClass = compact
+    ? ""
+    : "rounded-lg p-6 bg-bg-primary border border-border";
+
+  const headingClass = compact
+    ? "text-xs font-medium text-text-secondary"
+    : "text-lg font-semibold text-text-primary";
+
+  const headingText = compact ? "Configuration *" : "Select Configuration";
+
   if (isLoading) {
     return (
-      <div
-        className={compact ? "" : "border rounded-lg p-6"}
-        style={
-          compact
-            ? {}
-            : { backgroundColor: colors.bg.primary, borderColor: colors.border }
-        }
-      >
+      <div className={cardClass}>
         <div
           className={`flex items-center gap-2 ${compact ? "mb-1.5" : "mb-4"}`}
         >
-          <h2
-            className={
-              compact ? "text-xs font-medium" : "text-lg font-semibold"
-            }
-            style={{
-              color: compact ? colors.text.secondary : colors.text.primary,
-            }}
-          >
-            {compact ? "Configuration *" : "Select Configuration"}
-          </h2>
+          <h2 className={headingClass}>{headingText}</h2>
         </div>
-        <div
-          className="w-full px-4 py-3 rounded-md text-sm"
-          style={{
-            backgroundColor: colors.bg.secondary,
-            color: colors.text.secondary,
-          }}
-        >
+        <div className="w-full px-4 py-3 rounded-md text-sm bg-bg-secondary text-text-secondary">
           Loading configurations...
         </div>
       </div>
@@ -241,78 +206,37 @@ export default function ConfigSelector({
 
   if (error) {
     return (
-      <div
-        className={compact ? "" : "border rounded-lg p-6"}
-        style={
-          compact
-            ? {}
-            : { backgroundColor: colors.bg.primary, borderColor: colors.border }
-        }
-      >
+      <div className={cardClass}>
         <div
           className={`flex items-center gap-2 ${compact ? "mb-1.5" : "mb-4"}`}
         >
-          <h2
-            className={
-              compact ? "text-xs font-medium" : "text-lg font-semibold"
-            }
-            style={{
-              color: compact ? colors.text.secondary : colors.text.primary,
-            }}
-          >
-            {compact ? "Configuration *" : "Select Configuration"}
-          </h2>
+          <h2 className={headingClass}>{headingText}</h2>
         </div>
-        <div className="rounded-lg p-4 text-sm bg-[#fef2f2] border border-[#fecaca] text-[#dc2626]">
+        <div className="rounded-lg p-4 text-sm bg-status-error-bg border border-status-error-border text-status-error-text">
           {error}
         </div>
       </div>
     );
   }
 
-  const noConfigsAvailable = () => {
-    return (
-      <div
-        className="rounded-lg p-6 text-center"
-        style={{
-          backgroundColor: colors.bg.secondary,
-          border: `2px dashed ${colors.border}`,
-        }}
-      >
-        <GearIcon
-          className="w-10 h-10 mx-auto mb-2"
-          style={{ color: colors.text.secondary }}
-        />
-        <p
-          className="text-sm font-medium"
-          style={{ color: colors.text.primary }}
-        >
-          No configurations found
-        </p>
-        <p className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-          Create a configuration in the Prompt Editor first
-        </p>
-        <button
-          onClick={handleEditInPromptEditor}
-          className="mt-3 px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          style={{
-            backgroundColor: colors.accent.primary,
-            color: colors.bg.primary,
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = colors.accent.hover)
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = colors.accent.primary)
-          }
-        >
+  const noConfigsAvailable = (
+    <div className="rounded-lg p-6 text-center bg-bg-secondary border-2 border-dashed border-border">
+      <GearIcon className="w-10 h-10 mx-auto mb-2 text-text-secondary" />
+      <p className="text-sm font-medium text-text-primary">
+        No configurations found
+      </p>
+      <p className="text-xs mt-1 text-text-secondary">
+        Create a configuration in the Prompt Editor first
+      </p>
+      <div className="mt-3 flex justify-center">
+        <Button variant="primary" size="sm" onClick={handleEditInPromptEditor}>
           Create Configuration
-        </button>
+        </Button>
       </div>
-    );
-  };
+    </div>
+  );
 
-  const getModelVersionAndTime = (item: {
+  const renderModelMetaLine = (item: {
     config_id: string;
     version: number;
     inserted_at: string;
@@ -321,10 +245,7 @@ export default function ConfigSelector({
       (c) => c.config_id === item.config_id && c.version === item.version,
     );
     return (
-      <div
-        className="text-xs mt-0.5 font-mono"
-        style={{ color: colors.text.secondary }}
-      >
+      <div className="text-xs mt-0.5 font-mono text-text-secondary">
         {full
           ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""} • ${formatRelativeTime(item.inserted_at)}`
           : formatRelativeTime(item.inserted_at)}
@@ -332,76 +253,44 @@ export default function ConfigSelector({
     );
   };
 
+  const triggerBorder =
+    selectedConfig || (selectedConfigName && selectedVersion)
+      ? "border-accent-primary"
+      : "border-border";
+  const triggerText =
+    selectedConfig || (selectedConfigName && selectedVersion)
+      ? "text-text-primary"
+      : "text-text-secondary";
+  const triggerBg = disabled ? "bg-bg-secondary" : "bg-bg-primary";
+
   return (
-    <div
-      className={compact ? "" : "border rounded-lg p-6"}
-      style={
-        compact
-          ? {}
-          : { backgroundColor: colors.bg.primary, borderColor: colors.border }
-      }
-    >
+    <div className={cardClass}>
       <div
         className={`flex items-center justify-between ${compact ? "mb-1.5" : "mb-4"}`}
       >
         <div className="flex items-center gap-2">
-          <h2
-            className={
-              compact ? "text-xs font-medium" : "text-lg font-semibold"
-            }
-            style={{
-              color: compact ? colors.text.secondary : colors.text.primary,
-            }}
-          >
-            {compact ? "Configuration *" : "Select Configuration"}
-          </h2>
+          <h2 className={headingClass}>{headingText}</h2>
           {!compact && (
-            <span className="text-xs" style={{ color: colors.text.secondary }}>
-              (Required)
-            </span>
+            <span className="text-xs text-text-secondary">(Required)</span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleBrowseLibrary}
-            className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: colors.bg.primary,
-              border: `1px solid ${colors.border}`,
-              color: colors.text.primary,
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = colors.bg.primary)
-            }
-          >
+          <Button variant="outline" size="sm" onClick={handleBrowseLibrary}>
             Browse Library
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleEditInPromptEditor}
-            className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors"
-            style={{
-              backgroundColor: colors.bg.primary,
-              border: `1px solid ${colors.border}`,
-              color: colors.text.primary,
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = colors.bg.secondary)
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = colors.bg.primary)
-            }
           >
             <EditIcon className="w-3.5 h-3.5" />
             {selectedConfig ? "Edit Config" : "Create Config"}
-          </button>
+          </Button>
         </div>
       </div>
 
       {allConfigMeta.length === 0 ? (
-        noConfigsAvailable()
+        noConfigsAvailable
       ) : (
         <>
           <div className={`relative ${isDropdownOpen ? "z-50" : ""}`}>
@@ -411,34 +300,15 @@ export default function ConfigSelector({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search configurations..."
-                className="w-full px-3 py-2 rounded-md border text-sm focus:outline-none"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  borderColor: colors.accent.primary,
-                  color: colors.text.primary,
-                }}
                 autoFocus
+                className="w-full px-3 py-2 rounded-md border border-accent-primary bg-bg-primary text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary/20"
               />
             ) : (
-              /* Button when dropdown is closed */
               <div className="relative">
                 <button
                   onClick={handleOpenDropdown}
                   disabled={disabled}
-                  className="w-full px-3 py-2 pr-8 rounded-md border text-sm text-left transition-colors cursor-pointer disabled:cursor-not-allowed"
-                  style={{
-                    backgroundColor: disabled
-                      ? colors.bg.secondary
-                      : colors.bg.primary,
-                    borderColor:
-                      selectedConfig || (selectedConfigName && selectedVersion)
-                        ? colors.accent.primary
-                        : colors.border,
-                    color:
-                      selectedConfig || (selectedConfigName && selectedVersion)
-                        ? colors.text.primary
-                        : colors.text.secondary,
-                  }}
+                  className={`w-full px-3 py-2 pr-8 rounded-md border text-sm text-left transition-colors cursor-pointer disabled:cursor-not-allowed ${triggerBg} ${triggerBorder} ${triggerText}`}
                 >
                   {isLoadingPreview
                     ? "Loading..."
@@ -448,27 +318,14 @@ export default function ConfigSelector({
                         ? `${selectedConfigName} (v${selectedVersion})`
                         : "-- Select a configuration --"}
                 </button>
-                <ChevronDownIcon
-                  className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{ color: colors.text.secondary }}
-                />
+                <ChevronDownIcon className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary" />
               </div>
             )}
 
-            {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div
-                className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto"
-                style={{
-                  backgroundColor: colors.bg.primary,
-                  border: `1px solid ${colors.border}`,
-                }}
-              >
+              <div className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto bg-bg-primary border border-border">
                 {filteredDisplayGroups.length === 0 ? (
-                  <div
-                    className="px-4 py-6 text-center text-sm"
-                    style={{ color: colors.text.secondary }}
-                  >
+                  <div className="px-4 py-6 text-center text-sm text-text-secondary">
                     {searchQuery
                       ? `No configurations match "${searchQuery}"`
                       : "No configurations available"}
@@ -480,13 +337,8 @@ export default function ConfigSelector({
                     const versionItems = versionItemsMap[meta.id] ?? [];
                     return (
                       <div key={meta.id}>
-                        {/* Config group header — click to expand/collapse */}
                         <button
-                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors"
-                          style={{
-                            backgroundColor: colors.bg.secondary,
-                            color: colors.text.secondary,
-                          }}
+                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors bg-bg-secondary text-text-secondary hover:bg-neutral-100"
                           onClick={() => handleToggleGroup(meta.id)}
                         >
                           <span className="text-xs font-medium">
@@ -500,25 +352,7 @@ export default function ConfigSelector({
                           </span>
                           <span className="flex items-center gap-1">
                             {isLoadingGroup && (
-                              <svg
-                                className="w-3 h-3 animate-spin"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <circle
-                                  className="opacity-25"
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="4"
-                                />
-                                <path
-                                  className="opacity-75"
-                                  fill="currentColor"
-                                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                                />
-                              </svg>
+                              <div className="w-3 h-3 rounded-full animate-spin border-2 border-border border-t-accent-primary border-b-accent-primary [animation-duration:0.9s]" />
                             )}
                             {isExpanded ? (
                               <ChevronUpIcon className="w-3.5 h-3.5" />
@@ -527,7 +361,7 @@ export default function ConfigSelector({
                             )}
                           </span>
                         </button>
-                        {/* Version items — lightweight list, loaded on first expand */}
+
                         {isExpanded &&
                           !isLoadingGroup &&
                           versionItems.map((item) => {
@@ -543,68 +377,41 @@ export default function ConfigSelector({
                                     item.version,
                                   )
                                 }
-                                className="w-full px-4 py-2.5 text-left flex items-center justify-between transition-colors"
-                                style={{
-                                  backgroundColor: isSelected
-                                    ? colors.bg.secondary
-                                    : colors.bg.primary,
-                                }}
-                                onMouseEnter={(e) =>
-                                  (e.currentTarget.style.backgroundColor =
-                                    colors.bg.secondary)
-                                }
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    isSelected
-                                      ? colors.bg.secondary
-                                      : colors.bg.primary;
-                                }}
+                                className={`w-full px-4 py-2.5 text-left flex items-center justify-between transition-colors ${
+                                  isSelected
+                                    ? "bg-bg-secondary"
+                                    : "bg-bg-primary hover:bg-bg-secondary"
+                                }`}
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span
-                                      className="text-xs px-1.5 py-0.5 rounded"
-                                      style={{
-                                        backgroundColor: colors.bg.secondary,
-                                        color: colors.text.secondary,
-                                      }}
-                                    >
-                                      v{item.version}
-                                    </span>
-                                    <span
-                                      className="text-sm truncate"
-                                      style={{ color: colors.text.primary }}
-                                    >
+                                    <VersionPill
+                                      version={item.version}
+                                      size="sm"
+                                    />
+                                    <span className="text-sm truncate text-text-primary">
                                       {item.commit_message || "No message"}
                                     </span>
                                   </div>
-                                  {getModelVersionAndTime(item)}
+                                  {renderModelMetaLine(item)}
                                 </div>
                                 {isSelected && (
-                                  <CheckIcon
-                                    className="w-4 h-4 flex-shrink-0"
-                                    style={{ color: colors.status.success }}
-                                  />
+                                  <CheckIcon className="w-4 h-4 shrink-0 text-status-success" />
                                 )}
                               </button>
                             );
                           })}
+
                         {isExpanded && isLoadingGroup && (
-                          <div
-                            className="px-4 py-3 text-xs"
-                            style={{ color: colors.text.secondary }}
-                          >
-                            Loading versions…
+                          <div className="py-3">
+                            <Loader size="sm" message="Loading versions…" />
                           </div>
                         )}
 
                         {isExpanded &&
                           !isLoadingGroup &&
                           versionItems.length === 0 && (
-                            <div
-                              className="px-4 py-3 text-xs"
-                              style={{ color: colors.text.secondary }}
-                            >
+                            <div className="px-4 py-3 text-xs text-text-secondary">
                               No versions available
                             </div>
                           )}
@@ -616,155 +423,18 @@ export default function ConfigSelector({
             )}
           </div>
 
-          {/* Preview: loading state while full config details are being fetched */}
           {isLoadingPreview && !selectedConfig && (
-            <div
-              className="mt-4 rounded-md p-4 flex items-center gap-2"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
-              <svg
-                className="w-4 h-4 animate-spin flex-shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                style={{ color: colors.text.secondary }}
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                />
-              </svg>
-              <span
-                className="text-xs"
-                style={{ color: colors.text.secondary }}
-              >
-                Loading configuration details…
-              </span>
+            <div className="mt-4 rounded-md p-4 bg-bg-secondary">
+              <Loader size="sm" message="Loading configuration details…" />
             </div>
           )}
 
-          {/* Selected Config Preview */}
           {selectedConfig && !isLoadingPreview && (
-            <div
-              className="mt-4 rounded-md p-4"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
-              {/* Configuration Details */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <div
-                    className="text-xs font-medium mb-1"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    Provider & Model
-                  </div>
-                  <div
-                    className="text-sm font-mono"
-                    style={{ color: colors.text.primary }}
-                  >
-                    {selectedConfig.provider}/{selectedConfig.modelName}
-                  </div>
-                </div>
-
-                {selectedConfig.temperature !== undefined && (
-                  <div>
-                    <div
-                      className="text-xs font-medium mb-1"
-                      style={{ color: colors.text.secondary }}
-                    >
-                      Temperature
-                    </div>
-                    <div
-                      className="text-sm font-mono"
-                      style={{ color: colors.text.primary }}
-                    >
-                      {selectedConfig.temperature!.toFixed(2)}
-                    </div>
-                  </div>
-                )}
-
-                {selectedConfig.tools && selectedConfig.tools.length > 0 && (
-                  <>
-                    <div className="col-span-2">
-                      <div
-                        className="text-xs font-medium mb-1"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        Knowledge Base IDs
-                      </div>
-                      <div
-                        className="text-xs font-mono break-all"
-                        style={{ color: colors.text.primary }}
-                      >
-                        {selectedConfig.tools
-                          .map((tool) => tool.knowledge_base_ids)
-                          .flat()
-                          .join(", ") || "None"}
-                      </div>
-                    </div>
-                    <div>
-                      <div
-                        className="text-xs font-medium mb-1"
-                        style={{ color: colors.text.secondary }}
-                      >
-                        Max Results
-                      </div>
-                      <div
-                        className="text-sm font-mono"
-                        style={{ color: colors.text.primary }}
-                      >
-                        {selectedConfig.tools[0].max_num_results}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Prompt Preview */}
-              <div
-                className="border-t pt-3"
-                style={{ borderColor: colors.border }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div
-                    className="text-xs font-medium"
-                    style={{ color: colors.text.secondary }}
-                  >
-                    Prompt Preview
-                  </div>
-                  {selectedConfig.instructions && isPromptOverflowing && (
-                    <button
-                      onClick={() => setPromptExpanded((p) => !p)}
-                      className="rounded p-0.5 transition-colors"
-                      style={{ color: colors.text.secondary }}
-                      title={promptExpanded ? "Collapse" : "Expand"}
-                    >
-                      {promptExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                    </button>
-                  )}
-                </div>
-                <div
-                  ref={promptRef}
-                  className={`text-xs font-mono overflow-y-auto transition-all ${promptExpanded ? "max-h-48" : "max-h-12 line-clamp-3"}`}
-                  style={{ color: colors.text.primary }}
-                >
-                  {selectedConfig.instructions || "No instructions set"}
-                </div>
-              </div>
-            </div>
+            <SelectedConfigPreview config={selectedConfig} />
           )}
         </>
       )}
 
-      {/* Click outside to close dropdown */}
       {isDropdownOpen && (
         <div className="fixed inset-0 z-40" onClick={handleCloseDropdown} />
       )}

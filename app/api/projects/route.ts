@@ -4,7 +4,7 @@ import { apiClient } from "@/app/lib/apiClient";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { status, data } = await apiClient(request, "/api/v1/projects/", {
+    const { status, data } = await apiClient(request, "/api/v1/projects", {
       method: "POST",
       body: JSON.stringify(body),
     });

@@ -1,6 +1,6 @@
 /**
  * Guardrails — 2-panel layout:
- * [LEFT: Config Form] | [RIGHT: Saved Configs List]
+ * [LEFT: Saved Configs List] | [RIGHT: Config Form]
  */
 
 "use client";
@@ -214,7 +214,17 @@ export default function GuardrailsPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="shrink-0 border-r border-border overflow-hidden w-[450px]">
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <SavedConfigsList
+              configs={savedConfigs}
+              isLoading={savedConfigsLoading}
+              selectedConfigId={selectedSavedConfig?.id ?? null}
+              onSelectConfig={handleSelectSavedConfig}
+              onDeleteConfig={handleDeleteConfig}
+            />
+          </div>
+
+          <div className="shrink-0 border-l border-border overflow-hidden w-[450px]">
             <ValidatorConfigPanel
               validators={validators}
               validatorsLoading={validatorsLoading}
@@ -227,7 +237,6 @@ export default function GuardrailsPage() {
               onClear={handleClearForm}
             />
           </div>
-
           <div className="flex-1 flex flex-col overflow-hidden">
             <SavedConfigsList
               configs={savedConfigs}

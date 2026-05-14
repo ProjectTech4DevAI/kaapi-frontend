@@ -8,6 +8,7 @@ import {
   GUARDRAILS_FIELD_TOOLTIPS,
   KNOWN_ARRAY_OPTIONS,
   KNOWN_SINGLE_OPTIONS,
+  VALIDATOR_FIELD_OPTIONS,
 } from "@/app/lib/data/guardrails/validators";
 
 type SchemaProp = ValidatorConfigSchema["properties"][string];
@@ -19,6 +20,7 @@ interface SchemaFieldProps {
   defs: ValidatorConfigSchema["$defs"];
   value: unknown;
   onChange: (name: string, value: unknown) => void;
+  validatorType?: string;
 }
 
 export default function SchemaField({
@@ -27,6 +29,7 @@ export default function SchemaField({
   defs,
   value,
   onChange,
+  validatorType,
 }: SchemaFieldProps) {
   const label =
     schema.title ??
@@ -57,7 +60,9 @@ export default function SchemaField({
     </label>
   );
 
-  const singleOptions = KNOWN_SINGLE_OPTIONS[name];
+  const singleOptions =
+    (validatorType && VALIDATOR_FIELD_OPTIONS[validatorType]?.[name]) ||
+    KNOWN_SINGLE_OPTIONS[name];
   if (singleOptions) {
     return (
       <div>

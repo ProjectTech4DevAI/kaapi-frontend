@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { status, data } = await guardrailsUserClient(
       request,
-      "/api/v1/guardrails/topic_relevance_configs",
+      "/api/v1/guardrails/topic_relevance_configs/",
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { status, data } = await guardrailsUserClient(
       request,
-      "/api/v1/guardrails/topic_relevance_configs",
+      "/api/v1/guardrails/topic_relevance_configs/",
       {
         method: "POST",
         body: JSON.stringify(body),

@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Validator, formatValidatorName } from "@/app/lib/types/guardrails";
 import InfoTooltip from "@/app/components/InfoTooltip";
-import { GUARDRAILS_FIELD_TOOLTIPS } from "@/app/lib/data/guardrails/validators";
+import {
+  GUARDRAILS_FIELD_TOOLTIPS,
+  KNOWN_ARRAY_OPTIONS,
+  VALIDATOR_DEFAULT_VALUES,
+} from "@/app/lib/data/guardrails/validators";
+import MultiSelect from "@/app/components/MultiSelect";
 import Button from "@/app/components/Button";
 import Field from "@/app/components/Field";
 import Select from "@/app/components/Select";
@@ -10,6 +15,7 @@ import {
   VALIDATOR_META_BY_TYPE,
 } from "@/app/lib/utils/guardrails";
 import BanListField from "@/app/components/guardrails/BanListField";
+import TopicRelevanceField from "@/app/components/guardrails/TopicRelevanceField";
 import SchemaField from "@/app/components/guardrails/SchemaField";
 
 interface ValidatorConfigPanelProps {
@@ -61,12 +67,18 @@ export default function ValidatorConfigPanel({
         validator
           ? Object.keys(rest).length > 0
             ? rest
-            : buildDefaultValues(validator.config)
+            : {
+                ...(VALIDATOR_DEFAULT_VALUES[validator.type] ?? {}),
+                ...buildDefaultValues(validator.config),
+              }
           : {},
       );
     } else if (validator) {
       // Type changed with no saved config — only reset dynamic fields, leave static fields alone
-      setFieldValues(buildDefaultValues(validator.config));
+      setFieldValues({
+        ...(VALIDATOR_DEFAULT_VALUES[validator.type] ?? {}),
+        ...buildDefaultValues(validator.config),
+      });
     } else {
       setConfigName("");
       setStage("output");
@@ -80,6 +92,8 @@ export default function ValidatorConfigPanel({
     ? (VALIDATOR_META_BY_TYPE[selectedType]?.description ?? null)
     : null;
   const isBanList = selectedType === "ban_list";
+  const isLlamaGuard = selectedType === "llamaguard_7b";
+  const isTopicRelevance = selectedType === "topic_relevance";
 
   const editableProperties = validator
     ? Object.entries(validator.config.properties).filter(([key]) => {
@@ -87,6 +101,14 @@ export default function ValidatorConfigPanel({
         if (key === "on_fail") return false;
         if (key === "validator_metadata" || key === "metadata") return false;
         if (isBanList && (key === "banned_words" || key === "ban_list_id"))
+          return false;
+        if (isLlamaGuard && key === "policies") return false;
+        if (
+          isTopicRelevance &&
+          (key === "topic_relevance_config_id" ||
+            key === "prompt_schema_version" ||
+            key === "configuration")
+        )
           return false;
         return true;
       })
@@ -220,6 +242,42 @@ export default function ValidatorConfigPanel({
               </div>
             )}
 
+            {isTopicRelevance && (
+              <div className="border-t border-border pt-3">
+                <TopicRelevanceField
+                  value={
+                    (fieldValues["topic_relevance_config_id"] as
+                      | string
+                      | null) ?? null
+                  }
+                  onChange={(id) =>
+                    handleFieldChange("topic_relevance_config_id", id)
+                  }
+                />
+              </div>
+            )}
+
+            {isLlamaGuard && (
+              <div className="border-t border-border pt-3">
+                <label className="block text-xs font-medium mb-1 text-text-primary">
+                  Policies
+                  <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.policies} />
+                </label>
+                <MultiSelect
+                  options={KNOWN_ARRAY_OPTIONS.policies}
+                  value={
+                    Array.isArray(fieldValues["policies"])
+                      ? (fieldValues["policies"] as string[])
+                      : []
+                  }
+                  onChange={(v) =>
+                    handleFieldChange("policies", v.length > 0 ? v : null)
+                  }
+                  placeholder="Select policies…"
+                />
+              </div>
+            )}
+
             {editableProperties.length > 0 && (
               <div className="border-t border-border pt-3">
                 <div className="space-y-4">
@@ -231,6 +289,7 @@ export default function ValidatorConfigPanel({
                       defs={validator.config.$defs}
                       value={fieldValues[key]}
                       onChange={handleFieldChange}
+                      validatorType={selectedType ?? undefined}
                     />
                   ))}
                 </div>

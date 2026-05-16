@@ -6,7 +6,6 @@
  */
 
 import { useMemo } from "react";
-import { colors } from "@/app/lib/colors";
 
 export interface DiffSegment {
   type: "match" | "substitution" | "deletion" | "insertion";
@@ -21,7 +20,12 @@ interface TranscriptionDiffViewerProps {
   compact?: boolean;
 }
 
-// Simple word-level diff algorithm
+// Tailwind classes for the diff highlight palette. Kept as constants so the
+// reference and hypothesis rows stay in sync.
+const SUBSTITUTION_BG = "bg-status-warning-bg text-status-warning-text";
+const DELETION_BG = "bg-status-error-bg text-status-error-text";
+const INSERTION_BG = "bg-status-success-bg text-status-success-text";
+
 export function computeWordDiff(
   reference: string,
   hypothesis: string,
@@ -35,23 +39,15 @@ export function computeWordDiff(
     .split(/\s+/)
     .filter((w) => w.length > 0);
 
-  if (refWords.length === 0 && hypWords.length === 0) {
-    return [];
-  }
-
-  if (refWords.length === 0) {
+  if (refWords.length === 0 && hypWords.length === 0) return [];
+  if (refWords.length === 0)
     return hypWords.map((w) => ({ type: "insertion", hypothesis: w }));
-  }
-
-  if (hypWords.length === 0) {
+  if (hypWords.length === 0)
     return refWords.map((w) => ({ type: "deletion", reference: w }));
-  }
 
-  // Use dynamic programming for optimal alignment (Levenshtein-style)
   const m = refWords.length;
   const n = hypWords.length;
 
-  // Build cost matrix
   const dp: number[][] = Array(m + 1)
     .fill(null)
     .map(() => Array(n + 1).fill(0));
@@ -89,7 +85,6 @@ export function computeWordDiff(
     }
   }
 
-  // Backtrack to get alignment
   const segments: DiffSegment[] = [];
   let i = m,
     j = n;
@@ -150,88 +145,56 @@ export default function TranscriptionDiffViewer({
 
   if (!groundTruth && !hypothesis) {
     return (
-      <div className="text-sm italic" style={{ color: colors.text.secondary }}>
+      <div className="text-sm italic text-text-secondary">
         No text to compare
       </div>
     );
   }
 
+  const rowPad = compact ? "p-2" : "p-3";
+
   return (
     <div className={compact ? "space-y-2" : "space-y-4"}>
-      {/* Legend */}
       {showLegend && (
-        <div
-          className="flex items-center gap-4 text-xs"
-          style={{ color: colors.text.secondary }}
-        >
-          <div className="flex items-center gap-1.5">
-            <span
-              className="inline-block w-3 h-3 rounded"
-              style={{ backgroundColor: "#fef3c7" }}
-            />
-            <span>Substitution ({stats.substitutions})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="inline-block w-3 h-3 rounded"
-              style={{ backgroundColor: "#fee2e2" }}
-            />
-            <span>Deletion ({stats.deletions})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span
-              className="inline-block w-3 h-3 rounded"
-              style={{ backgroundColor: "#dcfce7" }}
-            />
-            <span>Insertion ({stats.insertions})</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs" style={{ color: colors.text.secondary }}>
-              Correct: {stats.matches}
-            </span>
-          </div>
+        <div className="flex items-center gap-4 text-xs text-text-secondary flex-wrap">
+          <LegendChip
+            color="bg-status-warning-bg"
+            label={`Substitution (${stats.substitutions})`}
+          />
+          <LegendChip
+            color="bg-status-error-bg"
+            label={`Deletion (${stats.deletions})`}
+          />
+          <LegendChip
+            color="bg-status-success-bg"
+            label={`Insertion (${stats.insertions})`}
+          />
+          <span>Correct: {stats.matches}</span>
         </div>
       )}
 
-      {/* Ground Truth Row */}
       <div>
-        <div
-          className="text-xs font-medium mb-1.5"
-          style={{ color: colors.text.secondary }}
-        >
+        <div className="text-xs font-medium mb-1.5 text-text-secondary">
           Ground Truth
         </div>
         <div
-          className={`${compact ? "p-2" : "p-3"} rounded-md font-mono text-sm leading-relaxed`}
-          style={{ backgroundColor: colors.bg.secondary }}
+          className={`${rowPad} rounded-md font-mono text-sm leading-relaxed bg-bg-secondary`}
         >
           {diffSegments.map((seg, idx) => {
-            if (seg.type === "insertion") {
-              // Insertions don't appear in ground truth
-              return null;
-            }
-
+            if (seg.type === "insertion") return null;
             const word = seg.reference || "";
-            let bgColor = "transparent";
-            let textDecoration = "none";
 
-            if (seg.type === "substitution") {
-              bgColor = "#fef3c7"; // yellow
-            } else if (seg.type === "deletion") {
-              bgColor = "#fee2e2"; // red
-              textDecoration = "line-through";
-            }
+            const tone =
+              seg.type === "substitution"
+                ? SUBSTITUTION_BG
+                : seg.type === "deletion"
+                  ? `${DELETION_BG} line-through`
+                  : "text-text-primary";
 
             return (
               <span key={idx}>
                 <span
-                  className="px-0.5 rounded"
-                  style={{
-                    backgroundColor: bgColor,
-                    textDecoration,
-                    color:
-                      seg.type === "deletion" ? "#dc2626" : colors.text.primary,
-                  }}
+                  className={`px-0.5 rounded ${tone}`}
                   title={
                     seg.type === "substitution"
                       ? `→ "${seg.hypothesis}"`
@@ -249,29 +212,19 @@ export default function TranscriptionDiffViewer({
         </div>
       </div>
 
-      {/* Hypothesis Row */}
       <div>
-        <div
-          className="text-xs font-medium mb-1.5"
-          style={{ color: colors.text.secondary }}
-        >
+        <div className="text-xs font-medium mb-1.5 text-text-secondary">
           Hypothesis (Transcription)
         </div>
         <div
-          className={`${compact ? "p-2" : "p-3"} rounded-md font-mono text-sm leading-relaxed`}
-          style={{ backgroundColor: colors.bg.secondary }}
+          className={`${rowPad} rounded-md font-mono text-sm leading-relaxed bg-bg-secondary`}
         >
           {diffSegments.map((seg, idx) => {
             if (seg.type === "deletion") {
-              // Deletions don't appear in hypothesis, but show placeholder
               return (
                 <span key={idx}>
                   <span
-                    className="px-1 mx-0.5 rounded text-xs"
-                    style={{
-                      backgroundColor: "#fee2e2",
-                      color: "#dc2626",
-                    }}
+                    className={`px-1 mx-0.5 rounded text-xs ${DELETION_BG}`}
                     title={`Missing: "${seg.reference}"`}
                   >
                     ___
@@ -281,26 +234,17 @@ export default function TranscriptionDiffViewer({
             }
 
             const word = seg.hypothesis || seg.reference || "";
-            let bgColor = "transparent";
-
-            if (seg.type === "substitution") {
-              bgColor = "#fef3c7"; // yellow
-            } else if (seg.type === "insertion") {
-              bgColor = "#dcfce7"; // green
-            }
+            const tone =
+              seg.type === "substitution"
+                ? SUBSTITUTION_BG
+                : seg.type === "insertion"
+                  ? `${INSERTION_BG} font-medium`
+                  : "text-text-primary";
 
             return (
               <span key={idx}>
                 <span
-                  className="px-0.5 rounded"
-                  style={{
-                    backgroundColor: bgColor,
-                    color:
-                      seg.type === "insertion"
-                        ? "#16a34a"
-                        : colors.text.primary,
-                    fontWeight: seg.type === "insertion" ? 500 : "normal",
-                  }}
+                  className={`px-0.5 rounded ${tone}`}
                   title={
                     seg.type === "substitution"
                       ? `Was: "${seg.reference}"`
@@ -317,27 +261,17 @@ export default function TranscriptionDiffViewer({
         </div>
       </div>
 
-      {/* Inline comparison view */}
       {!compact && (
         <div>
-          <div
-            className="text-xs font-medium mb-1.5"
-            style={{ color: colors.text.secondary }}
-          >
+          <div className="text-xs font-medium mb-1.5 text-text-secondary">
             Inline Comparison
           </div>
-          <div
-            className="p-3 rounded-md font-mono text-sm leading-loose border"
-            style={{
-              backgroundColor: colors.bg.primary,
-              borderColor: colors.border,
-            }}
-          >
+          <div className="p-3 rounded-md font-mono text-sm leading-loose border border-border bg-bg-primary">
             {diffSegments.map((seg, idx) => {
               if (seg.type === "match") {
                 return (
                   <span key={idx}>
-                    <span style={{ color: colors.text.primary }}>
+                    <span className="text-text-primary">
                       {seg.reference}
                     </span>{" "}
                   </span>
@@ -348,22 +282,12 @@ export default function TranscriptionDiffViewer({
                 return (
                   <span key={idx}>
                     <span
-                      className="px-1 rounded"
-                      style={{
-                        backgroundColor: "#fef3c7",
-                        textDecoration: "line-through",
-                        color: "#92400e",
-                      }}
+                      className={`px-1 rounded line-through ${SUBSTITUTION_BG}`}
                     >
                       {seg.reference}
                     </span>
                     <span
-                      className="px-1 rounded ml-0.5"
-                      style={{
-                        backgroundColor: "#fef3c7",
-                        color: "#92400e",
-                        fontWeight: 500,
-                      }}
+                      className={`px-1 rounded ml-0.5 font-medium ${SUBSTITUTION_BG}`}
                     >
                       {seg.hypothesis}
                     </span>{" "}
@@ -375,12 +299,7 @@ export default function TranscriptionDiffViewer({
                 return (
                   <span key={idx}>
                     <span
-                      className="px-1 rounded"
-                      style={{
-                        backgroundColor: "#fee2e2",
-                        textDecoration: "line-through",
-                        color: "#dc2626",
-                      }}
+                      className={`px-1 rounded line-through ${DELETION_BG}`}
                     >
                       {seg.reference}
                     </span>{" "}
@@ -392,12 +311,7 @@ export default function TranscriptionDiffViewer({
                 return (
                   <span key={idx}>
                     <span
-                      className="px-1 rounded"
-                      style={{
-                        backgroundColor: "#dcfce7",
-                        color: "#16a34a",
-                        fontWeight: 500,
-                      }}
+                      className={`px-1 rounded font-medium ${INSERTION_BG}`}
                     >
                       +{seg.hypothesis}
                     </span>{" "}
@@ -410,6 +324,15 @@ export default function TranscriptionDiffViewer({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function LegendChip({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={`inline-block w-3 h-3 rounded ${color}`} />
+      <span>{label}</span>
     </div>
   );
 }

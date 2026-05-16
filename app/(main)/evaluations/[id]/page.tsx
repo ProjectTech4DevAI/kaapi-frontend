@@ -30,9 +30,8 @@ import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
-import { Button, Modal, ResultsTableSkeleton } from "@/app/components";
+import { Button, Modal, ResultsTableSkeleton, Loader } from "@/app/components";
 import { useToast } from "@/app/components/Toast";
-import Loader from "@/app/components/Loader";
 import {
   MenuIcon,
   ChevronLeftIcon,
@@ -61,6 +60,33 @@ export default function EvaluationReport() {
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
+
+  const fetchAssistantConfig = async (assistantId: string) => {
+    try {
+      const result = await apiFetch<{
+        success: boolean;
+        data?: AssistantConfig;
+      }>(`/api/assistant/${assistantId}`, apiKey);
+      if (result.success && result.data) setAssistantConfig(result.data);
+    } catch (err) {
+      console.error(
+        `Failed to fetch assistant config for ${assistantId}:`,
+        err,
+      );
+    }
+  };
+
+  const fetchConfigInfo = async (configId: string, configVersion: number) => {
+    try {
+      await apiFetch(`/api/configs/${configId}`, apiKey);
+      await apiFetch(
+        `/api/configs/${configId}/versions/${configVersion}`,
+        apiKey,
+      );
+    } catch (error) {
+      console.error("Error fetching config version info:", error);
+    }
+  };
 
   const fetchJobDetails = useCallback(async () => {
     if (!isAuthenticated || !jobId) return;
@@ -111,33 +137,6 @@ export default function EvaluationReport() {
       setIsFormatSwitching(false);
     }
   }, [apiKey, isAuthenticated, jobId, exportFormat]);
-
-  const fetchAssistantConfig = async (assistantId: string) => {
-    try {
-      const result = await apiFetch<{
-        success: boolean;
-        data?: AssistantConfig;
-      }>(`/api/assistant/${assistantId}`, apiKey);
-      if (result.success && result.data) setAssistantConfig(result.data);
-    } catch (err) {
-      console.error(
-        `Failed to fetch assistant config for ${assistantId}:`,
-        err,
-      );
-    }
-  };
-
-  const fetchConfigInfo = async (configId: string, configVersion: number) => {
-    try {
-      await apiFetch(`/api/configs/${configId}`, apiKey);
-      await apiFetch(
-        `/api/configs/${configId}/versions/${configVersion}`,
-        apiKey,
-      );
-    } catch (error) {
-      console.error("Error fetching config version info:", error);
-    }
-  };
 
   useEffect(() => {
     if (isAuthenticated && jobId) fetchJobDetails();
@@ -252,7 +251,7 @@ export default function EvaluationReport() {
     job.status.toLowerCase() !== "failed";
 
   const segmentedClass =
-    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer border border-transparent text-text-primary hover:bg-black/4 hover:shadow-[0_0_0_1px_rgba(0,0,0,0.06)] data-[selected=true]:bg-bg-primary data-[selected=true]:border-border data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.08)] data-[selected=true]:hover:bg-bg-primary data-[selected=true]:hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)]";
+    "inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] data-[selected=true]:hover:bg-accent-hover";
 
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
@@ -260,8 +259,8 @@ export default function EvaluationReport() {
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b px-4 py-3.5 flex items-center justify-between shrink-0 bg-bg-primary border-border">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="border-b px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-bg-primary border-border">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               {sidebarCollapsed && (
                 <button
                   onClick={() => setSidebarCollapsed(false)}
@@ -278,19 +277,21 @@ export default function EvaluationReport() {
               >
                 <ChevronLeftIcon />
               </button>
-              <div className="min-w-0 flex-1 flex items-center gap-3 overflow-hidden">
+              <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-3 gap-y-1 overflow-hidden">
                 <h1 className="text-base font-semibold truncate min-w-0 text-text-primary tracking-[-0.01em]">
                   {job.run_name}
                 </h1>
                 <span className="flex items-center gap-1 text-xs shrink-0 text-text-secondary">
                   <DatabaseIcon className="shrink-0" />
-                  {job.dataset_name}
+                  <span className="truncate max-w-[200px]">
+                    {job.dataset_name}
+                  </span>
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0 relative z-10">
-              <div className="inline-flex rounded-lg p-0.5 bg-bg-secondary">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 relative z-10">
+              <div className="inline-flex rounded-full p-1 bg-accent-primary/10">
                 <button
                   type="button"
                   onClick={() => setExportFormat("row")}
@@ -299,7 +300,8 @@ export default function EvaluationReport() {
                   className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
-                  Individual Rows
+                  <span className="hidden sm:inline">Individual Rows</span>
+                  <span className="sm:hidden">Rows</span>
                 </button>
                 <button
                   type="button"
@@ -309,7 +311,8 @@ export default function EvaluationReport() {
                   className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <GroupIcon className="pointer-events-none" />
-                  Group by Questions
+                  <span className="hidden sm:inline">Group by Questions</span>
+                  <span className="sm:hidden">Grouped</span>
                 </button>
               </div>
               <Button
@@ -317,7 +320,8 @@ export default function EvaluationReport() {
                 size="sm"
                 onClick={() => setIsConfigModalOpen(true)}
               >
-                View Config
+                <span className="hidden sm:inline">View Config</span>
+                <span className="sm:hidden">Config</span>
               </Button>
               <Button
                 variant="primary"
@@ -325,7 +329,8 @@ export default function EvaluationReport() {
                 onClick={handleExportCSV}
                 disabled={!hasScore || isFormatSwitching || isResyncing}
               >
-                Export CSV
+                <span className="hidden sm:inline">Export CSV</span>
+                <span className="sm:hidden">Export</span>
               </Button>
             </div>
           </div>

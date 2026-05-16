@@ -9,7 +9,6 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
-import { colors } from "@/app/lib/colors";
 import { useSearchParams } from "next/navigation";
 import { Dataset } from "@/app/lib/types/dataset";
 import Sidebar from "@/app/components/Sidebar";
@@ -19,7 +18,7 @@ import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { FeatureGateModal, LoginModal } from "@/app/components/auth";
-import Loader from "@/app/components/Loader";
+import { Loader } from "@/app/components";
 import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
 import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
 import { Tab } from "@/app/lib/types/evaluation";
@@ -145,18 +144,18 @@ function SimplifiedEvalContent() {
     reader.readAsText(file);
   };
 
-  const handleCreateDataset = async () => {
+  const handleCreateDataset = async (): Promise<boolean> => {
     if (!uploadedFile) {
       toast.error("Please select a CSV file");
-      return;
+      return false;
     }
     if (!datasetName.trim()) {
       toast.error("Please enter a dataset name");
-      return;
+      return false;
     }
     if (!isAuthenticated) {
       toast.error("Please log in to create datasets.");
-      return;
+      return false;
     }
 
     setIsUploading(true);
@@ -188,10 +187,12 @@ function SimplifiedEvalContent() {
       setDuplicationFactor("1");
 
       toast.success("Dataset created successfully!");
+      return true;
     } catch (error: unknown) {
       toast.error(
         `Failed to create dataset: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
+      return false;
     } finally {
       setIsUploading(false);
     }
@@ -246,10 +247,7 @@ function SimplifiedEvalContent() {
   };
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/evaluations" />
 

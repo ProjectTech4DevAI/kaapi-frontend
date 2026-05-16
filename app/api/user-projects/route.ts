@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     const { status, data } = await apiClient(
       request,
-      `/api/v1/user-projects/${queryString ? `?${queryString}` : ""}`,
+      `/api/v1/user-projects${queryString ? `?${queryString}` : ""}`,
     );
     return NextResponse.json(data, { status });
   } catch {
@@ -22,14 +22,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { status, data } = await apiClient(
-      request,
-      "/api/v1/user-projects/",
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
-    );
+    const { status, data } = await apiClient(request, "/api/v1/user-projects", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
     return NextResponse.json(data, { status });
   } catch {
     return NextResponse.json(

@@ -37,6 +37,21 @@ export default function CredentialsPage() {
   const [existingCredential, setExistingCredential] =
     useState<Credential | null>(null);
 
+  const loadCredentials = async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiFetch<{ data?: Credential[] } | Credential[]>(
+        "/api/credentials",
+        apiKeys[0]?.key ?? "",
+      );
+      setCredentials(Array.isArray(data) ? data : data.data || []);
+    } catch {
+      // Silently ignore — credentials may not exist yet or auth may be cookie-only
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Load credentials once authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -64,21 +79,6 @@ export default function CredentialsPage() {
       setFormValues(blank);
     }
   }, [selectedProvider, credentials]);
-
-  const loadCredentials = async () => {
-    setIsLoading(true);
-    try {
-      const data = await apiFetch<{ data?: Credential[] } | Credential[]>(
-        "/api/credentials",
-        apiKeys[0]?.key ?? "",
-      );
-      setCredentials(Array.isArray(data) ? data : data.data || []);
-    } catch {
-      // Silently ignore — credentials may not exist yet or auth may be cookie-only
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const buildCredentialBody = (isUpdate: boolean) => {
     const innerPayload: Record<string, string> = {};

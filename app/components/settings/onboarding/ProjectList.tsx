@@ -19,7 +19,7 @@ function ProjectListSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between p-4 rounded-lg border border-border bg-white"
+          className="flex items-center justify-between p-4 rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
         >
           <div className="flex-1">
             <div className="h-4 w-36 bg-neutral-200 rounded mb-2" />
@@ -85,17 +85,17 @@ export default function ProjectList({
           {projects.map((project) => (
             <div
               key={project.id}
-              className="flex items-center justify-between p-4 rounded-lg border border-border bg-white transition-colors hover:bg-neutral-50 cursor-pointer"
+              className="flex items-center justify-between gap-3 p-4 rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow cursor-pointer"
             >
               <button
                 onClick={() => onSelectProject(project)}
-                className="flex-1 text-left min-w-0"
+                className="flex-1 text-left min-w-0 cursor-pointer"
               >
-                <p className="text-sm font-medium text-text-primary">
+                <p className="text-sm font-medium text-text-primary truncate">
                   {project.name}
                 </p>
                 {project.description && (
-                  <p className="text-xs text-text-secondary mt-0.5">
+                  <p className="text-xs text-text-secondary mt-0.5 truncate">
                     {project.description}
                   </p>
                 )}
@@ -103,12 +103,12 @@ export default function ProjectList({
                   Created {formatRelativeTime(project.inserted_at)}
                 </p>
               </button>
-              <div className="flex items-center gap-2 shrink-0 ml-3">
+              <div className="flex items-center gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${
+                  className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${
                     project.is_active
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-neutral-100 text-text-secondary border border-border"
+                      ? "bg-status-success-bg text-status-success-text border-status-success-border"
+                      : "bg-bg-secondary text-text-secondary border-border"
                   }`}
                 >
                   {project.is_active ? "Active" : "Inactive"}
@@ -121,12 +121,17 @@ export default function ProjectList({
                     }}
                     className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors cursor-pointer"
                     title="Edit project"
+                    aria-label="Edit project"
                   >
-                    <EditIcon className="w-4.5 h-4.5" />
+                    <EditIcon className="w-4 h-4" />
                   </button>
                 )}
-                <button onClick={() => onSelectProject(project)}>
-                  <ChevronRightIcon className="w-4 h-4 text-text-secondary" />
+                <button
+                  onClick={() => onSelectProject(project)}
+                  className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors cursor-pointer"
+                  aria-label="View project"
+                >
+                  <ChevronRightIcon className="w-4 h-4" />
                 </button>
               </div>
             </div>

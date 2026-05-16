@@ -5,11 +5,13 @@ import Image from "next/image";
 import { formatDate } from "@/app/components/utils";
 import { Document } from "@/app/lib/types/document";
 import {
-  RefreshIcon,
   DocumentFileIcon,
   DocumentTextIcon,
+  DownloadIcon,
   WarningIcon,
 } from "@/app/components/icons";
+import FileExtBadge from "@/app/components/FileExtBadge";
+import DocumentPreviewSkeleton from "./DocumentPreviewSkeleton";
 
 interface DocumentPreviewProps {
   document: Document | null;
@@ -56,26 +58,22 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-neutral-50">
-        <div className="text-center text-text-secondary">
-          <RefreshIcon className="w-8 h-8 mx-auto mb-3 animate-spin opacity-50" />
-          <p className="text-sm">Loading document...</p>
-        </div>
-      </div>
-    );
+    return <DocumentPreviewSkeleton />;
   }
 
   if (!document) {
     return (
-      <div className="h-full flex items-center justify-center bg-neutral-50">
-        <div className="text-center text-text-secondary">
-          <DocumentFileIcon className="mx-auto h-12 w-12 mb-3 opacity-30" />
-          <p className="text-sm font-medium text-text-primary">
+      <div className="h-full flex items-center justify-center px-6 bg-neutral-50">
+        <div className="text-center max-w-sm">
+          <div className="mx-auto mb-4 inline-flex items-center justify-center w-14 h-14 rounded-full bg-accent-primary/10">
+            <DocumentFileIcon className="w-7 h-7 text-accent-primary" />
+          </div>
+          <p className="text-base font-semibold text-text-primary mb-1">
             No document selected
           </p>
-          <p className="text-xs mt-1">
-            Select a document from the list to preview
+          <p className="text-sm text-text-secondary">
+            Pick a document from the list to preview it here, or upload a new
+            one to get started.
           </p>
         </div>
       </div>
@@ -87,61 +85,49 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
 
   return (
     <div className="h-full overflow-y-auto bg-neutral-50">
-      <div className="sticky top-0 z-10 bg-white border-b border-border px-6 py-4">
+      <div className="sticky top-0 z-10 bg-bg-primary border-b border-border px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2.5 mb-2">
-              <DocumentFileIcon className="w-5 h-5 shrink-0 text-text-secondary" />
+              <FileExtBadge fileName={document.fname} size="sm" />
               <h2 className="text-base font-semibold text-text-primary truncate">
                 {document.fname}
               </h2>
             </div>
             <div className="flex items-center gap-4 text-xs text-text-secondary">
-              {ext && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 font-medium text-text-primary uppercase">
-                  {ext}
-                </span>
-              )}
               <span>Size: {formatFileSize(document.file_size)}</span>
               <span>Uploaded: {formatDate(document.inserted_at)}</span>
             </div>
           </div>
-          {(document.signed_url || document.object_store_url) &&
-            (isPreviewable(document.fname) ? (
-              <a
-                href={document.signed_url || document.object_store_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 px-4 py-1.5 text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover rounded-full"
-              >
-                Download
-              </a>
-            ) : (
-              <a
-                href={document.signed_url || document.object_store_url}
-                download={document.fname}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="shrink-0 px-4 py-1.5 text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover rounded-full"
-              >
-                Download
-              </a>
-            ))}
+          {(document.signed_url || document.object_store_url) && (
+            <a
+              href={document.signed_url || document.object_store_url}
+              {...(isPreviewable(document.fname)
+                ? {}
+                : { download: document.fname })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-1.5 text-sm font-medium transition-colors bg-accent-primary text-white hover:bg-accent-hover rounded-full"
+            >
+              <DownloadIcon className="w-4 h-4" />
+              Download
+            </a>
+          )}
         </div>
       </div>
 
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
           {!document.signed_url && document.object_store_url && (
-            <div className="mb-4 px-4 py-3 rounded-lg border bg-amber-50 border-amber-200">
-              <p className="text-xs text-amber-700">
+            <div className="mb-4 px-4 py-3 rounded-lg border bg-status-warning-bg border-status-warning-border">
+              <p className="text-xs text-status-warning-text">
                 Direct preview unavailable. Please download the file to view it.
               </p>
             </div>
           )}
 
           {document.signed_url ? (
-            <div className="rounded-lg border border-border bg-white overflow-hidden">
+            <div className="rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
               {mimeType.startsWith("image/") ? (
                 imageLoadError ? (
                   <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
@@ -181,15 +167,16 @@ export function DocumentPreview({ document, isLoading }: DocumentPreviewProps) {
                     download={document.fname}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors bg-[#171717] text-white hover:bg-accent-hover"
+                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors bg-accent-primary text-white hover:bg-accent-hover"
                   >
+                    <DownloadIcon className="w-4 h-4" />
                     Download to view
                   </a>
                 </div>
               )}
             </div>
           ) : (
-            <div className="rounded-lg border border-border bg-white">
+            <div className="rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]">
               <div className="flex flex-col items-center justify-center py-20 text-text-secondary">
                 <WarningIcon className="mx-auto mb-3 opacity-40" />
                 <p className="text-sm font-medium text-text-primary mb-1">

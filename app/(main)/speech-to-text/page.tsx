@@ -7,8 +7,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { colors } from "@/app/lib/colors";
+import { useEffect, useState } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import TabNavigation from "@/app/components/TabNavigation";
@@ -19,19 +18,9 @@ import { apiFetch } from "@/app/lib/apiClient";
 import ErrorModal from "@/app/components/ErrorModal";
 import DatasetsTab from "@/app/components/speech-to-text/DatasetsTab";
 import EvaluationsTab from "@/app/components/speech-to-text/EvaluationsTab";
+import { useSttData } from "@/app/hooks/useSttData";
 import {
   AudioFile,
-  Dataset,
-  STTRun,
-  STTResult,
-  STTResultRaw,
-  Language,
-  DEFAULT_LANGUAGES,
-  RawLanguage,
-  LanguagesResponse,
-  DatasetsResponse,
-  RunsResponse,
-  RunDetailResponse,
   CreateDatasetResponse,
   CreateRunResponse,
 } from "@/app/lib/types/speechToText";
@@ -44,141 +33,43 @@ export default function SpeechToTextPage() {
   const { sidebarCollapsed } = useApp();
   const [leftPanelWidth] = useState(450);
   const { apiKeys, isAuthenticated } = useAuth();
-  const [languages, setLanguages] = useState<Language[]>([]);
+
+  const {
+    languages,
+    datasets,
+    runs,
+    results,
+    selectedRunId,
+    setSelectedRunId,
+    setResults,
+    isLoadingDatasets,
+    isLoadingRuns,
+    isLoadingResults,
+    loadDatasets,
+    loadRuns,
+    loadResults,
+  } = useSttData(activeTab);
+
   const [datasetName, setDatasetName] = useState("");
   const [datasetDescription, setDatasetDescription] = useState("");
   const [datasetLanguageId, setDatasetLanguageId] = useState<number>(1);
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
   const [playingFileId, setPlayingFileId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
-  const [isLoadingDatasets, setIsLoadingDatasets] = useState(true);
   const [evaluationName, setEvaluationName] = useState("");
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
     null,
   );
   const [selectedModel, setSelectedModel] = useState("gemini-2.5-pro");
   const [isRunning, setIsRunning] = useState(false);
-  const [runs, setRuns] = useState<STTRun[]>([]);
-  const [isLoadingRuns, setIsLoadingRuns] = useState(true);
-  const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
-  const [results, setResults] = useState<STTResult[]>([]);
-  const [isLoadingResults, setIsLoadingResults] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMessage, setErrorModalMessage] = useState("");
 
-  const loadLanguages = async () => {
-    if (!isAuthenticated) return;
-
-    try {
-      const data = await apiFetch<RawLanguage[] | LanguagesResponse>(
-        "/api/languages",
-        apiKeys[0]?.key ?? "",
-      );
-
-      let rawList: RawLanguage[] = [];
-      if (Array.isArray(data)) {
-        rawList = data;
-      } else if (
-        data.data &&
-        !Array.isArray(data.data) &&
-        Array.isArray(data.data.data)
-      ) {
-        rawList = data.data.data;
-      } else if (data.data && Array.isArray(data.data)) {
-        rawList = data.data;
-      } else if (data.languages && Array.isArray(data.languages)) {
-        rawList = data.languages;
-      }
-
-      const languagesList: Language[] = rawList
-        .filter((l) => l.is_active !== false)
-        .map((l) => ({
-          id: l.id,
-          code: l.locale || l.code || "",
-          name: l.label || l.name || "",
-        }));
-
-      if (languagesList.length > 0) {
-        setLanguages(languagesList);
-        // Default dataset language to first available if not already set
-        if (languagesList[0]?.id) {
-          setDatasetLanguageId(languagesList[0].id);
-        }
-      } else {
-        setLanguages(DEFAULT_LANGUAGES);
-      }
-    } catch (error) {
-      console.error("Failed to load languages:", error);
-      setLanguages(DEFAULT_LANGUAGES);
-    }
-  };
-
-  const loadDatasets = async () => {
-    if (!isAuthenticated) return;
-
-    setIsLoadingDatasets(true);
-    try {
-      const data = await apiFetch<Dataset[] | DatasetsResponse>(
-        "/api/evaluations/stt/datasets",
-        apiKeys[0]?.key ?? "",
-      );
-
-      let datasetsList: Dataset[] = [];
-      if (Array.isArray(data)) {
-        datasetsList = data;
-      } else if (data.datasets && Array.isArray(data.datasets)) {
-        datasetsList = data.datasets;
-      } else if (data.data && Array.isArray(data.data)) {
-        datasetsList = data.data;
-      }
-
-      setDatasets(datasetsList);
-    } catch (error) {
-      console.error("Failed to load datasets:", error);
-      toast.error("Failed to load datasets");
-      setDatasets([]);
-    } finally {
-      setIsLoadingDatasets(false);
-    }
-  };
-
-  const loadRuns = async () => {
-    if (!isAuthenticated) return;
-
-    setIsLoadingRuns(true);
-    try {
-      const data = await apiFetch<STTRun[] | RunsResponse>(
-        "/api/evaluations/stt/runs",
-        apiKeys[0]?.key ?? "",
-      );
-
-      let runsList: STTRun[] = [];
-      if (Array.isArray(data)) {
-        runsList = data;
-      } else if (data.runs && Array.isArray(data.runs)) {
-        runsList = data.runs;
-      } else if (data.data && Array.isArray(data.data)) {
-        runsList = data.data;
-      }
-
-      setRuns(runsList);
-    } catch (error) {
-      console.error("Failed to load runs:", error);
-      toast.error("Failed to load evaluation runs");
-      setRuns([]);
-    } finally {
-      setIsLoadingRuns(false);
-    }
-  };
-
   useEffect(() => {
-    loadLanguages();
-    loadDatasets();
-    if (activeTab === "evaluations") {
-      loadRuns();
+    if (languages.length > 0 && languages[0]?.id) {
+      setDatasetLanguageId(languages[0].id);
     }
-  }, [apiKeys, activeTab]);
+  }, [languages]);
 
   const handleAudioFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -347,7 +238,7 @@ export default function SpeechToTextPage() {
 
       setDatasetName("");
       setDatasetDescription("");
-      setDatasetLanguageId(1);
+      setDatasetLanguageId(languages[0]?.id ?? 1);
       setAudioFiles([]);
 
       await loadDatasets();
@@ -394,7 +285,6 @@ export default function SpeechToTextPage() {
       );
 
       setSelectedModel("gemini-2.5-pro");
-
       setEvaluationName("");
       setSelectedDatasetId(null);
 
@@ -418,70 +308,10 @@ export default function SpeechToTextPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const loadResults = async (runId: number) => {
-    if (!isAuthenticated) return;
-
-    setIsLoadingResults(true);
-    try {
-      const runData = await apiFetch<STTResultRaw[] | RunDetailResponse>(
-        `/api/evaluations/stt/runs/${runId}?include_results=true&include_signed_url=true`,
-        apiKeys[0]?.key ?? "",
-      );
-
-      let rawResults: STTResultRaw[] = [];
-      if (Array.isArray(runData)) {
-        rawResults = runData;
-      } else if (runData.results && Array.isArray(runData.results)) {
-        rawResults = runData.results;
-      } else if (runData.data && Array.isArray(runData.data)) {
-        rawResults = runData.data as STTResultRaw[];
-      } else if (
-        runData.data &&
-        !Array.isArray(runData.data) &&
-        runData.data.results &&
-        Array.isArray(runData.data.results)
-      ) {
-        rawResults = runData.data.results;
-      }
-
-      const resultsList: STTResult[] = rawResults.map((result) => {
-        const sample = result.sample;
-
-        const sampleName =
-          sample?.sample_metadata?.original_filename ||
-          `Sample ${result.stt_sample_id}`;
-
-        const groundTruth = sample?.ground_truth || "";
-        const signedUrl = sample?.signed_url || "";
-        const fileId = sample?.file_id;
-
-        return {
-          ...result,
-          sampleName,
-          groundTruth,
-          fileId,
-          signedUrl,
-        };
-      });
-
-      setResults(resultsList);
-      setSelectedRunId(runId);
-    } catch (error) {
-      console.error("Failed to load results:", error);
-      toast.error("Failed to load evaluation results");
-      setResults([]);
-    } finally {
-      setIsLoadingResults(false);
-    }
-  };
-
   const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/speech-to-text" />
 
@@ -501,21 +331,12 @@ export default function SpeechToTextPage() {
           />
 
           {!isAuthenticated ? (
-            <div
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
+            <div className="flex-1 flex items-center justify-center bg-bg-secondary">
               <div className="text-center">
-                <p
-                  className="text-sm font-medium mb-1"
-                  style={{ color: colors.text.primary }}
-                >
+                <p className="text-sm font-medium mb-1 text-text-primary">
                   Authentication required
                 </p>
-                <p
-                  className="text-xs mb-4"
-                  style={{ color: colors.text.secondary }}
-                >
+                <p className="text-xs mb-4 text-text-secondary">
                   Please sign in to start creating datasets and running
                   evaluations
                 </p>

@@ -326,7 +326,7 @@ export default function Sidebar({
       <div className="w-60">
         {isAuthenticated && (currentUser || googleProfile) ? (
           <div
-            className="px-3 pb-3 pt-1 border-t border-border relative"
+            className="h-16 px-3 flex items-center border-t border-border relative"
             ref={userMenuRef}
           >
             {showUserMenu && (
@@ -373,7 +373,7 @@ export default function Sidebar({
             </button>
           </div>
         ) : !isAuthenticated ? (
-          <div className="px-4 py-4 w-60 border-t border-border">
+          <div className="px-4 py-4 w-60 bg-bg-primary border-t border-r border-border">
             <div className="p-2">
               <p className="text-sm font-bold text-text-primary">
                 Get full access

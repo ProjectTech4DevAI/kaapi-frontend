@@ -3,7 +3,7 @@ import { apiClient } from "@/app/lib/apiClient";
 
 export async function GET(request: Request) {
   try {
-    const { status, data } = await apiClient(request, "/api/v1/collections/");
+    const { status, data } = await apiClient(request, "/api/v1/collections");
     return NextResponse.json(data, { status });
   } catch (error: unknown) {
     return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Get the JSON body from the request
     const body = await request.json();
 
-    const { status, data } = await apiClient(request, "/api/v1/collections/", {
+    const { status, data } = await apiClient(request, "/api/v1/collections", {
       method: "POST",
       body: JSON.stringify(body),
     });

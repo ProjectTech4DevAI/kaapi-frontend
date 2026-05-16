@@ -2,7 +2,7 @@
 
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
-import { Button, Field } from "@/app/components";
+import { Button, Field, Loader } from "@/app/components";
 
 interface CredentialFormPanelProps {
   provider: ProviderDef;
@@ -39,8 +39,7 @@ export default function CredentialFormPanel({
     return (
       <div className="flex-1 flex items-center justify-center py-8">
         <div className="text-center">
-          <div className="w-6 h-6 border-2 border-border border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-sm text-text-secondary">Loading credentials...</p>
+          <Loader size="sm" message="Loading credentials…" />
         </div>
       </div>
     );

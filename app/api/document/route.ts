@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
-    const endpoint = `/api/v1/documents/${queryString ? `?${queryString}` : ""}`;
+    const endpoint = `/api/v1/documents${queryString ? `?${queryString}` : ""}`;
     const { status, data } = await apiClient(request, endpoint);
     return NextResponse.json(data, { status });
   } catch (error: unknown) {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const { status, data } = await apiClient(request, "/api/v1/documents/", {
+      const { status, data } = await apiClient(request, "/api/v1/documents", {
         method: "POST",
         body: uploadBody,
         headers: { "Content-Type": contentType },

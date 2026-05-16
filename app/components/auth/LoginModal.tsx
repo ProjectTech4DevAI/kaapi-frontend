@@ -48,9 +48,12 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
       loginWithToken(access_token, user, google_profile);
       onClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to connect to server.",
-      );
+      const raw =
+        err instanceof Error ? err.message : "Failed to connect to server.";
+      const message = /no account found/i.test(raw)
+        ? "Your Google email isn't assigned to any organization or projects on Kaapi. Please contact Kaapi Support to request access."
+        : raw;
+      toast.error(message);
     } finally {
       setIsLoggingIn(false);
     }

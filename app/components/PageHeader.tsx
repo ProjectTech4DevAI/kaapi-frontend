@@ -5,8 +5,7 @@ import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { MenuIcon } from "@/app/components/icons";
 import { LoginModal } from "@/app/components/auth";
-import { Button } from "@/app/components";
-
+import { Button } from "@/app/components/ui";
 interface PageHeaderProps {
   title?: string;
   subtitle?: string;

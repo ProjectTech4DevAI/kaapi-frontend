@@ -1,7 +1,7 @@
 "use client";
 
 import { TTSDataset } from "@/app/lib/types/textToSpeech";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import TTSDatasetDescription from "@/app/components/text-to-speech/DatasetDescription";
 
 interface TTSDatasetCardProps {

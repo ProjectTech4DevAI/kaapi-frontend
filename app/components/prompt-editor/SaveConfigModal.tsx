@@ -1,7 +1,6 @@
 "use client";
 
-import { Button, Modal } from "@/app/components";
-
+import { Button, Modal } from "@/app/components/ui";
 interface SaveConfigModalProps {
   open: boolean;
   configName: string;

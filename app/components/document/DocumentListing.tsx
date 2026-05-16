@@ -4,9 +4,9 @@ import { formatDate } from "@/app/components/utils";
 import { Document } from "@/app/lib/types/document";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { DocumentFileIcon, TrashIcon } from "@/app/components/icons";
-import { Button } from "@/app/components";
-import Loader from "@/app/components/Loader";
-import FileExtBadge from "@/app/components/FileExtBadge";
+import { Button } from "@/app/components/ui";
+import Loader from "@/app/components/ui/Loader";
+import FileExtBadge from "@/app/components/ui/FileExtBadge";
 import DocumentListingSkeleton from "./DocumentListingSkeleton";
 
 interface DocumentListingProps {

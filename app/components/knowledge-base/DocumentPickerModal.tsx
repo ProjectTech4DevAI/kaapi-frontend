@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Button, Modal } from "@/app/components";
+import { Button, Modal } from "@/app/components/ui";
 import { CheckLineIcon, SearchIcon } from "@/app/components/icons";
 import { Document } from "@/app/lib/types/document";
 

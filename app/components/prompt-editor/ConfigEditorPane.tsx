@@ -14,8 +14,7 @@ import SaveConfigModal from "./SaveConfigModal";
 import LoadConfigDropdown from "./LoadConfigDropdown";
 import ConfigNameSection from "./ConfigNameSection";
 import ToolsSection from "./ToolsSection";
-import { Button } from "@/app/components";
-
+import { Button } from "@/app/components/ui";
 const inputClass =
   "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
 

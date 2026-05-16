@@ -5,7 +5,7 @@ import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
 import { EvalJob, AssistantConfig, Tab } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Modal } from "@/app/components";
+import { Modal } from "@/app/components/ui";
 import EvalRunsList from "./EvalRunsList";
 import RunEvaluationForm from "./RunEvaluationForm";
 

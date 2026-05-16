@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Field } from "@/app/components";
+import { Button, Field } from "@/app/components/ui";
 import { EditIcon } from "@/app/components/icons";
 import { ConfigPublic } from "@/app/lib/types/configs";
 

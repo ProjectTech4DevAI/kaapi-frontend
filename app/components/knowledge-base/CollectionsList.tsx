@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { BookOpenIcon, TrashIcon } from "@/app/components/icons";
 import { formatDate } from "@/app/components/utils";
 import { Collection } from "@/app/lib/types/document";

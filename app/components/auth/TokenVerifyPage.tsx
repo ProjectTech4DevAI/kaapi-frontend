@@ -9,7 +9,7 @@ import {
   WarningIcon,
   SpinnerIcon,
 } from "@/app/components/icons";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { APP_NAME } from "@/app/lib/constants";
 
 type Status = "verifying" | "success" | "error";

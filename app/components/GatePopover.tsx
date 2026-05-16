@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { GatePopoverProps } from "@/app/lib/types/nav";
 
 export default function GatePopover({

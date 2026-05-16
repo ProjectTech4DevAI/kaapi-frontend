@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
-
+import { Button } from "@/app/components/ui";
 interface FeatureGateModalProps {
   feature: string;
   description: string;

@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Field, Modal } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Field, Modal } from "@/app/components/ui";
+import Select from "@/app/components/ui/Select";
 import { InfoIcon } from "@/app/components/icons";
 
 const PROVIDERS = [{ value: "Kaapi", label: "Kaapi" }];

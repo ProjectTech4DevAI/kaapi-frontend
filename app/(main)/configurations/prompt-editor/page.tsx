@@ -15,7 +15,7 @@ import HistorySidebar from "@/app/components/prompt-editor/HistorySidebar";
 import PromptEditorPane from "@/app/components/prompt-editor/PromptEditorPane";
 import ConfigEditorPane from "@/app/components/prompt-editor/ConfigEditorPane";
 import DiffView from "@/app/components/prompt-editor/DiffView";
-import { Loader } from "@/app/components";
+import { Loader } from "@/app/components/ui";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useConfigs } from "@/app/hooks";

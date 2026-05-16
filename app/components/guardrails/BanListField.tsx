@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import BanListModal from "./BanListModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import Select from "@/app/components/Select";
+import Select from "@/app/components/ui/Select";
 
 interface BanList {
   id: string;

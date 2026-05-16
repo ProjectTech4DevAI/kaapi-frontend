@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal } from "@/app/components";
+import { Button, Modal } from "@/app/components/ui";
 import { ViewDatasetModalData } from "@/app/lib/types/dataset";
 
 interface ViewDatasetModalProps {

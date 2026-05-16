@@ -10,7 +10,7 @@ import {
   DownloadIcon,
   WarningIcon,
 } from "@/app/components/icons";
-import FileExtBadge from "@/app/components/FileExtBadge";
+import FileExtBadge from "@/app/components/ui/FileExtBadge";
 import DocumentPreviewSkeleton from "./DocumentPreviewSkeleton";
 
 interface DocumentPreviewProps {

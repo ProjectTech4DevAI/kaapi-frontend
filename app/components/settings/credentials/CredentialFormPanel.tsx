@@ -2,8 +2,7 @@
 
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
-import { Button, Field, Loader } from "@/app/components";
-
+import { Button, Field, Loader } from "@/app/components/ui";
 interface CredentialFormPanelProps {
   provider: ProviderDef;
   existingCredential: Credential | null;

@@ -9,7 +9,7 @@ import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/components/ui/Toast";
 import { LoginModal } from "@/app/components/auth";
 import {
   ChatConfigPicker,

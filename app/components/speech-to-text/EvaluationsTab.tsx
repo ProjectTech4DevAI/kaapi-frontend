@@ -31,7 +31,7 @@ export interface EvaluationsTabProps {
   isLoadingResults: boolean;
   loadResults: (runId: number) => void;
   apiKeys: APIKey[];
-  toast: ReturnType<typeof import("@/app/components/Toast").useToast>;
+  toast: ReturnType<typeof import("@/app/components/ui/Toast").useToast>;
   setActiveTab: (tab: Tab) => void;
 }
 

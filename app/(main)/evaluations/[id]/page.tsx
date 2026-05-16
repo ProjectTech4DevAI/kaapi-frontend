@@ -26,12 +26,13 @@ import {
   exportGroupedCSV,
   exportRowCSV,
 } from "@/app/lib/utils/evaluationExport";
-import ConfigModal from "@/app/components/ConfigModal";
+import ConfigModal from "@/app/components/ui/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
-import { Button, Modal, ResultsTableSkeleton, Loader } from "@/app/components";
-import { useToast } from "@/app/components/Toast";
+import { Button, Modal, Loader } from "@/app/components/ui";
+import { ResultsTableSkeleton } from "@/app/components";
+import { useToast } from "@/app/components/ui/Toast";
 import {
   MenuIcon,
   ChevronLeftIcon,

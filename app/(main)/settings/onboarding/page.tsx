@@ -23,7 +23,7 @@ import {
 import { apiFetch } from "@/app/lib/apiClient";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-import TabNavigation from "@/app/components/TabNavigation";
+import TabNavigation from "@/app/components/ui/TabNavigation";
 
 const PROJECT_TABS = [
   { id: "users", label: "Users" },

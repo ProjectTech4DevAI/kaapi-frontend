@@ -11,7 +11,7 @@ import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import Sidebar from "@/app/components/Sidebar";
 import { PageHeader } from "@/app/components";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/components/ui/Toast";
 import DatasetListing from "@/app/components/datasets/DatasetListing";
 import UploadDatasetModal from "@/app/components/datasets/UploadDatasetModal";
 import DeleteDatasetModal from "@/app/components/datasets/DeleteDatasetModal";

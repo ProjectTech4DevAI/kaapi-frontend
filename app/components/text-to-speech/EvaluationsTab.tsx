@@ -11,7 +11,7 @@ import {
 import { APIKey } from "@/app/lib/types/credentials";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/components/ui/Toast";
 import TTSRunsList from "./TTSRunsList";
 import RunTTSEvaluationForm from "./RunTTSEvaluationForm";
 

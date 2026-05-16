@@ -7,7 +7,7 @@ import {
   GuardrailsShieldCheckIcon,
   EditIcon,
 } from "@/app/components/icons";
-import Loader from "@/app/components/Loader";
+import Loader from "@/app/components/ui/Loader";
 import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
 
 interface SavedConfigsListProps {

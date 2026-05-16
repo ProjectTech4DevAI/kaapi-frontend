@@ -1,7 +1,7 @@
 "use client";
 
 import type { EvalJob, SummaryScore } from "@/app/lib/types/evaluation";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { RefreshIcon, WarningTriangleIcon } from "@/app/components/icons";
 
 interface MetricsOverviewProps {

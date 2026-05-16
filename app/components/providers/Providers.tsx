@@ -1,7 +1,7 @@
 "use client";
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { ToastProvider } from "@/app/components/Toast";
+import { ToastProvider } from "@/app/components/ui/Toast";
 import { AuthProvider } from "@/app/lib/context/AuthContext";
 import { AppProvider } from "@/app/lib/context/AppContext";
 

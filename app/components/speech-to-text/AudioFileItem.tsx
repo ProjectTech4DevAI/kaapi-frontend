@@ -2,7 +2,7 @@
 
 import { AudioFile, Language } from "@/app/lib/types/speechToText";
 import { CheckLineIcon, CloseIcon } from "@/app/components/icons";
-import Select from "@/app/components/Select";
+import Select from "@/app/components/ui/Select";
 import AudioPlayer from "@/app/components/speech-to-text/AudioPlayer";
 
 interface AudioFileItemProps {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader, Field, Button } from "@/app/components";
+import { Loader, Field, Button } from "@/app/components/ui";
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
 

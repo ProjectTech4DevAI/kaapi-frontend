@@ -13,10 +13,10 @@ import {
   CheckCircleIcon,
   TrashIcon,
 } from "@/app/components/icons";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/components/ui/Toast";
 import AddUserModal from "./AddUserModal";
 
 function UserListSkeleton() {

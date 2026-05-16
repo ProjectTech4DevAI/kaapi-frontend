@@ -10,7 +10,7 @@
 import { useState, useEffect } from "react";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/components/ui/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   PROVIDERS,

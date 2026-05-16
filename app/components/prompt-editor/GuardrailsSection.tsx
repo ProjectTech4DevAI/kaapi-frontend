@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import MultiSelect from "@/app/components/MultiSelect";
+import MultiSelect from "@/app/components/ui/MultiSelect";
 import { GuardrailRef } from "@/app/lib/types/configs";
 
 interface ValidatorConfigOption {

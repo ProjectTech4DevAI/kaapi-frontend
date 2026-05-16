@@ -93,7 +93,7 @@ export default function ConfigCard({
     try {
       await onLoadVersions(config.id);
 
-      const { configState } = await import("@/app/lib/store/configStore");
+      const { configState } = await import("@/app/lib/store/config");
       const versionItems = configState.versionItemsCache[config.id];
       if (!versionItems || versionItems.length === 0) {
         setIsLoadingDetails(false);

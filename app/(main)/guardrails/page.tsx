@@ -176,6 +176,7 @@ export default function GuardrailsPage() {
         );
       } else {
         setSelectedSavedConfig(null);
+        setSelectedValidatorType(null);
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save config");
@@ -234,7 +235,6 @@ export default function GuardrailsPage() {
               selectedConfigId={selectedSavedConfig?.id ?? null}
               onSelectConfig={handleSelectSavedConfig}
               onDeleteConfig={handleDeleteConfig}
-              onNewConfig={handleClearForm}
             />
           </div>
         </div>

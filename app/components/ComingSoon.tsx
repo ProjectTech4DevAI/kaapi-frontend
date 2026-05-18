@@ -5,8 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button } from "@/app/components";
-
+import { Button } from "@/app/components/ui";
 interface ComingSoonProps {
   featureName: string;
   description?: string;

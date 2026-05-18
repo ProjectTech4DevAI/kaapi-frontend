@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import PageHeader from "@/app/components/PageHeader";
 import {
@@ -20,6 +20,7 @@ import {
 import { buildValidatorUpdatePayload } from "@/app/lib/utils/guardrails";
 import ValidatorConfigPanel from "@/app/components/guardrails/ValidatorConfigPanel";
 import SavedConfigsList from "@/app/components/guardrails/SavedConfigsList";
+import DeleteConfigModal from "@/app/components/guardrails/DeleteConfigModal";
 
 export default function GuardrailsPage() {
   const { sidebarCollapsed } = useApp();
@@ -37,6 +38,8 @@ export default function GuardrailsPage() {
   const [selectedSavedConfig, setSelectedSavedConfig] =
     useState<SavedValidatorConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [configPendingDelete, setConfigPendingDelete] =
+    useState<SavedValidatorConfig | null>(null);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -119,8 +122,19 @@ export default function GuardrailsPage() {
     setSelectedSavedConfig(null);
   };
 
-  const handleDeleteConfig = async (configId: string) => {
-    if (!configsQueryString) return;
+  const handleRequestDeleteConfig = (configId: string) => {
+    const cfg = savedConfigs.find((c) => c.id === configId);
+    if (cfg) setConfigPendingDelete(cfg);
+  };
+
+  const handleConfirmDeleteConfig = async () => {
+    if (!configPendingDelete) return;
+    if (!configsQueryString) {
+      setConfigPendingDelete(null);
+      return;
+    }
+    const configId = configPendingDelete.id;
+    setConfigPendingDelete(null);
     try {
       await guardrailsFetch(
         `/api/guardrails/validators/configs/${configId}${configsQueryString}`,
@@ -204,7 +218,7 @@ export default function GuardrailsPage() {
     : null;
 
   return (
-    <div className="w-full h-screen flex bg-bg-secondary">
+    <div className="w-full h-screen flex bg-bg-primary">
       <Sidebar collapsed={sidebarCollapsed} activeRoute="/guardrails" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -214,17 +228,18 @@ export default function GuardrailsPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="w-full lg:w-3/5 lg:border-r border-border flex flex-col overflow-hidden">
             <SavedConfigsList
               configs={savedConfigs}
               isLoading={savedConfigsLoading}
               selectedConfigId={selectedSavedConfig?.id ?? null}
               onSelectConfig={handleSelectSavedConfig}
-              onDeleteConfig={handleDeleteConfig}
+              onDeleteConfig={handleRequestDeleteConfig}
+              onNewConfig={handleClearForm}
             />
           </div>
 
-          <div className="shrink-0 border-l border-border overflow-hidden w-[450px]">
+          <div className="hidden lg:flex w-2/5 flex-col overflow-hidden">
             <ValidatorConfigPanel
               validators={validators}
               validatorsLoading={validatorsLoading}
@@ -237,17 +252,15 @@ export default function GuardrailsPage() {
               onClear={handleClearForm}
             />
           </div>
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <SavedConfigsList
-              configs={savedConfigs}
-              isLoading={savedConfigsLoading}
-              selectedConfigId={selectedSavedConfig?.id ?? null}
-              onSelectConfig={handleSelectSavedConfig}
-              onDeleteConfig={handleDeleteConfig}
-            />
-          </div>
         </div>
       </div>
+
+      <DeleteConfigModal
+        open={!!configPendingDelete}
+        configName={configPendingDelete?.name}
+        onClose={() => setConfigPendingDelete(null)}
+        onConfirm={handleConfirmDeleteConfig}
+      />
     </div>
   );
 }

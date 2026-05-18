@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Field } from "@/app/components";
+import { Button, Field } from "@/app/components/ui";
 import { ChevronRightIcon } from "@/app/components/icons";
 import { Document } from "@/app/lib/types/document";
 import DocumentChip from "./DocumentChip";

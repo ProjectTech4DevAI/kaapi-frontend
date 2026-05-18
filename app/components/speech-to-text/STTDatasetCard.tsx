@@ -1,7 +1,7 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/speechToText";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import DatasetDescription from "./DatasetDescription";
 
 interface STTDatasetCardProps {

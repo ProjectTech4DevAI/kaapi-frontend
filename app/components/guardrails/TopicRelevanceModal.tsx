@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import Button from "@/app/components/Button";
-import { CloseIcon } from "@/app/components/icons";
-import Field from "@/app/components/Field";
+import { Button, Field, Modal } from "@/app/components/ui";
 
 interface TopicRelevanceModalProps {
   onClose: () => void;
@@ -65,28 +63,18 @@ export default function TopicRelevanceModal({
     "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 resize-none";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+    <Modal
+      open
+      onClose={onClose}
+      title="Create Topic Relevance Config"
+      maxWidth="max-w-md"
+    >
+      <div className="px-6 pb-2">
+        <p className="text-xs text-text-secondary mb-4">
+          Define a topic relevance configuration for output validation.
+        </p>
 
-      <div className="relative w-full max-w-md rounded-xl shadow-xl flex flex-col bg-bg-primary border border-border">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary">
-              Create Topic Relevance Config
-            </h2>
-            <p className="text-xs mt-0.5 text-text-secondary">
-              Define a topic relevance configuration for output validation
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-neutral-100 transition-colors text-text-secondary"
-          >
-            <CloseIcon className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="px-5 py-4 space-y-4 overflow-y-auto max-h-[70vh]">
+        <div className="space-y-4">
           <Field
             label="Name *"
             value={name}
@@ -117,10 +105,12 @@ export default function TopicRelevanceModal({
               onChange={(e) => setConfiguration(e.target.value)}
               placeholder="Enter the topic configuration prompt or schema…"
               rows={4}
-              className={`${textareaClass} ${configError ? "border-red-400" : ""}`}
+              className={`${textareaClass} ${configError ? "border-status-error-border" : ""}`}
             />
             {configError && (
-              <p className="text-xs text-red-500 mt-1">{configError}</p>
+              <p className="text-xs text-status-error-text mt-1">
+                {configError}
+              </p>
             )}
           </div>
 
@@ -141,16 +131,16 @@ export default function TopicRelevanceModal({
             />
           </div>
         </div>
-
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button size="sm" onClick={handleCreate} disabled={isSaving}>
-            {isSaving ? "Creating…" : "Create Topic Relevance Config"}
-          </Button>
-        </div>
       </div>
-    </div>
+
+      <div className="px-6 py-4 flex items-center justify-end gap-3 shrink-0">
+        <Button variant="outline" onClick={onClose} disabled={isSaving}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={handleCreate} disabled={isSaving}>
+          {isSaving ? "Creating…" : "Create"}
+        </Button>
+      </div>
+    </Modal>
   );
 }

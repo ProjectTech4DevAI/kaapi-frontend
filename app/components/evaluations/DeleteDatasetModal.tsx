@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Modal } from "@/app/components";
+import { Button, Modal } from "@/app/components/ui";
 import { WarningIcon } from "@/app/components/icons";
 
 interface DeleteDatasetModalProps {

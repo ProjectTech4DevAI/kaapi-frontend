@@ -1,8 +1,5 @@
 import { ValidatorConfigSchema } from "@/app/lib/types/guardrails";
-import InfoTooltip from "@/app/components/InfoTooltip";
-import MultiSelect from "../MultiSelect";
-import Field from "@/app/components/Field";
-import Select from "@/app/components/Select";
+import { Field, InfoTooltip, MultiSelect, Select } from "@/app/components/ui";
 import { resolveRef } from "@/app/lib/utils/guardrails";
 import {
   GUARDRAILS_FIELD_TOOLTIPS,
@@ -13,6 +10,9 @@ import {
 
 type SchemaProp = ValidatorConfigSchema["properties"][string];
 type AnyOfMember = { $ref?: string; enum?: string[]; type?: string };
+
+const capitalize = (v: string) =>
+  v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
 
 interface SchemaFieldProps {
   name: string;
@@ -71,7 +71,10 @@ export default function SchemaField({
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value || null)}
           placeholder="Select…"
-          options={singleOptions.map((v) => ({ value: v, label: v }))}
+          options={singleOptions.map((v) => ({
+            value: v,
+            label: capitalize(v),
+          }))}
         />
       </div>
     );
@@ -84,7 +87,7 @@ export default function SchemaField({
         <Select
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value)}
-          options={enumValues.map((v) => ({ value: v, label: v }))}
+          options={enumValues.map((v) => ({ value: v, label: capitalize(v) }))}
         />
       </div>
     );

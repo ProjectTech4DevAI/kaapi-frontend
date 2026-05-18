@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import TopicRelevanceModal from "./TopicRelevanceModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import Select from "@/app/components/Select";
+import { Select } from "@/app/components/ui";
 
 interface TopicRelevanceConfig {
   id: string;
@@ -64,33 +64,55 @@ export default function TopicRelevanceField({
   }, [apiKey]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (e.target.value === "__create__") {
-      setShowModal(true);
-    } else {
-      onChange(e.target.value || null);
-    }
+    onChange(e.target.value || null);
   };
 
   function renderSelect() {
     if (fetchError) {
       return (
-        <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+        <p className="text-xs px-3 py-2 rounded-md bg-status-error-bg border border-status-error-border text-status-error-text">
           {fetchError}
         </p>
       );
     }
     if (loading) {
-      return <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />;
+      return (
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-sm text-text-secondary"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-border border-t-accent-primary animate-spin" />
+          <span>Loading topic relevance configs…</span>
+        </div>
+      );
     }
+    const placeholderLabel =
+      configs.length === 0
+        ? "No configs yet"
+        : "Select a topic relevance config…";
     const options = [
-      ...(configs.length === 0
-        ? [{ value: "", label: "No configs yet" }]
-        : [{ value: "", label: "Select a topic relevance config…" }]),
-      { value: "__create__", label: "+ Create Topic Relevance Config" },
+      { value: "", label: placeholderLabel },
       ...configs.map((c) => ({ value: c.id, label: c.name })),
     ];
     return (
-      <Select value={value ?? ""} onChange={handleChange} options={options} />
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <Select
+            value={value ?? ""}
+            onChange={handleChange}
+            options={options}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-accent-primary bg-accent-primary/5 hover:bg-accent-primary/10 transition-colors cursor-pointer"
+          title="Create a new topic relevance config"
+        >
+          + New
+        </button>
+      </div>
     );
   }
 

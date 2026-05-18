@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { DocumentFileIcon, PlusIcon, InfoIcon } from "@/app/components/icons";
 import { Dataset } from "@/app/lib/types/dataset";
 import DatasetCard from "./DatasetCard";

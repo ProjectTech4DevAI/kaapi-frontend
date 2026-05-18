@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import Button from "@/app/components/ui/Button";
+import { Button, Field } from "@/app/components/ui";
 import { CloseIcon } from "@/app/components/icons";
-import Field from "@/app/components/ui/Field";
 
 interface BanListModalProps {
   onClose: () => void;

@@ -4,8 +4,7 @@ import { useEffect, useRef } from "react";
 import { TextSample } from "@/app/lib/types/textToSpeech";
 import { Language } from "@/app/lib/types/speechToText";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Button, Field } from "@/app/components/ui";
-import Select from "@/app/components/ui/Select";
+import { Button, Field, Select } from "@/app/components/ui";
 import { CloseIcon, PlusIcon } from "@/app/components/icons";
 
 interface CreateTTSDatasetFormProps {

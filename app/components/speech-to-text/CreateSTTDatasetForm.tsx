@@ -2,8 +2,7 @@
 
 import { AudioFile, Language } from "@/app/lib/types/speechToText";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Button, Field, InfoTooltip } from "@/app/components/ui";
-import Select from "@/app/components/ui/Select";
+import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
 import { MusicNoteIcon, PlusIcon } from "@/app/components/icons";
 import AudioFileItem from "./AudioFileItem";
 

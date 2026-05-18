@@ -1,7 +1,7 @@
 "use client";
 
 import { CloseIcon } from "@/app/components/icons";
-import FileExtBadge from "@/app/components/ui/FileExtBadge";
+import { FileExtBadge } from "@/app/components/ui";
 
 interface DocumentChipProps {
   fileName: string;

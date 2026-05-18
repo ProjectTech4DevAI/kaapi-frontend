@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import Modal from "@/app/components/ui/Modal";
-import Button from "@/app/components/ui/Button";
+import { Button, Modal } from "@/app/components/ui";
 import { CloudUploadIcon } from "@/app/components/icons";
 import DocumentChip from "@/app/components/knowledge-base/DocumentChip";
 import type { UploadPhase } from "@/app/lib/apiClient";

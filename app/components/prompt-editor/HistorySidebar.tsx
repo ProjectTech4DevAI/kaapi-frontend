@@ -1,6 +1,5 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
-import Loader from "@/app/components/ui/Loader";
-import { Button } from "@/app/components/ui";
+import { Button, Loader } from "@/app/components/ui";
 import { VersionPill } from "@/app/components";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import {

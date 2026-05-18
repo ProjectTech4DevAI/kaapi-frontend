@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Modal } from "@/app/components/ui";
-import Loader from "@/app/components/ui/Loader";
+import { Loader, Modal } from "@/app/components/ui";
 import { formatDate } from "@/app/components/utils";
 import { Document } from "@/app/lib/types/document";
 

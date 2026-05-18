@@ -1,8 +1,5 @@
 import { ValidatorConfigSchema } from "@/app/lib/types/guardrails";
-import InfoTooltip from "@/app/components/ui/InfoTooltip";
-import MultiSelect from "@/app/components/ui/MultiSelect";
-import Field from "@/app/components/ui/Field";
-import Select from "@/app/components/ui/Select";
+import { Field, InfoTooltip, MultiSelect, Select } from "@/app/components/ui";
 import { resolveRef } from "@/app/lib/utils/guardrails";
 import {
   GUARDRAILS_FIELD_TOOLTIPS,

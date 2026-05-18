@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Modal from "@/app/components/ui/Modal";
-import { Button, Field } from "@/app/components/ui";
+import { Button, Field, Modal, useToast } from "@/app/components/ui";
 import {
   EditProjectModalProps,
   ProjectResponse,
 } from "@/app/lib/types/onboarding";
 import { apiFetch } from "@/app/lib/apiClient";
-import { useToast } from "@/app/components/ui/Toast";
 
 export default function EditProjectModal({
   open,

@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { Dataset, ViewDatasetModalData } from "@/app/lib/types/dataset";
-import { useToast } from "@/app/components/ui/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { DatabaseIcon, PlusIcon } from "@/app/components/icons";
-import { Button, Modal } from "@/app/components/ui";
+import { Button, Modal, useToast } from "@/app/components/ui";
 import { DatasetListSkeleton } from "@/app/components";
 import DatasetCard from "./DatasetCard";
 import CreateDatasetForm from "./CreateDatasetForm";

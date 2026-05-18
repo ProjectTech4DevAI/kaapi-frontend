@@ -3,7 +3,7 @@
  */
 
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
-import { ToastType } from "@/app/components/ui/Toast";
+import { ToastType } from "@/app/components/ui";
 
 export const APP_NAME = "Kaapi Konsole";
 

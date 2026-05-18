@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import BanListModal from "./BanListModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Select } from "@/app/components/ui";
+import { Loader, Select } from "@/app/components/ui";
 
 interface BanList {
   id: string;
@@ -106,7 +106,7 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
           role="status"
           aria-live="polite"
         >
-          <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-border border-t-accent-primary animate-spin" />
+          <Loader size="sm" />
           <span>Loading ban lists…</span>
         </div>
       );

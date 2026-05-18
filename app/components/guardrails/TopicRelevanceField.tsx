@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import TopicRelevanceModal from "./TopicRelevanceModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Select } from "@/app/components/ui";
+import { Loader, Select } from "@/app/components/ui";
 
 interface TopicRelevanceConfig {
   id: string;
@@ -82,7 +82,7 @@ export default function TopicRelevanceField({
           role="status"
           aria-live="polite"
         >
-          <span className="inline-block w-3.5 h-3.5 rounded-full border-2 border-border border-t-accent-primary animate-spin" />
+          <Loader size="sm" />
           <span>Loading topic relevance configs…</span>
         </div>
       );

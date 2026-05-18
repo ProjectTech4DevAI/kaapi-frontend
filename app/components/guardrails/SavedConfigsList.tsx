@@ -66,11 +66,19 @@ export default function SavedConfigsList({
                 VALIDATOR_META_BY_TYPE[cfg.type]?.validator_name ??
                 formatValidatorName(cfg.type);
               return (
-                <button
-                  type="button"
+                <div
                   key={cfg.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
                   onClick={() => onSelectConfig(cfg)}
-                  className={`w-full text-left rounded-lg p-4 transition-shadow cursor-pointer ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectConfig(cfg);
+                    }
+                  }}
+                  className={`w-full text-left rounded-lg p-4 transition-shadow cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40 ${
                     isSelected
                       ? "bg-accent-primary/5 shadow-[0_6px_18px_rgba(31,68,150,0.18),0_2px_4px_rgba(31,68,150,0.08)]"
                       : "bg-bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.12),0_2px_4px_rgba(0,0,0,0.06)]"
@@ -109,18 +117,20 @@ export default function SavedConfigsList({
                         )}
                       </div>
                     </div>
-                    <span
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteConfig(cfg.id);
                       }}
                       className="p-1.5 rounded-md border border-status-error-border bg-bg-primary text-status-error-text hover:bg-status-error-bg transition-colors shrink-0 cursor-pointer"
                       title="Delete configuration"
+                      aria-label={`Delete configuration ${cfg.name}`}
                     >
                       <TrashIcon className="w-3.5 h-3.5" />
-                    </span>
+                    </button>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

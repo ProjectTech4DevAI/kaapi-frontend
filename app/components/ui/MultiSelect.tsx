@@ -131,9 +131,7 @@ export default function MultiSelect({
         onClick={() => setOpen((v) => !v)}
         onKeyDown={handleTriggerKeyDown}
         className={`min-h-9 w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-pointer text-left bg-bg-primary transition-colors ${
-          open
-            ? "border-accent-primary ring-1 ring-accent-primary"
-            : "border-border"
+          open ? "border-accent-primary ring-accent-primary" : "border-border"
         }`}
       >
         {value.map((v) => (

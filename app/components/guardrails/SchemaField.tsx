@@ -54,7 +54,7 @@ export default function SchemaField({
     (anyOf?.some((item) => item.type === "array") ?? false);
 
   const labelEl = (
-    <label className="block text-xs font-medium mb-1 text-text-primary">
+    <label className="block text-xs font-medium text-text-secondary mb-1">
       {label}
       {tooltip && <InfoTooltip text={tooltip} />}
     </label>

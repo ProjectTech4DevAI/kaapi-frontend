@@ -228,7 +228,7 @@ export default function GuardrailsPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="w-full lg:w-3/5 lg:border-r border-border flex flex-col overflow-hidden">
+          <div className="w-full lg:w-1/2 lg:border-r border-border flex flex-col overflow-hidden">
             <SavedConfigsList
               configs={savedConfigs}
               isLoading={savedConfigsLoading}
@@ -239,7 +239,7 @@ export default function GuardrailsPage() {
             />
           </div>
 
-          <div className="hidden lg:flex w-2/5 flex-col overflow-hidden">
+          <div className="hidden lg:flex w-1/2 flex-col overflow-hidden">
             <ValidatorConfigPanel
               validators={validators}
               validatorsLoading={validatorsLoading}

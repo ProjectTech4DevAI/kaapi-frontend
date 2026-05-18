@@ -6,6 +6,7 @@ import {
   InfoTooltip,
   Select,
   MultiSelect,
+  Loader,
 } from "@/app/components/ui";
 import {
   GUARDRAILS_FIELD_TOOLTIPS,
@@ -164,7 +165,7 @@ export default function ValidatorConfigPanel({
         />
 
         <div>
-          <label className="block text-xs font-medium mb-1 text-text-primary">
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             Stage
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.stage} />
           </label>
@@ -179,7 +180,7 @@ export default function ValidatorConfigPanel({
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1 text-text-primary">
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             On Fail Action
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.on_fail_action} />
           </label>
@@ -205,12 +206,19 @@ export default function ValidatorConfigPanel({
         </label>
 
         <div>
-          <label className="block text-xs font-medium mb-1 text-text-primary">
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             Validator Type *
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.validator_type} />
           </label>
           {validatorsLoading ? (
-            <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-sm text-text-secondary"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader size="sm" />
+              <span>Loading validator types…</span>
+            </div>
           ) : (
             <Select
               value={selectedType ?? ""}
@@ -259,7 +267,7 @@ export default function ValidatorConfigPanel({
 
             {isLlamaGuard && (
               <div>
-                <label className="block text-xs font-medium mb-1 text-text-primary">
+                <label className="block text-xs font-medium text-text-secondary mb-1">
                   Policies
                   <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.policies} />
                 </label>

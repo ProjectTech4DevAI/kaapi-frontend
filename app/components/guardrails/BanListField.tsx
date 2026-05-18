@@ -188,7 +188,7 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
   return (
     <>
       <div>
-        <label className="block text-xs font-medium mb-1 text-text-primary">
+        <label className="block text-xs font-medium text-text-secondary mb-1">
           Ban List
         </label>
         {renderSelect()}

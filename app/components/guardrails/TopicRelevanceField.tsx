@@ -119,7 +119,7 @@ export default function TopicRelevanceField({
   return (
     <>
       <div>
-        <label className="block text-xs font-medium mb-1 text-text-primary">
+        <label className="block text-xs font-medium text-text-secondary mb-1">
           Topic Relevance Config
         </label>
         {renderSelect()}

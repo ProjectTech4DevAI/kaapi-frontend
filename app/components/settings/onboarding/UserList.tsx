@@ -13,7 +13,8 @@ import {
   CheckCircleIcon,
   TrashIcon,
 } from "@/app/components/icons";
-import { Button, useToast } from "@/app/components/ui";
+import { Button } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import AddUserModal from "./AddUserModal";

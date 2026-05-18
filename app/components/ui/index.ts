@@ -13,5 +13,5 @@ export { default as ConfigModal } from "./ConfigModal";
 export { default as CodeBlock } from "./CodeBlock";
 export { default as CopyableCodeBlock } from "./CopyableCodeBlock";
 export { default as FileExtBadge } from "./FileExtBadge";
-export { ToastProvider, useToast, ToastContext } from "./Toast";
+export { ToastProvider, ToastContext } from "./Toast";
 export type { ToastType, Toast, ToastContextType } from "./Toast";

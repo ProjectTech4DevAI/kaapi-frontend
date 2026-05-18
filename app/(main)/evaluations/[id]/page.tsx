@@ -29,13 +29,8 @@ import {
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
-import {
-  Button,
-  Modal,
-  Loader,
-  ConfigModal,
-  useToast,
-} from "@/app/components/ui";
+import { Button, Modal, Loader, ConfigModal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { ResultsTableSkeleton } from "@/app/components";
 import {
   MenuIcon,

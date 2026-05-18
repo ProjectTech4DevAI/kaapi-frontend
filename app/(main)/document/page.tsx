@@ -5,7 +5,8 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { Modal, useToast } from "@/app/components/ui";
+import { Modal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
   apiFetch,

@@ -10,7 +10,8 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { ErrorModal, TabNavigation, useToast } from "@/app/components/ui";
+import { ErrorModal, TabNavigation } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";

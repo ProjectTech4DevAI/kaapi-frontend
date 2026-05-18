@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
-import { Button, Field, Modal, useToast } from "@/app/components/ui";
+import { Button, Field, Modal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { MailIcon } from "@/app/components/icons";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { GoogleAuthResponse } from "@/app/lib/types/auth";

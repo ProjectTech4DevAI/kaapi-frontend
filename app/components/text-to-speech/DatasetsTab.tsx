@@ -9,7 +9,7 @@ import {
 } from "@/app/lib/types/textToSpeech";
 import { Language } from "@/app/lib/types/speechToText";
 import { APIKey } from "@/app/lib/types/credentials";
-import { useToast } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { DatabaseIcon } from "@/app/components/icons";

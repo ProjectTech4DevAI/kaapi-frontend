@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useToast } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/utils";

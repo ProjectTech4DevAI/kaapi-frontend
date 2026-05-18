@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useToast } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { apiFetch } from "@/app/lib/apiClient";
 import {
   PROVIDERS,

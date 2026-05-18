@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Field, useToast } from "@/app/components/ui";
+import { Button, Field } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { isValidEmail, isValidPassword, isNonEmpty } from "@/app/lib/utils";
 import {

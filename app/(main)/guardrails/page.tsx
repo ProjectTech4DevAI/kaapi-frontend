@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useToast } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import PageHeader from "@/app/components/PageHeader";
 import {

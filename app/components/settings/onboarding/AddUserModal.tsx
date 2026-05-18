@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Field, Modal, useToast } from "@/app/components/ui";
+import { Button, Field, Modal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { isValidEmail } from "@/app/lib/utils";
 import {
   AddUserModalProps,

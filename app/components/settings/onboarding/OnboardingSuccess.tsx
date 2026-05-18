@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button, useToast } from "@/app/components/ui";
+import { Button } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { OnboardResponseData } from "@/app/lib/types/onboarding";
 
 interface OnboardingSuccessProps {

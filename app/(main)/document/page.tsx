@@ -5,7 +5,8 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { useToast } from "@/app/components/Toast";
+import { Modal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
   apiFetch,
@@ -16,7 +17,6 @@ import { DocumentListing } from "@/app/components/document/DocumentListing";
 import { DocumentPreview } from "@/app/components/document/DocumentPreview";
 import { UploadDocumentModal } from "@/app/components/document/UploadDocumentModal";
 import DeleteDocumentModal from "@/app/components/document/DeleteDocumentModal";
-import Modal from "@/app/components/Modal";
 import {
   DEFAULT_PAGE_LIMIT,
   MAX_DOCUMENT_SIZE_BYTES,

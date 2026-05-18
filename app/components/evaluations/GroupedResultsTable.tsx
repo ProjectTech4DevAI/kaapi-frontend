@@ -7,8 +7,7 @@
 import { Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
 import { formatScoreValue } from "@/app/lib/utils";
-import { InfoTooltip } from "@/app/components";
-
+import { InfoTooltip } from "@/app/components/ui";
 export default function GroupedResultsTable({
   traces,
 }: {

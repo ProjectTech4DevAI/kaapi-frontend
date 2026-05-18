@@ -5,7 +5,7 @@ import {
   Language,
   STTViewDatasetModalData,
 } from "@/app/lib/types/speechToText";
-import { Modal } from "@/app/components";
+import { Modal } from "@/app/components/ui";
 import AudioPlayerFromUrl from "./AudioPlayerFromUrl";
 
 interface STTViewDatasetModalProps {

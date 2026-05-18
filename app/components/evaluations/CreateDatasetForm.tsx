@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Field } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Field, Select } from "@/app/components/ui";
 import {
   CheckLineIcon,
   CloseIcon,

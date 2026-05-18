@@ -1,8 +1,8 @@
 "use client";
 
 import { ClipboardIcon, PlusIcon, RefreshIcon } from "@/app/components/icons";
-import { Button, RunsListSkeleton } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Select } from "@/app/components/ui";
+import { RunsListSkeleton } from "@/app/components";
 import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import EvalRunCard from "./EvalRunCard";
 

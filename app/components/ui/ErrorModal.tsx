@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Modal } from "@/app/components";
+import Button from "@/app/components/ui/Button";
+import Modal from "@/app/components/ui/Modal";
 import { WarningIcon } from "@/app/components/icons";
 
 interface ErrorModalProps {

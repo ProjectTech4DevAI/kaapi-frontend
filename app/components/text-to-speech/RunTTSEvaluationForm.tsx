@@ -1,10 +1,8 @@
 "use client";
 
 import { TTSDataset } from "@/app/lib/types/textToSpeech";
-import { Button, Field } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Field, LoaderBox, Select } from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
-import { LoaderBox } from "@/app/components/Loader";
 
 interface RunTTSEvaluationFormProps {
   evaluationName: string;

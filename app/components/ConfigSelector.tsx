@@ -8,7 +8,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useConfigs } from "@/app/hooks";
-import { Button, VersionPill, Loader } from "@/app/components";
+import { Button, Loader } from "@/app/components/ui";
+import { VersionPill } from "@/app/components";
 import SelectedConfigPreview from "@/app/components/configurations/SelectedConfigPreview";
 import {
   ChevronUpIcon,

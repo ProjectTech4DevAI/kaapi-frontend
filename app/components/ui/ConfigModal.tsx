@@ -6,10 +6,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import CopyableCodeBlock from "@/app/components/CopyableCodeBlock";
-import CodeBlock from "@/app/components/CodeBlock";
-import Tag from "@/app/components/Tag";
-import { Modal } from "@/app/components";
+import CopyableCodeBlock from "@/app/components/ui/CopyableCodeBlock";
+import CodeBlock from "@/app/components/ui/CodeBlock";
+import Tag from "@/app/components/ui/Tag";
+import Modal from "@/app/components/ui/Modal";
 import { EvalJob, AssistantConfig } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
@@ -18,7 +18,7 @@ import {
   ConfigVersionPublic,
   CompletionParams,
 } from "@/app/lib/types/configs";
-import Loader from "@/app/components/Loader";
+import Loader from "@/app/components/ui/Loader";
 
 interface ConfigModalProps {
   isOpen: boolean;

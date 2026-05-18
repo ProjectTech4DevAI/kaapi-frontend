@@ -10,12 +10,11 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import TabNavigation from "@/app/components/TabNavigation";
-import { useToast } from "@/app/components/Toast";
+import { ErrorModal, TabNavigation } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import ErrorModal from "@/app/components/ErrorModal";
 import DatasetsTab from "@/app/components/speech-to-text/DatasetsTab";
 import EvaluationsTab from "@/app/components/speech-to-text/EvaluationsTab";
 import { useSttData } from "@/app/hooks/useSttData";

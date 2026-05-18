@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { Validator, formatValidatorName } from "@/app/lib/types/guardrails";
-import InfoTooltip from "@/app/components/InfoTooltip";
+import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
 import { GUARDRAILS_FIELD_TOOLTIPS } from "@/app/lib/data/guardrails/validators";
-import Button from "@/app/components/Button";
-import Field from "@/app/components/Field";
-import Select from "@/app/components/Select";
 import {
   buildDefaultValues,
   VALIDATOR_META_BY_TYPE,

@@ -1,7 +1,7 @@
 "use client";
 
 import { STTRun } from "@/app/lib/types/speechToText";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { DatabaseIcon } from "@/app/components/icons";
 import { getStatusColor } from "@/app/components/utils";
 

@@ -1,6 +1,6 @@
 import { OrganizationListProps } from "@/app/lib/types/onboarding";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { Button, Loader } from "@/app/components";
+import { Button, Loader } from "@/app/components/ui";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { ChevronRightIcon } from "@/app/components/icons";
 

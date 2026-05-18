@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
 import { Validator, formatValidatorName } from "@/app/lib/types/guardrails";
-import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
-import { GUARDRAILS_FIELD_TOOLTIPS } from "@/app/lib/data/guardrails/validators";
+import {
+  Button,
+  Field,
+  InfoTooltip,
+  Select,
+  MultiSelect,
+  Loader,
+} from "@/app/components/ui";
+import {
+  GUARDRAILS_FIELD_TOOLTIPS,
+  KNOWN_ARRAY_OPTIONS,
+  VALIDATOR_DEFAULT_VALUES,
+} from "@/app/lib/data/guardrails/validators";
 import {
   buildDefaultValues,
   VALIDATOR_META_BY_TYPE,
 } from "@/app/lib/utils/guardrails";
 import BanListField from "@/app/components/guardrails/BanListField";
+import TopicRelevanceField from "@/app/components/guardrails/TopicRelevanceField";
 import SchemaField from "@/app/components/guardrails/SchemaField";
 
 interface ValidatorConfigPanelProps {
@@ -58,12 +70,18 @@ export default function ValidatorConfigPanel({
         validator
           ? Object.keys(rest).length > 0
             ? rest
-            : buildDefaultValues(validator.config)
+            : {
+                ...(VALIDATOR_DEFAULT_VALUES[validator.type] ?? {}),
+                ...buildDefaultValues(validator.config),
+              }
           : {},
       );
     } else if (validator) {
       // Type changed with no saved config — only reset dynamic fields, leave static fields alone
-      setFieldValues(buildDefaultValues(validator.config));
+      setFieldValues({
+        ...(VALIDATOR_DEFAULT_VALUES[validator.type] ?? {}),
+        ...buildDefaultValues(validator.config),
+      });
     } else {
       setConfigName("");
       setStage("output");
@@ -77,6 +95,8 @@ export default function ValidatorConfigPanel({
     ? (VALIDATOR_META_BY_TYPE[selectedType]?.description ?? null)
     : null;
   const isBanList = selectedType === "ban_list";
+  const isLlamaGuard = selectedType === "llamaguard_7b";
+  const isTopicRelevance = selectedType === "topic_relevance";
 
   const editableProperties = validator
     ? Object.entries(validator.config.properties).filter(([key]) => {
@@ -84,6 +104,14 @@ export default function ValidatorConfigPanel({
         if (key === "on_fail") return false;
         if (key === "validator_metadata" || key === "metadata") return false;
         if (isBanList && (key === "banned_words" || key === "ban_list_id"))
+          return false;
+        if (isLlamaGuard && key === "policies") return false;
+        if (
+          isTopicRelevance &&
+          (key === "topic_relevance_config_id" ||
+            key === "prompt_schema_version" ||
+            key === "configuration")
+        )
           return false;
         return true;
       })
@@ -117,20 +145,18 @@ export default function ValidatorConfigPanel({
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-bg-primary">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
-        <div>
-          <div className="text-sm font-semibold text-text-primary">
-            {existingName ? `${existingName}` : "New Validator Config"}
-          </div>
-          {!existingName && (
-            <div className="text-xs text-text-secondary">
-              Configure and save a validator
-            </div>
-          )}
-        </div>
+      <div className="border-b border-border px-4 py-3 shrink-0">
+        <h2 className="text-base font-semibold text-text-primary truncate">
+          {existingName ? existingName : "New Validator Config"}
+        </h2>
+        <p className="text-xs text-text-secondary mt-0.5">
+          {existingName
+            ? "Update this validator configuration"
+            : "Configure and save a validator"}
+        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
         <Field
           label="Config Name *"
           value={configName}
@@ -139,7 +165,7 @@ export default function ValidatorConfigPanel({
         />
 
         <div>
-          <label className="block text-xs font-medium mb-1 text-text-primary">
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             Stage
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.stage} />
           </label>
@@ -154,7 +180,7 @@ export default function ValidatorConfigPanel({
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1 text-text-primary">
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             On Fail Action
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.on_fail_action} />
           </label>
@@ -179,13 +205,20 @@ export default function ValidatorConfigPanel({
           <span className="text-sm text-text-primary">Enabled</span>
         </label>
 
-        <div className="border-t border-border pt-3">
-          <label className="block text-xs font-medium mb-1 text-text-primary">
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">
             Validator Type *
             <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.validator_type} />
           </label>
           {validatorsLoading ? (
-            <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-sm text-text-secondary"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader size="sm" />
+              <span>Loading validator types…</span>
+            </div>
           ) : (
             <Select
               value={selectedType ?? ""}
@@ -209,7 +242,7 @@ export default function ValidatorConfigPanel({
         {validator && (
           <>
             {isBanList && (
-              <div className="border-t border-border pt-3">
+              <div>
                 <BanListField
                   value={(fieldValues["ban_list_id"] as string | null) ?? null}
                   onChange={(id) => handleFieldChange("ban_list_id", id)}
@@ -217,8 +250,44 @@ export default function ValidatorConfigPanel({
               </div>
             )}
 
+            {isTopicRelevance && (
+              <div>
+                <TopicRelevanceField
+                  value={
+                    (fieldValues["topic_relevance_config_id"] as
+                      | string
+                      | null) ?? null
+                  }
+                  onChange={(id) =>
+                    handleFieldChange("topic_relevance_config_id", id)
+                  }
+                />
+              </div>
+            )}
+
+            {isLlamaGuard && (
+              <div>
+                <label className="block text-xs font-medium text-text-secondary mb-1">
+                  Policies
+                  <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.policies} />
+                </label>
+                <MultiSelect
+                  options={KNOWN_ARRAY_OPTIONS.policies}
+                  value={
+                    Array.isArray(fieldValues["policies"])
+                      ? (fieldValues["policies"] as string[])
+                      : []
+                  }
+                  onChange={(v) =>
+                    handleFieldChange("policies", v.length > 0 ? v : null)
+                  }
+                  placeholder="Select policies…"
+                />
+              </div>
+            )}
+
             {editableProperties.length > 0 && (
-              <div className="border-t border-border pt-3">
+              <div>
                 <div className="space-y-4">
                   {editableProperties.map(([key, prop]) => (
                     <SchemaField
@@ -228,6 +297,7 @@ export default function ValidatorConfigPanel({
                       defs={validator.config.$defs}
                       value={fieldValues[key]}
                       onChange={handleFieldChange}
+                      validatorType={selectedType ?? undefined}
                     />
                   ))}
                 </div>
@@ -235,23 +305,20 @@ export default function ValidatorConfigPanel({
             )}
           </>
         )}
-      </div>
 
-      <div className="px-4 py-3 border-t border-border shrink-0 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClear}
-          className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-        >
-          Cancel
-        </button>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || !configName.trim() || !selectedType}
-          className="!rounded-lg"
-        >
-          {isSaving ? "Saving…" : "Save Config"}
-        </Button>
+        <div className="pt-2 flex items-center justify-end gap-2">
+          <Button variant="outline" size="md" onClick={onClear}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleSave}
+            disabled={isSaving || !configName.trim() || !selectedType}
+          >
+            {isSaving ? "Saving…" : "Save Config"}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import BanListModal from "./BanListModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Select } from "@/app/components/ui";
+import { Loader, Select } from "@/app/components/ui";
 
 interface BanList {
   id: string;
@@ -88,44 +88,80 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (e.target.value === "__create__") {
-      setShowModal(true);
-    } else {
-      onChange(e.target.value || null);
-    }
+    onChange(e.target.value || null);
   };
 
   function renderSelect() {
     if (fetchError) {
       return (
-        <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+        <p className="text-xs px-3 py-2 rounded-md bg-status-error-bg border border-status-error-border text-status-error-text">
           {fetchError}
         </p>
       );
     }
     if (loading) {
-      return <div className="h-8 rounded-md animate-pulse bg-bg-secondary" />;
+      return (
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-bg-secondary text-sm text-text-secondary"
+          role="status"
+          aria-live="polite"
+        >
+          <Loader size="sm" />
+          <span>Loading ban lists…</span>
+        </div>
+      );
     }
+    const placeholderLabel =
+      banLists.length === 0 ? "No ban lists yet" : "Select a ban list…";
     const options = [
-      ...(banLists.length === 0
-        ? [{ value: "", label: "No ban lists yet" }]
-        : [{ value: "", label: "Select a ban list…" }]),
-      { value: "__create__", label: "+ Create Ban List" },
+      { value: "", label: placeholderLabel },
       ...banLists.map((bl) => ({ value: bl.id, label: bl.name })),
     ];
     return (
-      <Select value={value ?? ""} onChange={handleChange} options={options} />
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <Select
+            value={value ?? ""}
+            onChange={handleChange}
+            options={options}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-accent-primary bg-accent-primary/5 hover:bg-accent-primary/10 transition-colors cursor-pointer"
+          title="Create a new ban list"
+        >
+          + New
+        </button>
+      </div>
     );
   }
 
   function renderBannedWords() {
     if (!value) return null;
     if (wordsLoading) {
-      return <div className="h-6 rounded animate-pulse bg-bg-secondary" />;
+      return (
+        <div className="space-y-1.5" role="status" aria-live="polite">
+          <p className="text-xs text-text-secondary flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-border border-t-accent-primary animate-spin" />
+            Loading banned words…
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {[14, 22, 18, 26, 16, 20, 24].map((w, i) => (
+              <span
+                key={i}
+                className="inline-block h-5 rounded-full bg-bg-secondary animate-pulse"
+                style={{ width: `${w * 4}px` }}
+              />
+            ))}
+          </div>
+        </div>
+      );
     }
     if (wordsError) {
       return (
-        <p className="text-xs px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600">
+        <p className="text-xs px-3 py-2 rounded-md bg-status-error-bg border border-status-error-border text-status-error-text">
           {wordsError}
         </p>
       );
@@ -136,7 +172,7 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
           {bannedWords.map((word) => (
             <span
               key={word}
-              className="inline-block text-xs px-2 py-0.5 rounded-full bg-bg-secondary text-text-secondary"
+              className="inline-block text-xs px-2 py-0.5 rounded-full bg-status-success-bg text-status-success-text border border-status-success-border"
             >
               {word}
             </span>
@@ -152,7 +188,7 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
   return (
     <>
       <div>
-        <label className="block text-xs font-medium mb-1 text-text-primary">
+        <label className="block text-xs font-medium text-text-secondary mb-1">
           Ban List
         </label>
         {renderSelect()}

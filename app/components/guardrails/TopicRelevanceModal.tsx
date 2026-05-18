@@ -3,25 +3,24 @@ import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { Button, Field, Modal } from "@/app/components/ui";
 
-interface BanListModalProps {
+interface TopicRelevanceModalProps {
   onClose: () => void;
-  onCreated: (banList: { id: string; name: string }) => void;
+  onCreated: (topicRelevance: { id: string; name: string }) => void;
 }
 
-export default function BanListModal({
+export default function TopicRelevanceModal({
   onClose,
   onCreated,
-}: BanListModalProps) {
+}: TopicRelevanceModalProps) {
   const { activeKey } = useAuth();
   const apiKey = activeKey?.key ?? "";
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [bannedWords, setBannedWords] = useState("");
-  const [domain, setDomain] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
+  const [configuration, setConfiguration] = useState("");
+  const [promptSchemaVersion, setPromptSchemaVersion] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
-  const [wordsError, setWordsError] = useState("");
+  const [configError, setConfigError] = useState("");
 
   const handleCreate = async () => {
     let hasError = false;
@@ -31,11 +30,11 @@ export default function BanListModal({
     } else {
       setNameError("");
     }
-    if (!bannedWords.trim()) {
-      setWordsError("At least one banned word is required");
+    if (!configuration.trim()) {
+      setConfigError("Configuration is required");
       hasError = true;
     } else {
-      setWordsError("");
+      setConfigError("");
     }
     if (hasError) return;
 
@@ -44,15 +43,11 @@ export default function BanListModal({
       const body = {
         name: name.trim(),
         description: description.trim(),
-        banned_words: bannedWords
-          .split(",")
-          .map((w) => w.trim())
-          .filter(Boolean),
-        domain: domain.trim(),
-        is_public: isPublic,
+        configuration: configuration.trim(),
+        prompt_schema_version: promptSchemaVersion,
       };
       const data = await guardrailsFetch<{ id: string; name?: string }>(
-        "/api/guardrails/ban_lists",
+        "/api/guardrails/topic_relevance_configs",
         apiKey,
         { method: "POST", body: JSON.stringify(body) },
       );
@@ -68,10 +63,15 @@ export default function BanListModal({
     "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 resize-none";
 
   return (
-    <Modal open onClose={onClose} title="Create Ban List" maxWidth="max-w-md">
+    <Modal
+      open
+      onClose={onClose}
+      title="Create Topic Relevance Config"
+      maxWidth="max-w-md"
+    >
       <div className="px-6 pb-2">
         <p className="text-xs text-text-secondary mb-4">
-          Define a list of words to ban from outputs.
+          Define a topic relevance configuration for output validation.
         </p>
 
         <div className="space-y-4">
@@ -79,7 +79,7 @@ export default function BanListModal({
             label="Name *"
             value={name}
             onChange={setName}
-            placeholder="e.g. profanity-list"
+            placeholder="e.g. medical-topics"
             error={nameError}
           />
 
@@ -90,7 +90,7 @@ export default function BanListModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what this ban list covers…"
+              placeholder="Describe what this topic relevance config covers…"
               rows={2}
               className={textareaClass}
             />
@@ -98,41 +98,38 @@ export default function BanListModal({
 
           <div>
             <label className="block text-xs font-medium mb-1 text-text-secondary">
-              Banned Words *
-              <span className="ml-1 font-normal">(comma-separated)</span>
+              Configuration *
             </label>
             <textarea
-              value={bannedWords}
-              onChange={(e) => setBannedWords(e.target.value)}
-              placeholder="word1, word2, word3"
-              rows={3}
-              className={`${textareaClass} ${wordsError ? "border-status-error-border" : ""}`}
+              value={configuration}
+              onChange={(e) => setConfiguration(e.target.value)}
+              placeholder="Enter the topic configuration prompt or schema…"
+              rows={4}
+              className={`${textareaClass} ${configError ? "border-status-error-border" : ""}`}
             />
-            {wordsError && (
+            {configError && (
               <p className="text-xs text-status-error-text mt-1">
-                {wordsError}
+                {configError}
               </p>
             )}
           </div>
 
-          <Field
-            label="Domain"
-            value={domain}
-            onChange={setDomain}
-            placeholder="e.g. healthcare, finance"
-          />
-
-          <label className="flex items-center gap-2.5 cursor-pointer">
+          <div>
+            <label className="block text-xs font-medium mb-1 text-text-secondary">
+              Prompt Schema Version *
+            </label>
             <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="w-4 h-4 rounded"
+              type="number"
+              min={1}
+              value={promptSchemaVersion}
+              onChange={(e) =>
+                setPromptSchemaVersion(
+                  Math.max(1, parseInt(e.target.value, 10) || 1),
+                )
+              }
+              className="w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1"
             />
-            <span className="text-sm text-text-primary">
-              Make this ban list public
-            </span>
-          </label>
+          </div>
         </div>
       </div>
 
@@ -141,7 +138,7 @@ export default function BanListModal({
           Cancel
         </Button>
         <Button variant="primary" onClick={handleCreate} disabled={isSaving}>
-          {isSaving ? "Creating…" : "Create Ban List"}
+          {isSaving ? "Creating…" : "Create"}
         </Button>
       </div>
     </Modal>

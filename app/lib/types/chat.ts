@@ -12,7 +12,6 @@ export interface ChatMessage {
   status?: ChatMessageStatus;
   jobId?: string;
   error?: string;
-  /** True for user messages that were sent as audio (transcript may be empty). */
   isVoice?: boolean;
 }
 
@@ -20,6 +19,15 @@ export interface ChatConfigSelection {
   configId: string;
   version: number;
 }
+
+export type SendInput =
+  | { kind: "text"; text: string }
+  | {
+      kind: "audio";
+      base64: string;
+      mimeType: string;
+      transcript?: string;
+    };
 
 export type LLMCallConfigSelector =
   | { id: string; version: number }

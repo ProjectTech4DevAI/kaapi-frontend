@@ -461,17 +461,6 @@ export function useVoiceChat({
       audioBuffer.getChannelData(0).set(samples16k);
       const wavBlob = encodeWav(audioBuffer);
       const base64 = arrayBufferToBase64(await wavBlob.arrayBuffer());
-      const durationSec = samples16k.length / 16000;
-      console.log("[voice]", {
-        durationSec: durationSec.toFixed(2),
-        sourceSampleRate: pcm.sampleRate,
-        outputSampleRate: 16000,
-        wavBytes: wavBlob.size,
-        base64Length: base64.length,
-        first40: base64.slice(0, 40),
-        // Paste this into a new browser tab to hear what we sent:
-        dataUrl: `data:audio/wav;base64,${base64}`,
-      });
       const liveTranscript = (
         transcriptRef.current || finalTranscriptRef.current
       ).trim();

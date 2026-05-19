@@ -27,13 +27,107 @@ import {
   pollLLMCall,
 } from "@/app/lib/chatClient";
 import { useChatStore } from "@/app/lib/store/chat";
-import { ChatMessage, LLMCallRequest, LLMInput } from "@/app/lib/types/chat";
+import {
+  ChatMessage,
+  LLMCallRequest,
+  LLMInput,
+  SendInput,
+} from "@/app/lib/types/chat";
+import { SavedConfig } from "@/app/lib/types/configs";
 
 function genId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function buildUserMessage(input: SendInput): ChatMessage {
+  return {
+    id: genId(),
+    role: "user",
+    content:
+      input.kind === "text"
+        ? input.text.trim()
+        : (input.transcript?.trim() ?? ""),
+    createdAt: Date.now(),
+    status: "complete",
+    isVoice: input.kind === "audio",
+  };
+}
+
+function buildLLMInput(input: SendInput): LLMInput {
+  if (input.kind === "text") return input.text.trim();
+  return {
+    type: "audio",
+    content: {
+      format: "base64",
+      value: input.base64,
+      mime_type: input.mimeType,
+    },
+  };
+}
+
+function buildPayload(
+  input: SendInput,
+  fullConfig: SavedConfig,
+  conversationId: string | null,
+): LLMCallRequest {
+  return {
+    query: {
+      input: buildLLMInput(input),
+      conversation: conversationId
+        ? { id: conversationId }
+        : { auto_create: true },
+    },
+    config: { blob: configToBlob(fullConfig) },
+    include_provider_raw_response: true,
+  };
+}
+
+/**
+ * Run the full create-then-poll cycle for an LLM call. Returns the
+ * extracted assistant text plus the job id and any new conversation id.
+ * Throws on failure (caller is responsible for surfacing the error).
+ */
+async function executeChatCall(args: {
+  input: SendInput;
+  fullConfig: SavedConfig;
+  conversationId: string | null;
+  apiKey: string;
+  signal: AbortSignal;
+}): Promise<{
+  text: string;
+  jobId: string;
+  conversationId: string | null;
+}> {
+  const payload = buildPayload(
+    args.input,
+    args.fullConfig,
+    args.conversationId,
+  );
+  const created = await createLLMCall(payload, args.apiKey);
+  if (!created.success || !created.data?.job_id) {
+    throw new Error(created.error || "Failed to start the request");
+  }
+  const jobId = created.data.job_id;
+  const result = await pollLLMCall(jobId, args.apiKey, { signal: args.signal });
+  const text = extractAssistantText(result.llm_response?.response);
+  const newConversationId =
+    result.llm_response?.response?.conversation_id ?? args.conversationId;
+  return { text, jobId, conversationId: newConversationId };
+}
+
+function checkVoiceConfig(
+  config: SavedConfig | null | undefined,
+): string | null {
+  if (!config) return "Couldn't load the selected configuration. Try again.";
+  const provider = config.provider?.toLowerCase();
+  const type = config.type?.toLowerCase();
+  if (provider !== "google" || type !== "stt") {
+    return "Voice chat needs a config with provider “Google” and type “Speech-to-Text”. Pick a different config above, or update this one in Configurations → Prompt Editor.";
+  }
+  return null;
 }
 
 export default function ChatPage() {
@@ -92,16 +186,7 @@ export default function ChatPage() {
   );
 
   const sendMessage = useCallback(
-    async (
-      input:
-        | { kind: "text"; text: string }
-        | {
-            kind: "audio";
-            base64: string;
-            mimeType: string;
-            transcript?: string;
-          },
-    ): Promise<string | null> => {
+    async (input: SendInput): Promise<string | null> => {
       if (input.kind === "text" && !input.text.trim()) return null;
 
       if (!isAuthenticated) {
@@ -109,27 +194,15 @@ export default function ChatPage() {
         return null;
       }
       if (!configId || !configVersion) {
-        if (allConfigMeta.length === 0) {
-          toast.error(
-            "No configurations yet — create one in Configurations → Prompt Editor first.",
-          );
-        } else {
-          toast.error("Select a configuration before sending a message.");
-        }
+        const msg =
+          allConfigMeta.length === 0
+            ? "No configurations yet — create one in Configurations → Prompt Editor first."
+            : "Select a configuration before sending a message.";
+        toast.error(msg);
         return null;
       }
 
-      const userMessage: ChatMessage = {
-        id: genId(),
-        role: "user",
-        content:
-          input.kind === "text"
-            ? input.text.trim()
-            : (input.transcript?.trim() ?? ""),
-        createdAt: Date.now(),
-        status: "complete",
-        isVoice: input.kind === "audio",
-      };
+      const userMessage = buildUserMessage(input);
       const assistantMessage: ChatMessage = {
         id: genId(),
         role: "assistant",
@@ -137,7 +210,6 @@ export default function ChatPage() {
         createdAt: Date.now(),
         status: "pending",
       };
-
       appendMessages(userMessage, assistantMessage);
       if (input.kind === "text") setDraft("");
       setIsPending(true);
@@ -145,6 +217,11 @@ export default function ChatPage() {
       const controller = new AbortController();
       abortRef.current?.abort();
       abortRef.current = controller;
+
+      const finishAbort = () => {
+        if (abortRef.current === controller) abortRef.current = null;
+        setIsPending(false);
+      };
 
       try {
         const cached = configs.find(
@@ -158,80 +235,44 @@ export default function ChatPage() {
           );
         }
 
-        const apiInput: LLMInput =
-          input.kind === "text"
-            ? input.text.trim()
-            : {
-                type: "audio",
-                content: {
-                  format: "base64",
-                  value: input.base64,
-                  mime_type: input.mimeType,
-                },
-              };
-        if (input.kind === "audio") {
-          console.log("[chat] audio base64:", input.base64);
-        }
-
-        const payload: LLMCallRequest = {
-          query: {
-            input: apiInput,
-            conversation: conversationId
-              ? { id: conversationId }
-              : { auto_create: true },
-          },
-          config: { blob: configToBlob(fullConfig) },
-          include_provider_raw_response: true,
-        };
-
-        const created = await createLLMCall(payload, apiKey);
-        if (!created.success || !created.data?.job_id) {
-          throw new Error(created.error || "Failed to start the request");
-        }
-        const jobId = created.data.job_id;
-        updateMessageInStore(assistantMessage.id, { jobId });
-
-        const result = await pollLLMCall(jobId, apiKey, {
+        const {
+          text,
+          jobId,
+          conversationId: newConversationId,
+        } = await executeChatCall({
+          input,
+          fullConfig,
+          conversationId,
+          apiKey,
           signal: controller.signal,
         });
-
-        const text = extractAssistantText(result.llm_response?.response);
-        const newConversationId =
-          result.llm_response?.response?.conversation_id ?? conversationId;
+        updateMessageInStore(assistantMessage.id, { jobId });
         if (newConversationId && newConversationId !== conversationId) {
           setConversationId(newConversationId);
         }
-
         updateMessageInStore(assistantMessage.id, {
           content:
             text ||
             "(The assistant returned an empty response — try again or pick a different configuration.)",
           status: "complete",
         });
+        finishAbort();
         return text || null;
       } catch (err) {
-        if ((err as Error)?.name === "AbortError") {
-          updateMessageInStore(assistantMessage.id, {
-            status: "error",
-            content: "Cancelled.",
-            error: "Cancelled",
-          });
-          return null;
-        }
-        const message =
-          err instanceof Error ? err.message : "Something went wrong";
+        const isAbort = (err as Error)?.name === "AbortError";
+        const message = isAbort
+          ? "Cancelled."
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong";
         updateMessageInStore(assistantMessage.id, {
           status: "error",
           content: message,
           error: message,
         });
-        toast.error(message);
+        if (!isAbort) toast.error(message);
+        finishAbort();
         return null;
-      } finally {
-        if (abortRef.current === controller) {
-          abortRef.current = null;
-        }
-        setIsPending(false);
       }
     },
     [
@@ -263,9 +304,10 @@ export default function ChatPage() {
 
   const voice = useVoiceChat({ onSubmitAudio: handleVoiceSubmit });
 
-  // Live check used to render the inline requirement hint near the mic
-  // button. Synchronous — returns true only when the cached config we
-  // already have on hand is a Google STT config.
+  /**
+   * Live check used to render the inline requirement hint near the mic button.
+   * Synchronous — returns true only when the cached config we already have on hand is a Google STT config.
+   **/
   const activeConfig = configs.find(
     (c) => c.config_id === configId && c.version === configVersion,
   );
@@ -280,33 +322,23 @@ export default function ChatPage() {
       return;
     }
     if (!configId || !configVersion) {
-      if (allConfigMeta.length === 0) {
-        toast.error(
-          "No configurations yet — create one in Configurations → Prompt Editor first.",
-        );
-      } else {
-        toast.error("Select a configuration before starting voice chat.");
-      }
+      const msg =
+        allConfigMeta.length === 0
+          ? "No configurations yet — create one in Configurations → Prompt Editor first."
+          : "Select a configuration before starting voice chat.";
+      toast.error(msg);
       return;
     }
-    // Voice chat needs a Google STT config — the backend only routes
-    // audio input correctly when provider === "google" + type === "stt".
-    // Load the full config if it isn't cached so the check is reliable.
+    // Voice chat needs a Google STT config — load the full config if it
+    // isn't cached so the check is reliable, then validate.
     const cached = configs.find(
       (c) => c.config_id === configId && c.version === configVersion,
     );
     const fullConfig =
       cached ?? (await loadSingleVersion(configId, configVersion));
-    if (!fullConfig) {
-      toast.error("Couldn't load the selected configuration. Try again.");
-      return;
-    }
-    const provider = fullConfig.provider?.toLowerCase();
-    const type = fullConfig.type?.toLowerCase();
-    if (provider !== "google" || type !== "stt") {
-      toast.error(
-        "Voice chat needs a config with provider “Google” and type “Speech-to-Text”. Pick a different config above, or update this one in Configurations → Prompt Editor.",
-      );
+    const voiceError = checkVoiceConfig(fullConfig);
+    if (voiceError) {
+      toast.error(voiceError);
       return;
     }
     voice.start();

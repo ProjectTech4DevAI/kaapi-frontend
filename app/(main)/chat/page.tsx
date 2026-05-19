@@ -218,8 +218,10 @@ export default function ChatPage() {
       abortRef.current = controller;
 
       const finishAbort = () => {
-        if (abortRef.current === controller) abortRef.current = null;
-        setIsPending(false);
+        if (abortRef.current === controller) {
+          abortRef.current = null;
+          setIsPending(false);
+        }
       };
 
       try {

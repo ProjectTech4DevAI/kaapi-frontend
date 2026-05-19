@@ -17,12 +17,6 @@ interface ChatInputProps {
   helperText?: string;
   trailingAccessory?: ReactNode;
   onStartVoice?: () => void;
-  /**
-   * True when the currently selected configuration meets the voice-chat
-   * requirements (Google provider + STT type). When false, the mic still
-   * works but we surface the requirement inline so the user knows why
-   * clicking it will be rejected.
-   */
   voiceConfigReady?: boolean;
 }
 

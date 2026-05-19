@@ -10,13 +10,6 @@ import {
 export type VoiceStatus = "idle" | "listening" | "sending" | "error";
 
 interface UseVoiceChatArgs {
-  /**
-   * Called with the recorded audio (base64 + mime) when the user submits.
-   * `transcript` is the live browser-side transcription captured during
-   * recording (empty string if unavailable). Should return the assistant's
-   * text reply once available; if it returns a falsy value or throws, the
-   * loop pauses in `idle` state.
-   */
   onSubmitAudio: (audio: {
     base64: string;
     mimeType: string;
@@ -34,7 +27,6 @@ interface UseVoiceChatResult {
   cancel: () => void;
 }
 
-// Web Speech API typing — these aren't in @types/dom yet across all envs.
 interface SpeechRecognitionEventLike {
   resultIndex: number;
   results: ArrayLike<{
@@ -105,9 +97,6 @@ function ensurePcmRecorderModule(ctx: AudioContext): Promise<void> {
  * Lifecycle:
  *   idle ──start()──▶ listening ──submit()──▶ sending ──response──▶ idle
  * cancel() at any point returns to idle and tears down resources.
- *
- * Auto-playback of the assistant reply has been removed — playback is
- * driven from the chat bubble's speaker button (see useTextToSpeech).
  */
 export function useVoiceChat({
   onSubmitAudio,
@@ -143,7 +132,6 @@ export function useVoiceChat({
   const stopRecognition = useCallback((options?: { abort?: boolean }) => {
     const rec = recognitionRef.current;
     if (!rec) return;
-    // Detach the auto-restart so the engine actually halts.
     rec.onend = null;
     rec.onerror = null;
     try {
@@ -324,10 +312,6 @@ export function useVoiceChat({
     pcmChunksRef.current = [];
 
     // Capture raw PCM directly via Web Audio API instead of MediaRecorder.
-    // This avoids the webm/opus decode pipeline entirely — that pipeline
-    // truncates to ~1s on some Chrome builds because MediaRecorder's webm
-    // doesn't always carry the duration metadata that decodeAudioData
-    // relies on.
     try {
       const AudioCtor =
         window.AudioContext ||
@@ -437,15 +421,11 @@ export function useVoiceChat({
     }
 
     try {
-      // Wrap the captured Float32 mono PCM as a one-channel AudioBuffer so
-      // the existing encodeWav() helper can write the WAV header. No
-      // decodeAudioData involved — samples come straight from the audio
-      // graph, so the duration matches what the user actually spoke.
-      // Resample to 16 kHz mono before encoding. The AudioContext often
-      // runs at the hardware's native rate (44.1 / 48 / 96 kHz), and most
-      // <audio> players + STT backends choke on anything above 48 kHz.
-      // 16 kHz mono is the canonical voice/STT format — universally
-      // playable, smallest payload, and what most ASR pipelines expect.
+      /**
+       * Convert captured PCM samples into an AudioBuffer and encode as WAV.
+       * Resample to 16 kHz mono since most STT pipelines expect this format
+       * and some players/backends fail with higher sample rates.
+       */
       const sourceBuffer = new AudioBuffer({
         length: pcm.samples.length,
         sampleRate: pcm.sampleRate,

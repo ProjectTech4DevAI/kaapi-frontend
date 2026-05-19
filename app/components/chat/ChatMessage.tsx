@@ -75,10 +75,7 @@ function ThinkingDots() {
 }
 
 /**
- * Renders the assistant text with optional karaoke highlight. When
- * `charIndex` is non-null the cursor has reached/passed that char offset
- * (TTS in progress) — words before it render in primary colour, the rest
- * grey out. When null, all text renders in primary colour as normal.
+ * Renders the assistant text with optional karaoke highlight.
  */
 function AssistantBody({
   text,

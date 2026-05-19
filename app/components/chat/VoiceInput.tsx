@@ -1,8 +1,5 @@
 /**
  * VoiceInput - Replaces ChatInput while the user is in voice mode.
- *
- * Shows a "Listening…" bar with a live waveform that reflects the mic input,
- * plus dedicated cancel (✕) and submit (↑) controls.
  */
 
 "use client";

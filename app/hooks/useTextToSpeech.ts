@@ -4,16 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseTextToSpeechResult {
   isSpeaking: boolean;
-  /** Char offset of the word currently being spoken (for karaoke). */
-  charIndex: number | null;
+  charIndex: number | null; // (for karaoke).
   speak: (text: string) => void;
   stop: () => void;
 }
 
 /**
  * Tiny wrapper around `window.speechSynthesis` for on-demand TTS playback
- * (e.g. the speaker button on an assistant message). Exposes a `charIndex`
- * that advances per word so callers can drive a karaoke-style word reveal.
+ * (e.g. the speaker button on an assistant message).
  */
 export function useTextToSpeech(): UseTextToSpeechResult {
   const [isSpeaking, setIsSpeaking] = useState(false);

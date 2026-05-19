@@ -3,7 +3,6 @@
  *   - decode a recorded Blob (any browser container) into an AudioBuffer
  *   - down-mix + resample to 16 kHz mono (Whisper's expected input)
  *   - re-encode any AudioBuffer as PCM 16-bit WAV
- *   - convert raw bytes to base64
  */
 
 export async function decodeBlobToAudioBuffer(
@@ -22,7 +21,6 @@ export async function decodeBlobToAudioBuffer(
   }
 }
 
-/** Down-mix to mono, resample to 16 kHz Float32 — Whisper's expected input. */
 export function audioBufferToMono16k(audioBuffer: AudioBuffer): Float32Array {
   const numChannels = audioBuffer.numberOfChannels;
   const srcRate = audioBuffer.sampleRate;

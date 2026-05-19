@@ -149,8 +149,11 @@ export function useVoiceChat({
     const Ctor =
       (window as unknown as { SpeechRecognition?: SpeechRecognitionCtor })
         .SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionCtor })
-        .webkitSpeechRecognition;
+      (
+        window as unknown as {
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
+        }
+      ).webkitSpeechRecognition;
     if (!Ctor) return; // graceful: no browser STT, transcript stays empty
 
     finalTranscriptRef.current = "";
@@ -449,18 +452,26 @@ export function useVoiceChat({
         mimeType: "audio/wav",
         transcript: liveTranscript,
       });
-      // Auto-read / auto-re-listen has been removed for now. After the
-      // reply lands we drop back to idle and let the user decide whether
-      // to play the reply (via the speaker button in the chat bubble) and
-      // whether to record again.
-      setStatus("idle");
-      // Silence the unused-binding lint if `reply` is unused now.
+      // Auto-read TTS is intentionally not triggered — the user controls
+      // playback via the speaker button on the assistant bubble.
       void reply;
+      if (cancelledRef.current) {
+        setStatus("idle");
+        return;
+      }
+      await startRecording();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Voice request failed.");
       setStatus("error");
     }
-  }, [onSubmitAudio, status, stopMeter, stopRecognition, stopRecording]);
+  }, [
+    onSubmitAudio,
+    startRecording,
+    status,
+    stopMeter,
+    stopRecognition,
+    stopRecording,
+  ]);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;

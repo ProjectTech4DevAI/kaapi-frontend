@@ -329,8 +329,17 @@ export default function ChatPage() {
     const cached = configs.find(
       (c) => c.config_id === configId && c.version === configVersion,
     );
-    const fullConfig =
-      cached ?? (await loadSingleVersion(configId, configVersion));
+    if (cached) {
+      const err = checkVoiceConfig(cached);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+      voice.start();
+      return;
+    }
+
+    const fullConfig = await loadSingleVersion(configId, configVersion);
     const voiceError = checkVoiceConfig(fullConfig);
     if (voiceError) {
       toast.error(voiceError);

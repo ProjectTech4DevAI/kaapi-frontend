@@ -18,6 +18,7 @@ interface ChatInputProps {
   trailingAccessory?: ReactNode;
   onStartVoice?: () => void;
   voiceConfigReady?: boolean;
+  textConfigReady?: boolean;
 }
 
 const MAX_HEIGHT_PX = 200;
@@ -33,6 +34,7 @@ export default function ChatInput({
   trailingAccessory,
   onStartVoice,
   voiceConfigReady,
+  textConfigReady,
 }: ChatInputProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +48,9 @@ export default function ChatInput({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!disabled && !isPending && value.trim()) onSend();
+      if (!disabled && !isPending && value.trim()) {
+        onSend();
+      }
     }
   };
 
@@ -109,7 +113,16 @@ export default function ChatInput({
             </button>
           </div>
         </div>
-        {onStartVoice && voiceConfigReady === false ? (
+        {textConfigReady === false ? (
+          <div className="mt-2 flex items-start justify-center gap-1.5 text-[11px] text-status-warning-text">
+            <InfoIcon className="w-3 h-3 shrink-0 mt-[3px]" />
+            <p className="text-center leading-snug wrap-break-word">
+              This configuration is set up for{" "}
+              <span className="font-semibold">Speech-to-Text</span> — pick a
+              different config above to send text, or tap the microphone.
+            </p>
+          </div>
+        ) : onStartVoice && voiceConfigReady === false ? (
           <div className="mt-2 flex items-start justify-center gap-1.5 text-[11px] text-status-warning-text">
             <InfoIcon className="w-3 h-3 shrink-0 mt-[3px]" />
             <p className="text-center leading-snug wrap-break-word">

@@ -117,6 +117,17 @@ async function executeChatCall(args: {
   return { text, jobId, conversationId: newConversationId };
 }
 
+function checkTextConfig(
+  config: SavedConfig | null | undefined,
+): string | null {
+  if (!config) return "Couldn't load the selected configuration. Try again.";
+  const type = config.type?.toLowerCase();
+  if (type === "stt") {
+    return "This configuration is set up for Speech-to-Text. Pick a different config above (or tap the microphone to send a voice message).";
+  }
+  return null;
+}
+
 function checkVoiceConfig(
   config: SavedConfig | null | undefined,
 ): string | null {
@@ -201,6 +212,19 @@ export default function ChatPage() {
         return null;
       }
 
+      if (input.kind === "text") {
+        const cached = configs.find(
+          (c) => c.config_id === configId && c.version === configVersion,
+        );
+        if (cached) {
+          const err = checkTextConfig(cached);
+          if (err) {
+            toast.error(err);
+            return null;
+          }
+        }
+      }
+
       const userMessage = buildUserMessage(input);
       const assistantMessage: ChatMessage = {
         id: genId(),
@@ -234,6 +258,11 @@ export default function ChatPage() {
           throw new Error(
             "Couldn't load the selected configuration. Try picking it again.",
           );
+        }
+
+        if (input.kind === "text") {
+          const textErr = checkTextConfig(fullConfig);
+          if (textErr) throw new Error(textErr);
         }
 
         const {
@@ -312,6 +341,8 @@ export default function ChatPage() {
     !!activeConfig &&
     activeConfig.provider?.toLowerCase() === "google" &&
     activeConfig.type?.toLowerCase() === "stt";
+  const textConfigReady =
+    !activeConfig || (activeConfig.type?.toLowerCase() ?? "text") !== "stt";
 
   const handleStartVoice = useCallback(async () => {
     if (!isAuthenticated) {
@@ -419,6 +450,7 @@ export default function ChatPage() {
               isPending={isPending}
               onStartVoice={handleStartVoice}
               voiceConfigReady={hasConfig ? voiceConfigReady : undefined}
+              textConfigReady={hasConfig ? textConfigReady : undefined}
               placeholder={
                 !isAuthenticated
                   ? "Log in to start chatting…"

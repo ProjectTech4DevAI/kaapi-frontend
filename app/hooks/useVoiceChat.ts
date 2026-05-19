@@ -332,7 +332,7 @@ export function useVoiceChat({
 
       // Recorder feed — AudioWorkletNode runs a tiny processor on the
       // audio thread, posts Float32 sample chunks back to the main thread
-      // via its MessagePort. Replaces the deprecated ScriptProcessorNode.
+      // via its MessagePort.
       await ensurePcmRecorderModule(ctx);
       if (cancelledRef.current) {
         stream.getTracks().forEach((t) => t.stop());

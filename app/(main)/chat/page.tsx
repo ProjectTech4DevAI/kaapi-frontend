@@ -88,7 +88,6 @@ function buildPayload(
 /**
  * Run the full create-then-poll cycle for an LLM call. Returns the
  * extracted assistant text plus the job id and any new conversation id.
- * Throws on failure (caller is responsible for surfacing the error).
  */
 async function executeChatCall(args: {
   input: SendInput;
@@ -304,10 +303,6 @@ export default function ChatPage() {
 
   const voice = useVoiceChat({ onSubmitAudio: handleVoiceSubmit });
 
-  /**
-   * Live check used to render the inline requirement hint near the mic button.
-   * Synchronous — returns true only when the cached config we already have on hand is a Google STT config.
-   **/
   const activeConfig = configs.find(
     (c) => c.config_id === configId && c.version === configVersion,
   );
@@ -329,8 +324,6 @@ export default function ChatPage() {
       toast.error(msg);
       return;
     }
-    // Voice chat needs a Google STT config — load the full config if it
-    // isn't cached so the check is reliable, then validate.
     const cached = configs.find(
       (c) => c.config_id === configId && c.version === configVersion,
     );

@@ -41,12 +41,27 @@ export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 /** Dispatched when the user's session is no longer valid (expired or revoked). */
 export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
 
-export const PROVIDES_OPTIONS = [{ value: "openai", label: "OpenAI" }];
+export const PROVIDES_OPTIONS = [
+  { value: "openai", label: "OpenAI" },
+  { value: "google", label: "Google" },
+];
 
 export const PROVIDER_TYPES = [
-  { value: "text", label: "Text Completion" },
-  { value: "stt", label: "Speech-to-Text (Coming Soon)" },
-  { value: "tts", label: "Text-to-Speech (Coming Soon)" },
+  {
+    value: "text",
+    label: "Text Completion",
+    description: "Standard text-based LLM completion",
+  },
+  {
+    value: "stt",
+    label: "Speech-to-Text",
+    description: "Transcribe audio input into text",
+  },
+  {
+    value: "tts",
+    label: "Text-to-Speech",
+    description: "Text input into transcribe audio",
+  },
 ];
 
 export const MODEL_OPTIONS = {
@@ -57,6 +72,7 @@ export const MODEL_OPTIONS = {
     { value: "gpt-4", label: "GPT-4" },
     { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
   ],
+  google: [{ value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" }],
 };
 
 export const DEFAULT_CONFIG: ConfigBlob = {

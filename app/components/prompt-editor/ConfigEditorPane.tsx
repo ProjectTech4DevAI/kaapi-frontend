@@ -247,7 +247,7 @@ export default function ConfigEditorPane({
             <select
               value={configBlob.completion.type || "text"}
               onChange={(e) =>
-                handleTypeChange(e.target.value as "text" | "stt" | "tts")
+                handleTypeChange(e.target.value as "text" | "stt")
               }
               className={inputClass}
             >
@@ -258,7 +258,9 @@ export default function ConfigEditorPane({
               ))}
             </select>
             <p className="text-xs mt-1.5 text-text-secondary">
-              Standard text-based LLM completion
+              {PROVIDER_TYPES.find(
+                (t) => t.value === (configBlob.completion.type || "text"),
+              )?.description ?? ""}
             </p>
           </div>
 

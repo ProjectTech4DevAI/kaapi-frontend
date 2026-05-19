@@ -17,7 +17,9 @@ import {
   ChatInput,
   ChatMessageList,
 } from "@/app/components/chat";
+import VoiceInput from "@/app/components/chat/VoiceInput";
 import { useConfigs } from "@/app/hooks";
+import { useVoiceChat } from "@/app/hooks/useVoiceChat";
 import {
   configToBlob,
   createLLMCall,
@@ -25,7 +27,7 @@ import {
   pollLLMCall,
 } from "@/app/lib/chatClient";
 import { useChatStore } from "@/app/lib/store/chat";
-import { ChatMessage, LLMCallRequest } from "@/app/lib/types/chat";
+import { ChatMessage, LLMCallRequest, LLMInput } from "@/app/lib/types/chat";
 
 function genId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -90,13 +92,21 @@ export default function ChatPage() {
   );
 
   const sendMessage = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed) return;
+    async (
+      input:
+        | { kind: "text"; text: string }
+        | {
+            kind: "audio";
+            base64: string;
+            mimeType: string;
+            transcript?: string;
+          },
+    ): Promise<string | null> => {
+      if (input.kind === "text" && !input.text.trim()) return null;
 
       if (!isAuthenticated) {
         setShowLoginModal(true);
-        return;
+        return null;
       }
       if (!configId || !configVersion) {
         if (allConfigMeta.length === 0) {
@@ -106,15 +116,19 @@ export default function ChatPage() {
         } else {
           toast.error("Select a configuration before sending a message.");
         }
-        return;
+        return null;
       }
 
       const userMessage: ChatMessage = {
         id: genId(),
         role: "user",
-        content: trimmed,
+        content:
+          input.kind === "text"
+            ? input.text.trim()
+            : (input.transcript?.trim() ?? ""),
         createdAt: Date.now(),
         status: "complete",
+        isVoice: input.kind === "audio",
       };
       const assistantMessage: ChatMessage = {
         id: genId(),
@@ -125,7 +139,7 @@ export default function ChatPage() {
       };
 
       appendMessages(userMessage, assistantMessage);
-      setDraft("");
+      if (input.kind === "text") setDraft("");
       setIsPending(true);
 
       const controller = new AbortController();
@@ -144,9 +158,24 @@ export default function ChatPage() {
           );
         }
 
+        const apiInput: LLMInput =
+          input.kind === "text"
+            ? input.text.trim()
+            : {
+                type: "audio",
+                content: {
+                  format: "base64",
+                  value: input.base64,
+                  mime_type: input.mimeType,
+                },
+              };
+        if (input.kind === "audio") {
+          console.log("[chat] audio base64:", input.base64);
+        }
+
         const payload: LLMCallRequest = {
           query: {
-            input: trimmed,
+            input: apiInput,
             conversation: conversationId
               ? { id: conversationId }
               : { auto_create: true },
@@ -179,6 +208,7 @@ export default function ChatPage() {
             "(The assistant returned an empty response — try again or pick a different configuration.)",
           status: "complete",
         });
+        return text || null;
       } catch (err) {
         if ((err as Error)?.name === "AbortError") {
           updateMessageInStore(assistantMessage.id, {
@@ -186,7 +216,7 @@ export default function ChatPage() {
             content: "Cancelled.",
             error: "Cancelled",
           });
-          return;
+          return null;
         }
         const message =
           err instanceof Error ? err.message : "Something went wrong";
@@ -196,6 +226,7 @@ export default function ChatPage() {
           error: message,
         });
         toast.error(message);
+        return null;
       } finally {
         if (abortRef.current === controller) {
           abortRef.current = null;
@@ -218,6 +249,79 @@ export default function ChatPage() {
       updateMessageInStore,
     ],
   );
+
+  const handleVoiceSubmit = useCallback(
+    async (audio: { base64: string; mimeType: string; transcript: string }) =>
+      sendMessage({
+        kind: "audio",
+        base64: audio.base64,
+        mimeType: audio.mimeType,
+        transcript: audio.transcript,
+      }),
+    [sendMessage],
+  );
+
+  const voice = useVoiceChat({ onSubmitAudio: handleVoiceSubmit });
+
+  // Live check used to render the inline requirement hint near the mic
+  // button. Synchronous — returns true only when the cached config we
+  // already have on hand is a Google STT config.
+  const activeConfig = configs.find(
+    (c) => c.config_id === configId && c.version === configVersion,
+  );
+  const voiceConfigReady =
+    !!activeConfig &&
+    activeConfig.provider?.toLowerCase() === "google" &&
+    activeConfig.type?.toLowerCase() === "stt";
+
+  const handleStartVoice = useCallback(async () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (!configId || !configVersion) {
+      if (allConfigMeta.length === 0) {
+        toast.error(
+          "No configurations yet — create one in Configurations → Prompt Editor first.",
+        );
+      } else {
+        toast.error("Select a configuration before starting voice chat.");
+      }
+      return;
+    }
+    // Voice chat needs a Google STT config — the backend only routes
+    // audio input correctly when provider === "google" + type === "stt".
+    // Load the full config if it isn't cached so the check is reliable.
+    const cached = configs.find(
+      (c) => c.config_id === configId && c.version === configVersion,
+    );
+    const fullConfig =
+      cached ?? (await loadSingleVersion(configId, configVersion));
+    if (!fullConfig) {
+      toast.error("Couldn't load the selected configuration. Try again.");
+      return;
+    }
+    const provider = fullConfig.provider?.toLowerCase();
+    const type = fullConfig.type?.toLowerCase();
+    if (provider !== "google" || type !== "stt") {
+      toast.error(
+        "Voice chat needs a config with provider “Google” and type “Speech-to-Text”. Pick a different config above, or update this one in Configurations → Prompt Editor.",
+      );
+      return;
+    }
+    voice.start();
+  }, [
+    allConfigMeta,
+    configId,
+    configs,
+    configVersion,
+    isAuthenticated,
+    loadSingleVersion,
+    toast,
+    voice,
+  ]);
+
+  const isVoiceActive = voice.status !== "idle" && voice.status !== "error";
 
   const hasConversation = messages.length > 0;
   const hasConfig = !!configId && !!configVersion;
@@ -258,35 +362,47 @@ export default function ChatPage() {
                   setShowLoginModal(true);
                   return;
                 }
-                sendMessage(text);
+                sendMessage({ kind: "text", text });
               }}
             />
           )}
 
-          <ChatInput
-            value={draft}
-            onChange={setDraft}
-            onSend={() => sendMessage(draft)}
-            isPending={isPending}
-            placeholder={
-              !isAuthenticated
-                ? "Log in to start chatting…"
-                : !hasConfig
-                  ? "Select a configuration to start chatting…"
-                  : "Message your assistant…"
-            }
-            trailingAccessory={
-              isAuthenticated ? (
-                <ChatConfigPicker
-                  configId={configId}
-                  version={configVersion}
-                  onSelect={handleConfigSelect}
-                  disabled={isPending}
-                  openUp
-                />
-              ) : null
-            }
-          />
+          {isVoiceActive ? (
+            <VoiceInput
+              status={voice.status}
+              audioLevel={voice.audioLevel}
+              transcript={voice.transcript}
+              onCancel={voice.cancel}
+              onSubmit={voice.submit}
+            />
+          ) : (
+            <ChatInput
+              value={draft}
+              onChange={setDraft}
+              onSend={() => sendMessage({ kind: "text", text: draft })}
+              isPending={isPending}
+              onStartVoice={handleStartVoice}
+              voiceConfigReady={hasConfig ? voiceConfigReady : undefined}
+              placeholder={
+                !isAuthenticated
+                  ? "Log in to start chatting…"
+                  : !hasConfig
+                    ? "Select a configuration to start chatting…"
+                    : "Message your assistant…"
+              }
+              trailingAccessory={
+                isAuthenticated ? (
+                  <ChatConfigPicker
+                    configId={configId}
+                    version={configVersion}
+                    onSelect={handleConfigSelect}
+                    disabled={isPending}
+                    openUp
+                  />
+                ) : null
+              }
+            />
+          )}
         </div>
       </div>
 

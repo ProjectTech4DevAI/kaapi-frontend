@@ -7,7 +7,12 @@ import {
   encodeWav,
 } from "@/app/lib/audio/codec";
 
-export type VoiceStatus = "idle" | "listening" | "sending" | "error";
+export type VoiceStatus =
+  | "idle"
+  | "requesting"
+  | "listening"
+  | "sending"
+  | "error";
 
 interface UseVoiceChatArgs {
   onSubmitAudio: (audio: {
@@ -290,6 +295,7 @@ export function useVoiceChat({
     // wired up later) is the authoritative transcript path.
     transcriptRef.current = "";
     setTranscript("");
+    setStatus("requesting");
     startRecognition();
 
     let stream: MediaStream;

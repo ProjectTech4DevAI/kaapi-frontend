@@ -19,6 +19,8 @@ const BAR_COUNT = 24;
 
 function StatusLabel({ status }: { status: VoiceStatus }) {
   switch (status) {
+    case "requesting":
+      return <>Waiting for microphone permission…</>;
     case "listening":
       return <>Listening…</>;
     case "sending":
@@ -113,7 +115,9 @@ export default function VoiceInput({
             ? "Tap ↑ to send · ✕ to cancel"
             : status === "sending"
               ? "Sending your message…"
-              : "Preparing microphone…"}
+              : status === "requesting"
+                ? "Allow microphone access in the browser prompt to start"
+                : "Preparing microphone…"}
         </p>
       </div>
     </div>

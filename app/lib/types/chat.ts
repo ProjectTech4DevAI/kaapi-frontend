@@ -116,3 +116,8 @@ export interface PollOptions {
   intervalMs?: number;
   timeoutMs?: number;
 }
+
+export interface ChatAudioPayload {
+  url: string;
+  mimeType: string;
+}

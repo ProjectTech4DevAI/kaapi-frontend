@@ -14,6 +14,7 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import {
+  ChatAudioPayload,
   LLMCallCreateResponse,
   LLMCallRequest,
   LLMCallStatusData,
@@ -182,7 +183,7 @@ interface AudioOutputNode {
 
 export function extractAssistantAudio(
   response?: LLMResponseBody | null,
-): { url: string; mimeType: string } | null {
+): ChatAudioPayload | null {
   const output = response?.output as AudioOutputNode | null | undefined;
   if (!output || typeof output !== "object") return null;
   if (output.type !== "audio" || !output.content) return null;

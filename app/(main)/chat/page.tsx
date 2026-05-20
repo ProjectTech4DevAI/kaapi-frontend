@@ -29,6 +29,7 @@ import {
 } from "@/app/lib/chatClient";
 import { useChatStore } from "@/app/lib/store/chat";
 import {
+  ChatAudioPayload,
   ChatMessage,
   LLMCallRequest,
   LLMInput,
@@ -98,7 +99,7 @@ async function executeChatCall(args: {
   signal: AbortSignal;
 }): Promise<{
   text: string;
-  audio: { url: string; mimeType: string } | null;
+  audio: ChatAudioPayload | null;
   jobId: string;
   conversationId: string | null;
 }> {

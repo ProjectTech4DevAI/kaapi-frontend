@@ -44,6 +44,8 @@ export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
 export const PROVIDES_OPTIONS = [
   { value: "openai", label: "OpenAI" },
   { value: "google", label: "Google" },
+  { value: "sarvamai", label: "Sarvam AI" },
+  { value: "elevenlabs", label: "ElevenLabs" },
 ];
 
 export const PROVIDER_TYPES = [
@@ -60,7 +62,7 @@ export const PROVIDER_TYPES = [
   {
     value: "tts",
     label: "Text-to-Speech",
-    description: "Text input into transcribe audio",
+    description: "Synthesise audio from a text prompt",
   },
 ];
 

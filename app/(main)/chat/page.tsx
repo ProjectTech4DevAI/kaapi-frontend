@@ -23,6 +23,7 @@ import { useVoiceChat } from "@/app/hooks/useVoiceChat";
 import {
   configToBlob,
   createLLMCall,
+  extractAssistantAudio,
   extractAssistantText,
   pollLLMCall,
 } from "@/app/lib/chatClient";
@@ -97,6 +98,7 @@ async function executeChatCall(args: {
   signal: AbortSignal;
 }): Promise<{
   text: string;
+  audio: { url: string; mimeType: string } | null;
   jobId: string;
   conversationId: string | null;
 }> {
@@ -111,10 +113,11 @@ async function executeChatCall(args: {
   }
   const jobId = created.data.job_id;
   const result = await pollLLMCall(jobId, args.apiKey, { signal: args.signal });
-  const text = extractAssistantText(result.llm_response?.response);
-  const newConversationId =
-    result.llm_response?.response?.conversation_id ?? args.conversationId;
-  return { text, jobId, conversationId: newConversationId };
+  const response = result.llm_response?.response;
+  const audio = extractAssistantAudio(response);
+  const text = audio ? "" : extractAssistantText(response);
+  const newConversationId = response?.conversation_id ?? args.conversationId;
+  return { text, audio, jobId, conversationId: newConversationId };
 }
 
 function checkTextConfig(
@@ -267,6 +270,7 @@ export default function ChatPage() {
 
         const {
           text,
+          audio,
           jobId,
           conversationId: newConversationId,
         } = await executeChatCall({
@@ -280,12 +284,20 @@ export default function ChatPage() {
         if (newConversationId && newConversationId !== conversationId) {
           setConversationId(newConversationId);
         }
-        updateMessageInStore(assistantMessage.id, {
-          content:
-            text ||
-            "(The assistant returned an empty response — try again or pick a different configuration.)",
-          status: "complete",
-        });
+        if (audio) {
+          updateMessageInStore(assistantMessage.id, {
+            content: "",
+            audio,
+            status: "complete",
+          });
+        } else {
+          updateMessageInStore(assistantMessage.id, {
+            content:
+              text ||
+              "(The assistant returned an empty response — try again or pick a different configuration.)",
+            status: "complete",
+          });
+        }
         finishAbort();
         return text || null;
       } catch (err) {

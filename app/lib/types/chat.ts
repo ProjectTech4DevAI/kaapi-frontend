@@ -4,6 +4,11 @@ export type ChatRole = "user" | "assistant";
 
 export type ChatMessageStatus = "pending" | "complete" | "error";
 
+export interface ChatAudioPayload {
+  url: string;
+  mimeType: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
@@ -13,6 +18,7 @@ export interface ChatMessage {
   jobId?: string;
   error?: string;
   isVoice?: boolean;
+  audio?: ChatAudioPayload;
 }
 
 export interface ChatConfigSelection {

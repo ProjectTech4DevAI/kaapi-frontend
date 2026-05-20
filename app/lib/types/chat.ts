@@ -9,6 +9,16 @@ export interface ChatAudioPayload {
   mimeType: string;
 }
 
+export type ChatAttachmentKind = "image" | "pdf";
+
+export interface ChatAttachment {
+  kind: ChatAttachmentKind;
+  name: string;
+  mimeType: string;
+  /** Data URL or http(s) URL used for inline preview in the chat bubble. */
+  previewUrl?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
@@ -19,6 +29,7 @@ export interface ChatMessage {
   error?: string;
   isVoice?: boolean;
   audio?: ChatAudioPayload;
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatConfigSelection {
@@ -26,8 +37,15 @@ export interface ChatConfigSelection {
   version: number;
 }
 
+export interface SendAttachment {
+  kind: ChatAttachmentKind;
+  name: string;
+  mimeType: string;
+  base64: string;
+}
+
 export type SendInput =
-  | { kind: "text"; text: string }
+  | { kind: "text"; text: string; attachments?: SendAttachment[] }
   | {
       kind: "audio";
       base64: string;

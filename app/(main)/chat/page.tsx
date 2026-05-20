@@ -16,8 +16,8 @@ import {
   ChatEmptyState,
   ChatInput,
   ChatMessageList,
+  VoiceInput,
 } from "@/app/components/chat";
-import VoiceInput from "@/app/components/chat/VoiceInput";
 import { useConfigs } from "@/app/hooks";
 import { useVoiceChat } from "@/app/hooks/useVoiceChat";
 import {
@@ -33,6 +33,7 @@ import {
   ChatMessage,
   LLMCallRequest,
   LLMInput,
+  LLMStructuredInput,
   SendInput,
 } from "@/app/lib/types/chat";
 import { SavedConfig } from "@/app/lib/types/configs";
@@ -45,7 +46,7 @@ function genId() {
 }
 
 function buildUserMessage(input: SendInput): ChatMessage {
-  return {
+  const base: ChatMessage = {
     id: genId(),
     role: "user",
     content:
@@ -56,18 +57,49 @@ function buildUserMessage(input: SendInput): ChatMessage {
     status: "complete",
     isVoice: input.kind === "audio",
   };
+  if (input.kind === "text" && input.attachments?.length) {
+    base.attachments = input.attachments.map((a) => ({
+      kind: a.kind,
+      name: a.name,
+      mimeType: a.mimeType,
+      previewUrl: `data:${a.mimeType};base64,${a.base64}`,
+    }));
+  }
+  return base;
 }
 
 function buildLLMInput(input: SendInput): LLMInput {
-  if (input.kind === "text") return input.text.trim();
-  return {
-    type: "audio",
-    content: {
-      format: "base64",
-      value: input.base64,
-      mime_type: input.mimeType,
-    },
-  };
+  if (input.kind === "audio") {
+    return {
+      type: "audio",
+      content: {
+        format: "base64",
+        value: input.base64,
+        mime_type: input.mimeType,
+      },
+    };
+  }
+  const text = input.text.trim();
+  const files = input.attachments ?? [];
+  if (files.length === 0) return text;
+  const items: LLMStructuredInput[] = [];
+  if (text) {
+    items.push({
+      type: "text",
+      content: { format: "text", value: text },
+    });
+  }
+  for (const a of files) {
+    items.push({
+      type: a.kind,
+      content: {
+        format: "base64",
+        value: a.base64,
+        mime_type: a.mimeType,
+      },
+    });
+  }
+  return items;
 }
 
 function buildPayload(
@@ -201,7 +233,13 @@ export default function ChatPage() {
 
   const sendMessage = useCallback(
     async (input: SendInput): Promise<string | null> => {
-      if (input.kind === "text" && !input.text.trim()) return null;
+      if (
+        input.kind === "text" &&
+        !input.text.trim() &&
+        !input.attachments?.length
+      ) {
+        return null;
+      }
 
       if (!isAuthenticated) {
         setShowLoginModal(true);
@@ -459,7 +497,10 @@ export default function ChatPage() {
             <ChatInput
               value={draft}
               onChange={setDraft}
-              onSend={() => sendMessage({ kind: "text", text: draft })}
+              onSend={(attachments) =>
+                sendMessage({ kind: "text", text: draft, attachments })
+              }
+              onAttachmentError={(msg) => toast.error(msg)}
               isPending={isPending}
               onStartVoice={handleStartVoice}
               voiceConfigReady={hasConfig ? voiceConfigReady : undefined}

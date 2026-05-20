@@ -6,54 +6,13 @@ import {
   audioBufferToMono16k,
   encodeWav,
 } from "@/app/lib/audio/codec";
-
-export type VoiceStatus =
-  | "idle"
-  | "requesting"
-  | "listening"
-  | "sending"
-  | "error";
-
-interface UseVoiceChatArgs {
-  onSubmitAudio: (audio: {
-    base64: string;
-    mimeType: string;
-    transcript: string;
-  }) => Promise<string | null | undefined>;
-}
-
-interface UseVoiceChatResult {
-  status: VoiceStatus;
-  error: string | null;
-  audioLevel: number; // 0..1 — for the live waveform
-  transcript: string; // live transcript captured during recording
-  start: () => Promise<void>;
-  submit: () => Promise<void>;
-  cancel: () => void;
-}
-
-interface SpeechRecognitionEventLike {
-  resultIndex: number;
-  results: ArrayLike<{
-    0: { transcript: string };
-    isFinal: boolean;
-    length: number;
-  }>;
-}
-interface SpeechRecognitionLike {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((e: unknown) => void) | null;
-  onend: (() => void) | null;
-}
-interface SpeechRecognitionCtor {
-  new (): SpeechRecognitionLike;
-}
+import {
+  VoiceStatus,
+  UseVoiceChatArgs,
+  UseVoiceChatResult,
+  SpeechRecognitionLike,
+  SpeechRecognitionCtor,
+} from "@/app/lib/types/voiceChat";
 
 /**
  * AudioWorkletProcessor source — captures the first input channel each

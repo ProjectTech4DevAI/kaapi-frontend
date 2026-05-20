@@ -36,14 +36,6 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
       types: ["tts"],
     },
   ],
-  sarvamai: [
-    { value: "bulbul:v3", label: "Bulbul v3", types: ["tts"] },
-    { value: "saaras:v3", label: "Saaras v3", types: ["tts"] },
-  ],
-  elevenlabs: [
-    { value: "eleven_v3", label: "Eleven v3", types: ["tts"] },
-    { value: "scribe_v2", label: "Scribe v2", types: ["tts"] },
-  ],
 };
 
 export function getModelsForType(

@@ -238,6 +238,9 @@ function PromptEditorContent() {
   ]);
 
   const handleSave = async () => {
+    const wasNewConfig = !allConfigMeta.find(
+      (m) => m.name === currentConfigName.trim(),
+    );
     const ok = await saveConfig({
       currentConfigName,
       currentConfigBlob,
@@ -248,6 +251,7 @@ function PromptEditorContent() {
     if (ok) {
       setHasUnsavedChanges(false);
       setCommitMessage("");
+      if (wasNewConfig) resetEditor();
     }
   };
 

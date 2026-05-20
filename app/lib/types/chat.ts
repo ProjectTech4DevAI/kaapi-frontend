@@ -15,7 +15,6 @@ export interface ChatAttachment {
   kind: ChatAttachmentKind;
   name: string;
   mimeType: string;
-  /** Data URL or http(s) URL used for inline preview in the chat bubble. */
   previewUrl?: string;
 }
 

@@ -103,7 +103,7 @@ export default function VoiceInput({
             aria-label="Send voice message"
             className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
               canSubmit
-                ? "bg-text-primary text-white hover:bg-neutral-800 cursor-pointer"
+                ? "bg-accent-primary text-white hover:bg-accent-secondary cursor-pointer"
                 : "bg-neutral-200 text-text-secondary cursor-not-allowed"
             }`}
           >

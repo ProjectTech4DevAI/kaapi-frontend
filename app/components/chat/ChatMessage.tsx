@@ -5,39 +5,23 @@
 "use client";
 
 import { useState } from "react";
-import { ChatMessage as ChatMessageType } from "@/app/lib/types/chat";
+import {
+  ChatAttachment,
+  ChatMessage as ChatMessageType,
+} from "@/app/lib/types/chat";
 import {
   ChatIcon,
   CheckLineIcon,
   CopyIcon,
+  DocumentFileIcon,
   MicIcon,
   SpeakerIcon,
 } from "@/app/components/icons";
+import { AttachmentPreviewModal, MarkdownContent } from "@/app/components/chat";
 import { useTextToSpeech } from "@/app/hooks/useTextToSpeech";
 
 interface ChatMessageProps {
   message: ChatMessageType;
-}
-
-interface WordSegment {
-  text: string;
-  start: number;
-  isWord: boolean;
-}
-
-function tokenizeWords(text: string): WordSegment[] {
-  const segments: WordSegment[] = [];
-  const re = /(\S+|\s+)/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(text)) !== null) {
-    const value = match[0];
-    segments.push({
-      text: value,
-      start: match.index,
-      isWord: !/^\s+$/.test(value),
-    });
-  }
-  return segments;
 }
 
 function VoiceMessageBody() {
@@ -74,44 +58,17 @@ function ThinkingDots() {
   );
 }
 
-/**
- * Renders the assistant text with optional karaoke highlight.
- */
 function AssistantBody({
   text,
-  charIndex,
   baseClass,
   trailing,
 }: {
   text: string;
-  charIndex: number | null;
   baseClass: string;
   trailing?: React.ReactNode;
 }) {
-  const segments = tokenizeWords(text);
-  const isKaraoke = typeof charIndex === "number";
   return (
-    <div
-      className={`${baseClass} whitespace-pre-wrap wrap-break-word transition-colors`}
-    >
-      {segments.map((seg, i) => {
-        if (!seg.isWord) return <span key={i}>{seg.text}</span>;
-        const isRead = !isKaraoke || seg.start <= charIndex;
-        return (
-          <span
-            key={i}
-            className={
-              isRead
-                ? "text-text-primary transition-colors duration-150"
-                : "text-text-secondary/60 transition-colors duration-150"
-            }
-          >
-            {seg.text}
-          </span>
-        );
-      })}
-      {trailing}
-    </div>
+    <MarkdownContent text={text} className={baseClass} trailing={trailing} />
   );
 }
 
@@ -162,7 +119,7 @@ function AssistantMessage({ message }: { message: ChatMessageType }) {
     isError ? "text-status-error" : "text-text-primary"
   }`;
 
-  const { isSpeaking, charIndex, speak, stop } = useTextToSpeech();
+  const { isSpeaking, speak, stop } = useTextToSpeech();
   const [copied, setCopied] = useState(false);
 
   const handleSpeak = () => {
@@ -200,7 +157,6 @@ function AssistantMessage({ message }: { message: ChatMessageType }) {
         ) : (
           <AssistantBody
             text={message.content}
-            charIndex={isSpeaking ? charIndex : null}
             baseClass={baseClass}
             trailing={
               isPending && message.content ? (
@@ -244,30 +200,94 @@ function AssistantMessage({ message }: { message: ChatMessageType }) {
   );
 }
 
+function UserAttachments({ items }: { items: ChatAttachment[] }) {
+  const [preview, setPreview] = useState<ChatAttachment | null>(null);
+  const cardClass =
+    "flex-1 min-w-0 basis-[180px] max-w-xs rounded-xl bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.05)] overflow-hidden cursor-pointer hover:shadow-[0_4px_12px_rgba(0,0,0,0.12),0_2px_4px_rgba(0,0,0,0.06)] transition-shadow";
+  return (
+    <>
+      <div className="flex flex-wrap justify-end gap-2 mb-2 max-w-full">
+        {items.map((a, i) =>
+          a.kind === "image" && a.previewUrl ? (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPreview(a)}
+              title={a.name}
+              aria-label={`Preview ${a.name}`}
+              className={`${cardClass} bg-bg-secondary text-left`}
+            >
+              <img
+                src={a.previewUrl}
+                alt={a.name}
+                className="block w-full max-h-56 object-contain"
+              />
+            </button>
+          ) : (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setPreview(a)}
+              className={`${cardClass} flex items-center gap-2.5 px-3 py-2.5 hover:bg-bg-secondary text-left`}
+              title={a.name}
+              aria-label={`Preview ${a.name}`}
+            >
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-accent-primary text-white shrink-0">
+                <DocumentFileIcon className="w-4 h-4" />
+              </span>
+              <span className="flex flex-col min-w-0 flex-1">
+                <span className="text-[13px] font-medium text-text-primary truncate">
+                  {a.name}
+                </span>
+                <span className="text-[11px] text-text-secondary">
+                  {a.kind === "pdf" ? "PDF" : a.mimeType}
+                </span>
+              </span>
+            </button>
+          ),
+        )}
+      </div>
+      <AttachmentPreviewModal
+        attachment={preview}
+        onClose={() => setPreview(null)}
+      />
+    </>
+  );
+}
+
 export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   if (isUser) {
     const isVoiceWithoutTranscript =
       !!message.isVoice && !message.content.trim();
+    const attachments = message.attachments ?? [];
+    const hasAttachments = attachments.length > 0;
     return (
       <div className="flex justify-end px-4 sm:px-6">
-        <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl bg-neutral-100 px-4 py-2.5 text-[15px] leading-relaxed text-text-primary whitespace-pre-wrap wrap-break-word">
-          {isVoiceWithoutTranscript ? (
-            <VoiceMessageBody />
-          ) : (
-            <>
-              {message.isVoice && (
-                <span
-                  className="mr-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent-primary/10 text-accent-primary align-text-bottom"
-                  title="Voice message"
-                  aria-label="Voice message"
-                >
-                  <MicIcon className="w-3 h-3" />
-                </span>
+        <div className="max-w-[85%] sm:max-w-[75%] flex flex-col items-end gap-1">
+          {hasAttachments && <UserAttachments items={attachments} />}
+          {(isVoiceWithoutTranscript ||
+            message.content.trim() ||
+            !hasAttachments) && (
+            <div className="rounded-2xl bg-neutral-100 px-4 py-2.5 text-[15px] leading-relaxed text-text-primary whitespace-pre-wrap wrap-break-word">
+              {isVoiceWithoutTranscript ? (
+                <VoiceMessageBody />
+              ) : (
+                <>
+                  {message.isVoice && (
+                    <span
+                      className="mr-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent-primary/10 text-accent-primary align-text-bottom"
+                      title="Voice message"
+                      aria-label="Voice message"
+                    >
+                      <MicIcon className="w-3 h-3" />
+                    </span>
+                  )}
+                  {message.content}
+                </>
               )}
-              {message.content}
-            </>
+            </div>
           )}
         </div>
       </div>

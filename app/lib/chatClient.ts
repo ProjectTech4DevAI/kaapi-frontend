@@ -86,9 +86,11 @@ export async function pollLLMCall(
     }
     if (FAILURE_STATUSES.has(status)) {
       throw new Error(
-        res.data.error_message ||
-          res.error ||
-          `Job ${status}. Please try again.`,
+        sanitizeAssistantText(
+          res.data.error_message ||
+            res.error ||
+            `Job ${status}. Please try again.`,
+        ),
       );
     }
 
@@ -156,14 +158,24 @@ function findText(node: unknown, depth = 0): string | null {
   return null;
 }
 
+const DATA_URL_RE = /data:([\w.+-]+\/[\w.+-]+);base64,[A-Za-z0-9+/=]{32,}/g;
+
+function sanitizeAssistantText(text: string): string {
+  return text.replace(DATA_URL_RE, (_match, mime: string) => {
+    const [, sub] = mime.split("/");
+    const label = (sub ?? mime).toUpperCase();
+    return `[${label} attachment]`;
+  });
+}
+
 export function extractAssistantText(
   response?: LLMResponseBody | null,
 ): string {
   if (!response) return "";
   const text = findText(response.output);
-  if (text) return text;
+  if (text) return sanitizeAssistantText(text);
   try {
-    return JSON.stringify(response.output ?? "");
+    return sanitizeAssistantText(JSON.stringify(response.output ?? ""));
   } catch {
     return "";
   }

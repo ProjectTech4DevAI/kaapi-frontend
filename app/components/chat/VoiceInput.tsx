@@ -5,7 +5,7 @@
 "use client";
 
 import { CloseIcon, SendIcon } from "@/app/components/icons";
-import type { VoiceStatus } from "@/app/hooks/useVoiceChat";
+import { VoiceStatus } from "@/app/lib/types/voiceChat";
 
 interface VoiceInputProps {
   status: VoiceStatus;

@@ -60,7 +60,7 @@ export const PROVIDER_TYPES = [
   {
     value: "tts",
     label: "Text-to-Speech",
-    description: "Text input into transcribe audio",
+    description: "Synthesise audio from a text prompt",
   },
 ];
 

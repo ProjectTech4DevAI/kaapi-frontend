@@ -14,6 +14,7 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import {
+  ChatAudioPayload,
   LLMCallCreateResponse,
   LLMCallRequest,
   LLMCallStatusData,
@@ -166,6 +167,38 @@ export function extractAssistantText(
   } catch {
     return "";
   }
+}
+
+interface AudioOutputContent {
+  format?: string;
+  value?: string;
+  mime_type?: string;
+  uri?: string;
+}
+
+interface AudioOutputNode {
+  type?: string;
+  content?: AudioOutputContent;
+}
+
+export function extractAssistantAudio(
+  response?: LLMResponseBody | null,
+): ChatAudioPayload | null {
+  const output = response?.output as AudioOutputNode | null | undefined;
+  if (!output || typeof output !== "object") return null;
+  if (output.type !== "audio" || !output.content) return null;
+  const { uri, value, format, mime_type } = output.content;
+  const mimeType = mime_type || "audio/wav";
+  if (format === "url" && typeof value === "string" && value) {
+    return { url: value, mimeType };
+  }
+  if (typeof uri === "string" && uri) {
+    return { url: uri, mimeType };
+  }
+  if (format === "base64" && typeof value === "string" && value) {
+    return { url: `data:${mimeType};base64,${value}`, mimeType };
+  }
+  return null;
 }
 
 /**

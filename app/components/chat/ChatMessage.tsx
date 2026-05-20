@@ -115,6 +115,46 @@ function AssistantBody({
   );
 }
 
+function AssistantAudioPlayer({
+  url,
+  mimeType,
+}: {
+  url: string;
+  mimeType: string;
+}) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className="inline-flex items-center gap-2.5 rounded-2xl bg-status-error-bg text-status-error-text border border-status-error-border px-3 py-2 text-[13px]">
+        <SpeakerIcon className="w-4 h-4 shrink-0" />
+        <span>
+          Audio is no longer available (the signed URL may have expired).
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex flex-col gap-2 rounded-2xl bg-bg-secondary px-3 py-2 max-w-full">
+      <div className="flex items-center gap-2 text-[12px] font-medium text-text-secondary">
+        <SpeakerIcon className="w-3.5 h-3.5 text-accent-primary" />
+        <span>Voice reply</span>
+      </div>
+      <audio
+        src={url}
+        controls
+        preload="metadata"
+        onError={() => setError(true)}
+        className="max-w-full"
+      >
+        <source src={url} type={mimeType} />
+        Your browser doesn&apos;t support inline audio playback.
+      </audio>
+    </div>
+  );
+}
+
 function AssistantMessage({ message }: { message: ChatMessageType }) {
   const isPending = message.status === "pending";
   const isError = message.status === "error";
@@ -141,7 +181,8 @@ function AssistantMessage({ message }: { message: ChatMessageType }) {
     }
   };
 
-  const showToolbar = !isPending && !isError && !!message.content;
+  const hasAudio = !!message.audio?.url;
+  const showToolbar = !isPending && !isError && !hasAudio && !!message.content;
 
   return (
     <div className="flex gap-3 px-4 sm:px-6">
@@ -149,8 +190,13 @@ function AssistantMessage({ message }: { message: ChatMessageType }) {
         <ChatIcon className="w-4 h-4" />
       </div>
       <div className="flex-1 min-w-0 pt-1">
-        {isPending && !message.content ? (
+        {isPending && !message.content && !hasAudio ? (
           <ThinkingDots />
+        ) : hasAudio && message.audio ? (
+          <AssistantAudioPlayer
+            url={message.audio.url}
+            mimeType={message.audio.mimeType}
+          />
         ) : (
           <AssistantBody
             text={message.content}

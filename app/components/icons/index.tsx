@@ -3,6 +3,8 @@ export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
 export { default as CheckLineIcon } from "./common/CheckLineIcon";
+export { default as MicIcon } from "./common/MicIcon";
+export { default as SpeakerIcon } from "./common/SpeakerIcon";
 export { default as MusicNoteIcon } from "./common/MusicNoteIcon";
 export { default as PlayIcon } from "./common/PlayIcon";
 export { default as CopyIcon } from "./common/CopyIcon";

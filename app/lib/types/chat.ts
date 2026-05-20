@@ -12,6 +12,7 @@ export interface ChatMessage {
   status?: ChatMessageStatus;
   jobId?: string;
   error?: string;
+  isVoice?: boolean;
 }
 
 export interface ChatConfigSelection {
@@ -19,13 +20,33 @@ export interface ChatConfigSelection {
   version: number;
 }
 
+export type SendInput =
+  | { kind: "text"; text: string }
+  | {
+      kind: "audio";
+      base64: string;
+      mimeType: string;
+      transcript?: string;
+    };
+
 export type LLMCallConfigSelector =
   | { id: string; version: number }
   | { blob: ConfigBlob };
 
+export interface LLMStructuredInput {
+  type: "text" | "audio" | "image" | "pdf";
+  content: {
+    format: "text" | "base64" | "url";
+    value: string;
+    mime_type?: string;
+  };
+}
+
+export type LLMInput = string | LLMStructuredInput | LLMStructuredInput[];
+
 export interface LLMCallRequest {
   query: {
-    input: string;
+    input: LLMInput;
     conversation?: {
       id?: string;
       auto_create?: boolean;

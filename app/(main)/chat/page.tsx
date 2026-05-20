@@ -212,6 +212,11 @@ export default function ChatPage() {
     return () => abortRef.current?.abort();
   }, []);
 
+  useEffect(() => {
+    if (!configId || !configVersion) return;
+    void loadSingleVersion(configId, configVersion);
+  }, [configId, configVersion, loadSingleVersion]);
+
   const handleNewChat = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;

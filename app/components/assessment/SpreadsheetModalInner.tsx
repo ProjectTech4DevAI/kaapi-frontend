@@ -11,6 +11,7 @@ import {
   loadSpreadsheetState,
   persistSpreadsheetState,
 } from "@/app/lib/assessment/results";
+import type { UniverAPI } from "@/app/lib/types/assessment";
 
 interface SpreadsheetModalInnerProps {
   runId: number;
@@ -20,13 +21,6 @@ interface SpreadsheetModalInnerProps {
   rows: string[][];
   onClose: () => void;
 }
-
-type UniverAPI = {
-  dispose?: () => void;
-  onCommandExecuted: (cb: () => void) => { dispose: () => void };
-  getActiveWorkbook: () => { save: () => object } | null;
-  createUniverSheet: (d: object) => void;
-};
 
 export default function SpreadsheetModalInner({
   runId,
@@ -38,7 +32,7 @@ export default function SpreadsheetModalInner({
 }: SpreadsheetModalInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const univerRef = useRef<{ dispose?: () => void } | null>(null);
-  
+
   useEffect(() => {
     if (!containerRef.current) return;
 

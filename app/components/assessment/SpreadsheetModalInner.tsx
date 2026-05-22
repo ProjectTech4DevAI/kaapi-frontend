@@ -38,6 +38,7 @@ export default function SpreadsheetModalInner({
 }: SpreadsheetModalInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const univerRef = useRef<{ dispose?: () => void } | null>(null);
+  
   useEffect(() => {
     if (!containerRef.current) return;
 

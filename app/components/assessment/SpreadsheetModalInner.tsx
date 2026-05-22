@@ -6,6 +6,11 @@ import { UniverSheetsCorePreset } from "@univerjs/preset-sheets-core";
 import sheetsEnUS from "@univerjs/preset-sheets-core/locales/en-US";
 import "@univerjs/preset-sheets-core/lib/index.css";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
+import {
+  buildSpreadsheetWorkbookData,
+  loadSpreadsheetState,
+  persistSpreadsheetState,
+} from "@/app/lib/assessment/results";
 
 interface SpreadsheetModalInnerProps {
   runId: number;
@@ -14,71 +19,6 @@ interface SpreadsheetModalInnerProps {
   headers: string[];
   rows: string[][];
   onClose: () => void;
-}
-
-const STORAGE_PREFIX = "kaapi_sheet_state_";
-
-function storageKey(runId: number) {
-  return `${STORAGE_PREFIX}${runId}`;
-}
-
-function loadSavedState(runId: number): object | null {
-  try {
-    const raw = localStorage.getItem(storageKey(runId));
-    return raw ? (JSON.parse(raw) as object) : null;
-  } catch {
-    return null;
-  }
-}
-
-function persistState(runId: number, data: object) {
-  try {
-    localStorage.setItem(storageKey(runId), JSON.stringify(data));
-  } catch {
-    // quota exceeded — silently skip
-  }
-}
-
-function buildWorkbookData(headers: string[], rows: string[][]) {
-  type CellEntry = { v: string | number; t: number; s?: object };
-  const cellData: Record<number, Record<number, CellEntry>> = {};
-
-  cellData[0] = {};
-  headers.forEach((h, col) => {
-    cellData[0][col] = {
-      v: h,
-      t: 1,
-      s: { bl: 1, bg: { rgb: "#EFF6FF" }, cl: { rgb: "#1E40AF" } },
-    };
-  });
-
-  rows.forEach((row, rowIdx) => {
-    cellData[rowIdx + 1] = {};
-    row.forEach((cell, col) => {
-      const numVal = Number(cell);
-      const isNum = cell.trim() !== "" && !isNaN(numVal) && isFinite(numVal);
-      cellData[rowIdx + 1][col] = isNum
-        ? { v: numVal, t: 2 }
-        : { v: cell, t: 1 };
-    });
-  });
-
-  return {
-    id: "assessment-results",
-    locale: "enUS",
-    name: "Assessment Results",
-    appVersion: "0.5.0",
-    sheets: {
-      sheet1: {
-        id: "sheet1",
-        name: "Results",
-        cellData,
-        rowCount: Math.max(rows.length + 1, 100),
-        columnCount: Math.max(headers.length, 26),
-      },
-    },
-    styles: {},
-  };
 }
 
 type UniverAPI = {
@@ -98,7 +38,6 @@ export default function SpreadsheetModalInner({
 }: SpreadsheetModalInnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const univerRef = useRef<{ dispose?: () => void } | null>(null);
-
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -112,15 +51,19 @@ export default function SpreadsheetModalInner({
     const api = univerAPI as unknown as UniverAPI;
     univerRef.current = api;
 
-    const saved = loadSavedState(runId);
-    api.createUniverSheet(saved ?? buildWorkbookData(headers, rows));
+    const saved = loadSpreadsheetState(runId);
+    api.createUniverSheet(saved ?? buildSpreadsheetWorkbookData(headers, rows));
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const cmdDisposable = api.onCommandExecuted(() => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        const snapshot = api.getActiveWorkbook()?.save();
-        if (snapshot) persistState(runId, snapshot);
+        try {
+          const snapshot = api.getActiveWorkbook()?.save();
+          if (snapshot) persistSpreadsheetState(runId, snapshot);
+        } catch {
+          // silently skip — storage quota exceeded or unavailable will handle it by not saving, and the user can still export their data if needed
+        }
       }, 1500);
     });
 

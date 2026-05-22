@@ -9,6 +9,7 @@ import {
   ACTIVE_ASSESSMENT_STATUSES,
   COMPLETED_ASSESSMENT_STATUSES,
   FAILED_ASSESSMENT_STATUSES,
+  SPREADSHEET_STATE_STORAGE_PREFIX,
 } from "@/app/lib/assessment/constants";
 
 export function isActiveStatus(status: string): boolean {
@@ -68,6 +69,69 @@ export function filterAssessments(
 }
 
 export const PREVIEW_ROW_LIMIT = 10;
+
+export function spreadsheetStorageKey(runId: number): string {
+  return `${SPREADSHEET_STATE_STORAGE_PREFIX}${runId}`;
+}
+
+export function loadSpreadsheetState(runId: number): object | null {
+  try {
+    const raw = localStorage.getItem(spreadsheetStorageKey(runId));
+    return raw ? (JSON.parse(raw) as object) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function persistSpreadsheetState(runId: number, data: object): void {
+  localStorage.setItem(spreadsheetStorageKey(runId), JSON.stringify(data));
+}
+
+type SpreadsheetCellEntry = { v: string | number; t: number; s?: object };
+
+export function buildSpreadsheetWorkbookData(
+  headers: string[],
+  rows: string[][],
+) {
+  const cellData: Record<number, Record<number, SpreadsheetCellEntry>> = {};
+
+  cellData[0] = {};
+  headers.forEach((h, col) => {
+    cellData[0][col] = {
+      v: h,
+      t: 1,
+      s: { bl: 1, bg: { rgb: "#EFF6FF" }, cl: { rgb: "#1E40AF" } },
+    };
+  });
+
+  rows.forEach((row, rowIdx) => {
+    cellData[rowIdx + 1] = {};
+    row.forEach((cell, col) => {
+      const numVal = Number(cell);
+      const isNum = cell.trim() !== "" && !isNaN(numVal) && isFinite(numVal);
+      cellData[rowIdx + 1][col] = isNum
+        ? { v: numVal, t: 2 }
+        : { v: cell, t: 1 };
+    });
+  });
+
+  return {
+    id: "assessment-results",
+    locale: "enUS",
+    name: "Assessment Results",
+    appVersion: "0.5.0",
+    sheets: {
+      sheet1: {
+        id: "sheet1",
+        name: "Results",
+        cellData,
+        rowCount: Math.max(rows.length + 1, 100),
+        columnCount: Math.max(headers.length, 26),
+      },
+    },
+    styles: {},
+  };
+}
 
 export function jsonResultsToTableData(
   results: Record<string, unknown>[],

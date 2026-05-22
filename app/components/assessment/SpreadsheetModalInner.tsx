@@ -62,7 +62,7 @@ export default function SpreadsheetModalInner({
           const snapshot = api.getActiveWorkbook()?.save();
           if (snapshot) persistSpreadsheetState(runId, snapshot);
         } catch {
-          // silently skip — storage quota exceeded or unavailable will handle it by not saving, and the user can still export their data if needed
+          // silently skip — storage quota exceeded or unavailable
         }
       }, 1500);
     });

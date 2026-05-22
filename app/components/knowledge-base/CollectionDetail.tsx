@@ -80,12 +80,6 @@ export default function CollectionDetail({
         </div>
 
         <div className="space-y-3 mt-6">
-          <DetailRow
-            label="Status"
-            value={(collection.status || "N/A")
-              .replace(/_/g, " ")
-              .toUpperCase()}
-          />
           <div className="flex items-center gap-3">
             <div className="text-xs uppercase font-semibold text-text-secondary">
               Knowledge Base ID:

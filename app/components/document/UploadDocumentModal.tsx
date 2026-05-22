@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Button, Modal } from "@/app/components/ui";
 import { CloudUploadIcon } from "@/app/components/icons";
-import DocumentChip from "@/app/components/knowledge-base/DocumentChip";
+import { DocumentChip } from "@/app/components/knowledge-base";
 import type { UploadPhase } from "@/app/lib/apiClient";
 import {
   ACCEPTED_DOCUMENT_TYPES,

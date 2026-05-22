@@ -13,6 +13,7 @@ import { Document, Collection } from "@/app/lib/types/document";
 import {
   saveCollectionData,
   getCollectionDataByCollectionId,
+  updateCollectionCacheByCollectionId,
   deleteCollectionFromCache,
   pruneStaleCache,
   setCollectionIdForJob,
@@ -38,6 +39,7 @@ export function useCollections() {
     useState<Collection | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   const apiKeyRef = useRef<typeof apiKey>(null);
@@ -146,6 +148,7 @@ export function useCollections() {
 
   const fetchDocuments = useCallback(async () => {
     if (!isAuthenticated) return;
+    setIsLoadingDocuments(true);
     try {
       const result = await apiFetch<Document[] | DocumentResponse>(
         "/api/document",
@@ -162,6 +165,8 @@ export function useCollections() {
       setAvailableDocuments(sorted);
     } catch (error) {
       console.error("Error fetching documents:", error);
+    } finally {
+      setIsLoadingDocuments(false);
     }
   }, [apiKey, isAuthenticated]);
 
@@ -395,6 +400,61 @@ export function useCollections() {
     [apiKey, collections, isAuthenticated, toast],
   );
 
+  const updateCollection = useCallback(
+    async (
+      collectionId: string,
+      patch: { name?: string; description?: string },
+    ): Promise<boolean> => {
+      if (!isAuthenticated) {
+        toast.error("Please log in to continue");
+        return false;
+      }
+      const trimmedName = patch.name?.trim();
+      if (patch.name !== undefined && !trimmedName) {
+        toast.error("Name cannot be empty");
+        return false;
+      }
+      const payload: { name?: string; description?: string } = {};
+      if (patch.name !== undefined) payload.name = trimmedName!;
+      if (patch.description !== undefined)
+        payload.description = patch.description;
+
+      const previous = collections.find((c) => c.id === collectionId);
+
+      setCollections((prev) =>
+        prev.map((c) => (c.id === collectionId ? { ...c, ...payload } : c)),
+      );
+      setSelectedCollection((prev) =>
+        prev?.id === collectionId ? { ...prev, ...payload } : prev,
+      );
+
+      try {
+        await apiFetch(`/api/collections/${collectionId}`, apiKey?.key ?? "", {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        updateCollectionCacheByCollectionId(collectionId, payload);
+        toast.success("Knowledge base updated");
+        return true;
+      } catch (error) {
+        console.error("Error updating collection:", error);
+        const message =
+          error instanceof Error ? error.message : "Failed to update";
+        toast.error(message);
+        if (previous) {
+          setCollections((prev) =>
+            prev.map((c) => (c.id === collectionId ? previous : c)),
+          );
+          setSelectedCollection((prev) =>
+            prev?.id === collectionId ? previous : prev,
+          );
+        }
+        return false;
+      }
+    },
+    [apiKey, collections, isAuthenticated, toast],
+  );
+
   const fetchAndPreviewDoc = useCallback(
     async (doc: Document): Promise<Document> => {
       if (!isAuthenticated) return doc;
@@ -420,11 +480,28 @@ export function useCollections() {
     fetchDocumentsRef.current = fetchDocuments;
   }, [fetchDocuments]);
 
+  const apiKeyValue = apiKey?.key ?? null;
+
   useEffect(() => {
-    if (!isAuthenticated || !apiKey) return;
-    fetchCollectionsRef.current?.();
-    fetchDocumentsRef.current?.();
-  }, [apiKey, isAuthenticated]);
+    if (!isAuthenticated) return;
+    void fetchCollections();
+    void fetchDocuments();
+  }, [isAuthenticated, apiKeyValue]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void fetchCollectionsRef.current?.();
+      void fetchDocumentsRef.current?.();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     apiKeyRef.current = apiKey;
@@ -465,11 +542,14 @@ export function useCollections() {
     selectedCollection,
     isLoading,
     isLoadingDetail,
+    isLoadingDocuments,
     isCreating,
     setSelectedCollection,
     fetchCollectionDetails,
     createCollection,
     deleteCollection,
+    updateCollection,
     fetchAndPreviewDoc,
+    fetchDocuments,
   };
 }

@@ -272,7 +272,15 @@ export interface ResultsCounts {
   failed: number;
 }
 
+export type UniverAPI = {
+  dispose?: () => void;
+  onCommandExecuted: (cb: () => void) => { dispose: () => void };
+  getActiveWorkbook: () => { save: () => object } | null;
+  createUniverSheet: (d: object) => void;
+};
+
 export interface AssessmentResultsPreview {
+  runId: number;
   title: string;
   headers: string[];
   rows: string[][];

@@ -17,11 +17,11 @@ import {
   isCompletedStatus,
   isFailedStatus,
   jsonResultsToTableData,
-  PREVIEW_ROW_LIMIT,
 } from "@/app/lib/assessment/results";
 import {
   ASSESSMENT_TAG,
   RESULTS_POLL_INTERVAL_MS,
+  SPREADSHEET_PREVIEW_ROW_LIMIT,
 } from "@/app/lib/assessment/constants";
 import type {
   ConfigResponse,
@@ -438,9 +438,14 @@ export default function useAssessmentResults({
           ? json
           : json.data || [];
         const { headers, rows } = jsonResultsToTableData(results, {
-          rowLimit: PREVIEW_ROW_LIMIT,
+          rowLimit: SPREADSHEET_PREVIEW_ROW_LIMIT,
         });
-        setPreviewModal({ title: label, headers, rows });
+        if (results.length > SPREADSHEET_PREVIEW_ROW_LIMIT) {
+          toast.warning(
+            `Preview capped at ${SPREADSHEET_PREVIEW_ROW_LIMIT} rows. Download CSV for full data.`,
+          );
+        }
+        setPreviewModal({ runId, title: label, headers, rows });
       } catch (error) {
         if (handleForbiddenError(error, onForbidden)) return;
         toast.error(getAsyncErrorMessage("Preview failed", error));

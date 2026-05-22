@@ -10,7 +10,7 @@ import {
   EyeIcon,
   RefreshIcon,
 } from "@/app/components/icons";
-import DataViewModal from "./DataViewModal";
+import SpreadsheetModal from "./SpreadsheetModal";
 import DownloadDropdown from "./DownloadDropdown";
 import {
   canRetryStatus,
@@ -412,7 +412,8 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
       </div>
 
       {previewModal && (
-        <DataViewModal
+        <SpreadsheetModal
+          runId={previewModal.runId}
           title={previewModal.title}
           subtitle={`${previewModal.rows.length} rows · ${previewModal.headers.length} columns`}
           headers={previewModal.headers}

@@ -5,6 +5,7 @@ import { Button } from "@/app/components/ui";
 import {
   CheckLineIcon,
   ChevronDownIcon,
+  CloseIcon,
   CopyIcon,
 } from "@/app/components/icons";
 import { formatDate } from "@/app/components/utils";
@@ -14,12 +15,14 @@ interface CollectionDetailProps {
   collection: Collection;
   onRequestDelete: (collectionId: string) => void;
   onPreviewDocument: (firstDocument: Document) => void;
+  onClose?: () => void;
 }
 
 export default function CollectionDetail({
   collection,
   onRequestDelete,
   onPreviewDocument,
+  onClose,
 }: CollectionDetailProps) {
   const [showAllDocs, setShowAllDocs] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -42,8 +45,8 @@ export default function CollectionDetail({
   return (
     <>
       <div className="p-6 border-b border-border">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-text-primary">
               {collection.name}
             </h2>
@@ -53,15 +56,27 @@ export default function CollectionDetail({
               </p>
             )}
           </div>
-          {!isOptimistic && (
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => onRequestDelete(collection.id)}
-            >
-              Delete
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {!isOptimistic && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => onRequestDelete(collection.id)}
+              >
+                Delete
+              </Button>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-3 mt-6">

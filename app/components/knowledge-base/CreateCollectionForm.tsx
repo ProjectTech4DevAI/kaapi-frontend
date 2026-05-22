@@ -3,6 +3,10 @@
 import { Button, Field } from "@/app/components/ui";
 import { ChevronRightIcon, CloseIcon } from "@/app/components/icons";
 import { Document } from "@/app/lib/types/document";
+import {
+  COLLECTION_DESCRIPTION_MAX,
+  COLLECTION_NAME_MAX,
+} from "@/app/lib/constants";
 import DocumentChip from "./DocumentChip";
 
 interface CreateCollectionFormProps {
@@ -62,12 +66,18 @@ export default function CreateCollectionForm({
         )}
       </div>
 
-      <Field
-        label="Name *"
-        value={collectionName}
-        onChange={setCollectionName}
-        placeholder="e.g., Product Docs v1"
-      />
+      <div>
+        <Field
+          label="Name *"
+          value={collectionName}
+          onChange={setCollectionName}
+          placeholder="e.g., Product Docs v1"
+          maxLength={COLLECTION_NAME_MAX}
+        />
+        <p className="text-[11px] text-text-secondary mt-1 text-right">
+          {collectionName.length}/{COLLECTION_NAME_MAX}
+        </p>
+      </div>
 
       <div>
         <label className="block text-xs font-medium mb-1 text-text-secondary">
@@ -78,8 +88,12 @@ export default function CreateCollectionForm({
           onChange={(e) => setCollectionDescription(e.target.value)}
           placeholder="Description..."
           rows={3}
+          maxLength={COLLECTION_DESCRIPTION_MAX}
           className="w-full px-3 py-2 rounded-lg border border-border bg-white text-text-primary text-sm placeholder:text-neutral-400 resize-none focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors"
         />
+        <p className="text-[11px] text-text-secondary mt-1 text-right">
+          {collectionDescription.length}/{COLLECTION_DESCRIPTION_MAX}
+        </p>
       </div>
 
       <div>

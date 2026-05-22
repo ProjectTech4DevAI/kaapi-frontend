@@ -74,11 +74,12 @@ export function useCollections() {
           );
           status = jobData?.status || undefined;
         }
+        console.log({ collectionData });
 
         setSelectedCollection({
           ...collectionData,
-          name: cached.name || collectionData.name || "Untitled Collection",
-          description: cached.description || collectionData.description || "",
+          name: collectionData.name || cached.name || "Untitled Collection",
+          description: collectionData.description || cached.description || "",
           status,
           job_id: cached.job_id,
         });
@@ -238,14 +239,18 @@ export function useCollections() {
   }, [isAuthenticated]);
 
   const createCollection = useCallback(
-    async ({ name, description, documentIds }: CreateCollectionParams) => {
+    async ({
+      name,
+      description,
+      documentIds,
+    }: CreateCollectionParams): Promise<boolean> => {
       if (!isAuthenticated) {
         toast.error("Please log in to continue");
-        return;
+        return false;
       }
       if (!name.trim() || documentIds.length === 0) {
         toast.error("Please provide a name and select at least one document");
-        return;
+        return false;
       }
 
       setIsCreating(true);
@@ -302,6 +307,7 @@ export function useCollections() {
         }
 
         await fetchCollections();
+        return true;
       } catch (error) {
         console.error("Error creating knowledge base:", error);
         toast.error(
@@ -309,6 +315,7 @@ export function useCollections() {
         );
         setCollections((prev) => prev.filter((c) => c.id !== optimisticId));
         setSelectedCollection(null);
+        return false;
       } finally {
         setIsCreating(false);
       }

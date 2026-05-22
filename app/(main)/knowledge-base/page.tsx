@@ -91,12 +91,13 @@ export default function KnowledgeBasePage() {
       description: collectionDescription,
       documentIds: Array.from(selectedDocuments),
     };
+    const ok = await createCollection(params);
+    if (!ok) return;
     setShowCreateForm(false);
     setShowDocumentPicker(false);
     setCollectionName("");
     setCollectionDescription("");
     setSelectedDocuments(new Set());
-    await createCollection(params);
   };
 
   const handleRequestDelete = (collectionId: string) => {
@@ -254,6 +255,7 @@ export default function KnowledgeBasePage() {
           onClose={() => setSelectedCollection(null)}
           maxWidth="max-w-2xl"
           maxHeight="max-h-[90vh]"
+          showClose={false}
         >
           {selectedCollection && (
             <CollectionDetail
@@ -263,6 +265,7 @@ export default function KnowledgeBasePage() {
                 handleRequestDelete(id);
               }}
               onPreviewDocument={handlePreviewDocument}
+              onClose={() => setSelectedCollection(null)}
             />
           )}
         </Modal>

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 
-// GET /api/collections/[collection_id] - Get a specific collection
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ collection_id: string }> },
@@ -26,7 +25,35 @@ export async function GET(
   }
 }
 
-// DELETE /api/collection/[collection_id] - Delete a collection
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ collection_id: string }> },
+) {
+  const { collection_id } = await params;
+  try {
+    const body = await request.json();
+    const { status, data } = await apiClient(
+      request,
+      `/api/v1/collections/${collection_id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    return NextResponse.json(data, { status });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        data: null,
+      },
+      { status: 500 },
+    );
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ collection_id: string }> },

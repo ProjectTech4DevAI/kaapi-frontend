@@ -273,6 +273,7 @@ export interface ResultsCounts {
 }
 
 export interface AssessmentResultsPreview {
+  runId: number;
   title: string;
   headers: string[];
   rows: string[][];

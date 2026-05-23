@@ -48,6 +48,7 @@ export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
 export { default as LogoutIcon } from "./sidebar/LogoutIcon";
 export { default as ChatIcon } from "./sidebar/ChatIcon";
 export { default as SendIcon } from "./sidebar/SendIcon";
+export { default as ChartBarIcon } from "./sidebar/ChartBarIcon";
 
 // Prompt Editor Icons
 export { default as ChevronRightIcon } from "./prompt-editor/ChevronRightIcon";

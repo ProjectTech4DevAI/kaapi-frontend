@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Loader } from "@/app/components/ui";
+import { InfoTooltip, Loader } from "@/app/components/ui";
 import { AnalyticsChartData, AnalyticsMetric } from "@/app/lib/types/analytics";
 
 const SERIES_COLORS = [
@@ -225,8 +225,19 @@ export default function AnalyticsChartCard({
     <div className="bg-bg-primary overflow-hidden space-y-6">
       <div className="pt-2 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold text-text-primary tracking-tight">
+          <h2 className="text-xl font-semibold text-text-primary tracking-tight inline-flex items-center">
             {metricLabel}
+            <InfoTooltip
+              text={
+                <>
+                  Chart values are the selected metric (
+                  <strong>{metricLabel}</strong>) summed per month and broken
+                  out by the chosen <strong>Group by</strong>. The thick line is
+                  the total across all groups; the band is the spread between
+                  the lowest and highest group at each month.
+                </>
+              }
+            />
           </h2>
           <p className="text-sm text-text-secondary mt-1">
             Monthly trend
@@ -268,24 +279,41 @@ export default function AnalyticsChartCard({
                     className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ background: t.color }}
                   />
-                  <span className="text-xs font-medium text-text-secondary truncate">
+                  <span className="text-xs font-medium text-text-secondary truncate inline-flex items-center">
                     {t.name}
+                    <InfoTooltip
+                      text={
+                        <>
+                          Sum of <strong>{metricLabel}</strong> for{" "}
+                          <strong>{t.name}</strong> across the visible months.
+                        </>
+                      }
+                    />
                   </span>
                 </div>
                 <p className="text-3xl font-semibold text-text-primary tabular-nums tracking-tight">
                   {formatValue(t.total, activeData!.metric)}
                 </p>
                 {hasTokens && (
-                  <p className="text-xs text-text-secondary mt-2 tabular-nums">
+                  <p className="text-xs text-text-secondary mt-2 tabular-nums inline-flex items-center">
                     <span className="font-semibold text-text-primary">
                       {formatTokens(t.totalTokens ?? 0)}
-                    </span>{" "}
-                    tokens
-                    <span className="text-text-secondary/80">
-                      {" "}
+                    </span>
+                    <span className="ml-1">tokens</span>
+                    <span className="ml-1 text-text-secondary/80">
                       · in {formatTokens(t.inputTokens ?? 0)} · out{" "}
                       {formatTokens(t.outputTokens ?? 0)}
                     </span>
+                    <InfoTooltip
+                      text={
+                        <>
+                          Tokens billed to this group during the chart window.
+                          <br />
+                          <strong>in</strong> = input/prompt tokens,{" "}
+                          <strong>out</strong> = output/completion tokens.
+                        </>
+                      }
+                    />
                   </p>
                 )}
               </div>
@@ -394,26 +422,76 @@ export default function AnalyticsChartCard({
       </div>
 
       {tokenSummary && (
-        <div className="pt-6 mt-2 border-t border-border grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <TokenStat label="Total tokens" value={tokenSummary.totalSum} />
-          <TokenStat label="Input tokens" value={tokenSummary.inputSum} />
-          <TokenStat label="Output tokens" value={tokenSummary.outputSum} />
+        <div className="pt-5 mt-2 border-t border-border">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-text-primary inline-flex items-center">
+                Tokens for this chart
+                <InfoTooltip
+                  text={
+                    <>
+                      Tokens reported by the response for{" "}
+                      <strong>{metricLabel}</strong> with the current filters.
+                      Only models that actually consumed tokens contribute to
+                      this sum. Use this to gauge how much volume produced the
+                      numbers above.
+                      <br />
+                      <br />
+                      This is <strong>not</strong> a global total —{" "}
+                      <em>production</em> and <em>eval</em> tokens are shown
+                      separately in the &quot;All-time totals&quot; row at the
+                      bottom of the page.
+                    </>
+                  }
+                />
+              </h3>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Aggregated across the groups shown in the chart above
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <TokenStat
+              label="Total tokens"
+              value={tokenSummary.totalSum}
+              tooltip="Input + output tokens charged for the calls that produced the values in this chart."
+            />
+            <TokenStat
+              label="Input tokens"
+              value={tokenSummary.inputSum}
+              tooltip="Prompt tokens sent to the model — what you paid for on the input side."
+            />
+            <TokenStat
+              label="Output tokens"
+              value={tokenSummary.outputSum}
+              tooltip="Completion tokens returned by the model — what you paid for on the output side."
+            />
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function TokenStat({ label, value }: { label: string; value: number }) {
+function TokenStat({
+  label,
+  value,
+  tooltip,
+}: {
+  label: string;
+  value: number;
+  tooltip: string;
+}) {
   return (
     <div className="rounded-xl bg-bg-secondary/40 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-text-secondary mb-2">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-text-secondary mb-2 inline-flex items-center">
         {label}
+        <InfoTooltip text={tooltip} />
       </p>
-      <p className="text-3xl font-semibold text-text-primary tabular-nums tracking-tight">
+      <p className="text-2xl font-semibold text-text-primary tabular-nums tracking-tight">
         {formatTokens(value)}
       </p>
-      <p className="text-xs text-text-secondary mt-1 tabular-nums">
+      <p className="text-[11px] text-text-secondary mt-1 tabular-nums">
         {value.toLocaleString("en-US")} exact
       </p>
     </div>

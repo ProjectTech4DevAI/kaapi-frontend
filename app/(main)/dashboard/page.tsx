@@ -7,7 +7,11 @@ import { CloseIcon } from "@/app/components/icons";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useAnalyticsChart } from "@/app/hooks/useAnalyticsChart";
-import { AnalyticsChartCard } from "@/app/components/analytics";
+import { useAnalyticsTotals } from "@/app/hooks/useAnalyticsTotals";
+import {
+  AnalyticsChartCard,
+  AnalyticsTotalsRow,
+} from "@/app/components/analytics";
 import { PROVIDES_OPTIONS } from "@/app/lib/constants";
 import {
   AnalyticsChartFilters,
@@ -17,10 +21,10 @@ import {
 } from "@/app/lib/types/analytics";
 
 const METRIC_OPTIONS: { value: AnalyticsMetric; label: string }[] = [
-  { value: "requests", label: "Requests" },
-  { value: "cost", label: "Cost" },
+  { value: "requests", label: "Requests (LLM call + LLM chain)" },
+  { value: "cost", label: "Cost (LLM cost USD)" },
   { value: "eval_runs", label: "Eval runs" },
-  { value: "eval_cost", label: "Eval cost" },
+  { value: "eval_cost", label: "Eval cost (USD)" },
 ];
 
 const GROUP_BY_OPTIONS: { value: AnalyticsGroupBy; label: string }[] = [
@@ -143,6 +147,21 @@ export default function AnalyticsPage() {
 
   const { data, isLoading, error } = useAnalyticsChart(filters);
 
+  const totalsFilters = useMemo(
+    () => ({
+      modality: modality || undefined,
+      provider: provider || undefined,
+      from_month: fromMonth || undefined,
+      to_month: toMonth || undefined,
+    }),
+    [modality, provider, fromMonth, toMonth],
+  );
+  const {
+    totals,
+    isLoading: isTotalsLoading,
+    error: totalsError,
+  } = useAnalyticsTotals(totalsFilters);
+
   const metricLabel =
     METRIC_OPTIONS.find((m) => m.value === metric)?.label ?? metric;
 
@@ -250,6 +269,12 @@ export default function AnalyticsPage() {
                 isLoading={isLoading}
                 error={error}
                 metricLabel={metricLabel}
+              />
+
+              <AnalyticsTotalsRow
+                totals={totals}
+                isLoading={isTotalsLoading}
+                error={totalsError}
               />
             </div>
           )}

@@ -272,11 +272,25 @@ export interface ResultsCounts {
   failed: number;
 }
 
+export type UniverCommandInfo = {
+  id: string;
+  type?: number;
+  params?: unknown;
+};
+
 export type UniverAPI = {
   dispose?: () => void;
-  onCommandExecuted: (cb: () => void) => { dispose: () => void };
+  onCommandExecuted: (cb: (info: UniverCommandInfo) => void) => {
+    dispose: () => void;
+  };
   getActiveWorkbook: () => { save: () => object } | null;
   createUniverSheet: (d: object) => void;
+};
+
+export type SpreadsheetStateEnvelope = {
+  v: number;
+  ts: number;
+  data: object;
 };
 
 export interface AssessmentResultsPreview {

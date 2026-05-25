@@ -11,7 +11,11 @@ import {
   loadSpreadsheetState,
   persistSpreadsheetState,
 } from "@/app/lib/assessment/results";
+import { SPREADSHEET_STATE_DEBOUNCE_MS } from "@/app/lib/assessment/constants";
 import type { UniverAPI } from "@/app/lib/types/assessment";
+
+// Univer command types: 0=COMMAND, 1=OPERATION, 2=MUTATION. Only mutations change state.
+const UNIVER_MUTATION_TYPE = 2;
 
 interface SpreadsheetModalInnerProps {
   runId: number;
@@ -50,20 +54,42 @@ export default function SpreadsheetModalInner({
     api.createUniverSheet(saved ?? buildSpreadsheetWorkbookData(headers, rows));
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    const cmdDisposable = api.onCommandExecuted(() => {
+    let lastSerialized: string | null = null;
+
+    const flushNow = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+      try {
+        const snapshot = api.getActiveWorkbook()?.save();
+        if (!snapshot) return;
+        const serialized = JSON.stringify(snapshot);
+        if (serialized === lastSerialized) return; // dedup unchanged saves
+        lastSerialized = serialized;
+        persistSpreadsheetState(runId, snapshot);
+      } catch {
+        // serialization failed or storage unavailable — keep in-memory state
+      }
+    };
+
+    const cmdDisposable = api.onCommandExecuted((info) => {
+      // Skip non-mutating commands (selection, scroll, focus, etc.)
+      if (info.type !== UNIVER_MUTATION_TYPE) return;
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        try {
-          const snapshot = api.getActiveWorkbook()?.save();
-          if (snapshot) persistSpreadsheetState(runId, snapshot);
-        } catch {
-          // silently skip — storage quota exceeded or unavailable
-        }
-      }, 1500);
+      debounceTimer = setTimeout(flushNow, SPREADSHEET_STATE_DEBOUNCE_MS);
     });
 
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") flushNow();
+    };
+    window.addEventListener("beforeunload", flushNow);
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener("beforeunload", flushNow);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      flushNow(); // flush pending edits on unmount
       cmdDisposable.dispose();
       api.dispose?.();
       univerRef.current = null;

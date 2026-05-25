@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { InfoTooltip, Loader } from "@/app/components/ui";
 import { AnalyticsChartData, AnalyticsMetric } from "@/app/lib/types/analytics";
+import { normalizeAndMergeSeries } from "@/app/lib/utils/analytics/normalizeSeries";
 
 const SERIES_COLORS = [
   "#1f4496",
@@ -167,7 +168,8 @@ export default function AnalyticsChartCard({
 }: AnalyticsChartCardProps) {
   const activeData = useMemo(() => {
     if (!data) return null;
-    const filtered = data.series.filter((s) => {
+    const merged = normalizeAndMergeSeries(data.series);
+    const filtered = merged.filter((s) => {
       const dataSum = s.data.reduce((acc, v) => acc + (Number(v) || 0), 0);
       const tokenSum =
         (s.total_input_tokens ?? 0) +

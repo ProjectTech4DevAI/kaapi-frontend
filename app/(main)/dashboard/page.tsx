@@ -21,24 +21,24 @@ import {
 } from "@/app/lib/types/analytics";
 
 const METRIC_OPTIONS: { value: AnalyticsMetric; label: string }[] = [
-  { value: "requests", label: "Requests (LLM call + LLM chain)" },
-  { value: "cost", label: "Cost (LLM cost USD)" },
-  { value: "eval_runs", label: "Eval runs" },
+  { value: "requests", label: "Number of requests" },
+  { value: "cost", label: "LLM cost (USD)" },
+  { value: "eval_runs", label: "Number of eval runs" },
   { value: "eval_cost", label: "Eval cost (USD)" },
 ];
 
 const GROUP_BY_OPTIONS: { value: AnalyticsGroupBy; label: string }[] = [
-  { value: "total", label: "Total" },
+  { value: "total", label: "Total (no breakdown)" },
   { value: "provider", label: "Provider" },
-  { value: "modality", label: "Modality" },
-  { value: "modality_provider", label: "Modality + Provider" },
+  { value: "modality", label: "Request type" },
+  { value: "modality_provider", label: "Request type + Provider" },
 ];
 
 const MODALITY_OPTIONS: { value: AnalyticsModality; label: string }[] = [
   { value: "T-FS-T", label: "Text → Text" },
   { value: "S-FS-S", label: "Speech → Speech" },
-  { value: "STT", label: "Speech to Text" },
-  { value: "TTS", label: "Text to Speech" },
+  { value: "STT", label: "Speech → Text" },
+  { value: "TTS", label: "Text → Speech" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -186,95 +186,116 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6">
-              <div className="rounded-2xl bg-bg-primary p-5 sm:p-6 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-text-secondary">
-                      Metric
-                    </label>
-                    <Select
-                      value={metric}
-                      onChange={(e) =>
-                        setMetric(e.target.value as AnalyticsMetric)
-                      }
-                      options={toSelectOptions(METRIC_OPTIONS)}
-                    />
+              <div className="rounded-2xl bg-bg-primary p-5 sm:p-6 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] space-y-6">
+                <section>
+                  <h3 className="text-sm font-semibold text-text-primary mb-1">
+                    Chart settings
+                  </h3>
+                  <p className="text-xs text-text-secondary mb-3">
+                    Pick what the chart below plots and how to break it down.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-text-secondary">
+                        Metric
+                      </label>
+                      <Select
+                        value={metric}
+                        onChange={(e) =>
+                          setMetric(e.target.value as AnalyticsMetric)
+                        }
+                        options={toSelectOptions(METRIC_OPTIONS)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-text-secondary">
+                        Group by
+                      </label>
+                      <Select
+                        value={groupBy}
+                        onChange={(e) =>
+                          setGroupBy(e.target.value as AnalyticsGroupBy)
+                        }
+                        options={toSelectOptions(GROUP_BY_OPTIONS)}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-text-secondary">
-                      Group by
-                    </label>
-                    <Select
-                      value={groupBy}
-                      onChange={(e) =>
-                        setGroupBy(e.target.value as AnalyticsGroupBy)
-                      }
-                      options={toSelectOptions(GROUP_BY_OPTIONS)}
-                    />
+                </section>
+
+                <section>
+                  <h3 className="text-sm font-semibold text-text-primary mb-1">
+                    Filters
+                  </h3>
+                  <p className="text-xs text-text-secondary mb-3">
+                    Narrow what counts toward the totals above and the chart
+                    below.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-text-secondary">
+                        Request type
+                      </label>
+                      <Select
+                        value={modality}
+                        onChange={(e) =>
+                          setModality(e.target.value as AnalyticsModality | "")
+                        }
+                        options={toSelectOptions(MODALITY_OPTIONS)}
+                        placeholder="All request types"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1 text-text-secondary">
+                        Provider
+                      </label>
+                      <Select
+                        value={provider}
+                        onChange={(e) => setProvider(e.target.value)}
+                        options={PROVIDES_OPTIONS}
+                        placeholder="All providers"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-text-secondary">
-                      Modality
-                    </label>
-                    <Select
-                      value={modality}
-                      onChange={(e) =>
-                        setModality(e.target.value as AnalyticsModality | "")
-                      }
-                      options={toSelectOptions(MODALITY_OPTIONS)}
-                      placeholder="All modalities"
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] gap-4 items-end mt-4">
+                    <MonthYearPicker
+                      label="From month"
+                      value={fromMonth}
+                      onChange={setFromMonth}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-text-secondary">
-                      Provider
-                    </label>
-                    <Select
-                      value={provider}
-                      onChange={(e) => setProvider(e.target.value)}
-                      options={PROVIDES_OPTIONS}
-                      placeholder="All providers"
+                    <MonthYearPicker
+                      label="To month"
+                      value={toMonth}
+                      onChange={setToMonth}
                     />
+                    {(fromMonth || toMonth) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setFromMonth("");
+                          setToMonth("");
+                        }}
+                        className="text-status-error-text border-status-error-border hover:bg-status-error-bg gap-1.5 text-[13px]"
+                      >
+                        <CloseIcon className="w-3.5 h-3.5" />
+                        Clear dates
+                      </Button>
+                    )}
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] gap-4 items-end">
-                  <MonthYearPicker
-                    label="From month"
-                    value={fromMonth}
-                    onChange={setFromMonth}
-                  />
-                  <MonthYearPicker
-                    label="To month"
-                    value={toMonth}
-                    onChange={setToMonth}
-                  />
-                  {(fromMonth || toMonth) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setFromMonth("");
-                        setToMonth("");
-                      }}
-                    >
-                      <CloseIcon className="w-3.5 h-3.5" />
-                      Clear dates
-                    </Button>
-                  )}
-                </div>
+                </section>
               </div>
+
+              <AnalyticsTotalsRow
+                totals={totals}
+                isLoading={isTotalsLoading}
+                error={totalsError}
+              />
 
               <AnalyticsChartCard
                 data={data}
                 isLoading={isLoading}
                 error={error}
                 metricLabel={metricLabel}
-              />
-
-              <AnalyticsTotalsRow
-                totals={totals}
-                isLoading={isTotalsLoading}
-                error={totalsError}
               />
             </div>
           )}

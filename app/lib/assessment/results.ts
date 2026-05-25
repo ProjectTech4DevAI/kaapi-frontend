@@ -3,6 +3,7 @@ import type {
   AssessmentRun,
   ResultTone,
   ResultsCounts,
+  SpreadsheetStateEnvelope,
   StatusFilter,
 } from "@/app/lib/types/assessment";
 import {
@@ -75,19 +76,12 @@ export function spreadsheetStorageKey(runId: number): string {
   return `${SPREADSHEET_STATE_STORAGE_PREFIX}${runId}`;
 }
 
-type SpreadsheetStateEnvelope = {
-  v: number;
-  ts: number;
-  data: object;
-};
-
 export function loadSpreadsheetState(runId: number): object | null {
   try {
     const raw = localStorage.getItem(spreadsheetStorageKey(runId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SpreadsheetStateEnvelope>;
     if (parsed?.v !== SPREADSHEET_STATE_SCHEMA_VERSION || !parsed.data) {
-      // schema mismatch — discard so we don't hand stale shape to Univer
       localStorage.removeItem(spreadsheetStorageKey(runId));
       return null;
     }

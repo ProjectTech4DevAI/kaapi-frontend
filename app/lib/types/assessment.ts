@@ -287,6 +287,12 @@ export type UniverAPI = {
   createUniverSheet: (d: object) => void;
 };
 
+export type SpreadsheetStateEnvelope = {
+  v: number;
+  ts: number;
+  data: object;
+};
+
 export interface AssessmentResultsPreview {
   runId: number;
   title: string;

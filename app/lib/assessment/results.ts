@@ -9,6 +9,7 @@ import {
   ACTIVE_ASSESSMENT_STATUSES,
   COMPLETED_ASSESSMENT_STATUSES,
   FAILED_ASSESSMENT_STATUSES,
+  SPREADSHEET_STATE_SCHEMA_VERSION,
   SPREADSHEET_STATE_STORAGE_PREFIX,
 } from "@/app/lib/assessment/constants";
 
@@ -74,17 +75,76 @@ export function spreadsheetStorageKey(runId: number): string {
   return `${SPREADSHEET_STATE_STORAGE_PREFIX}${runId}`;
 }
 
+type SpreadsheetStateEnvelope = {
+  v: number;
+  ts: number;
+  data: object;
+};
+
 export function loadSpreadsheetState(runId: number): object | null {
   try {
     const raw = localStorage.getItem(spreadsheetStorageKey(runId));
-    return raw ? (JSON.parse(raw) as object) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SpreadsheetStateEnvelope>;
+    if (parsed?.v !== SPREADSHEET_STATE_SCHEMA_VERSION || !parsed.data) {
+      // schema mismatch — discard so we don't hand stale shape to Univer
+      localStorage.removeItem(spreadsheetStorageKey(runId));
+      return null;
+    }
+    return parsed.data;
   } catch {
     return null;
   }
 }
 
+// Evict oldest spreadsheet-state entries until below `keep` count.
+function evictOldestSpreadsheetStates(keep: number): void {
+  const entries: Array<{ key: string; ts: number }> = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key?.startsWith(SPREADSHEET_STATE_STORAGE_PREFIX)) continue;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw) as Partial<SpreadsheetStateEnvelope>;
+      entries.push({ key, ts: parsed?.ts ?? 0 });
+    } catch {
+      // malformed — treat as oldest so it gets dropped first
+      entries.push({ key, ts: 0 });
+    }
+  }
+  entries.sort((a, b) => a.ts - b.ts);
+  const toDrop = Math.max(0, entries.length - keep);
+  for (let i = 0; i < toDrop; i++) {
+    localStorage.removeItem(entries[i].key);
+  }
+}
+
 export function persistSpreadsheetState(runId: number, data: object): void {
-  localStorage.setItem(spreadsheetStorageKey(runId), JSON.stringify(data));
+  const envelope: SpreadsheetStateEnvelope = {
+    v: SPREADSHEET_STATE_SCHEMA_VERSION,
+    ts: Date.now(),
+    data,
+  };
+  const key = spreadsheetStorageKey(runId);
+  const payload = JSON.stringify(envelope);
+  try {
+    localStorage.setItem(key, payload);
+  } catch (err) {
+    // Quota exceeded — drop oldest sheets (keep current) and retry once
+    const isQuota =
+      err instanceof DOMException &&
+      (err.name === "QuotaExceededError" ||
+        err.name === "NS_ERROR_DOM_QUOTA_REACHED");
+    if (!isQuota) return;
+    try {
+      localStorage.removeItem(key);
+      evictOldestSpreadsheetStates(5);
+      localStorage.setItem(key, payload);
+    } catch {
+      // still failing — give up silently; in-memory state remains intact
+    }
+  }
 }
 
 type SpreadsheetCellEntry = { v: string | number; t: number; s?: object };

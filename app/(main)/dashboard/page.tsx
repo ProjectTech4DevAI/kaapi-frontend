@@ -12,7 +12,14 @@ import {
   AnalyticsChartCard,
   AnalyticsTotalsRow,
 } from "@/app/components/analytics";
-import { PROVIDES_OPTIONS } from "@/app/lib/constants";
+import {
+  ANALYTICS_GROUP_BY_OPTIONS,
+  ANALYTICS_METRIC_OPTIONS,
+  ANALYTICS_MODALITY_OPTIONS,
+  MONTH_OPTIONS,
+  PROVIDES_OPTIONS,
+  getRecentYearOptions,
+} from "@/app/lib/constants";
 import {
   AnalyticsChartFilters,
   AnalyticsGroupBy,
@@ -20,56 +27,13 @@ import {
   AnalyticsModality,
 } from "@/app/lib/types/analytics";
 
-const METRIC_OPTIONS: { value: AnalyticsMetric; label: string }[] = [
-  { value: "requests", label: "Number of requests" },
-  { value: "cost", label: "LLM cost (USD)" },
-  { value: "eval_runs", label: "Number of eval runs" },
-  { value: "eval_cost", label: "Eval cost (USD)" },
-];
-
-const GROUP_BY_OPTIONS: { value: AnalyticsGroupBy; label: string }[] = [
-  { value: "total", label: "Total (no breakdown)" },
-  { value: "provider", label: "Provider" },
-  { value: "modality", label: "Request type" },
-  { value: "modality_provider", label: "Request type + Provider" },
-];
-
-const MODALITY_OPTIONS: { value: AnalyticsModality; label: string }[] = [
-  { value: "T-FS-T", label: "Text → Text" },
-  { value: "S-FS-S", label: "Speech → Speech" },
-  { value: "STT", label: "Speech → Text" },
-  { value: "TTS", label: "Text → Speech" },
-  { value: "OTHER", label: "Other" },
-];
-
 function toSelectOptions<T extends string>(
   items: { value: T; label: string }[],
 ): SelectOption[] {
   return items.map((i) => ({ value: i.value, label: i.label }));
 }
 
-const MONTH_OPTIONS: SelectOption[] = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
-
-const YEAR_OPTIONS: SelectOption[] = (() => {
-  const now = new Date().getFullYear();
-  return Array.from({ length: 2 }, (_, i) => {
-    const y = String(now - i);
-    return { value: y, label: y };
-  });
-})();
+const YEAR_OPTIONS: SelectOption[] = getRecentYearOptions(2);
 
 interface MonthYearPickerProps {
   label: string;
@@ -163,7 +127,7 @@ export default function AnalyticsPage() {
   } = useAnalyticsTotals(totalsFilters);
 
   const metricLabel =
-    METRIC_OPTIONS.find((m) => m.value === metric)?.label ?? metric;
+    ANALYTICS_METRIC_OPTIONS.find((m) => m.value === metric)?.label ?? metric;
 
   const isReady = isHydrated;
 
@@ -204,7 +168,7 @@ export default function AnalyticsPage() {
                         onChange={(e) =>
                           setMetric(e.target.value as AnalyticsMetric)
                         }
-                        options={toSelectOptions(METRIC_OPTIONS)}
+                        options={toSelectOptions(ANALYTICS_METRIC_OPTIONS)}
                       />
                     </div>
                     <div>
@@ -216,7 +180,7 @@ export default function AnalyticsPage() {
                         onChange={(e) =>
                           setGroupBy(e.target.value as AnalyticsGroupBy)
                         }
-                        options={toSelectOptions(GROUP_BY_OPTIONS)}
+                        options={toSelectOptions(ANALYTICS_GROUP_BY_OPTIONS)}
                       />
                     </div>
                   </div>
@@ -240,7 +204,7 @@ export default function AnalyticsPage() {
                         onChange={(e) =>
                           setModality(e.target.value as AnalyticsModality | "")
                         }
-                        options={toSelectOptions(MODALITY_OPTIONS)}
+                        options={toSelectOptions(ANALYTICS_MODALITY_OPTIONS)}
                         placeholder="All request types"
                       />
                     </div>

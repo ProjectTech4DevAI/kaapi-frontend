@@ -12,8 +12,15 @@ import {
   YAxis,
 } from "recharts";
 import { InfoTooltip, Loader } from "@/app/components/ui";
-import { AnalyticsChartData, AnalyticsMetric } from "@/app/lib/types/analytics";
+import { AnalyticsChartData } from "@/app/lib/types/analytics";
 import { normalizeAndMergeSeries } from "@/app/lib/utils/analytics/normalizeSeries";
+import {
+  formatCompactMetric,
+  formatMetricValue,
+  formatMonthLabel,
+  formatTokens,
+} from "@/app/lib/utils/analytics/formatValue";
+import ChartTooltip from "./ChartTooltip";
 
 const SERIES_COLORS = [
   "#1f4496",
@@ -27,45 +34,6 @@ const SERIES_COLORS = [
   "#ea580c",
   "#475569",
 ];
-
-const CURRENCY_METRICS: AnalyticsMetric[] = ["cost", "eval_cost"];
-
-function formatMonthLabel(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
-
-function formatValue(value: number, metric: AnalyticsMetric): string {
-  if (CURRENCY_METRICS.includes(metric)) {
-    return value.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
-function formatTokens(n: number): string {
-  if (!Number.isFinite(n)) return "0";
-  const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
-function formatAxisValue(value: number, metric: AnalyticsMetric): string {
-  const abs = Math.abs(value);
-  const compact =
-    abs >= 1_000_000
-      ? `${(value / 1_000_000).toFixed(1)}M`
-      : abs >= 1_000
-        ? `${(value / 1_000).toFixed(1)}k`
-        : value.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  return CURRENCY_METRICS.includes(metric) ? `$${compact}` : compact;
-}
 
 interface ChartRow {
   month: string;
@@ -96,61 +64,6 @@ function buildRows(chart: AnalyticsChartData): ChartRow[] {
     });
     return row;
   });
-}
-
-interface TooltipEntry {
-  dataKey?: string | number;
-  value?: number | string;
-  color?: string;
-}
-
-interface TooltipRenderProps {
-  active?: boolean;
-  payload?: TooltipEntry[];
-  label?: string | number;
-  metric: AnalyticsMetric;
-}
-
-function ChartTooltip({ active, payload, label, metric }: TooltipRenderProps) {
-  if (!active || !payload?.length) return null;
-  const totalEntry = payload.find((e) => e.dataKey === "__total");
-  const seriesEntries = payload.filter(
-    (e) => e.dataKey !== "__total" && e.dataKey !== "__range",
-  );
-  return (
-    <div className="rounded-lg border border-border bg-bg-primary px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.08)] min-w-[180px]">
-      <p className="text-xs font-medium text-text-secondary mb-1.5">{label}</p>
-      {totalEntry && (
-        <div className="flex items-center justify-between gap-3 pb-1.5 mb-1.5 border-b border-border text-[13px]">
-          <span className="font-medium text-text-primary">Total</span>
-          <span className="font-semibold text-text-primary tabular-nums">
-            {formatValue(Number(totalEntry.value ?? 0), metric)}
-          </span>
-        </div>
-      )}
-      {seriesEntries.length > 0 && (
-        <div className="space-y-1">
-          {seriesEntries.map((entry) => (
-            <div
-              key={String(entry.dataKey)}
-              className="flex items-center gap-2 text-[13px]"
-            >
-              <span
-                className="inline-block w-2 h-2 rounded-full shrink-0"
-                style={{ background: entry.color }}
-              />
-              <span className="text-text-secondary flex-1 truncate">
-                {String(entry.dataKey)}
-              </span>
-              <span className="text-text-primary tabular-nums">
-                {formatValue(Number(entry.value ?? 0), metric)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 interface AnalyticsChartCardProps {
@@ -294,7 +207,7 @@ export default function AnalyticsChartCard({
                   </span>
                 </div>
                 <p className="text-3xl font-semibold text-text-primary tabular-nums tracking-tight">
-                  {formatValue(t.total, activeData!.metric)}
+                  {formatMetricValue(t.total, activeData!.metric)}
                 </p>
                 {hasTokens && (
                   <p className="text-xs text-text-secondary mt-2 tabular-nums inline-flex items-center">
@@ -371,7 +284,7 @@ export default function AnalyticsChartCard({
                 tickMargin={6}
                 width={56}
                 tickFormatter={(v) =>
-                  formatAxisValue(Number(v), activeData!.metric)
+                  formatCompactMetric(Number(v), activeData!.metric)
                 }
               />
               <Tooltip

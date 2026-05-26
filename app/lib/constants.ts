@@ -4,6 +4,11 @@
 
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/ui";
+import {
+  AnalyticsGroupBy,
+  AnalyticsMetric,
+  AnalyticsModality,
+} from "@/app/lib/types/analytics";
 
 export const APP_NAME = "Kaapi Konsole";
 
@@ -49,6 +54,62 @@ export const PROVIDES_OPTIONS = [
   { value: "openai", label: "OpenAI" },
   { value: "google", label: "Google" },
 ];
+
+export const ANALYTICS_METRIC_OPTIONS: {
+  value: AnalyticsMetric;
+  label: string;
+}[] = [
+  { value: "requests", label: "Number of requests" },
+  { value: "cost", label: "LLM cost (USD)" },
+  { value: "eval_runs", label: "Number of eval runs" },
+  { value: "eval_cost", label: "Eval cost (USD)" },
+];
+
+export const ANALYTICS_GROUP_BY_OPTIONS: {
+  value: AnalyticsGroupBy;
+  label: string;
+}[] = [
+  { value: "total", label: "Total (no breakdown)" },
+  { value: "provider", label: "Provider" },
+  { value: "modality", label: "Request type" },
+  { value: "modality_provider", label: "Request type + Provider" },
+];
+
+export const ANALYTICS_MODALITY_OPTIONS: {
+  value: AnalyticsModality;
+  label: string;
+}[] = [
+  { value: "T-FS-T", label: "Text → Text" },
+  { value: "S-FS-S", label: "Speech → Speech" },
+  { value: "STT", label: "Speech → Text" },
+  { value: "TTS", label: "Text → Speech" },
+  { value: "OTHER", label: "Other" },
+];
+
+export const MONTH_OPTIONS: { value: string; label: string }[] = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+export function getRecentYearOptions(
+  count = 2,
+): { value: string; label: string }[] {
+  const now = new Date().getFullYear();
+  return Array.from({ length: count }, (_, i) => {
+    const y = String(now - i);
+    return { value: y, label: y };
+  });
+}
 
 export const PROVIDER_TYPES = [
   {

@@ -36,3 +36,16 @@ export interface AnalyticsChartFilters {
 }
 
 export type AnalyticsChartResponse = APIEnvelope<AnalyticsChartData>;
+
+export interface AnalyticsTooltipEntry {
+  dataKey?: string | number;
+  value?: number | string;
+  color?: string;
+}
+
+export interface AnalyticsTooltipRenderProps {
+  active?: boolean;
+  payload?: AnalyticsTooltipEntry[];
+  label?: string | number;
+  metric: AnalyticsMetric;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { PageHeader, Sidebar } from "@/app/components";
 import { Button, Select, SelectOption } from "@/app/components/ui";
 import { CloseIcon } from "@/app/components/icons";
@@ -11,14 +11,13 @@ import { useAnalyticsTotals } from "@/app/hooks/useAnalyticsTotals";
 import {
   AnalyticsChartCard,
   AnalyticsTotalsRow,
+  MonthYearPicker,
 } from "@/app/components/analytics";
 import {
   ANALYTICS_GROUP_BY_OPTIONS,
   ANALYTICS_METRIC_OPTIONS,
   ANALYTICS_MODALITY_OPTIONS,
-  MONTH_OPTIONS,
   PROVIDES_OPTIONS,
-  getRecentYearOptions,
 } from "@/app/lib/constants";
 import {
   AnalyticsChartFilters,
@@ -31,60 +30,6 @@ function toSelectOptions<T extends string>(
   items: { value: T; label: string }[],
 ): SelectOption[] {
   return items.map((i) => ({ value: i.value, label: i.label }));
-}
-
-const YEAR_OPTIONS: SelectOption[] = getRecentYearOptions(2);
-
-interface MonthYearPickerProps {
-  label: string;
-  value: string;
-  onChange: (iso: string) => void;
-}
-
-function MonthYearPicker({ label, value, onChange }: MonthYearPickerProps) {
-  const [year, setYear] = useState(value ? value.slice(0, 4) : "");
-  const [month, setMonth] = useState(value ? value.slice(5, 7) : "");
-
-  useEffect(() => {
-    setYear(value ? value.slice(0, 4) : "");
-    setMonth(value ? value.slice(5, 7) : "");
-  }, [value]);
-
-  const flush = (y: string, m: string) => {
-    if (y && m) onChange(`${y}-${m}-01`);
-    else if (!y && !m) onChange("");
-  };
-
-  const handleMonth = (m: string) => {
-    setMonth(m);
-    flush(year, m);
-  };
-  const handleYear = (y: string) => {
-    setYear(y);
-    flush(y, month);
-  };
-
-  return (
-    <div>
-      <label className="block text-xs font-medium mb-1 text-text-secondary">
-        {label}
-      </label>
-      <div className="grid grid-cols-2 gap-2">
-        <Select
-          value={month}
-          onChange={(e) => handleMonth(e.target.value)}
-          options={MONTH_OPTIONS}
-          placeholder="Month"
-        />
-        <Select
-          value={year}
-          onChange={(e) => handleYear(e.target.value)}
-          options={YEAR_OPTIONS}
-          placeholder="Year"
-        />
-      </div>
-    </div>
-  );
 }
 
 export default function AnalyticsPage() {

@@ -5,6 +5,9 @@ import {
   AnalyticsChartFilters,
   AnalyticsChartResponse,
   AnalyticsMetric,
+  AnalyticsTotalsMap,
+  AnalyticsTotalsValue,
+  UseAnalyticsTotalsResult,
 } from "@/app/lib/types/analytics";
 
 const TOTAL_METRICS: AnalyticsMetric[] = [
@@ -13,15 +16,6 @@ const TOTAL_METRICS: AnalyticsMetric[] = [
   "eval_runs",
   "eval_cost",
 ];
-
-export interface AnalyticsTotalsValue {
-  value: number;
-  totalTokens: number;
-  inputTokens: number;
-  outputTokens: number;
-}
-
-export type AnalyticsTotalsMap = Record<AnalyticsMetric, AnalyticsTotalsValue>;
 
 function buildQuery(
   metric: AnalyticsMetric,
@@ -41,12 +35,6 @@ function buildQuery(
 
 function emptyValue(): AnalyticsTotalsValue {
   return { value: 0, totalTokens: 0, inputTokens: 0, outputTokens: 0 };
-}
-
-export interface UseAnalyticsTotalsResult {
-  totals: AnalyticsTotalsMap | null;
-  isLoading: boolean;
-  error: string | null;
 }
 
 export function useAnalyticsTotals(

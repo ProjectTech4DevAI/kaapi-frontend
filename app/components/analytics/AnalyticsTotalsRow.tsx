@@ -2,13 +2,7 @@
 
 import { ReactNode } from "react";
 import { InfoTooltip, Loader } from "@/app/components/ui";
-import { AnalyticsTotalsMap } from "@/app/hooks/useAnalyticsTotals";
-
-interface AnalyticsTotalsRowProps {
-  totals: AnalyticsTotalsMap | null;
-  isLoading: boolean;
-  error: string | null;
-}
+import { AnalyticsTotalsRowProps } from "@/app/lib/types/analytics";
 
 function formatTokens(n: number): string {
   if (!Number.isFinite(n)) return "0";

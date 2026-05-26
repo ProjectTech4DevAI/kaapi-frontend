@@ -49,3 +49,24 @@ export interface AnalyticsTooltipRenderProps {
   label?: string | number;
   metric: AnalyticsMetric;
 }
+
+export interface AnalyticsTotalsValue {
+  value: number;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+export type AnalyticsTotalsMap = Record<AnalyticsMetric, AnalyticsTotalsValue>;
+
+export interface UseAnalyticsTotalsResult {
+  totals: AnalyticsTotalsMap | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface AnalyticsTotalsRowProps {
+  totals: AnalyticsTotalsMap | null;
+  isLoading: boolean;
+  error: string | null;
+}

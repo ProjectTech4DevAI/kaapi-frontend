@@ -98,7 +98,7 @@ export default function TopicRelevanceModal({
 
           <div>
             <label className="block text-xs font-medium mb-1 text-text-secondary">
-              Configuration *
+              Topic relevance Configuration *
             </label>
             <textarea
               value={configuration}

@@ -1,18 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import BanListModal from "./BanListModal";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { Loader, Select } from "@/app/components/ui";
+import { CheckLineIcon, CopyIcon } from "@/app/components/icons";
+import { BanList, BanListFieldProps } from "@/app/lib/types/guardrails";
 
-interface BanList {
-  id: string;
-  name: string;
-}
-
-interface BanListFieldProps {
-  value: string | null;
-  onChange: (id: string | null) => void;
-}
+const WORDS_MIN_PX = 44;
+const WORDS_MAX_PX = 220;
 
 export default function BanListField({ value, onChange }: BanListFieldProps) {
   const { activeKey } = useAuth();
@@ -24,6 +19,31 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
   const [bannedWords, setBannedWords] = useState<string[]>([]);
   const [wordsLoading, setWordsLoading] = useState(false);
   const [wordsError, setWordsError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const wordsRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoSize = (
+    el: HTMLTextAreaElement | null,
+    minPx: number,
+    maxPx: number,
+  ) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, minPx), maxPx)}px`;
+  };
+
+  const wordsAsText = bannedWords.join(", ");
+
+  const handleCopy = async () => {
+    if (!wordsAsText) return;
+    try {
+      await navigator.clipboard.writeText(wordsAsText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  };
 
   const fetchBanLists = () => {
     setLoading(true);
@@ -86,6 +106,10 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
       setBannedWords([]);
     }
   }, [value]);
+
+  useEffect(() => {
+    autoSize(wordsRef.current, WORDS_MIN_PX, WORDS_MAX_PX);
+  }, [wordsAsText, wordsLoading]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange(e.target.value || null);
@@ -168,15 +192,43 @@ export default function BanListField({ value, onChange }: BanListFieldProps) {
     }
     if (bannedWords.length > 0) {
       return (
-        <div className="flex flex-wrap gap-1">
-          {bannedWords.map((word) => (
-            <span
-              key={word}
-              className="inline-block text-xs px-2 py-0.5 rounded-full bg-status-success-bg text-status-success-text border border-status-success-border"
-            >
-              {word}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium text-text-secondary">
+              {bannedWords.length} word{bannedWords.length !== 1 ? "s" : ""} ·
+              select text to copy, or use the copy button
             </span>
-          ))}
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={handleCopy}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleCopy();
+                }
+              }}
+              aria-label={copied ? "Copied" : "Copy banned words"}
+              title={copied ? "Copied" : "Copy comma-separated list"}
+              className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-accent-primary bg-accent-primary/5 hover:bg-accent-primary/10 transition-colors cursor-pointer"
+            >
+              {copied ? (
+                <CheckLineIcon className="w-3 h-3 text-status-success" />
+              ) : (
+                <CopyIcon className="w-3 h-3" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </span>
+          </div>
+          <textarea
+            ref={wordsRef}
+            value={wordsAsText}
+            readOnly
+            rows={2}
+            spellCheck={false}
+            onFocus={(e) => e.currentTarget.select()}
+            className="w-full text-sm rounded-md border border-status-success-border bg-status-success-bg text-status-success-text px-2.5 py-1.5 outline-none resize-none font-mono leading-relaxed overflow-hidden cursor-text"
+          />
         </div>
       );
     }

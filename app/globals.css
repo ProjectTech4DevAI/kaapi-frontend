@@ -225,3 +225,27 @@ a {
     transform: translateY(-2px);
   }
 }
+
+/**
+ * Read-only form styling.
+ * Usage:
+ *   <fieldset disabled={readOnly} className="read-only-fields">…</fieldset>
+ */
+.read-only-fields
+  :where(input, select, textarea, button[role="combobox"]):disabled {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 4%, white);
+  border-color: color-mix(in srgb, var(--color-accent-primary) 15%, white);
+  color: color-mix(
+    in srgb,
+    var(--color-accent-primary) 55%,
+    var(--color-text-primary)
+  );
+  font-weight: 500;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.read-only-fields button:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}

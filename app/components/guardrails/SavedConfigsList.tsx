@@ -2,7 +2,7 @@ import {
   SavedValidatorConfig,
   formatValidatorName,
 } from "@/app/lib/types/guardrails";
-import { TrashIcon, GuardrailsShieldCheckIcon } from "@/app/components/icons";
+import { GuardrailsShieldCheckIcon } from "@/app/components/icons";
 import { Button } from "@/app/components/ui";
 import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
 import SavedConfigsListSkeleton from "./SavedConfigsListSkeleton";
@@ -12,7 +12,6 @@ interface SavedConfigsListProps {
   isLoading: boolean;
   selectedConfigId: string | null;
   onSelectConfig: (cfg: SavedValidatorConfig) => void;
-  onDeleteConfig: (id: string) => void;
   onNewConfig: () => void;
 }
 
@@ -21,7 +20,6 @@ export default function SavedConfigsList({
   isLoading,
   selectedConfigId,
   onSelectConfig,
-  onDeleteConfig,
   onNewConfig,
 }: SavedConfigsListProps) {
   return (
@@ -84,51 +82,37 @@ export default function SavedConfigsList({
                       : "bg-bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.12),0_2px_4px_rgba(0,0,0,0.06)]"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        title={cfg.name}
-                        className={`text-sm truncate max-w-[18rem] ${
-                          isSelected
-                            ? "font-semibold text-accent-primary"
-                            : "font-medium text-text-primary"
-                        }`}
-                      >
-                        {cfg.name}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
-                          {displayName}
-                        </span>
-                        {cfg.stage && (
-                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-bg-secondary text-text-primary border border-border">
-                            {cfg.stage}
-                          </span>
-                        )}
-                        {cfg.on_fail_action && (
-                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-status-warning-bg text-status-warning-text border border-status-warning-border">
-                            on fail: {cfg.on_fail_action}
-                          </span>
-                        )}
-                        {cfg.is_enabled === false && (
-                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-status-error-bg text-status-error-text border border-status-error-border">
-                            disabled
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteConfig(cfg.id);
-                      }}
-                      className="p-1.5 rounded-md border border-status-error-border bg-bg-primary text-status-error-text hover:bg-status-error-bg transition-colors shrink-0 cursor-pointer"
-                      title="Delete configuration"
-                      aria-label={`Delete configuration ${cfg.name}`}
+                  <div className="flex-1 min-w-0">
+                    <h3
+                      title={cfg.name}
+                      className={`text-sm truncate max-w-[18rem] ${
+                        isSelected
+                          ? "font-semibold text-accent-primary"
+                          : "font-medium text-text-primary"
+                      }`}
                     >
-                      <TrashIcon className="w-3.5 h-3.5" />
-                    </button>
+                      {cfg.name}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
+                        {displayName}
+                      </span>
+                      {cfg.stage && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-bg-secondary text-text-primary border border-border">
+                          {cfg.stage}
+                        </span>
+                      )}
+                      {cfg.on_fail_action && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-status-warning-bg text-status-warning-text border border-status-warning-border">
+                          on fail: {cfg.on_fail_action}
+                        </span>
+                      )}
+                      {cfg.is_enabled === false && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-status-error-bg text-status-error-text border border-status-error-border">
+                          disabled
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

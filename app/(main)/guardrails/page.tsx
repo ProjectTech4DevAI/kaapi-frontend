@@ -17,10 +17,8 @@ import {
   SavedValidatorConfig,
   OrgContext,
 } from "@/app/lib/types/guardrails";
-import { buildValidatorUpdatePayload } from "@/app/lib/utils/guardrails";
 import ValidatorConfigPanel from "@/app/components/guardrails/ValidatorConfigPanel";
 import SavedConfigsList from "@/app/components/guardrails/SavedConfigsList";
-import DeleteConfigModal from "@/app/components/guardrails/DeleteConfigModal";
 
 export default function GuardrailsPage() {
   const { sidebarCollapsed } = useApp();
@@ -38,8 +36,6 @@ export default function GuardrailsPage() {
   const [selectedSavedConfig, setSelectedSavedConfig] =
     useState<SavedValidatorConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [configPendingDelete, setConfigPendingDelete] =
-    useState<SavedValidatorConfig | null>(null);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -122,40 +118,11 @@ export default function GuardrailsPage() {
     setSelectedSavedConfig(null);
   };
 
-  const handleRequestDeleteConfig = (configId: string) => {
-    const cfg = savedConfigs.find((c) => c.id === configId);
-    if (cfg) setConfigPendingDelete(cfg);
-  };
-
-  const handleConfirmDeleteConfig = async () => {
-    if (!configPendingDelete) return;
-    if (!configsQueryString) {
-      setConfigPendingDelete(null);
-      return;
-    }
-    const configId = configPendingDelete.id;
-    setConfigPendingDelete(null);
-    try {
-      await guardrailsFetch(
-        `/api/guardrails/validators/configs/${configId}${configsQueryString}`,
-        apiKey,
-        { method: "DELETE" },
-      );
-      toast.success("Config deleted");
-      if (selectedSavedConfig?.id === configId) {
-        handleClearForm();
-      }
-      fetchSavedConfigs();
-    } catch {
-      toast.error("Failed to delete config");
-    }
-  };
-
-  const handleSaveConfig = async (
-    name: string,
-    configValues: Record<string, unknown>,
-  ) => {
-    if (!name.trim()) {
+  const handleSaveConfig = async (configValues: Record<string, unknown>) => {
+    if (selectedSavedConfig) return;
+    const name =
+      typeof configValues.name === "string" ? configValues.name.trim() : "";
+    if (!name) {
       toast.error("Please enter a config name");
       return;
     }
@@ -165,33 +132,18 @@ export default function GuardrailsPage() {
     }
     setIsSaving(true);
     try {
-      const isUpdate = !!selectedSavedConfig;
-      const base = `/api/guardrails/validators/configs`;
-      const url = isUpdate
-        ? `${base}/${selectedSavedConfig!.id}${configsQueryString}`
-        : `${base}${configsQueryString}`;
-
-      const body = isUpdate
-        ? buildValidatorUpdatePayload(configValues)
-        : configValues;
-
-      await guardrailsFetch(url, apiKey, {
-        method: isUpdate ? "PATCH" : "POST",
-        body: JSON.stringify(body),
-      });
-      toast.success(
-        isUpdate ? `Config "${name}" updated` : `Config "${name}" saved`,
+      await guardrailsFetch(
+        `/api/guardrails/validators/configs${configsQueryString}`,
+        apiKey,
+        {
+          method: "POST",
+          body: JSON.stringify(configValues),
+        },
       );
-      const savedConfigId = selectedSavedConfig?.id;
-      const freshList = await fetchSavedConfigs();
-      if (isUpdate && savedConfigId) {
-        setSelectedSavedConfig(
-          freshList.find((c) => c.id === savedConfigId) ?? null,
-        );
-      } else {
-        setSelectedSavedConfig(null);
-        setSelectedValidatorType(null);
-      }
+      toast.success(`Config "${name}" saved`);
+      await fetchSavedConfigs();
+      setSelectedSavedConfig(null);
+      setSelectedValidatorType(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save config");
     } finally {
@@ -234,7 +186,6 @@ export default function GuardrailsPage() {
               isLoading={savedConfigsLoading}
               selectedConfigId={selectedSavedConfig?.id ?? null}
               onSelectConfig={handleSelectSavedConfig}
-              onDeleteConfig={handleRequestDeleteConfig}
               onNewConfig={handleClearForm}
             />
           </div>
@@ -250,17 +201,11 @@ export default function GuardrailsPage() {
               isSaving={isSaving}
               onSave={handleSaveConfig}
               onClear={handleClearForm}
+              readOnly={!!selectedSavedConfig}
             />
           </div>
         </div>
       </div>
-
-      <DeleteConfigModal
-        open={!!configPendingDelete}
-        configName={configPendingDelete?.name}
-        onClose={() => setConfigPendingDelete(null)}
-        onConfirm={handleConfirmDeleteConfig}
-      />
     </div>
   );
 }

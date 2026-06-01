@@ -118,12 +118,11 @@ export default function GuardrailsPage() {
     setSelectedSavedConfig(null);
   };
 
-  const handleSaveConfig = async (
-    name: string,
-    configValues: Record<string, unknown>,
-  ) => {
+  const handleSaveConfig = async (configValues: Record<string, unknown>) => {
     if (selectedSavedConfig) return;
-    if (!name.trim()) {
+    const name =
+      typeof configValues.name === "string" ? configValues.name.trim() : "";
+    if (!name) {
       toast.error("Please enter a config name");
       return;
     }

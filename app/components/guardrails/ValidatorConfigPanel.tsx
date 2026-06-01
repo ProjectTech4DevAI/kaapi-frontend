@@ -30,7 +30,7 @@ interface ValidatorConfigPanelProps {
   existingValues?: Record<string, unknown> | null;
   existingName?: string;
   isSaving: boolean;
-  onSave: (name: string, configValues: Record<string, unknown>) => void;
+  onSave: (configValues: Record<string, unknown>) => void;
   onClear: () => void;
   readOnly?: boolean;
 }
@@ -136,14 +136,14 @@ export default function ValidatorConfigPanel({
     );
 
     const payload: Record<string, unknown> = {
-      name: configName,
+      name: configName.trim(),
       type: selectedType,
       stage,
       on_fail_action: onFailAction,
       is_enabled: isEnabled,
       ...cleanFieldValues,
     };
-    onSave(configName, payload);
+    onSave(payload);
   };
 
   return (

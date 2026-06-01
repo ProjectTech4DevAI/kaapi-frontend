@@ -10,6 +10,7 @@ interface MultiSelectProps {
   value: string[];
   onChange: (value: string[]) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 const getValue = (opt: MultiSelectOption) =>
@@ -22,6 +23,7 @@ export default function MultiSelect({
   value,
   onChange,
   placeholder,
+  disabled = false,
 }: MultiSelectProps) {
   const labelFor = (val: string) => {
     const match = options.find((o) => getValue(o) === val);
@@ -128,9 +130,10 @@ export default function MultiSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-controls={listboxId}
+        disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={handleTriggerKeyDown}
-        className={`min-h-9 w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-pointer text-left bg-bg-primary transition-colors ${
+        className={`min-h-9 w-full flex flex-wrap items-center gap-1.5 rounded-md border px-2.5 py-1.5 cursor-pointer text-left bg-bg-primary transition-colors disabled:cursor-not-allowed ${
           open ? "border-accent-primary ring-accent-primary" : "border-border"
         }`}
       >
@@ -141,18 +144,20 @@ export default function MultiSelect({
             onClick={(e) => e.stopPropagation()}
           >
             {labelFor(v)}
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => remove(v, e)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") remove(v, e);
-              }}
-              className="leading-none opacity-60 hover:opacity-100 text-text-primary cursor-pointer"
-              aria-label={`Remove ${v}`}
-            >
-              ×
-            </span>
+            {!disabled && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => remove(v, e)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") remove(v, e);
+                }}
+                className="inline-flex items-center justify-center leading-none opacity-60 hover:opacity-100 cursor-pointer text-[#356581]"
+                aria-label={`Remove ${v}`}
+              >
+                ×
+              </span>
+            )}
           </span>
         ))}
 

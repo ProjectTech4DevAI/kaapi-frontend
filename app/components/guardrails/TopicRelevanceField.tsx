@@ -204,7 +204,7 @@ export default function TopicRelevanceField({
                   }
                   disabled
                   rows={2}
-                  className={`${textareaReadOnlyClass} overflow-hidden`}
+                  className={`${textareaReadOnlyClass} overflow-auto`}
                 />
               </div>
             )}

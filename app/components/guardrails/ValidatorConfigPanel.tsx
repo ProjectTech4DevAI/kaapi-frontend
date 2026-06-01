@@ -285,6 +285,7 @@ export default function ValidatorConfigPanel({
                     onChange={(id) =>
                       handleFieldChange("topic_relevance_config_id", id)
                     }
+                    disabled={readOnly}
                   />
                 </div>
               )}

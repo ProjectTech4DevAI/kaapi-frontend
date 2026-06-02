@@ -30,9 +30,52 @@ export function canRetryStatus(status: string): boolean {
   return isFailedStatus(status);
 }
 
+function safeCount(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/** Backfill run-count fields from run_stats when the API omits them. */
+export function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
+  const runStats = Array.isArray(run.run_stats) ? run.run_stats : [];
+  const pendingRuns = safeCount(
+    run.pending_runs,
+    runStats.filter((item) => item.status === "pending").length,
+  );
+  const processingRuns = safeCount(
+    run.processing_runs,
+    Math.max(
+      0,
+      runStats.filter((item) => isActiveStatus(item.status)).length -
+        pendingRuns,
+    ),
+  );
+  const completedRuns = safeCount(
+    run.completed_runs,
+    runStats.filter((item) => isCompletedStatus(item.status)).length,
+  );
+  const failedRuns = safeCount(
+    run.failed_runs,
+    runStats.filter((item) => isFailedStatus(item.status)).length,
+  );
+  const totalRuns = safeCount(
+    run.total_runs,
+    runStats.length ||
+      pendingRuns + processingRuns + completedRuns + failedRuns,
+  );
+
+  return {
+    ...run,
+    total_runs: totalRuns,
+    pending_runs: pendingRuns,
+    processing_runs: processingRuns,
+    completed_runs: completedRuns,
+    failed_runs: failedRuns,
+  };
+}
+
 export function getResultTone(status: string): ResultTone {
   if (isCompletedStatus(status)) return "success";
-  if (status === "failed") return "error";
+  if (status === "failed" || status === "l1_failed") return "error";
   if (isActiveStatus(status) || status === "completed_with_errors") {
     return "warning";
   }

@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import Loader from "@/app/components/Loader";
 import { useToast } from "@/app/components/Toast";
@@ -15,6 +22,8 @@ import type {
   AssessmentTab,
   AssessmentTabId,
   ConfigSelection,
+  L1Config,
+  PostProcessingConfig,
   SchemaProperty,
 } from "@/app/lib/types/assessment";
 import PageLayout from "@/app/components/assessment/PageLayout";
@@ -93,6 +102,9 @@ function PageContent() {
   const [systemInstruction, setSystemInstruction] = useState("");
   const [outputSchema, setOutputSchema] = useState<SchemaProperty[]>([]);
   const [configs, setConfigs] = useState<ConfigSelection[]>([]);
+  const [l1Config, setL1Config] = useState<L1Config | null>(null);
+  const [postProcessingConfig, setPostProcessingConfig] =
+    useState<PostProcessingConfig | null>(null);
 
   const handleForbidden = useCallback(
     (options?: { notify?: boolean }) => {
@@ -140,6 +152,10 @@ function PageContent() {
     },
     [setDataset],
   );
+
+  useEffect(() => {
+    setL1Config(null);
+  }, [datasetId]);
 
   const outputSchemaJson = useMemo(
     () => schemaToJsonSchema(outputSchema),
@@ -190,6 +206,8 @@ function PageContent() {
             config_id,
             config_version,
           })),
+          l1_config: l1Config ?? null,
+          post_processing_config: postProcessingConfig ?? null,
         }),
       });
 
@@ -202,6 +220,8 @@ function PageContent() {
       setPromptTemplate("");
       setOutputSchema([]);
       setConfigs([]);
+      setL1Config(null);
+      setPostProcessingConfig(null);
       setActiveTab("results");
     } catch (error) {
       if (handleForbiddenError(error, handleForbiddenWithNotify)) return;
@@ -218,8 +238,10 @@ function PageContent() {
     datasetId,
     experimentName,
     handleForbiddenWithNotify,
+    l1Config,
     outputSchema,
     outputSchemaJson,
+    postProcessingConfig,
     promptTemplate,
     activeKey,
     systemInstruction,
@@ -238,6 +260,8 @@ function PageContent() {
     promptTemplate,
     outputSchema,
     configs,
+    l1Config,
+    postProcessingConfig,
   };
 
   const hasDataset = !!datasetId && columns.length > 0;
@@ -272,7 +296,9 @@ function PageContent() {
   const effectiveCompletedConfigSteps = useMemo(() => {
     const merged = new Set(completedConfigSteps);
     if (hasMapperSelection) merged.add(1);
-    if (canReachReview) merged.add(2);
+    if (hasMapperSelection) merged.add(2); // L1 Filters is optional and always passable
+    if (canReachReview) merged.add(3);
+    if (canReachReview) merged.add(4); // Post Processing is optional and always passable
     return merged;
   }, [canReachReview, completedConfigSteps, hasMapperSelection]);
 
@@ -299,10 +325,12 @@ function PageContent() {
         completedSteps: effectiveCompletedConfigSteps,
         configStep,
         configs,
+        datasetId,
         experimentName,
         formState,
         hasDataset,
         isSubmitting,
+        l1Config,
         outputSchema,
         systemInstruction,
         promptTemplate,
@@ -312,9 +340,12 @@ function PageContent() {
         setConfigStep,
         setConfigs,
         setExperimentName,
+        setL1Config,
         setOutputSchema,
         setSystemInstruction,
         setPromptTemplate,
+        postProcessingConfig,
+        setPostProcessingConfig,
         submitBlockerMessage,
         onSubmit: handleSubmit,
         onStepComplete: handleConfigNext,

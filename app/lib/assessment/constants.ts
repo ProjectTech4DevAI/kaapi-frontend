@@ -1,5 +1,7 @@
 import type {
   ColumnRole,
+  PostProcessingConfig,
+  PostProcessingFilterRule,
   ResultsCounts,
   ResultTone,
   RoleOption,
@@ -24,11 +26,14 @@ export const DATASET_SAMPLE_ROW_LIMIT = 10;
 
 export const ACTIVE_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "pending",
+  "l1_processing",
+  "l2_processing",
   "processing",
   "in_progress",
 ]);
 export const FAILED_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "failed",
+  "l1_failed",
   "completed_with_errors",
 ]);
 export const COMPLETED_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
@@ -79,8 +84,10 @@ export const SUMMARY_BADGE_CLASSES: Record<ResultTone, string> = {
 
 export const ASSESSMENT_CONFIG_STEPS: Step[] = [
   { id: 1, label: "Mapper" },
-  { id: 2, label: "Prompt & Config" },
-  { id: 3, label: "Review" },
+  { id: 2, label: "Eliminatory (optional)" },
+  { id: 3, label: "Evaluation" },
+  { id: 4, label: "Post Processing (optional)" },
+  { id: 5, label: "Review" },
 ];
 
 export const SCHEMA_TYPE_OPTIONS: Array<{
@@ -134,6 +141,57 @@ export const DEFAULT_SYSTEM_PROMPT = "(not set)";
 export const DEFAULT_USER_PROMPT =
   "(not set: backend concatenates mapped text columns)";
 
+export const DEFAULT_L1_TOPIC_RELEVANCE_PROMPT = `You are an L1 screener for the School Innovation Marathon (SIM), a national competition for Indian school students (grades 6–12).
+
+You act as the FIRST FILTER only. Novelty scoring happens here as a basic gate; deeper evaluation happens later.
+
+PHILOSOPHY: Inclusive. Maximize idea retention. Reject only when the rules clearly demand it. Never penalize for weak language, poor grammar, regional languages (Hindi, Telugu, Tamil, etc.), or AI-assisted writing. Decisions must be evidence-based — use only the provided inputs and never assume missing details.
+
+INPUTS: Each submission has TEXT columns and may also have ATTACHMENTS (images or PDFs). The attached document(s) are provided alongside the text.
+
+STEP 1 — COMPREHENSION
+Extract the idea from the text columns and from any attachments.
+- If the text is unclear, use the attachments to understand the idea.
+- If the attachments are unclear, rely on the text.
+
+STEP 2 — TOPIC RELEVANCE CHECK
+Assess each input column independently as relevant or irrelevant:
+  relevant = the column (or document) describes a real-world problem/solution attempt, however simple
+  irrelevant = blank, gibberish, a scientific fact, pure personal opinion, or no connection to any innovation context
+
+DOCUMENT CONDITION (apply ONLY when an attachment/document is present for the row):
+- Judge the document's relevance from its actual content (the image or PDF), not from its filename or URL.
+- A document is relevant if it shows or supports the idea — e.g. a prototype photo, diagram, poster, report, or demonstration tied to the problem/solution.
+- A document is irrelevant if it is blank, unreadable, unrelated to the submission, or shows no connection to any innovation context.
+- If NO document is present for the row, ignore document relevance entirely — base the decision on the text columns only. Do not penalize a submission for missing attachments.
+
+CASE 1 — ALL present inputs (text columns and any document) are irrelevant → REJECT immediately. Skip novelty scoring.
+CASE 2 — ANY input (a text column OR the document) is relevant → proceed to novelty scoring.
+
+STEP 3 — NOVELTY SCORING (Case 2 only)
+Score novelty 1–10 based on how original the solution mechanism is. When a document is present, factor what it reveals about the idea into this judgement:
+
+1–2: Generic statement with no mechanism ("use water carefully", "spread awareness", "recycle more")
+3–4: Widely-known, off-the-shelf existing product or solution with no meaningful new application
+     (e.g. standard homework reminder app, basic recycling bin, existing commercial pill dispenser)
+5–6: Existing concept applied to a new specific context, OR combines known elements in a non-obvious way for a specific user group
+     (e.g. laser mirror alarm for grid infrastructure theft, Arduino rain sensor for clothes protection, smart traffic gate system)
+7–8: Significant new mechanism or integration not commonly seen
+     (e.g. camera app reading medicine labels in regional languages with dosage alerts)
+9–10: Highly original novel design
+
+DECISION RULE:
+  Novelty ≥ 5 → ACCEPT
+  Novelty ≤ 4 → REJECT
+
+RULES:
+- Never reject because of poor spelling, mixed languages, short text, AI-like writing, or a missing attachment
+- If the idea is unclear but shows a genuine attempt at problem + solution → lean ACCEPT
+- A real problem with any proposed mechanism (even common) scores at least 5
+- Score novelty relative to what is expected from a school student, not a PhD researcher
+- When borderline between two scores, pick the higher one
+- A working prototype does NOT raise novelty — novelty is about the idea, not execution`;
+
 export const DATASET_LEFT_PANEL_CLASSES = "w-[40%] min-w-[360px] max-w-[500px]";
 export const ALLOWED_DATASET_EXTENSIONS = [".csv", ".xlsx", ".xls"] as const;
 
@@ -148,3 +206,27 @@ export const JSON_TOKEN_CLASSES = {
 
 export const JSON_EDITOR_FONT_CLASSES =
   "font-mono text-[13px] leading-[1.7] [tab-size:2]";
+
+export const POST_PROCESSING_FILTER_OPS: {
+  value: PostProcessingFilterRule["op"];
+  label: string;
+}[] = [
+  { value: "eq", label: "=" },
+  { value: "ne", label: "≠" },
+  { value: "gt", label: ">" },
+  { value: "lt", label: "<" },
+  { value: "gte", label: "≥" },
+  { value: "lte", label: "≤" },
+  { value: "contains", label: "contains" },
+  { value: "not_contains", label: "not contains" },
+  { value: "is_empty", label: "is empty" },
+  { value: "is_not_empty", label: "is not empty" },
+];
+
+export const POST_PROCESSING_NO_VALUE_OPS = new Set<
+  PostProcessingFilterRule["op"]
+>(["is_empty", "is_not_empty"]);
+
+export function emptyPostProcessingConfig(): PostProcessingConfig {
+  return { computed_columns: [], sort: [], filter: [] };
+}

@@ -1,7 +1,7 @@
 // Shared TypeScript types for the Assessment feature.
 import type { Dispatch, SetStateAction } from "react";
 import type { Dataset } from "@/app/lib/types/dataset";
-import type { ConfigVersionItems } from "@/app/lib/types/configs";
+import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
 
 export type ValueSetter<T> = (value: T) => void;
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
@@ -20,7 +20,7 @@ export interface LabeledValue<T = string> {
 
 export interface Attachment {
   column: string;
-  type: "image" | "pdf";
+  type: "image" | "pdf" | "mixed";
   format: "url" | "base64";
 }
 
@@ -62,6 +62,28 @@ export interface SchemaProperty {
   enumValues: string[];
 }
 
+export interface L1TopicRelevanceConfig {
+  columns: string[];
+  attachment_columns?: string[];
+  prompt: string;
+}
+
+export interface L1DuplicateDetectionConfig {
+  columns: string[];
+}
+
+export interface L1Config {
+  topic_relevance?: L1TopicRelevanceConfig;
+  duplicate_detection?: L1DuplicateDetectionConfig;
+}
+
+export interface L1FiltersStepProps extends StepNavigationProps {
+  columns: string[];
+  attachmentColumns?: string[];
+  l1Config: L1Config | null;
+  setL1Config: ValueSetter<L1Config | null>;
+}
+
 export interface AssessmentFormState {
   experimentName: string;
   datasetId: string;
@@ -73,6 +95,8 @@ export interface AssessmentFormState {
   promptTemplate: string;
   outputSchema: SchemaProperty[];
   configs: ConfigSelection[];
+  l1Config: L1Config | null;
+  postProcessingConfig: PostProcessingConfig | null;
 }
 
 export interface AssessmentDatasetState {
@@ -140,7 +164,7 @@ export interface WithForbiddenHandler {
 
 export interface ColumnConfig {
   role: ColumnRole;
-  attachmentType?: "image" | "pdf";
+  attachmentType?: "image" | "pdf" | "mixed";
   attachmentFormat?: string;
 }
 
@@ -163,10 +187,12 @@ export interface ConfigPanelProps {
   completedSteps: Set<number>;
   configStep: number;
   configs: ConfigSelection[];
+  datasetId: string | null;
   experimentName: string;
   formState: AssessmentFormState;
   hasDataset: boolean;
   isSubmitting: boolean;
+  l1Config: L1Config | null;
   outputSchema: SchemaProperty[];
   systemInstruction: string;
   promptTemplate: string;
@@ -176,9 +202,12 @@ export interface ConfigPanelProps {
   setConfigStep: ValueSetter<number>;
   setConfigs: StateSetter<ConfigSelection[]>;
   setExperimentName: ValueSetter<string>;
+  setL1Config: ValueSetter<L1Config | null>;
   setOutputSchema: ValueSetter<SchemaProperty[]>;
   setSystemInstruction: ValueSetter<string>;
   setPromptTemplate: ValueSetter<string>;
+  postProcessingConfig: PostProcessingConfig | null;
+  setPostProcessingConfig: ValueSetter<PostProcessingConfig | null>;
   submitBlockerMessage: string;
   onSubmit: () => void;
   onStepComplete: ValueSetter<number>;
@@ -211,6 +240,9 @@ export interface AssessmentRunStat {
   total_items: number;
   error_message: string | null;
   updated_at: string | null;
+  l1_total_rows: number | null;
+  l1_total_passed: number | null;
+  l1_total_rejected: number | null;
 }
 
 export interface AssessmentRun {
@@ -230,6 +262,54 @@ export interface AssessmentRun {
   updated_at: string;
 }
 
+export interface PostProcessingComputedColumn {
+  name: string;
+  formula: string;
+}
+
+export interface PostProcessingSortRule {
+  column: string;
+  direction: "asc" | "desc";
+}
+
+export interface PostProcessingFilterRule {
+  column: string;
+  op:
+    | "eq"
+    | "ne"
+    | "gt"
+    | "lt"
+    | "gte"
+    | "lte"
+    | "contains"
+    | "not_contains"
+    | "is_empty"
+    | "is_not_empty";
+  value?: string | number;
+}
+
+export interface PostProcessingConfig {
+  computed_columns: PostProcessingComputedColumn[];
+  sort: PostProcessingSortRule[];
+  filter: PostProcessingFilterRule[];
+}
+
+export interface PostProcessingStepProps extends StepNavigationProps {
+  postProcessingConfig: PostProcessingConfig | null;
+  setPostProcessingConfig: (config: PostProcessingConfig | null) => void;
+  columnMapping: ColumnMapping;
+  outputSchema: SchemaProperty[];
+}
+
+export interface PostProcessingPanelProps {
+  /** Seed columns — overridden by fetchColumns when panel opens */
+  availableColumns: string[];
+  /** Called once when panel first opens to get actual column names */
+  fetchColumns?: () => Promise<string[]>;
+  initialConfig: PostProcessingConfig | null;
+  onSave: (config: PostProcessingConfig) => Promise<void>;
+}
+
 export interface AssessmentChildRun {
   id: number;
   assessment_id: number | null;
@@ -244,6 +324,10 @@ export interface AssessmentChildRun {
   organization_id: number;
   project_id: number;
   assessment_config: Record<string, unknown> | null;
+  l1_total_rows: number | null;
+  l1_total_passed: number | null;
+  l1_total_rejected: number | null;
+  post_processing_config: PostProcessingConfig | null;
   inserted_at: string;
   updated_at: string;
 }
@@ -347,7 +431,38 @@ export interface VersionListState {
   nextSkip: number;
 }
 
+export type LatestConfigModel = { provider: string; model: string } | null;
+
+export interface SavedConfigCardProps {
+  config: ConfigPublic;
+  versions: VersionListState;
+  latestModel: LatestConfigModel;
+  expanded: boolean;
+  loadingSelectionKeys: Record<string, boolean>;
+  isSelected: (configId: string, version: number) => boolean;
+  onLoadVersions: (configId: string, skip: number) => void;
+  onToggleExpansion: ValueSetter<string>;
+  onToggleVersionSelection: (
+    config: ConfigPublic,
+    version: number,
+  ) => void | Promise<void>;
+}
+
+export interface PromptAndConfigStepProps extends StepNavigationProps {
+  textColumns: string[];
+  sampleRow: SampleRow;
+  systemInstruction: string;
+  setSystemInstruction: ValueSetter<string>;
+  promptTemplate: string;
+  setPromptTemplate: ValueSetter<string>;
+  configs: ConfigSelection[];
+  setConfigs: StateSetter<ConfigSelection[]>;
+  outputSchema: SchemaProperty[];
+  setOutputSchema: ValueSetter<SchemaProperty[]>;
+}
+
 export const ATTACHMENT_FORMATS: Record<string, string[]> = {
+  mixed: ["url", "base64"],
   image: ["url", "base64"],
   pdf: ["url", "base64"],
 };

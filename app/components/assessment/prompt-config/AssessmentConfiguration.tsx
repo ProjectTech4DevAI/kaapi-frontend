@@ -4,6 +4,7 @@ import { Button } from "@/app/components";
 import {
   type ConfigMode,
   type ConfigSelection,
+  type LatestConfigModel,
   type ValueSetter,
   type VersionListState,
 } from "@/app/lib/types/assessment";
@@ -28,6 +29,7 @@ interface AssessmentConfigurationProps extends Omit<
   nextConfigSkip: number;
   expandedConfigId: string | null;
   versionStateByConfig: Record<string, VersionListState>;
+  latestModelByConfig: Record<string, LatestConfigModel>;
   loadingSelectionKeys: Record<string, boolean>;
   isSelected: (configId: string, version: number) => boolean;
   onLoadMoreConfigs: (skip: number) => void | Promise<void>;
@@ -53,6 +55,7 @@ export default function AssessmentConfiguration({
   nextConfigSkip,
   expandedConfigId,
   versionStateByConfig,
+  latestModelByConfig,
   loadingSelectionKeys,
   isSelected,
   onLoadMoreConfigs,
@@ -127,6 +130,7 @@ export default function AssessmentConfiguration({
             nextConfigSkip={nextConfigSkip}
             expandedConfigId={expandedConfigId}
             versionStateByConfig={versionStateByConfig}
+            latestModelByConfig={latestModelByConfig}
             loadingSelectionKeys={loadingSelectionKeys}
             isSelected={isSelected}
             onLoadMoreConfigs={onLoadMoreConfigs}

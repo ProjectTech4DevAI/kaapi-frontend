@@ -10,8 +10,8 @@ import {
   EyeIcon,
   RefreshIcon,
 } from "@/app/components/icons";
-import SpreadsheetModal from "./SpreadsheetModal";
 import DownloadDropdown from "./DownloadDropdown";
+import PostProcessingPanel from "./PostProcessingPanel";
 import {
   canRetryStatus,
   formatStatusLabel,
@@ -25,10 +25,11 @@ import {
   STATUS_FILTER_OPTIONS,
 } from "@/app/lib/assessment/constants";
 import { formatRelativeTime } from "@/app/lib/utils";
-import type { EvaluationsTabProps } from "@/app/lib/types/assessment";
+import type {
+  EvaluationsTabProps,
+  PostProcessingConfig,
+} from "@/app/lib/types/assessment";
 import useAssessmentResults from "@/app/hooks/useAssessmentResults";
-
-import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";
 
 export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
   const toast = useToast();
@@ -46,9 +47,6 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
     retryingAssessmentId,
     expandedId,
     downloadingId,
-    previewLoading,
-    previewModal,
-    setPreviewModal,
     loadAssessments,
     handleExpand,
     handleRetryAssessment,
@@ -56,6 +54,8 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
     handlePreview,
     handleAssessmentDownload,
     handleRunDownload,
+    handleSavePostProcessing,
+    handleFetchRunColumns,
   } = useAssessmentResults({ onForbidden, toast });
 
   return (
@@ -258,135 +258,164 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                                 const previewLabel = `${configName}${childRun.config_version ? ` v${childRun.config_version}` : ""}`;
 
                                 return (
-                                  <div
-                                    key={childRun.id}
-                                    className="rounded-xl border border-border bg-bg-secondary p-4"
-                                  >
-                                    <div className="flex items-start justify-between gap-3">
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <span className="text-sm font-semibold text-text-primary">
-                                            {configName}
-                                          </span>
-                                          {childRun.config_version !== null && (
-                                            <span className="rounded-full bg-bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
-                                              v{childRun.config_version}
+                                  <div key={childRun.id}>
+                                    <div className="rounded-xl border border-border bg-bg-secondary p-4">
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-sm font-semibold text-text-primary">
+                                              {configName}
                                             </span>
-                                          )}
-                                          {configDetail?.provider &&
-                                            configDetail?.model && (
-                                              <span className="rounded-full bg-bg-primary px-2 py-0.5 text-[10px] font-medium text-text-secondary">
-                                                {configDetail.provider}/
-                                                {configDetail.model}
+                                            {childRun.config_version !==
+                                              null && (
+                                              <span className="rounded-full bg-bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+                                                v{childRun.config_version}
                                               </span>
                                             )}
-                                        </div>
-
-                                        <div className="mt-1 text-sm text-text-secondary">
-                                          {isConfigLoading
-                                            ? "Loading configuration details..."
-                                            : configDetail?.description ||
-                                              configDetail?.commitMessage ||
-                                              "No description available for this configuration."}
-                                        </div>
-
-                                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
-                                          <span>
-                                            {childRun.total_items} items
-                                          </span>
-                                          {childRun.updated_at && (
-                                            <span>
-                                              {formatRelativeTime(
-                                                childRun.updated_at,
+                                            {configDetail?.provider &&
+                                              configDetail?.model && (
+                                                <span className="rounded-full bg-bg-primary px-2 py-0.5 text-[10px] font-medium text-text-secondary">
+                                                  {configDetail.provider}/
+                                                  {configDetail.model}
+                                                </span>
                                               )}
-                                            </span>
-                                          )}
-                                          {childRun.config_id && (
-                                            <span className="font-mono">
-                                              ID{" "}
-                                              {childRun.config_id.slice(0, 8)}
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        {configError && (
-                                          <div className="mt-2 text-xs text-status-error-text">
-                                            {configError}
                                           </div>
-                                        )}
-                                        {isFailedChild &&
-                                          childRun.error_message && (
-                                            <div className="mt-2 text-xs text-status-error-text">
-                                              {childRun.error_message}
+
+                                          <div className="mt-1 text-sm text-text-secondary">
+                                            {isConfigLoading
+                                              ? "Loading configuration details..."
+                                              : configDetail?.description ||
+                                                configDetail?.commitMessage ||
+                                                "No description available for this configuration."}
+                                          </div>
+
+                                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-secondary">
+                                            <span>
+                                              {childRun.total_items} items
+                                            </span>
+                                            {childRun.updated_at && (
+                                              <span>
+                                                {formatRelativeTime(
+                                                  childRun.updated_at,
+                                                )}
+                                              </span>
+                                            )}
+                                            {childRun.config_id && (
+                                              <span className="font-mono">
+                                                ID{" "}
+                                                {childRun.config_id.slice(0, 8)}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {childRun.l1_total_rows != null && (
+                                            <div className="mt-1.5 text-xs text-text-secondary">
+                                              L1:{" "}
+                                              {childRun.l1_total_passed ?? 0}/
+                                              {childRun.l1_total_rows} passed
+                                              {childRun.l1_total_rejected !=
+                                                null &&
+                                                childRun.l1_total_rejected >
+                                                  0 && (
+                                                  <span className="ml-1 text-status-warning-text">
+                                                    ·{" "}
+                                                    {childRun.l1_total_rejected}{" "}
+                                                    rejected
+                                                  </span>
+                                                )}
                                             </div>
                                           )}
-                                      </div>
 
-                                      <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span
-                                          className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${childStatusClass}`}
-                                        >
-                                          {formatStatusLabel(childRun.status)}
-                                        </span>
-                                        {isCompletedChild && (
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() =>
-                                              handlePreview(
-                                                childRun.id,
-                                                previewLabel,
-                                              )
-                                            }
-                                            disabled={
-                                              previewLoading === childRun.id
-                                            }
-                                            className={`!rounded-md !px-2.5 !py-1.5 !text-xs ${
-                                              previewLoading === childRun.id
-                                                ? "opacity-50"
-                                                : ""
-                                            }`}
-                                          >
-                                            {previewLoading === childRun.id ? (
-                                              <LoadingSpinner className="w-3.5 h-3.5" />
-                                            ) : (
-                                              <EyeIcon className="w-3.5 h-3.5" />
+                                          {configError && (
+                                            <div className="mt-2 text-xs text-status-error-text">
+                                              {configError}
+                                            </div>
+                                          )}
+                                          {isFailedChild &&
+                                            childRun.error_message && (
+                                              <div className="mt-2 text-xs text-status-error-text">
+                                                {childRun.error_message}
+                                              </div>
                                             )}
-                                            Preview
-                                          </Button>
-                                        )}
-                                        {isCompletedChild && (
-                                          <DownloadDropdown
-                                            onDownload={(fmt) =>
-                                              handleRunDownload(
-                                                childRun.id,
-                                                fmt,
-                                              )
-                                            }
-                                            loading={
-                                              downloadingId ===
-                                              `run-${childRun.id}`
-                                            }
-                                          />
-                                        )}
-                                        {isFailedChild && (
-                                          <Button
-                                            type="button"
-                                            size="sm"
-                                            onClick={() =>
-                                              handleRerun(childRun)
-                                            }
-                                            disabled={isRerunning}
-                                            className="!rounded-lg !px-3 !py-1.5 !text-xs"
+                                        </div>
+
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          <span
+                                            className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${childStatusClass}`}
                                           >
-                                            {isRerunning
-                                              ? "Re-running..."
-                                              : "Re-run"}
-                                          </Button>
-                                        )}
+                                            {formatStatusLabel(childRun.status)}
+                                          </span>
+                                          {isCompletedChild && (
+                                            <Button
+                                              type="button"
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() =>
+                                                handlePreview(
+                                                  childRun.id,
+                                                  previewLabel,
+                                                )
+                                              }
+                                              className="!rounded-md !px-2.5 !py-1.5 !text-xs"
+                                            >
+                                              <EyeIcon className="w-3.5 h-3.5" />
+                                              Preview
+                                            </Button>
+                                          )}
+                                          {isCompletedChild && (
+                                            <DownloadDropdown
+                                              onDownload={(fmt) =>
+                                                handleRunDownload(
+                                                  childRun.id,
+                                                  fmt,
+                                                )
+                                              }
+                                              loading={
+                                                downloadingId ===
+                                                `run-${childRun.id}`
+                                              }
+                                            />
+                                          )}
+                                          {isFailedChild && (
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              onClick={() =>
+                                                handleRerun(childRun)
+                                              }
+                                              disabled={isRerunning}
+                                              className="!rounded-lg !px-3 !py-1.5 !text-xs"
+                                            >
+                                              {isRerunning
+                                                ? "Re-running..."
+                                                : "Re-run"}
+                                            </Button>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
+                                    {isCompletedChild && (
+                                      <PostProcessingPanel
+                                        availableColumns={[]}
+                                        initialConfig={
+                                          childRun.post_processing_config ??
+                                          null
+                                        }
+                                        fetchColumns={() =>
+                                          handleFetchRunColumns(childRun.id)
+                                        }
+                                        onSave={async (
+                                          cfg: PostProcessingConfig,
+                                        ) => {
+                                          await handleSavePostProcessing(
+                                            childRun.id,
+                                            cfg,
+                                          );
+                                          toast.success(
+                                            "Post-processing saved. Re-open preview to see updated results.",
+                                          );
+                                        }}
+                                      />
+                                    )}
                                   </div>
                                 );
                               })
@@ -410,17 +439,6 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
             ))}
         </div>
       </div>
-
-      {previewModal && (
-        <SpreadsheetModal
-          runId={previewModal.runId}
-          title={previewModal.title}
-          subtitle={`${previewModal.rows.length} rows · ${previewModal.headers.length} columns`}
-          headers={previewModal.headers}
-          rows={previewModal.rows}
-          onClose={() => setPreviewModal(null)}
-        />
-      )}
     </div>
   );
 }

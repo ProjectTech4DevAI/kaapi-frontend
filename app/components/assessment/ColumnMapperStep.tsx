@@ -47,14 +47,17 @@ export default function ColumnMapperStep({
 
       next[index] = {
         role,
-        attachmentType: current?.attachmentType || "image",
+        attachmentType: current?.attachmentType || "mixed",
         attachmentFormat: current?.attachmentFormat || "url",
       };
       return next;
     });
   };
 
-  const updateAttachmentType = (index: number, type: "image" | "pdf") => {
+  const updateAttachmentType = (
+    index: number,
+    type: "image" | "pdf" | "mixed",
+  ) => {
     setColumnConfigs((prev) => {
       const next = [...prev];
       next[index] = {
@@ -218,19 +221,26 @@ export default function ColumnMapperStep({
                             Attachment Type
                           </span>
                           <Select
-                            value={config.attachmentType || "image"}
+                            value={config.attachmentType || "mixed"}
                             onChange={(event) =>
                               updateAttachmentType(
                                 index,
-                                event.target.value as "image" | "pdf",
+                                event.target.value as "image" | "pdf" | "mixed",
                               )
                             }
                             options={[
+                              { value: "mixed", label: "Mixed (image or PDF)" },
                               { value: "image", label: "Image" },
                               { value: "pdf", label: "PDF" },
                             ]}
                             className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
                           />
+                          {(config.attachmentType || "mixed") === "mixed" && (
+                            <span className="mt-1 block text-[11px] text-text-secondary">
+                              Detects image vs PDF per row — use for columns
+                              that mix both.
+                            </span>
+                          )}
                         </label>
 
                         <label className="flex-1">
@@ -243,7 +253,7 @@ export default function ColumnMapperStep({
                               updateAttachmentFormat(index, event.target.value)
                             }
                             options={ATTACHMENT_FORMATS[
-                              config.attachmentType || "image"
+                              config.attachmentType || "mixed"
                             ].map((format) => ({
                               value: format,
                               label: format,
@@ -288,7 +298,7 @@ export default function ColumnMapperStep({
               disabled={!hasText}
               className="!rounded-lg"
             >
-              Next: Prompt Editor
+              Next: Eliminatory
             </Button>
           </div>
         </div>

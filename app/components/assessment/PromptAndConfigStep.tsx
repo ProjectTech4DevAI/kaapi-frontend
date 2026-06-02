@@ -23,32 +23,15 @@ import {
   MAX_CONFIGS,
   type ConfigMode,
   type ConfigSelection,
-  type SampleRow,
-  type SchemaProperty,
-  type StateSetter,
-  type ValueSetter,
+  type PromptAndConfigStepProps,
   type VersionListState,
 } from "@/app/lib/types/assessment";
 import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
+import useLatestConfigModels from "@/app/hooks/useLatestConfigModels";
 import AssessmentConfiguration from "./prompt-config/AssessmentConfiguration";
 import SetupProgress from "./prompt-config/SetupProgress";
 import PromptPanel from "./prompt-config/PromptPanel";
 import ResponseSchema from "./prompt-config/ResponseSchema";
-
-interface PromptAndConfigStepProps {
-  onNext: () => void;
-  onBack: () => void;
-  textColumns: string[];
-  sampleRow: SampleRow;
-  systemInstruction: string;
-  setSystemInstruction: ValueSetter<string>;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-  configs: ConfigSelection[];
-  setConfigs: StateSetter<ConfigSelection[]>;
-  outputSchema: SchemaProperty[];
-  setOutputSchema: ValueSetter<SchemaProperty[]>;
-}
 
 export default function PromptAndConfigStep({
   textColumns,
@@ -229,6 +212,12 @@ export default function PromptAndConfigStep({
     }
   }, [isAuthenticated, loadConfigs]);
 
+  const latestModelByConfig = useLatestConfigModels(
+    configCards,
+    apiKey,
+    isAuthenticated,
+  );
+
   const filteredConfigCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return configCards;
@@ -393,7 +382,7 @@ export default function PromptAndConfigStep({
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2 className="text-xl font-semibold text-text-primary">
-              Prompt & Config
+              Evaluation
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
               Write the task on the left. Tune behavior and output on the right.
@@ -437,6 +426,7 @@ export default function PromptAndConfigStep({
               nextConfigSkip={nextConfigSkip}
               expandedConfigId={expandedConfigId}
               versionStateByConfig={versionStateByConfig}
+              latestModelByConfig={latestModelByConfig}
               loadingSelectionKeys={loadingSelectionKeys}
               isSelected={isSelected}
               onLoadMoreConfigs={(skip) => loadConfigs(skip, false)}

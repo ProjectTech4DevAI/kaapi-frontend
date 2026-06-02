@@ -230,6 +230,50 @@ export function buildSpreadsheetWorkbookData(
   };
 }
 
+type SpreadsheetSnapshot = {
+  sheetOrder?: string[];
+  sheets?: Record<
+    string,
+    { cellData?: Record<string, Record<string, { v?: unknown }>> }
+  >;
+};
+
+/** Extract a row-major string matrix from a Univer workbook snapshot (includes user edits). */
+export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
+  const snap = snapshot as SpreadsheetSnapshot;
+  const sheets = snap.sheets ?? {};
+  const sheetId = snap.sheetOrder?.[0] ?? Object.keys(sheets)[0];
+  const cellData = (sheetId && sheets[sheetId]?.cellData) || {};
+
+  let maxRow = -1;
+  let maxCol = -1;
+  for (const rKey of Object.keys(cellData)) {
+    maxRow = Math.max(maxRow, Number(rKey));
+    for (const cKey of Object.keys(cellData[rKey])) {
+      maxCol = Math.max(maxCol, Number(cKey));
+    }
+  }
+  if (maxRow < 0) return [];
+
+  const matrix: string[][] = [];
+  for (let r = 0; r <= maxRow; r++) {
+    const row: string[] = [];
+    for (let c = 0; c <= maxCol; c++) {
+      const v = cellData[r]?.[c]?.v;
+      row.push(v == null ? "" : String(v));
+    }
+    matrix.push(row);
+  }
+  return matrix;
+}
+
+/** Serialize a string matrix to CSV with RFC-4180 quoting. */
+export function rowsToCsv(matrix: string[][]): string {
+  const escape = (cell: string) =>
+    /[",\n\r]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell;
+  return matrix.map((row) => row.map(escape).join(",")).join("\r\n");
+}
+
 export function jsonResultsToTableData(
   results: Record<string, unknown>[],
   opts?: { skipFields?: Set<string>; rowLimit?: number },

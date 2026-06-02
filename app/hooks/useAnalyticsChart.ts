@@ -78,7 +78,6 @@ export function useAnalyticsChart(
     } finally {
       setIsLoading(false);
     }
-     
   }, [apiKey, isAuthenticated, filtersKey]);
 
   useEffect(() => {

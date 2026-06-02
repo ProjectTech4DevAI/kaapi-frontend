@@ -21,6 +21,7 @@ export default function BanListModal({
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
   const [wordsError, setWordsError] = useState("");
 
   const handleCreate = async () => {
@@ -30,6 +31,12 @@ export default function BanListModal({
       hasError = true;
     } else {
       setNameError("");
+    }
+    if (!description.trim()) {
+      setDescriptionError("Description is required");
+      hasError = true;
+    } else {
+      setDescriptionError("");
     }
     if (!bannedWords.trim()) {
       setWordsError("At least one banned word is required");
@@ -85,15 +92,20 @@ export default function BanListModal({
 
           <div>
             <label className="block text-xs font-medium mb-1 text-text-secondary">
-              Description
+              Description *
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this ban list covers…"
               rows={2}
-              className={textareaClass}
+              className={`${textareaClass} ${descriptionError ? "border-status-error-border" : ""}`}
             />
+            {descriptionError && (
+              <p className="text-xs text-status-error-text">
+                {descriptionError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -109,9 +121,7 @@ export default function BanListModal({
               className={`${textareaClass} ${wordsError ? "border-status-error-border" : ""}`}
             />
             {wordsError && (
-              <p className="text-xs text-status-error-text mt-1">
-                {wordsError}
-              </p>
+              <p className="text-xs text-status-error-text">{wordsError}</p>
             )}
           </div>
 

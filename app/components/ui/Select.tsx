@@ -1,11 +1,7 @@
 "use client";
 
 import { SelectHTMLAttributes } from "react";
-
-export interface SelectOption {
-  value: string;
-  label: string;
-}
+import { SelectOption } from "@/app/lib/types/ui";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: SelectOption[];

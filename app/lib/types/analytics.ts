@@ -65,8 +65,23 @@ export interface UseAnalyticsTotalsResult {
   error: string | null;
 }
 
+export interface UseAnalyticsChartResult {
+  data: AnalyticsChartData | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
 export interface AnalyticsTotalsRowProps {
   totals: AnalyticsTotalsMap | null;
   isLoading: boolean;
   error: string | null;
+}
+
+export interface AnalyticsChartRow {
+  month: string;
+  monthIso: string;
+  __total: number;
+  __range: [number, number];
+  [seriesName: string]: string | number | [number, number];
 }

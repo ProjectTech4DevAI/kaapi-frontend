@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader, Sidebar } from "@/app/components";
-import { Button, Select, SelectOption } from "@/app/components/ui";
+import { Button, Select } from "@/app/components/ui";
+import { toSelectOptions } from "@/app/lib/utils/selectOptions";
 import { CloseIcon } from "@/app/components/icons";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -25,12 +26,6 @@ import {
   AnalyticsMetric,
   AnalyticsModality,
 } from "@/app/lib/types/analytics";
-
-function toSelectOptions<T extends string>(
-  items: { value: T; label: string }[],
-): SelectOption[] {
-  return items.map((i) => ({ value: i.value, label: i.label }));
-}
 
 export default function AnalyticsPage() {
   const { sidebarCollapsed } = useApp();

@@ -5,6 +5,7 @@ import {
   AnalyticsChartData,
   AnalyticsChartFilters,
   AnalyticsChartResponse,
+  UseAnalyticsChartResult,
 } from "@/app/lib/types/analytics";
 
 function buildQuery(filters: AnalyticsChartFilters): string {
@@ -18,13 +19,6 @@ function buildQuery(filters: AnalyticsChartFilters): string {
   if (filters.from_month) params.set("from_month", filters.from_month);
   if (filters.to_month) params.set("to_month", filters.to_month);
   return params.toString();
-}
-
-export interface UseAnalyticsChartResult {
-  data: AnalyticsChartData | null;
-  isLoading: boolean;
-  error: string | null;
-  refetch: () => void;
 }
 
 export function useAnalyticsChart(

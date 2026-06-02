@@ -12,7 +12,10 @@ import {
   YAxis,
 } from "recharts";
 import { InfoTooltip, Loader } from "@/app/components/ui";
-import { AnalyticsChartData } from "@/app/lib/types/analytics";
+import {
+  AnalyticsChartData,
+  AnalyticsChartRow,
+} from "@/app/lib/types/analytics";
 import { normalizeAndMergeSeries } from "@/app/lib/utils/analytics/normalizeSeries";
 import {
   formatCompactMetric,
@@ -35,15 +38,7 @@ const SERIES_COLORS = [
   "#475569",
 ];
 
-interface ChartRow {
-  month: string;
-  monthIso: string;
-  __total: number;
-  __range: [number, number];
-  [seriesName: string]: string | number | [number, number];
-}
-
-function buildRows(chart: AnalyticsChartData): ChartRow[] {
+function buildRows(chart: AnalyticsChartData): AnalyticsChartRow[] {
   return chart.labels.map((label, i) => {
     const values = chart.series.map((s) => {
       const raw = s.data[i];
@@ -53,7 +48,7 @@ function buildRows(chart: AnalyticsChartData): ChartRow[] {
     const total = values.reduce((acc, v) => acc + v, 0);
     const min = values.length ? Math.min(...values) : 0;
     const max = values.length ? Math.max(...values) : 0;
-    const row: ChartRow = {
+    const row: AnalyticsChartRow = {
       month: formatMonthLabel(label),
       monthIso: label,
       __total: total,

@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import PromptDiffPane from "./PromptDiffPane";
 import ConfigDiffPane from "./ConfigDiffPane";
-import { Button, Select, type SelectOption } from "@/app/components/ui";
+import { Button, Select } from "@/app/components/ui";
+import type { SelectOption } from "@/app/lib/types/ui";
 import { VersionPill } from "@/app/components";
 import { ArrowLeftIcon, ChevronRightIcon } from "@/app/components/icons";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";

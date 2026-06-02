@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
 
         <div className="flex-1 flex flex-col overflow-hidden bg-bg-primary">
           <PageHeader
-            title="Dashboard"
+            title="Analytics"
             subtitle="Track cost, request volume and token usage across providers, modalities and projects"
           />
 

@@ -1,29 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { InfoTooltip, Loader } from "@/app/components/ui";
+import { InfoTooltip } from "@/app/components/ui";
 import {
   AnalyticsChartData,
   AnalyticsChartRow,
 } from "@/app/lib/types/analytics";
 import { normalizeAndMergeSeries } from "@/app/lib/utils/analytics/normalizeSeries";
 import {
-  formatCompactMetric,
-  formatMetricValue,
   formatMonthLabel,
   formatTokens,
 } from "@/app/lib/utils/analytics/formatValue";
-import ChartTooltip from "./ChartTooltip";
+import BreakdownPanel from "./BreakdownPanel";
+import LineTrendChart from "./LineTrendChart";
 
 const SERIES_COLORS = [
   "#1f4496",
@@ -88,15 +77,22 @@ export default function AnalyticsChartCard({
     return { ...data, series: filtered };
   }, [data]);
 
-  const rows = useMemo(
-    () => (activeData ? buildRows(activeData) : []),
-    [activeData],
-  );
+  const rows = useMemo(() => {
+    if (!activeData) return [];
+    const all = buildRows(activeData);
+    // Auto-trim leading + trailing months where every series is zero
+    let start = 0;
+    let end = all.length - 1;
+    const isEmpty = (r: AnalyticsChartRow) => r.__total === 0;
+    while (start <= end && isEmpty(all[start])) start++;
+    while (end >= start && isEmpty(all[end])) end--;
+    return all.slice(start, end + 1);
+  }, [activeData]);
   const hasSeries = !!activeData && activeData.series.length > 0;
 
   const totals = useMemo(() => {
     if (!activeData) return [];
-    return activeData.series.map((s, i) => {
+    const raw = activeData.series.map((s, i) => {
       const sum = s.data.reduce((acc, v) => acc + (Number(v) || 0), 0);
       return {
         name: s.name,
@@ -107,6 +103,13 @@ export default function AnalyticsChartCard({
         totalTokens: s.total_tokens,
       };
     });
+    const grandTotal = raw.reduce((acc, t) => acc + t.total, 0);
+    return raw
+      .map((t) => ({
+        ...t,
+        sharePct: grandTotal > 0 ? (t.total / grandTotal) * 100 : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
   }, [activeData]);
 
   const tokenSummary = useMemo(() => {
@@ -154,182 +157,26 @@ export default function AnalyticsChartCard({
             {activeData ? ` · grouped by ${activeData.group_by}` : ""}
           </p>
         </div>
-        {totals.length > 0 && (
-          <div className="hidden sm:flex flex-wrap items-center justify-end gap-x-5 gap-y-1.5 max-w-[55%]">
-            {totals.map((t) => (
-              <div
-                key={t.name}
-                className="flex items-center gap-2 text-[13px] text-text-secondary"
-              >
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: t.color }}
-                />
-                <span className="truncate max-w-48">{t.name}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {totals.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {totals.map((t) => {
-            const hasTokens =
-              t.inputTokens !== undefined ||
-              t.outputTokens !== undefined ||
-              t.totalTokens !== undefined;
-            return (
-              <div
-                key={t.name}
-                className="min-w-0 rounded-xl bg-bg-secondary/40 p-4"
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ background: t.color }}
-                  />
-                  <span className="text-xs font-medium text-text-secondary truncate inline-flex items-center">
-                    {t.name}
-                    <InfoTooltip
-                      text={
-                        <>
-                          Sum of <strong>{metricLabel}</strong> for{" "}
-                          <strong>{t.name}</strong> across the visible months.
-                        </>
-                      }
-                    />
-                  </span>
-                </div>
-                <p className="text-3xl font-semibold text-text-primary tabular-nums tracking-tight">
-                  {formatMetricValue(t.total, activeData!.metric)}
-                </p>
-                {hasTokens && (
-                  <p className="text-xs text-text-secondary mt-2 tabular-nums inline-flex items-center">
-                    <span className="font-semibold text-text-primary">
-                      {formatTokens(t.totalTokens ?? 0)}
-                    </span>
-                    <span className="ml-1">tokens</span>
-                    <span className="ml-1 text-text-secondary/80">
-                      · in {formatTokens(t.inputTokens ?? 0)} · out{" "}
-                      {formatTokens(t.outputTokens ?? 0)}
-                    </span>
-                    <InfoTooltip
-                      text={
-                        <>
-                          Tokens billed to this group during the chart window.
-                          <br />
-                          <strong>in</strong> = input/prompt tokens,{" "}
-                          <strong>out</strong> = output/completion tokens.
-                        </>
-                      }
-                    />
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <BreakdownPanel
+          totals={totals}
+          metric={activeData!.metric}
+          metricLabel={metricLabel}
+          groupBy={activeData!.group_by}
+        />
       )}
 
-      <div className="h-[480px]">
-        {isLoading && !data ? (
-          <div className="h-full flex items-center justify-center">
-            <Loader size="md" message="Loading chart…" />
-          </div>
-        ) : error ? (
-          <div className="h-full flex items-center justify-center px-6 text-center">
-            <p className="text-sm text-status-error-text">{error}</p>
-          </div>
-        ) : !hasSeries ? (
-          <div className="h-full flex items-center justify-center px-6 text-center">
-            <p className="text-sm text-text-secondary">
-              No data for the selected filters yet.
-            </p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={rows}
-              margin={{ top: 12, right: 24, left: 4, bottom: 8 }}
-            >
-              <defs>
-                <linearGradient id="range-band" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1f4496" stopOpacity={0.18} />
-                  <stop offset="100%" stopColor="#1f4496" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                stroke="#f1f1f1"
-                strokeDasharray="0"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fill: "#737373" }}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                padding={{ left: 12, right: 12 }}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: "#737373" }}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={6}
-                width={56}
-                tickFormatter={(v) =>
-                  formatCompactMetric(Number(v), activeData!.metric)
-                }
-              />
-              <Tooltip
-                content={<ChartTooltip metric={activeData!.metric} />}
-                cursor={{
-                  stroke: "#a3a3a3",
-                  strokeWidth: 1,
-                  strokeDasharray: "3 3",
-                }}
-              />
-              {activeData!.series.length > 1 && (
-                <Area
-                  type="monotone"
-                  dataKey="__range"
-                  stroke="none"
-                  fill="url(#range-band)"
-                  isAnimationActive={false}
-                  activeDot={false}
-                  legendType="none"
-                />
-              )}
-              {activeData!.series.map((s, i) => (
-                <Line
-                  key={s.name}
-                  type="monotone"
-                  dataKey={s.name}
-                  stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-                  strokeWidth={1.25}
-                  strokeOpacity={0.45}
-                  dot={false}
-                  activeDot={false}
-                />
-              ))}
-              <Line
-                type="monotone"
-                dataKey="__total"
-                stroke="#1f4496"
-                strokeWidth={2.5}
-                dot={{ r: 3, strokeWidth: 2, stroke: "#fff", fill: "#1f4496" }}
-                activeDot={{
-                  r: 5,
-                  strokeWidth: 2,
-                  stroke: "#fff",
-                  fill: "#1f4496",
-                }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      <LineTrendChart
+        rows={rows}
+        activeData={activeData}
+        hasSeries={hasSeries}
+        hasInitialData={!!data}
+        isLoading={isLoading}
+        error={error}
+        seriesColors={SERIES_COLORS}
+      />
 
       {tokenSummary && (
         <div className="pt-5 mt-2 border-t border-border">

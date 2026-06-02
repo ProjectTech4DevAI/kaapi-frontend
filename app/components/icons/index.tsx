@@ -1,5 +1,6 @@
 // Common Icons (shared across multiple pages)
 export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
+export { default as TooltipIcon } from "./common/TooltipIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
 export { default as CheckLineIcon } from "./common/CheckLineIcon";

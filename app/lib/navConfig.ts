@@ -12,12 +12,6 @@ export const SETTINGS_NAV: SettingsNavSection[] = [
 
 export const NAV_ITEMS: NavItemConfig[] = [
   {
-    name: "Dashboard",
-    route: "/dashboard",
-    icon: "chart",
-    gateDescription: "Log in to view the analytics dashboard.",
-  },
-  {
     name: "Documents",
     route: "/document",
     icon: "document",
@@ -61,5 +55,11 @@ export const NAV_ITEMS: NavItemConfig[] = [
     ],
     gateDescription:
       "Log in to compare model response quality across different configs.",
+  },
+  {
+    name: "Analytics",
+    route: "/analytics",
+    icon: "chart",
+    gateDescription: "Log in to view the analytics dashboard.",
   },
 ];

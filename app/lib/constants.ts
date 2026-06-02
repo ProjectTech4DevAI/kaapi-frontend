@@ -59,10 +59,8 @@ export const ANALYTICS_METRIC_OPTIONS: {
   value: AnalyticsMetric;
   label: string;
 }[] = [
-  { value: "requests", label: "Number of requests" },
-  { value: "cost", label: "LLM cost (USD)" },
-  { value: "eval_runs", label: "Number of eval runs" },
-  { value: "eval_cost", label: "Eval cost (USD)" },
+  { value: "cost_all", label: "Cost (USD)" },
+  { value: "volume", label: "Volume" },
 ];
 
 export const ANALYTICS_GROUP_BY_OPTIONS: {

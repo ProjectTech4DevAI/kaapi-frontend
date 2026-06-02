@@ -1,6 +1,19 @@
 import { APIEnvelope } from "@/app/lib/types/chat";
 
-export type AnalyticsMetric = "requests" | "cost" | "eval_runs" | "eval_cost";
+/**
+ * Atomic backend metrics map 1:1 to a single `/analytics/monthly/chart` call.
+ * Virtual metrics (`cost_all`, `volume`) are frontend-only: the chart hook
+ * fans them out into two atomic calls and sums the responses before plotting.
+ *   - `cost_all` = `cost` + `eval_cost` (production + eval spend)
+ *   - `volume`   = `requests` + `eval_runs` (production calls + eval batches)
+ */
+export type AnalyticsMetric =
+  | "requests"
+  | "cost"
+  | "eval_runs"
+  | "eval_cost"
+  | "cost_all"
+  | "volume";
 
 export type AnalyticsGroupBy =
   | "total"
@@ -57,7 +70,16 @@ export interface AnalyticsTotalsValue {
   outputTokens: number;
 }
 
-export type AnalyticsTotalsMap = Record<AnalyticsMetric, AnalyticsTotalsValue>;
+/** Atomic backend metrics — the ones that map 1:1 to a backend call. */
+export type AnalyticsBackendMetric = Exclude<
+  AnalyticsMetric,
+  "cost_all" | "volume"
+>;
+
+export type AnalyticsTotalsMap = Record<
+  AnalyticsBackendMetric,
+  AnalyticsTotalsValue
+>;
 
 export interface UseAnalyticsTotalsResult {
   totals: AnalyticsTotalsMap | null;

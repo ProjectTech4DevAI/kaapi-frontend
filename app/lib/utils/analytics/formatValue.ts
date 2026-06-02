@@ -1,6 +1,10 @@
 import { AnalyticsMetric } from "@/app/lib/types/analytics";
 
-export const CURRENCY_METRICS: AnalyticsMetric[] = ["cost", "eval_cost"];
+export const CURRENCY_METRICS: AnalyticsMetric[] = [
+  "cost",
+  "eval_cost",
+  "cost_all",
+];
 
 export function formatMetricValue(
   value: number,

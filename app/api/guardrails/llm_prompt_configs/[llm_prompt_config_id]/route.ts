@@ -3,13 +3,13 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ topic_relevance_config_id: string }> },
+  { params }: { params: Promise<{ llm_prompt_config_id: string }> },
 ) {
   try {
-    const { topic_relevance_config_id } = await params;
+    const { llm_prompt_config_id } = await params;
     const { status, data } = await guardrailsUserClient(
       request,
-      `/api/v1/guardrails/topic_relevance_configs/${topic_relevance_config_id}`,
+      `/api/v1/guardrails/llm_prompt_configs/${llm_prompt_config_id}`,
     );
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
@@ -20,18 +20,18 @@ export async function GET(
   }
 }
 
-export async function PUT(
+export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ topic_relevance_config_id: string }> },
+  { params }: { params: Promise<{ llm_prompt_config_id: string }> },
 ) {
   try {
-    const { topic_relevance_config_id } = await params;
+    const { llm_prompt_config_id } = await params;
     const body = await request.json();
     const { status, data } = await guardrailsUserClient(
       request,
-      `/api/v1/guardrails/topic_relevance_configs/${topic_relevance_config_id}`,
+      `/api/v1/guardrails/llm_prompt_configs/${llm_prompt_config_id}`,
       {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(body),
       },
     );
@@ -46,13 +46,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ topic_relevance_config_id: string }> },
+  { params }: { params: Promise<{ llm_prompt_config_id: string }> },
 ) {
   try {
-    const { topic_relevance_config_id } = await params;
+    const { llm_prompt_config_id } = await params;
     const { status, data } = await guardrailsUserClient(
       request,
-      `/api/v1/guardrails/topic_relevance_configs/${topic_relevance_config_id}`,
+      `/api/v1/guardrails/llm_prompt_configs/${llm_prompt_config_id}`,
       {
         method: "DELETE",
       },

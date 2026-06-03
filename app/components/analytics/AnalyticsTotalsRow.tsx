@@ -2,7 +2,16 @@
 
 import { ReactNode } from "react";
 import { InfoTooltip, Loader } from "@/app/components/ui";
-import { AnalyticsTotalsRowProps } from "@/app/lib/types/analytics";
+import {
+  AnalyticsCardAccent,
+  AnalyticsTotalsRowProps,
+} from "@/app/lib/types/analytics";
+
+const ACCENT_CARD: Record<AnalyticsCardAccent, string> = {
+  cost: "bg-status-success-bg/40 border-status-success-border/40",
+  usage: "bg-accent-primary/5 border-accent-primary/20",
+  activity: "bg-status-warning-bg/40 border-status-warning-border/40",
+};
 
 function formatTokens(n: number): string {
   if (!Number.isFinite(n)) return "0";
@@ -52,29 +61,26 @@ export default function AnalyticsTotalsRow({
         <h3 className="text-sm font-semibold text-text-primary tracking-tight">
           All-time totals
         </h3>
-        <p className="text-[11px] text-text-secondary">
-          Real users on the left, quality checks on the right.
-        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
         <StatCard
           accent="cost"
-          label="Production cost"
+          label="AI cost"
           value={formatCurrency(totals.cost.value)}
           hint="Real users using your AI"
           tooltip="Money spent on AI requests made by your real users (excludes any testing or quality checks you ran)."
         />
         <StatCard
           accent="usage"
-          label="Production tokens"
+          label="AI usage tokens"
           value={`${formatTokens(totals.cost.totalTokens)} tokens`}
           hint={`${formatCount(totals.cost.inputTokens)} in · ${formatCount(totals.cost.outputTokens)} out`}
           tooltip="The amount of text your AI processed for real users. Tokens are how AI providers measure work and bill you — roughly one word ≈ 1.3 tokens."
         />
         <StatCard
           accent="activity"
-          label="Production requests"
+          label="AI requests"
           value={formatCount(totals.requests.value)}
           hint="Real-user AI requests"
           tooltip="How many times your real users asked the AI to do something."
@@ -83,35 +89,27 @@ export default function AnalyticsTotalsRow({
           accent="cost"
           label="Eval cost"
           value={formatCurrency(totals.eval_cost.value)}
-          hint="Quality checks you ran"
-          tooltip="Money spent on AI requests used for testing and quality checks (separate from real-user activity)."
+          hint="Evaluations you ran"
+          tooltip="Money spent on AI requests used for running evaluations (separate from user activity)."
         />
         <StatCard
           accent="usage"
           label="Eval tokens"
           value={`${formatTokens(totals.eval_cost.totalTokens)} tokens`}
           hint={`${formatCount(totals.eval_cost.inputTokens)} in · ${formatCount(totals.eval_cost.outputTokens)} out`}
-          tooltip="The amount of text processed during your quality checks. Tokens are how AI providers measure work and bill you."
+          tooltip="The amount of text processed during your evaluations. Tokens are how AI providers measure work and bill you."
         />
         <StatCard
           accent="activity"
           label="Eval runs"
           value={formatCount(totals.eval_runs.value)}
-          hint="Quality-check batches"
-          tooltip="How many times you ran a quality check on your AI. Each run can test the AI on many cases at once."
+          hint="Eval-run activity"
+          tooltip="How many times you ran an evaluation on your AI. Each run can test it on many cases at once."
         />
       </div>
     </div>
   );
 }
-
-type Accent = "cost" | "usage" | "activity";
-
-const ACCENT_CARD: Record<Accent, string> = {
-  cost: "bg-status-success-bg/40 border-status-success-border/40",
-  usage: "bg-accent-primary/5 border-accent-primary/20",
-  activity: "bg-status-warning-bg/40 border-status-warning-border/40",
-};
 
 function StatCard({
   label,
@@ -124,7 +122,7 @@ function StatCard({
   value: string;
   hint?: string;
   tooltip?: ReactNode;
-  accent: Accent;
+  accent: AnalyticsCardAccent;
 }) {
   return (
     <div className={`rounded-lg border p-3 ${ACCENT_CARD[accent]}`}>

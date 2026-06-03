@@ -41,13 +41,14 @@ export default function TopicRelevanceModal({
     try {
       setIsSaving(true);
       const body = {
+        validator_name: "topic_relevance",
         name: name.trim(),
         description: description.trim(),
-        configuration: configuration.trim(),
+        llm_prompt: configuration.trim(),
         prompt_schema_version: promptSchemaVersion,
       };
       const data = await guardrailsFetch<{ id: string; name?: string }>(
-        "/api/guardrails/topic_relevance_configs",
+        "/api/guardrails/llm_prompt_configs",
         apiKey,
         { method: "POST", body: JSON.stringify(body) },
       );

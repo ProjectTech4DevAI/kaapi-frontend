@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PageHeader, Sidebar } from "@/app/components";
-import { Select } from "@/app/components/ui";
+import { InfoTooltip, Select } from "@/app/components/ui";
 import { toSelectOptions } from "@/app/lib/utils/selectOptions";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -29,16 +29,19 @@ import {
 function FilterField({
   label,
   className,
+  info,
   children,
 }: {
   label: string;
   className?: string;
+  info?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className={className}>
-      <label className="block text-[12px] font-medium mb-1 text-text-secondary">
-        {label}
+      <label className="flex items-center text-[12px] font-medium mb-1 text-text-secondary">
+        <span>{label}</span>
+        {info && <InfoTooltip text={info} />}
       </label>
       {children}
     </div>
@@ -113,6 +116,15 @@ export default function AnalyticsPage() {
                   <FilterField
                     label="Metric"
                     className="flex-1 basis-40 min-w-40"
+                    info={
+                      <>
+                        What the chart and breakdown measure.
+                        <br />
+                        <strong>Cost</strong> = USD spent (production + eval
+                        combined). <strong>Volume</strong> = number of LLM
+                        requests + eval runs.
+                      </>
+                    }
                   >
                     <Select
                       value={metric}
@@ -125,6 +137,16 @@ export default function AnalyticsPage() {
                   <FilterField
                     label="Group by"
                     className="flex-1 basis-40 min-w-40"
+                    info={
+                      <>
+                        How the metric is broken down in the chart and table.
+                        <br />
+                        <strong>Total</strong> = a single combined line.{" "}
+                        <strong>Provider</strong> /{" "}
+                        <strong>Request type</strong>/ their combination splits
+                        the metric into one series per group.
+                      </>
+                    }
                   >
                     <Select
                       value={groupBy}
@@ -137,6 +159,18 @@ export default function AnalyticsPage() {
                   <FilterField
                     label="Request type"
                     className="flex-1 basis-40 min-w-40"
+                    info={
+                      <>
+                        Filter to a specific call modality:
+                        <br />
+                        <strong>Text → Text</strong> (chat),{" "}
+                        <strong>Speech → Speech</strong>,{" "}
+                        <strong>Speech → Text</strong> (transcription),{" "}
+                        <strong>Text → Speech</strong> (TTS), or{" "}
+                        <strong>Other</strong>. Leave as <em>All</em> to include
+                        every type.
+                      </>
+                    }
                   >
                     <Select
                       value={modality}

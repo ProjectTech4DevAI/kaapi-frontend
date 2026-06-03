@@ -2,14 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronLeftIcon } from "@/app/components/icons";
+import { MonthYearAllowedRange } from "@/app/lib/types/analytics";
 
 interface MonthYearPickerProps {
-  /** Label to render above the trigger. Pass empty/omit to skip (e.g. when wrapping in your own field). */
   label?: string;
-  /** ISO date in `YYYY-MM-01` form (empty string when unset). */
-  value: string;
+  value: string; // ISO date in `YYYY-MM-01` form
   onChange: (iso: string) => void;
-  /** How many months back to expose (default 24 → 2 years). */
   monthsBack?: number;
   placeholder?: string;
 }
@@ -29,16 +27,7 @@ const MONTH_LABELS_SHORT = [
   "Dec",
 ];
 
-interface AllowedRange {
-  /** All `{ year, monthIdx }` pairs that are selectable, newest first. */
-  pairs: { year: number; monthIdx: number }[];
-  /** Sorted list of years that contain at least one allowed month, newest first. */
-  years: number[];
-  /** Map of year → Set of allowed month indices. */
-  monthsByYear: Map<number, Set<number>>;
-}
-
-function buildAllowedRange(monthsBack: number): AllowedRange {
+function buildAllowedRange(monthsBack: number): MonthYearAllowedRange {
   const now = new Date();
   const startYear = now.getFullYear();
   const startMonth = now.getMonth();

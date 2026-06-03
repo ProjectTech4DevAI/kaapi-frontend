@@ -100,6 +100,8 @@ export interface AnalyticsTotalsRowProps {
   error: string | null;
 }
 
+export type AnalyticsCardAccent = "cost" | "usage" | "activity";
+
 export interface AnalyticsChartRow {
   month: string;
   monthIso: string;

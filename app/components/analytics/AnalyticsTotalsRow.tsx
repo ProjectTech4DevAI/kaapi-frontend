@@ -2,7 +2,16 @@
 
 import { ReactNode } from "react";
 import { InfoTooltip, Loader } from "@/app/components/ui";
-import { AnalyticsTotalsRowProps } from "@/app/lib/types/analytics";
+import {
+  AnalyticsCardAccent,
+  AnalyticsTotalsRowProps,
+} from "@/app/lib/types/analytics";
+
+const ACCENT_CARD: Record<AnalyticsCardAccent, string> = {
+  cost: "bg-status-success-bg/40 border-status-success-border/40",
+  usage: "bg-accent-primary/5 border-accent-primary/20",
+  activity: "bg-status-warning-bg/40 border-status-warning-border/40",
+};
 
 function formatTokens(n: number): string {
   if (!Number.isFinite(n)) return "0";
@@ -102,14 +111,6 @@ export default function AnalyticsTotalsRow({
   );
 }
 
-type Accent = "cost" | "usage" | "activity";
-
-const ACCENT_CARD: Record<Accent, string> = {
-  cost: "bg-status-success-bg/40 border-status-success-border/40",
-  usage: "bg-accent-primary/5 border-accent-primary/20",
-  activity: "bg-status-warning-bg/40 border-status-warning-border/40",
-};
-
 function StatCard({
   label,
   value,
@@ -121,7 +122,7 @@ function StatCard({
   value: string;
   hint?: string;
   tooltip?: ReactNode;
-  accent: Accent;
+  accent: AnalyticsCardAccent;
 }) {
   return (
     <div className={`rounded-lg border p-3 ${ACCENT_CARD[accent]}`}>

@@ -56,4 +56,10 @@ export const NAV_ITEMS: NavItemConfig[] = [
     gateDescription:
       "Log in to compare model response quality across different configs.",
   },
+  {
+    name: "Analytics",
+    route: "/analytics",
+    icon: "chart",
+    gateDescription: "Log in to view the analytics dashboard.",
+  },
 ];

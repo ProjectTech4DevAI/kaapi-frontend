@@ -20,6 +20,7 @@ import {
   ChevronRightIcon,
   ChevronLeftIcon,
   ChatIcon,
+  ChartBarIcon,
 } from "@/app/components/icons";
 import { LoginModal } from "@/app/components/auth";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
@@ -119,6 +120,7 @@ export default function Sidebar({
     gear: <GearIcon className="w-5 h-5" />,
     shield: <ShieldCheckIcon />,
     sliders: <SlidersIcon />,
+    chart: <ChartBarIcon />,
   };
 
   const navItems: MenuItem[] = NAV_ITEMS.filter(

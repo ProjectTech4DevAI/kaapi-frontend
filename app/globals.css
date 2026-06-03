@@ -249,3 +249,27 @@ a {
   opacity: 1;
   cursor: not-allowed;
 }
+
+/**
+ * Accent-colored thin scrollbar for compact data tables.
+ * Applied via className="custom-scroll-accent" on a scroll container.
+ */
+.custom-scroll-accent::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scroll-accent::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll-accent::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 60%, white);
+  border-radius: 3px;
+}
+.custom-scroll-accent::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-accent-primary);
+}
+.custom-scroll-accent {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-accent-primary) 60%, white)
+    transparent;
+}

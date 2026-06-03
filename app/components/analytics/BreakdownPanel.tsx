@@ -83,7 +83,7 @@ function PieTooltip({ active, payload, metric, grandTotal }: PieTooltipProps) {
     <div className="rounded-lg border border-border bg-bg-primary px-3 py-2 shadow-[0_4px_12px_rgba(0,0,0,0.08)] min-w-40">
       <div className="flex items-center gap-2 text-[13px] mb-1">
         <span
-          className="inline-block w-2 h-2 rounded-full shrink-0"
+          className="inline-block w-3 h-2.5 rounded-xs shrink-0"
           style={{ background: item.fill }}
         />
         <span className="font-medium text-text-primary truncate">
@@ -169,7 +169,7 @@ export default function BreakdownPanel({
                     <td className="py-2.5 px-4">
                       <span className="inline-flex items-center gap-2 min-w-0">
                         <span
-                          className="w-2.5 h-2.5 rounded-sm shrink-0"
+                          className="w-3.5 h-2.5 rounded-xs shrink-0"
                           style={{ background: t.color }}
                         />
                         <span className="truncate font-medium text-text-primary">
@@ -256,7 +256,7 @@ export default function BreakdownPanel({
                   className="inline-flex items-center gap-1.5 text-[12px] text-text-secondary"
                 >
                   <span
-                    className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+                    className="inline-block w-4 h-2.5 rounded-xs shrink-0"
                     style={{ background: d.fill }}
                   />
                   <span className="truncate max-w-32">{d.name}</span>

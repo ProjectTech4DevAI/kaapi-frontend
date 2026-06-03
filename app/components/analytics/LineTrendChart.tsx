@@ -134,7 +134,7 @@ export default function LineTrendChart({
               className="inline-flex items-center gap-1.5 text-[12px] text-text-secondary"
             >
               <span
-                className="inline-block w-2.5 h-2.5 rounded-sm shrink-0"
+                className="inline-block w-4 h-2.5 rounded-xs shrink-0"
                 style={{ background: seriesColors[i % seriesColors.length] }}
               />
               <span className="truncate max-w-40">{s.name}</span>

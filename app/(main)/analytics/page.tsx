@@ -118,11 +118,11 @@ export default function AnalyticsPage() {
                     className="flex-1 basis-40 min-w-40"
                     info={
                       <>
-                        What the chart and breakdown measure.
+                        What the chart shows.
                         <br />
-                        <strong>Cost</strong> = USD spent (production + eval
-                        combined). <strong>Volume</strong> = number of LLM
-                        requests + eval runs.
+                        <strong>Cost</strong> = money spent on AI (real users +
+                        quality checks combined). <strong>Volume</strong> = how
+                        busy your AI was (number of requests).
                       </>
                     }
                   >
@@ -139,12 +139,12 @@ export default function AnalyticsPage() {
                     className="flex-1 basis-40 min-w-40"
                     info={
                       <>
-                        How the metric is broken down in the chart and table.
+                        How the chart is split up.
                         <br />
-                        <strong>Total</strong> = a single combined line.{" "}
-                        <strong>Provider</strong> /{" "}
-                        <strong>Request type</strong>/ their combination splits
-                        the metric into one series per group.
+                        <strong>Total</strong> = everything as one line. Pick{" "}
+                        <strong>Provider</strong> (who supplies the AI) or{" "}
+                        <strong>Request type</strong> (what the AI was used for)
+                        to see one line per group.
                       </>
                     }
                   >
@@ -161,14 +161,15 @@ export default function AnalyticsPage() {
                     className="flex-1 basis-40 min-w-40"
                     info={
                       <>
-                        Filter to a specific call modality:
+                        What the AI was used for. Pick one to see numbers for
+                        just that kind of work:
                         <br />
-                        <strong>Text → Text</strong> (chat),{" "}
-                        <strong>Speech → Speech</strong>,{" "}
-                        <strong>Speech → Text</strong> (transcription),{" "}
-                        <strong>Text → Speech</strong> (TTS), or{" "}
-                        <strong>Other</strong>. Leave as <em>All</em> to include
-                        every type.
+                        <strong>Text → Text</strong> (chat / written replies),{" "}
+                        <strong>Speech → Speech</strong> (voice conversations),{" "}
+                        <strong>Speech → Text</strong> (turning audio into
+                        written text), <strong>Text → Speech</strong> (reading
+                        text aloud), or <strong>Other</strong>. Leave as{" "}
+                        <em>All</em> to count everything.
                       </>
                     }
                   >

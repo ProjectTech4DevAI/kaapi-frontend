@@ -15,16 +15,22 @@ import BreakdownPanel from "./BreakdownPanel";
 import LineTrendChart from "./LineTrendChart";
 
 const SERIES_COLORS = [
-  "#1f4496",
+  "#2563eb",
+  "#e11d48",
   "#16a34a",
   "#f59e0b",
-  "#dc2626",
-  "#8b5cf6",
+  "#7c3aed",
   "#0891b2",
+  "#ea580c",
   "#db2777",
   "#65a30d",
-  "#ea580c",
+  "#4f46e5",
+  "#dc2626",
+  "#0d9488",
+  "#c026d3",
+  "#ca8a04",
   "#475569",
+  "#84cc16",
 ];
 
 function buildRows(chart: AnalyticsChartData): AnalyticsChartRow[] {
@@ -143,11 +149,13 @@ export default function AnalyticsChartCard({
             <InfoTooltip
               text={
                 <>
-                  Chart values are the selected metric (
-                  <strong>{metricLabel}</strong>) summed per month and broken
-                  out by the chosen <strong>Group by</strong>. The thick line is
-                  the total across all groups; the band is the spread between
-                  the lowest and highest group at each month.
+                  Shows <strong>{metricLabel}</strong> month by month, split by
+                  what you chose under <em>Group by</em> (for example, one line
+                  per provider).
+                  <br />
+                  <br />
+                  The dotted line is the overall total — adding all the coloured
+                  lines together each month.
                 </>
               }
             />
@@ -187,17 +195,14 @@ export default function AnalyticsChartCard({
                 <InfoTooltip
                   text={
                     <>
-                      Tokens reported by the response for{" "}
-                      <strong>{metricLabel}</strong> with the current filters.
-                      Only models that actually consumed tokens contribute to
-                      this sum. Use this to gauge how much volume produced the
-                      numbers above.
+                      The amount of text the AI processed to produce the numbers
+                      above. Tokens are how AI providers measure work and bill
+                      you — roughly one word ≈ 1.3 tokens.
                       <br />
                       <br />
-                      This is <strong>not</strong> a global total —{" "}
-                      <em>production</em> and <em>eval</em> tokens are shown
-                      separately in the &quot;All-time totals&quot; row at the
-                      bottom of the page.
+                      This only counts the data shown in the chart. For a full
+                      real-users-vs-quality-checks split, see the &quot;All-time
+                      totals&quot; section at the top.
                     </>
                   }
                 />
@@ -211,17 +216,17 @@ export default function AnalyticsChartCard({
             <TokenStat
               label="Total tokens"
               value={tokenSummary.totalSum}
-              tooltip="Input + output tokens charged for the calls that produced the values in this chart."
+              tooltip="All the text the AI processed (what you sent in + what it sent back), for the requests shown in the chart."
             />
             <TokenStat
               label="Input tokens"
               value={tokenSummary.inputSum}
-              tooltip="Prompt tokens sent to the model — what you paid for on the input side."
+              tooltip="The text you sent to the AI — your prompts and any background information you gave it."
             />
             <TokenStat
               label="Output tokens"
               value={tokenSummary.outputSum}
-              tooltip="Completion tokens returned by the model — what you paid for on the output side."
+              tooltip="The text the AI sent back — its answers and replies."
             />
           </div>
         </div>

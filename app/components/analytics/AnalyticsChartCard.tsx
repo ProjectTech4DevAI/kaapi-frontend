@@ -15,8 +15,8 @@ import BreakdownPanel from "./BreakdownPanel";
 import LineTrendChart from "./LineTrendChart";
 
 const SERIES_COLORS = [
-  "#2563eb",
-  "#e11d48",
+  "#1f4496",
+  "#ffce00",
   "#16a34a",
   "#f59e0b",
   "#7c3aed",

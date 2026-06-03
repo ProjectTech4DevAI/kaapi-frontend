@@ -3,10 +3,10 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const { status, data } = await guardrailsUserClient(
-      request,
-      "/api/v1/guardrails/topic_relevance_configs/",
-    );
+    const url = new URL(request.url);
+    const qs = url.searchParams.toString();
+    const path = `/api/v1/guardrails/llm_prompt_configs/${qs ? `?${qs}` : ""}`;
+    const { status, data } = await guardrailsUserClient(request, path);
     return NextResponse.json(data, { status });
   } catch (e: unknown) {
     return NextResponse.json(
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { status, data } = await guardrailsUserClient(
       request,
-      "/api/v1/guardrails/topic_relevance_configs/",
+      "/api/v1/guardrails/llm_prompt_configs/",
       {
         method: "POST",
         body: JSON.stringify(body),

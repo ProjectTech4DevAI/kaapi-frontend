@@ -49,25 +49,25 @@ export default function TopicRelevanceField({
 
     guardrailsFetch<{
       data?:
-        | { topic_relevance_configs?: TopicRelevanceConfig[] }
+        | { llm_prompt_configs?: TopicRelevanceConfig[] }
         | TopicRelevanceConfig[];
-      topic_relevance_configs?: TopicRelevanceConfig[];
-    }>("/api/guardrails/topic_relevance_configs", apiKey)
+      llm_prompt_configs?: TopicRelevanceConfig[];
+    }>(
+      "/api/guardrails/llm_prompt_configs?validator_name=topic_relevance",
+      apiKey,
+    )
       .then((data) => {
         const nested = data?.data;
         const list: TopicRelevanceConfig[] = Array.isArray(
-          (nested as { topic_relevance_configs?: TopicRelevanceConfig[] })
-            ?.topic_relevance_configs,
+          (nested as { llm_prompt_configs?: TopicRelevanceConfig[] })
+            ?.llm_prompt_configs,
         )
-          ? (
-              nested as {
-                topic_relevance_configs: TopicRelevanceConfig[];
-              }
-            ).topic_relevance_configs
+          ? (nested as { llm_prompt_configs: TopicRelevanceConfig[] })
+              .llm_prompt_configs
           : Array.isArray(nested)
             ? (nested as TopicRelevanceConfig[])
-            : Array.isArray(data?.topic_relevance_configs)
-              ? data.topic_relevance_configs!
+            : Array.isArray(data?.llm_prompt_configs)
+              ? data.llm_prompt_configs!
               : [];
         setConfigs(list);
       })
@@ -101,16 +101,17 @@ export default function TopicRelevanceField({
     let cancelled = false;
     setDetailsLoading(true);
     guardrailsFetch<{
-      data?: TopicRelevanceConfigDetails;
+      data?: TopicRelevanceConfigDetails & { llm_prompt?: string | null };
       description?: string | null;
       configuration?: string | null;
-    }>(`/api/guardrails/topic_relevance_configs/${value}`, apiKey)
+      llm_prompt?: string | null;
+    }>(`/api/guardrails/llm_prompt_configs/${value}`, apiKey)
       .then((d) => {
         if (cancelled) return;
         const entity = d?.data ?? d;
         setDetails({
           description: entity?.description ?? null,
-          configuration: entity?.configuration ?? null,
+          configuration: entity?.llm_prompt ?? entity?.configuration ?? null,
         });
       })
       .catch(() => {

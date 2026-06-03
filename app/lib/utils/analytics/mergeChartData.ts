@@ -1,29 +1,14 @@
 import {
   AnalyticsChartData,
   AnalyticsMetric,
+  AnalyticsSeriesAggregate,
   AnalyticsSeriesPoint,
 } from "@/app/lib/types/analytics";
 
-interface SeriesAggregate {
-  data: number[];
-  totalTokens: number;
-  inputTokens: number;
-  outputTokens: number;
-  hasTokens: boolean;
-}
-
 /**
- * Sums two `AnalyticsChartData` responses into one synthetic series set.
- *
- * Used to back the "virtual" metrics (`cost_all`, `volume`) — we fire one
- * backend call per atomic metric and combine the responses here, aligning
- * series by name and label by month.
- *
- * - Labels are the union of both responses' labels, sorted lexicographically
- *   (which sorts correctly because they are `YYYY-MM-DD` strings).
- * - Series are matched by `name`. If a series appears in only one response,
- *   its values are kept and the other response contributes 0 for those months.
- * - Token totals are summed across both responses.
+ * Sums two `AnalyticsChartData` responses into one — labels unioned,
+ * series matched by name, values and token totals added per month.
+ * Backs the virtual metrics (`cost_all`, `volume`).
  */
 export function mergeChartData(
   a: AnalyticsChartData,
@@ -33,7 +18,7 @@ export function mergeChartData(
   const labels = Array.from(new Set([...a.labels, ...b.labels])).sort();
   const labelIndex = new Map(labels.map((l, i) => [l, i]));
 
-  const map = new Map<string, SeriesAggregate>();
+  const map = new Map<string, AnalyticsSeriesAggregate>();
 
   const ingest = (src: AnalyticsChartData) => {
     for (const s of src.series) {

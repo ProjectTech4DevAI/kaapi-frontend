@@ -108,11 +108,16 @@ export interface AnalyticsChartRow {
   [seriesName: string]: string | number | [number, number];
 }
 
+export interface AnalyticsSeriesAggregate {
+  data: number[];
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  hasTokens: boolean;
+}
+
 export interface MonthYearAllowedRange {
-  /** All `{ year, monthIdx }` pairs that are selectable, newest first. */
   pairs: { year: number; monthIdx: number }[];
-  /** Sorted list of years that contain at least one allowed month, newest first. */
   years: number[];
-  /** Map of year → Set of allowed month indices (0-based). */
   monthsByYear: Map<number, Set<number>>;
 }

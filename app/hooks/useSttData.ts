@@ -32,12 +32,6 @@ interface UseSttDataResult {
   loadResults: (runId: number) => Promise<void>;
 }
 
-/**
- * Owns the read-side state for the speech-to-text page: the list of
- * languages, datasets, runs, and the currently-loaded results, plus the
- * loaders that populate them. The page passes the active tab so we only
- * fetch runs when it's relevant.
- */
 export function useSttData(
   activeTab: "datasets" | "evaluations",
 ): UseSttDataResult {

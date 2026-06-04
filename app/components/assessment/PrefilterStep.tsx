@@ -5,8 +5,11 @@ import { Button } from "@/app/components";
 import Modal from "@/app/components/Modal";
 import { ExpandIcon } from "@/app/components/icons";
 import CompactToggleSwitch from "@/app/components/assessment/CompactToggleSwitch";
-import { DEFAULT_L1_TOPIC_RELEVANCE_PROMPT } from "@/app/lib/assessment/constants";
-import type { L1Config, L1FiltersStepProps } from "@/app/lib/types/assessment";
+import { DEFAULT_PREFILTER_TOPIC_RELEVANCE_PROMPT } from "@/app/lib/assessment/constants";
+import type {
+  PrefilterConfig,
+  PrefilterStepProps,
+} from "@/app/lib/types/assessment";
 
 function ColumnChips({
   columns,
@@ -51,35 +54,39 @@ function ColumnChips({
   );
 }
 
-export default function L1FiltersStep({
+export default function PrefilterStep({
   columns,
   attachmentColumns = [],
-  l1Config,
-  setL1Config,
+  prefilterConfig,
+  setPrefilterConfig,
   onNext,
   onBack,
-}: L1FiltersStepProps) {
-  const [trEnabled, setTrEnabled] = useState(() => !!l1Config?.topic_relevance);
+}: PrefilterStepProps) {
+  const [trEnabled, setTrEnabled] = useState(
+    () => !!prefilterConfig?.topic_relevance,
+  );
   const [dupEnabled, setDupEnabled] = useState(
-    () => !!l1Config?.duplicate_detection,
+    () => !!prefilterConfig?.duplicate_detection,
   );
   const [trColumns, setTrColumns] = useState<string[]>(
-    () => l1Config?.topic_relevance?.columns ?? [],
+    () => prefilterConfig?.topic_relevance?.columns ?? [],
   );
   const [trAttachmentColumns, setTrAttachmentColumns] = useState<string[]>(
-    () => l1Config?.topic_relevance?.attachment_columns ?? attachmentColumns,
+    () =>
+      prefilterConfig?.topic_relevance?.attachment_columns ?? attachmentColumns,
   );
   const [trPrompt, setTrPrompt] = useState(
     () =>
-      l1Config?.topic_relevance?.prompt ?? DEFAULT_L1_TOPIC_RELEVANCE_PROMPT,
+      prefilterConfig?.topic_relevance?.prompt ??
+      DEFAULT_PREFILTER_TOPIC_RELEVANCE_PROMPT,
   );
   const [dupColumns, setDupColumns] = useState<string[]>(
-    () => l1Config?.duplicate_detection?.columns ?? [],
+    () => prefilterConfig?.duplicate_detection?.columns ?? [],
   );
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 
   const handleNext = () => {
-    const config: L1Config = {};
+    const config: PrefilterConfig = {};
     if (trEnabled && trColumns.length > 0 && trPrompt.trim()) {
       config.topic_relevance = {
         columns: trColumns,
@@ -92,7 +99,7 @@ export default function L1FiltersStep({
     if (dupEnabled && dupColumns.length > 0) {
       config.duplicate_detection = { columns: dupColumns };
     }
-    setL1Config(Object.keys(config).length > 0 ? config : null);
+    setPrefilterConfig(Object.keys(config).length > 0 ? config : null);
     onNext();
   };
 

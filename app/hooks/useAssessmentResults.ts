@@ -83,6 +83,7 @@ export default function useAssessmentResults({
   const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [rerunningId, setRerunningId] = useState<number | null>(null);
+  const [resumingId, setResumingId] = useState<number | null>(null);
   const [retryingAssessmentId, setRetryingAssessmentId] = useState<
     number | null
   >(null);
@@ -347,6 +348,41 @@ export default function useAssessmentResults({
     ],
   );
 
+  const handleResume = useCallback(
+    async (run: AssessmentChildRun) => {
+      if (!isAuthenticated) {
+        toast.error("Please sign in to resume this run");
+        return;
+      }
+
+      setResumingId(run.id);
+      try {
+        await apiFetch(`/api/assessment/runs/${run.id}/resume`, apiKey, {
+          method: "POST",
+        });
+
+        toast.success("Run resumed from failed stage!");
+        void loadAssessments();
+        if (run.assessment_id) {
+          void loadChildRuns(run.assessment_id);
+        }
+      } catch (error) {
+        if (handleForbiddenError(error, onForbidden)) return;
+        toast.error(getAsyncErrorMessage("Resume failed", error));
+      } finally {
+        setResumingId(null);
+      }
+    },
+    [
+      apiKey,
+      isAuthenticated,
+      loadAssessments,
+      loadChildRuns,
+      onForbidden,
+      toast,
+    ],
+  );
+
   const handleRetryAssessment = useCallback(
     async (assessmentId: number) => {
       if (!isAuthenticated) {
@@ -452,6 +488,7 @@ export default function useAssessmentResults({
     statusFilter,
     setStatusFilter,
     rerunningId,
+    resumingId,
     retryingAssessmentId,
     expandedId,
     downloadingId,
@@ -459,6 +496,7 @@ export default function useAssessmentResults({
     handleExpand,
     handleRetryAssessment,
     handleRerun,
+    handleResume,
     handlePreview,
     handleAssessmentDownload,
     handleRunDownload,

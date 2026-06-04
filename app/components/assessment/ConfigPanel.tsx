@@ -6,7 +6,7 @@ import { DatabaseIcon } from "@/app/components/icons";
 import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";
 import type { ConfigPanelProps } from "@/app/lib/types/assessment";
 import ColumnMapperStep from "./ColumnMapperStep";
-import L1FiltersStep from "./L1FiltersStep";
+import PrefilterStep from "./PrefilterStep";
 import PostProcessingStep from "./PostProcessingStep";
 import PromptAndConfigStep from "./PromptAndConfigStep";
 import ReviewStep from "./ReviewStep";
@@ -24,7 +24,7 @@ export default function ConfigPanel({
   formState,
   hasDataset,
   isSubmitting,
-  l1Config,
+  prefilterConfig,
   outputSchema,
   systemInstruction,
   promptTemplate,
@@ -36,7 +36,7 @@ export default function ConfigPanel({
   setConfigStep,
   setConfigs,
   setExperimentName,
-  setL1Config,
+  setPrefilterConfig,
   setOutputSchema,
   setSystemInstruction,
   setPromptTemplate,
@@ -95,12 +95,12 @@ export default function ConfigPanel({
             configStep === 2 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
           }
         >
-          <L1FiltersStep
+          <PrefilterStep
             key={datasetId ?? "no-dataset"}
             columns={columnMapping.textColumns}
             attachmentColumns={columnMapping.attachments.map((a) => a.column)}
-            l1Config={l1Config}
-            setL1Config={setL1Config}
+            prefilterConfig={prefilterConfig}
+            setPrefilterConfig={setPrefilterConfig}
             onNext={() => onStepComplete(2)}
             onBack={() => setConfigStep(1)}
           />

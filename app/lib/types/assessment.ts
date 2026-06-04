@@ -22,6 +22,9 @@ export interface Attachment {
   column: string;
   type: "image" | "pdf" | "mixed";
   format: "url" | "base64";
+  // For 'mixed': column whose value decides each row's type + the value->type map.
+  type_column?: string | null;
+  type_value_map?: Record<string, string> | null;
 }
 
 export interface ConfigRef {
@@ -62,26 +65,26 @@ export interface SchemaProperty {
   enumValues: string[];
 }
 
-export interface L1TopicRelevanceConfig {
+export interface PrefilterTopicRelevanceConfig {
   columns: string[];
   attachment_columns?: string[];
   prompt: string;
 }
 
-export interface L1DuplicateDetectionConfig {
+export interface PrefilterDuplicateDetectionConfig {
   columns: string[];
 }
 
-export interface L1Config {
-  topic_relevance?: L1TopicRelevanceConfig;
-  duplicate_detection?: L1DuplicateDetectionConfig;
+export interface PrefilterConfig {
+  topic_relevance?: PrefilterTopicRelevanceConfig;
+  duplicate_detection?: PrefilterDuplicateDetectionConfig;
 }
 
-export interface L1FiltersStepProps extends StepNavigationProps {
+export interface PrefilterStepProps extends StepNavigationProps {
   columns: string[];
   attachmentColumns?: string[];
-  l1Config: L1Config | null;
-  setL1Config: ValueSetter<L1Config | null>;
+  prefilterConfig: PrefilterConfig | null;
+  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
 }
 
 export interface AssessmentFormState {
@@ -95,7 +98,7 @@ export interface AssessmentFormState {
   promptTemplate: string;
   outputSchema: SchemaProperty[];
   configs: ConfigSelection[];
-  l1Config: L1Config | null;
+  prefilterConfig: PrefilterConfig | null;
   postProcessingConfig: PostProcessingConfig | null;
 }
 
@@ -166,6 +169,10 @@ export interface ColumnConfig {
   role: ColumnRole;
   attachmentType?: "image" | "pdf" | "mixed";
   attachmentFormat?: string;
+  // For 'mixed': the type-deciding column + comma-separated values per type.
+  attachmentTypeColumn?: string;
+  attachmentImageValues?: string;
+  attachmentPdfValues?: string;
 }
 
 export interface RoleVisuals {
@@ -192,7 +199,7 @@ export interface ConfigPanelProps {
   formState: AssessmentFormState;
   hasDataset: boolean;
   isSubmitting: boolean;
-  l1Config: L1Config | null;
+  prefilterConfig: PrefilterConfig | null;
   outputSchema: SchemaProperty[];
   systemInstruction: string;
   promptTemplate: string;
@@ -202,7 +209,7 @@ export interface ConfigPanelProps {
   setConfigStep: ValueSetter<number>;
   setConfigs: StateSetter<ConfigSelection[]>;
   setExperimentName: ValueSetter<string>;
-  setL1Config: ValueSetter<L1Config | null>;
+  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
   setOutputSchema: ValueSetter<SchemaProperty[]>;
   setSystemInstruction: ValueSetter<string>;
   setPromptTemplate: ValueSetter<string>;
@@ -232,6 +239,16 @@ export interface PageLayoutProps {
   evaluationsTabProps: EvaluationsTabProps;
 }
 
+export interface PipelineStageEntry {
+  stage: string;
+  type?: string;
+  order?: number;
+}
+
+export interface PipelineConfig {
+  stages: PipelineStageEntry[];
+}
+
 export interface AssessmentRunStat {
   run_id: number;
   config_id: string | null;
@@ -240,9 +257,11 @@ export interface AssessmentRunStat {
   total_items: number;
   error_message: string | null;
   updated_at: string | null;
-  l1_total_rows: number | null;
-  l1_total_passed: number | null;
-  l1_total_rejected: number | null;
+  prefilter_total_rows: number | null;
+  prefilter_total_passed: number | null;
+  prefilter_total_rejected: number | null;
+  stage: string | null;
+  stage_status: string | null;
 }
 
 export interface AssessmentRun {
@@ -324,9 +343,12 @@ export interface AssessmentChildRun {
   organization_id: number;
   project_id: number;
   assessment_config: Record<string, unknown> | null;
-  l1_total_rows: number | null;
-  l1_total_passed: number | null;
-  l1_total_rejected: number | null;
+  prefilter_total_rows: number | null;
+  prefilter_total_passed: number | null;
+  prefilter_total_rejected: number | null;
+  stage: string | null;
+  stage_status: string | null;
+  pipeline: PipelineConfig | null;
   post_processing_config: PostProcessingConfig | null;
   inserted_at: string;
   updated_at: string;

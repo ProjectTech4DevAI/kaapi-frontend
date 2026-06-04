@@ -26,19 +26,26 @@ export const DATASET_SAMPLE_ROW_LIMIT = 10;
 
 export const ACTIVE_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "pending",
-  "l1_processing",
+  "prefilter_processing",
   "l2_processing",
   "processing",
   "in_progress",
 ]);
 export const FAILED_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "failed",
-  "l1_failed",
+  "prefilter_failed",
   "completed_with_errors",
 ]);
 export const COMPLETED_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "completed",
 ]);
+
+// Friendly labels for pipeline stages (backend Stage enum values).
+export const STAGE_LABELS: Record<string, string> = {
+  PRE_FILTER_TOPIC_RELEVANCE: "Topic Relevance",
+  PRE_FILTER_DUPLICATE_DETECTION: "Duplicate Detection",
+  L2_ASSESSMENT: "Assessment",
+};
 
 export const STATUS_FILTER_OPTIONS: Array<{
   value: StatusFilter;
@@ -141,7 +148,7 @@ export const DEFAULT_SYSTEM_PROMPT = "(not set)";
 export const DEFAULT_USER_PROMPT =
   "(not set: backend concatenates mapped text columns)";
 
-export const DEFAULT_L1_TOPIC_RELEVANCE_PROMPT = `You are an L1 screener for the School Innovation Marathon (SIM), a national competition for Indian school students (grades 6–12).
+export const DEFAULT_PREFILTER_TOPIC_RELEVANCE_PROMPT = `You are a pre-filter screener for the School Innovation Marathon (SIM), a national competition for Indian school students (grades 6–12).
 
 You act as the FIRST FILTER only. Novelty scoring happens here as a basic gate; deeper evaluation happens later.
 

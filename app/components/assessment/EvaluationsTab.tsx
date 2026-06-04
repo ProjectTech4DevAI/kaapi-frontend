@@ -1,6 +1,7 @@
 "use client";
 
 // Assessment Evaluations tab — shows run cards with status, retry, and CSV export.
+import { Fragment } from "react";
 import { Button, RunsListSkeleton } from "@/app/components";
 import Select from "@/app/components/Select";
 import { useToast } from "@/app/components/Toast";
@@ -16,6 +17,8 @@ import {
   canRetryStatus,
   formatStatusLabel,
   getResultTone,
+  getStageProgress,
+  hasViewableResults,
   isCompletedStatus,
   isFailedStatus,
 } from "@/app/lib/assessment/results";
@@ -44,6 +47,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
     statusFilter,
     setStatusFilter,
     rerunningId,
+    resumingId,
     retryingAssessmentId,
     expandedId,
     downloadingId,
@@ -51,6 +55,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
     handleExpand,
     handleRetryAssessment,
     handleRerun,
+    handleResume,
     handlePreview,
     handleAssessmentDownload,
     handleRunDownload,
@@ -236,7 +241,12 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                                 const isCompletedChild = isCompletedStatus(
                                   childRun.status,
                                 );
+                                const stageProgress =
+                                  getStageProgress(childRun);
+                                const canPreview = hasViewableResults(childRun);
                                 const isRerunning = rerunningId === childRun.id;
+                                const isResuming = resumingId === childRun.id;
+                                const canResume = Boolean(childRun.stage);
                                 const configKey =
                                   childRun.config_id && childRun.config_version
                                     ? `${childRun.config_id}:${childRun.config_version}`
@@ -307,21 +317,84 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                                               </span>
                                             )}
                                           </div>
-                                          {childRun.l1_total_rows != null && (
+                                          {childRun.prefilter_total_rows !=
+                                            null && (
                                             <div className="mt-1.5 text-xs text-text-secondary">
-                                              L1:{" "}
-                                              {childRun.l1_total_passed ?? 0}/
-                                              {childRun.l1_total_rows} passed
-                                              {childRun.l1_total_rejected !=
+                                              Prefilter:{" "}
+                                              {childRun.prefilter_total_passed ??
+                                                0}
+                                              /{childRun.prefilter_total_rows}{" "}
+                                              passed
+                                              {childRun.prefilter_total_rejected !=
                                                 null &&
-                                                childRun.l1_total_rejected >
+                                                childRun.prefilter_total_rejected >
                                                   0 && (
                                                   <span className="ml-1 text-status-warning-text">
                                                     ·{" "}
-                                                    {childRun.l1_total_rejected}{" "}
+                                                    {
+                                                      childRun.prefilter_total_rejected
+                                                    }{" "}
                                                     rejected
                                                   </span>
                                                 )}
+                                            </div>
+                                          )}
+
+                                          {stageProgress.length > 0 && (
+                                            <div className="mt-3 flex items-center">
+                                              {stageProgress.map((s, i) => {
+                                                const done =
+                                                  s.status === "completed";
+                                                const failed =
+                                                  s.status === "failed";
+                                                const active =
+                                                  s.status === "processing";
+                                                const nodeClass = done
+                                                  ? "bg-status-success border-status-success text-white"
+                                                  : failed
+                                                    ? "bg-status-error border-status-error text-white"
+                                                    : active
+                                                      ? "border-status-warning text-status-warning-text"
+                                                      : "border-border text-text-secondary";
+                                                const labelClass = done
+                                                  ? "text-text-primary"
+                                                  : active
+                                                    ? "text-status-warning-text"
+                                                    : failed
+                                                      ? "text-status-error-text"
+                                                      : "text-text-secondary";
+                                                const prevDone =
+                                                  i > 0 &&
+                                                  stageProgress[i - 1]
+                                                    .status === "completed";
+                                                return (
+                                                  <Fragment key={s.stage}>
+                                                    {i > 0 && (
+                                                      <div
+                                                        className={`h-px w-6 ${prevDone ? "bg-status-success" : "bg-border"}`}
+                                                      />
+                                                    )}
+                                                    <div className="flex items-center gap-1.5">
+                                                      <span
+                                                        className={`flex h-4 w-4 items-center justify-center rounded-full border text-[9px] font-bold leading-none ${nodeClass} ${active ? "animate-pulse" : ""}`}
+                                                      >
+                                                        {done
+                                                          ? "✓"
+                                                          : failed
+                                                            ? "✗"
+                                                            : active
+                                                              ? "●"
+                                                              : ""}
+                                                      </span>
+                                                      <span
+                                                        className={`text-[11px] font-medium ${labelClass}`}
+                                                      >
+                                                        {s.label}
+                                                      </span>
+                                                    </div>
+                                                  </Fragment>
+                                                );
+                                              })}
                                             </div>
                                           )}
 
@@ -344,7 +417,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                                           >
                                             {formatStatusLabel(childRun.status)}
                                           </span>
-                                          {isCompletedChild && (
+                                          {canPreview && (
                                             <Button
                                               type="button"
                                               variant="outline"
@@ -375,19 +448,39 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                                               }
                                             />
                                           )}
-                                          {isFailedChild && (
+                                          {isFailedChild && canResume && (
                                             <Button
                                               type="button"
                                               size="sm"
                                               onClick={() =>
+                                                handleResume(childRun)
+                                              }
+                                              disabled={
+                                                isResuming || isRerunning
+                                              }
+                                              className="!rounded-lg !px-3 !py-1.5 !text-xs"
+                                            >
+                                              {isResuming
+                                                ? "Resuming..."
+                                                : "Retry from failed stage"}
+                                            </Button>
+                                          )}
+                                          {isFailedChild && (
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant="secondary"
+                                              onClick={() =>
                                                 handleRerun(childRun)
                                               }
-                                              disabled={isRerunning}
+                                              disabled={
+                                                isRerunning || isResuming
+                                              }
                                               className="!rounded-lg !px-3 !py-1.5 !text-xs"
                                             >
                                               {isRerunning
                                                 ? "Re-running..."
-                                                : "Re-run"}
+                                                : "Retry all"}
                                             </Button>
                                           )}
                                         </div>

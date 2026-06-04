@@ -22,7 +22,7 @@ import type {
   AssessmentTab,
   AssessmentTabId,
   ConfigSelection,
-  L1Config,
+  PrefilterConfig,
   PostProcessingConfig,
   SchemaProperty,
 } from "@/app/lib/types/assessment";
@@ -102,7 +102,8 @@ function PageContent() {
   const [systemInstruction, setSystemInstruction] = useState("");
   const [outputSchema, setOutputSchema] = useState<SchemaProperty[]>([]);
   const [configs, setConfigs] = useState<ConfigSelection[]>([]);
-  const [l1Config, setL1Config] = useState<L1Config | null>(null);
+  const [prefilterConfig, setPrefilterConfig] =
+    useState<PrefilterConfig | null>(null);
   const [postProcessingConfig, setPostProcessingConfig] =
     useState<PostProcessingConfig | null>(null);
 
@@ -154,7 +155,7 @@ function PageContent() {
   );
 
   useEffect(() => {
-    setL1Config(null);
+    setPrefilterConfig(null);
   }, [datasetId]);
 
   const outputSchemaJson = useMemo(
@@ -199,14 +200,19 @@ function PageContent() {
           system_instruction: systemInstruction.trim() || null,
           text_columns: columnMapping.textColumns,
           attachments: columnMapping.attachments.map(
-            ({ column, type, format }) => ({ column, type, format }),
+            ({ column, type, format, type_column, type_value_map }) => ({
+              column,
+              type,
+              format,
+              ...(type_column ? { type_column, type_value_map } : {}),
+            }),
           ),
           output_schema: outputSchemaJson,
           configs: configs.map(({ config_id, config_version }) => ({
             config_id,
             config_version,
           })),
-          l1_config: l1Config ?? null,
+          prefilter_config: prefilterConfig ?? null,
           post_processing_config: postProcessingConfig ?? null,
         }),
       });
@@ -220,7 +226,7 @@ function PageContent() {
       setPromptTemplate("");
       setOutputSchema([]);
       setConfigs([]);
-      setL1Config(null);
+      setPrefilterConfig(null);
       setPostProcessingConfig(null);
       setActiveTab("results");
     } catch (error) {
@@ -238,7 +244,7 @@ function PageContent() {
     datasetId,
     experimentName,
     handleForbiddenWithNotify,
-    l1Config,
+    prefilterConfig,
     outputSchema,
     outputSchemaJson,
     postProcessingConfig,
@@ -260,7 +266,7 @@ function PageContent() {
     promptTemplate,
     outputSchema,
     configs,
-    l1Config,
+    prefilterConfig,
     postProcessingConfig,
   };
 
@@ -296,7 +302,7 @@ function PageContent() {
   const effectiveCompletedConfigSteps = useMemo(() => {
     const merged = new Set(completedConfigSteps);
     if (hasMapperSelection) merged.add(1);
-    if (hasMapperSelection) merged.add(2); // L1 Filters is optional and always passable
+    if (hasMapperSelection) merged.add(2); // Prefilter is optional and always passable
     if (canReachReview) merged.add(3);
     if (canReachReview) merged.add(4); // Post Processing is optional and always passable
     return merged;
@@ -330,7 +336,7 @@ function PageContent() {
         formState,
         hasDataset,
         isSubmitting,
-        l1Config,
+        prefilterConfig,
         outputSchema,
         systemInstruction,
         promptTemplate,
@@ -340,7 +346,7 @@ function PageContent() {
         setConfigStep,
         setConfigs,
         setExperimentName,
-        setL1Config,
+        setPrefilterConfig,
         setOutputSchema,
         setSystemInstruction,
         setPromptTemplate,

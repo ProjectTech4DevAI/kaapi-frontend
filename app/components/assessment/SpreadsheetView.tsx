@@ -12,6 +12,7 @@ import {
   loadSpreadsheetState,
   persistSpreadsheetState,
   rowsToCsv,
+  savedSnapshotMatchesHeaders,
   spreadsheetSnapshotToRows,
 } from "@/app/lib/assessment/results";
 import { SPREADSHEET_STATE_DEBOUNCE_MS } from "@/app/lib/assessment/constants";
@@ -68,8 +69,15 @@ export default function SpreadsheetView({
     const api = univerAPI as unknown as UniverAPI;
     univerRef.current = api;
 
+    // Use the cached snapshot only when its columns still match the fresh data,
+    // so newly-available columns (e.g. duplicate detection, L2 output) aren't
+    // hidden by a stale snapshot persisted from an earlier, partial state.
     const saved = loadSpreadsheetState(runId);
-    api.createUniverSheet(saved ?? buildSpreadsheetWorkbookData(headers, rows));
+    const useSaved =
+      saved != null && savedSnapshotMatchesHeaders(saved, headers);
+    api.createUniverSheet(
+      useSaved ? saved : buildSpreadsheetWorkbookData(headers, rows),
+    );
 
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let lastSerialized: string | null = null;

@@ -1,5 +1,6 @@
 // Result status utilities: status checks, counts, filters, and label formatting for assessment runs.
 import type {
+  AssessmentChildRun,
   AssessmentRun,
   ResultTone,
   ResultsCounts,
@@ -12,7 +13,59 @@ import {
   FAILED_ASSESSMENT_STATUSES,
   SPREADSHEET_STATE_SCHEMA_VERSION,
   SPREADSHEET_STATE_STORAGE_PREFIX,
+  STAGE_LABELS,
 } from "@/app/lib/assessment/constants";
+
+export type StageProgressStatus =
+  | "completed"
+  | "processing"
+  | "pending"
+  | "failed";
+
+export interface StageProgress {
+  stage: string;
+  label: string;
+  status: StageProgressStatus;
+}
+
+// Per-stage progress for a child run, derived from pipeline + stage + stage_status.
+export function getStageProgress(run: AssessmentChildRun): StageProgress[] {
+  const stages = run.pipeline?.stages ?? [];
+  if (stages.length === 0 || !run.stage) return [];
+
+  // Terminal markers carry no pipeline position; let the status badge speak.
+  if (run.stage === "FAILED") return [];
+  if (run.stage === "COMPLETED") {
+    return stages.map((s) => ({
+      stage: s.stage,
+      label: STAGE_LABELS[s.stage] ?? s.stage,
+      status: "completed" as const,
+    }));
+  }
+
+  const currentIndex = stages.findIndex((s) => s.stage === run.stage);
+  return stages.map((s, i) => {
+    let status: StageProgressStatus;
+    if (i < currentIndex) {
+      status = "completed";
+    } else if (i > currentIndex) {
+      status = "pending";
+    } else if (run.stage_status === "COMPLETED") {
+      status = "completed";
+    } else if (run.stage_status === "FAILED") {
+      status = "failed";
+    } else {
+      status = "processing";
+    }
+    return { stage: s.stage, label: STAGE_LABELS[s.stage] ?? s.stage, status };
+  });
+}
+
+// True once any stage has completed, so partial results are worth previewing.
+export function hasViewableResults(run: AssessmentChildRun): boolean {
+  if (isCompletedStatus(run.status)) return true;
+  return getStageProgress(run).some((s) => s.status === "completed");
+}
 
 export function isActiveStatus(status: string): boolean {
   return ACTIVE_ASSESSMENT_STATUSES.has(status);
@@ -75,7 +128,7 @@ export function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
 
 export function getResultTone(status: string): ResultTone {
   if (isCompletedStatus(status)) return "success";
-  if (status === "failed" || status === "l1_failed") return "error";
+  if (status === "failed" || status === "prefilter_failed") return "error";
   if (isActiveStatus(status) || status === "completed_with_errors") {
     return "warning";
   }
@@ -265,6 +318,18 @@ export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
     matrix.push(row);
   }
   return matrix;
+}
+
+/** True when a saved snapshot's header row still matches the fresh headers.
+ *  Lets us keep user edits when columns are unchanged but discard a stale
+ *  snapshot once new columns (e.g. duplicate detection) appear. */
+export function savedSnapshotMatchesHeaders(
+  snapshot: object,
+  headers: string[],
+): boolean {
+  const savedHeaders = spreadsheetSnapshotToRows(snapshot)[0] ?? [];
+  if (savedHeaders.length < headers.length) return false;
+  return headers.every((h, i) => savedHeaders[i] === h);
 }
 
 /** Serialize a string matrix to CSV with RFC-4180 quoting. */

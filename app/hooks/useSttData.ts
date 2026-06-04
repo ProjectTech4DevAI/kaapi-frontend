@@ -14,23 +14,8 @@ import {
   DatasetsResponse,
   RunsResponse,
   RunDetailResponse,
+  UseSttDataResult,
 } from "@/app/lib/types/speechToText";
-
-interface UseSttDataResult {
-  languages: Language[];
-  datasets: Dataset[];
-  runs: STTRun[];
-  results: STTResult[];
-  selectedRunId: number | null;
-  setSelectedRunId: (id: number | null) => void;
-  setResults: React.Dispatch<React.SetStateAction<STTResult[]>>;
-  isLoadingDatasets: boolean;
-  isLoadingRuns: boolean;
-  isLoadingResults: boolean;
-  loadDatasets: () => Promise<void>;
-  loadRuns: () => Promise<void>;
-  loadResults: (runId: number) => Promise<void>;
-}
 
 export function useSttData(
   activeTab: "datasets" | "evaluations",

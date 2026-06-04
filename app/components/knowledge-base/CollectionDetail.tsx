@@ -125,7 +125,7 @@ export default function CollectionDetail({
           </h3>
           {documents.length > 0 && (
             <Button
-              variant="outline"
+              variant="primary"
               size="sm"
               onClick={() => onPreviewDocument(documents[0])}
             >

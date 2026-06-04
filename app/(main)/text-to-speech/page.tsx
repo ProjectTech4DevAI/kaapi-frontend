@@ -15,8 +15,7 @@ import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import DatasetsTab from "@/app/components/text-to-speech/DatasetsTab";
-import EvaluationsTab from "@/app/components/text-to-speech/EvaluationsTab";
+import { DatasetsTab, EvaluationsTab } from "@/app/components/text-to-speech";
 import {
   TTSTab,
   TextSample,

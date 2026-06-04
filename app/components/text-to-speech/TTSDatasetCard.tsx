@@ -2,7 +2,7 @@
 
 import { TTSDataset } from "@/app/lib/types/textToSpeech";
 import { Button } from "@/app/components/ui";
-import TTSDatasetDescription from "@/app/components/text-to-speech/DatasetDescription";
+import TTSDatasetDescription from "./DatasetDescription";
 
 interface TTSDatasetCardProps {
   dataset: TTSDataset;

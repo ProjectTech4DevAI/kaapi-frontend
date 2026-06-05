@@ -1,28 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
-
-/**
- * Same-origin proxy for document content.
- *
- * Object-storage signed URLs are typically public for GET, but they (a) live
- * on a different origin so the browser blocks fetch() via CORS, and (b) often
- * set Content-Disposition: attachment so the browser downloads instead of
- * rendering. Both problems disappear when the bytes come from our own origin.
- *
- * The route fetches the document's signed URL server-side and streams the
- * bytes back with the upstream Content-Type intact (no attachment header).
- */
-
-interface DocumentDetail {
-  signed_url?: string;
-  fname?: string;
-}
-
-interface DocumentDetailEnvelope {
-  data?: DocumentDetail;
-  signed_url?: string;
-  fname?: string;
-}
+import { DocumentDetailEnvelope } from "@/app/lib/types/document";
 
 export async function GET(
   request: Request,

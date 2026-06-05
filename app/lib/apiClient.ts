@@ -4,7 +4,6 @@ import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 export type UploadPhase = "uploading" | "processing" | "done";
 
-/** Coalesces concurrent refresh calls into a single request. */
 let refreshPromise: Promise<boolean> | null = null;
 
 /**
@@ -224,7 +223,6 @@ export async function apiFetch<T>(
     throw new Error(message);
   }
 
-  // Auth endpoints (login, register, etc.) — never auto-refresh, just throw
   if (url.startsWith("/api/auth/")) {
     throw new Error(message);
   }
@@ -251,4 +249,39 @@ export async function apiFetch<T>(
   // Refresh failed → both tokens expired, force logout
   dispatchAuthExpired();
   throw new Error("Session expired. Please log in again.");
+}
+
+/**
+ * Authenticated fetch that returns the raw `Response`, with the same
+ * X-API-KEY + cookie + silent-refresh-on-401 behaviour as `apiFetch`.
+ */
+export async function apiFetchResponse(
+  url: string,
+  apiKey: string,
+  options: RequestInit = {},
+): Promise<Response> {
+  const buildHeaders = () => {
+    const headers = new Headers(options.headers);
+    if (apiKey) headers.set("X-API-KEY", apiKey);
+    return headers;
+  };
+
+  const doFetch = () =>
+    fetch(url, {
+      ...options,
+      headers: buildHeaders(),
+      credentials: "include",
+    });
+
+  const res = await doFetch();
+  if (res.ok || res.status !== 401) return res;
+
+  // Auth endpoints — never auto-refresh.
+  if (url.startsWith("/api/auth/")) return res;
+
+  const refreshed = await tryRefreshToken();
+  if (refreshed) return doFetch();
+
+  dispatchAuthExpired();
+  return res;
 }

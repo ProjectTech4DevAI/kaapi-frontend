@@ -4,24 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Loader, Modal } from "@/app/components/ui";
 import { DownloadIcon } from "@/app/components/icons";
 import { formatDate } from "@/app/components/utils";
-import { Document } from "@/app/lib/types/document";
 import {
+  Document,
   DocumentPreviewKind,
-  getDocumentPreviewSource,
-} from "@/app/lib/utils/documentPreview";
-import CsvPreview from "./CsvPreview";
-
-interface DocumentPreviewModalProps {
-  open: boolean;
-  onClose: () => void;
-  documents: Document[];
-  previewDoc: Document | null;
-  isLoading?: boolean;
-  onSelectDocument: (doc: Document) => void;
-}
+  DocumentPreviewModalProps,
+  DocumentSidebarProps,
+  PreviewPaneProps,
+} from "@/app/lib/types/document";
+import { getDocumentPreviewSource } from "@/app/lib/utils/documentPreview";
+import CsvPreview from "@/app/components/knowledge-base/CsvPreview";
 
 // Native iframes are likely to silently fail (cancelled download, bad MIME);
-// viewer-rendered docs can legitimately take longer. Give each its own budget.
 const IFRAME_TIMEOUT_MS: Record<DocumentPreviewKind, number> = {
   native: 12000,
   office: 25000,
@@ -95,12 +88,6 @@ export default function DocumentPreviewModal({
       </div>
     </Modal>
   );
-}
-
-interface DocumentSidebarProps {
-  documents: Document[];
-  previewDoc: Document | null;
-  onSelectDocument: (doc: Document) => void;
 }
 
 function DocumentSidebar({
@@ -177,16 +164,6 @@ function PreviewHeader({ previewDoc }: { previewDoc: Document | null }) {
       )}
     </div>
   );
-}
-
-interface PreviewPaneProps {
-  previewDoc: Document | null;
-  previewUrl: string | null;
-  kind: DocumentPreviewKind;
-  renderIframe: boolean;
-  showLoader: boolean;
-  frameTimedOut: boolean;
-  onFrameLoad: () => void;
 }
 
 function PreviewPane({

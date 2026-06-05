@@ -8,6 +8,15 @@ export interface Document {
   updated_at?: string;
 }
 
+export interface DocumentDetail {
+  signed_url?: string;
+  fname?: string;
+}
+
+export interface DocumentDetailEnvelope extends DocumentDetail {
+  data?: DocumentDetail;
+}
+
 export interface Collection {
   id: string;
   name?: string;
@@ -18,4 +27,46 @@ export interface Collection {
   status?: string;
   job_id?: string;
   documents?: Document[];
+}
+
+export interface CsvPreviewProps {
+  url: string;
+}
+
+export interface DocumentPreviewModalProps {
+  open: boolean;
+  onClose: () => void;
+  documents: Document[];
+  previewDoc: Document | null;
+  isLoading?: boolean;
+  onSelectDocument: (doc: Document) => void;
+}
+
+export type DocumentPreviewKind =
+  | "native"
+  | "office"
+  | "google"
+  | "csv"
+  | "unsupported";
+
+export interface DocumentPreviewSource {
+  kind: DocumentPreviewKind;
+  url: string | null;
+  ext?: string;
+}
+
+export interface PreviewPaneProps {
+  previewDoc: Document | null;
+  previewUrl: string | null;
+  kind: DocumentPreviewKind;
+  renderIframe: boolean;
+  showLoader: boolean;
+  frameTimedOut: boolean;
+  onFrameLoad: () => void;
+}
+
+export interface DocumentSidebarProps {
+  documents: Document[];
+  previewDoc: Document | null;
+  onSelectDocument: (doc: Document) => void;
 }

@@ -1,25 +1,4 @@
-import { Document } from "@/app/lib/types/document";
-
-/**
- * How to render a document in the preview iframe:
- * - `native`     — browser can render directly (pdf, images, txt, html…)
- * - `office`     — route through Microsoft Office Online Viewer (Word/Excel/PowerPoint)
- * - `google`     — route through Google Docs Viewer (tsv — Office viewer can't handle these)
- * - `csv`        — fetch + parse client-side and render as a table (more reliable than gview)
- * - `unsupported`— no inline preview; fall back to download link
- */
-export type DocumentPreviewKind =
-  | "native"
-  | "office"
-  | "google"
-  | "csv"
-  | "unsupported";
-
-export interface DocumentPreviewSource {
-  kind: DocumentPreviewKind;
-  url: string | null;
-  ext?: string; // useful for the UI to branch on file type within a kind
-}
+import { Document, DocumentPreviewSource } from "@/app/lib/types/document";
 
 const NATIVE_EXTS = new Set([
   "pdf",

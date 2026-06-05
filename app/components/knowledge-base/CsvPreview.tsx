@@ -3,11 +3,9 @@
 import { useEffect, useState } from "react";
 import { Loader } from "@/app/components/ui";
 import { useAuth } from "@/app/lib/context/AuthContext";
+import { apiFetchResponse } from "@/app/lib/apiClient";
 import { ParsedCsv, parseCsv } from "@/app/lib/utils/csv";
-
-interface CsvPreviewProps {
-  url: string;
-}
+import { CsvPreviewProps } from "@/app/lib/types/document";
 
 export default function CsvPreview({ url }: CsvPreviewProps) {
   const { activeKey } = useAuth();
@@ -21,10 +19,7 @@ export default function CsvPreview({ url }: CsvPreviewProps) {
     setLoading(true);
     setError(null);
     setData(null);
-    fetch(url, {
-      headers: apiKey ? { "X-API-KEY": apiKey } : undefined,
-      credentials: "include",
-    })
+    apiFetchResponse(url, apiKey)
       .then((r) => {
         if (!r.ok) throw new Error(`Server returned ${r.status}`);
         return r.text();

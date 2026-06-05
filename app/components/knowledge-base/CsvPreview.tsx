@@ -49,7 +49,7 @@ export default function CsvPreview({ url }: CsvPreviewProps) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 px-6 text-center">
         <p className="text-sm text-text-secondary">
-          Couldn't load CSV preview.
+          Couldn&apos;t load CSV preview.
         </p>
         <p className="text-xs text-text-secondary">{error}</p>
       </div>

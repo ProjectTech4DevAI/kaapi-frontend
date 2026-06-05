@@ -251,8 +251,7 @@ a {
 }
 
 /**
- * Global scrollbar styling — applies the accent-primary colour to every
- * scrollable container in the app.
+ * Global scrollbar styling — applies the accent-primary colour to every scrollable container
  */
 ::-webkit-scrollbar {
   width: 6px;

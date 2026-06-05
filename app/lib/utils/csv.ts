@@ -1,4 +1,8 @@
-/** Parse a single CSV line. Handles quoted fields and escaped quotes ("") */
+import { ParsedCsv } from "@/app/lib/types/document";
+
+/**
+ * Parse a single CSV line. Handles quoted fields and escaped quotes ("")
+ **/
 export const parseCsvRow = (line: string): string[] => {
   const result: string[] = [];
   let current = "";
@@ -22,12 +26,9 @@ export const parseCsvRow = (line: string): string[] => {
   return result;
 };
 
-export interface ParsedCsv {
-  headers: string[];
-  rows: string[][];
-}
-
-/** Parse a CSV file into headers + rows. First non-empty line is treated as the header row. */
+/**
+ * Parse a CSV file into headers + rows. First non-empty line is treated as the header row.
+ **/
 export const parseCsv = (text: string): ParsedCsv => {
   const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
   const headers = lines.length > 0 ? parseCsvRow(lines[0]) : [];

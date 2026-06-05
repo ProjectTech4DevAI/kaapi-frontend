@@ -70,3 +70,8 @@ export interface DocumentSidebarProps {
   previewDoc: Document | null;
   onSelectDocument: (doc: Document) => void;
 }
+
+export interface ParsedCsv {
+  headers: string[];
+  rows: string[][];
+}

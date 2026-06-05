@@ -73,6 +73,5 @@ export function getDocumentPreviewSource(
     };
   }
 
-  // Known unsupported types — explicit download fallback
   return { kind: "unsupported", url: doc.signed_url, ext };
 }

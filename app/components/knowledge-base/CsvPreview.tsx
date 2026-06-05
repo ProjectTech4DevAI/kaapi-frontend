@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Loader } from "@/app/components/ui";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetchResponse } from "@/app/lib/apiClient";
-import { ParsedCsv, parseCsv } from "@/app/lib/utils/csv";
-import { CsvPreviewProps } from "@/app/lib/types/document";
+import { parseCsv } from "@/app/lib/utils/csv";
+import { CsvPreviewProps, ParsedCsv } from "@/app/lib/types/document";
 
 export default function CsvPreview({ url }: CsvPreviewProps) {
   const { activeKey } = useAuth();

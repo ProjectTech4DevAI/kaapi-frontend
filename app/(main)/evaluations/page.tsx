@@ -18,8 +18,7 @@ import { useApp } from "@/app/lib/context/AppContext";
 import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import { Loader, TabNavigation } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
-import DatasetsTab from "@/app/components/evaluations/DatasetsTab";
-import EvaluationsTab from "@/app/components/evaluations/EvaluationsTab";
+import { DatasetsTab, EvaluationsTab } from "@/app/components/evaluations";
 import { Tab } from "@/app/lib/types/evaluation";
 
 const leftPanelWidth = 450;
@@ -120,12 +119,13 @@ function SimplifiedEvalContent() {
           .toLowerCase(),
       );
       const required = ["question", "answer"];
+      const allowed = new Set([...required, "category"]);
       const hasRequired = required.every((col) => headers.includes(col));
-      const hasExtra = headers.some((col) => !required.includes(col));
+      const hasExtra = headers.some((col) => !allowed.has(col));
 
       if (!hasRequired || hasExtra) {
         toast.error(
-          'CSV must have exactly two columns: "question" and "answer"',
+          'CSV must have "question" and "answer" columns (optional: "category")',
         );
         event.target.value = "";
         return;

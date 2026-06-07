@@ -15,7 +15,7 @@ import {
 } from "@/app/lib/utils/evaluation";
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
-import GroupedResultsTable from "@/app/components/evaluations/GroupedResultsTable";
+import { GroupedResultsTable } from "@/app/components/evaluations";
 
 interface DetailedResultsTableProps {
   job: EvalJob;
@@ -63,8 +63,13 @@ export default function DetailedResultsTable({
   const scoreNames =
     individual_scores[0]?.trace_scores?.map((s) => s.name) || [];
 
+  const hasAnyCategory = individual_scores.some(
+    (s) => (s.category ?? "").trim().length > 0,
+  );
+
   const COLUMN_WIDTHS = {
     index: 50,
+    category: 130,
     question: 250,
     groundTruth: 250,
     answer: 250,
@@ -72,6 +77,7 @@ export default function DetailedResultsTable({
   };
   const tableMinWidth =
     COLUMN_WIDTHS.index +
+    (hasAnyCategory ? COLUMN_WIDTHS.category : 0) +
     COLUMN_WIDTHS.question +
     COLUMN_WIDTHS.groundTruth +
     COLUMN_WIDTHS.answer +
@@ -90,6 +96,14 @@ export default function DetailedResultsTable({
                 className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.index}px` }}
               ></th>
+              {hasAnyCategory && (
+                <th
+                  className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
+                  style={{ width: `${COLUMN_WIDTHS.category}px` }}
+                >
+                  Category
+                </th>
+              )}
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.question}px` }}
@@ -134,6 +148,18 @@ export default function DetailedResultsTable({
                   <td className="px-4 py-3 text-sm font-medium align-top text-text-secondary">
                     {index + 1}
                   </td>
+
+                  {hasAnyCategory && (
+                    <td className="px-4 py-3 align-top bg-bg-primary">
+                      {item.category ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent-primary/10 text-accent-primary">
+                          {item.category}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-text-secondary">—</span>
+                      )}
+                    </td>
+                  )}
 
                   <td className="px-4 py-3 align-top bg-bg-primary">
                     <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">

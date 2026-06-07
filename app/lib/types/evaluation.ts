@@ -12,6 +12,8 @@ export interface TraceItem {
   question: string;
   llm_answer: string;
   ground_truth_answer: string;
+  question_id?: number;
+  category?: string;
   scores: TraceScore[];
 }
 
@@ -21,11 +23,13 @@ export interface GroupedTraceItem {
   ground_truth_answer: string;
   llm_answers: string[];
   trace_ids: string[];
+  category?: string;
   scores: TraceScore[][];
 }
 
 export interface IndividualScore {
   trace_id: string;
+  category?: string;
   input?: {
     question: string;
   };
@@ -40,6 +44,17 @@ export interface IndividualScore {
   trace_scores: TraceScore[];
 }
 
+/**
+ * Aggregate metrics for one category, computed server-side from the eval
+ * traces. `avg_correctness` is null when the eval didn't run an LLM judge.
+ */
+export interface CategoryMetric {
+  category: string;
+  total_evals: number;
+  avg_cosine: number | null;
+  avg_correctness: number | null;
+}
+
 export interface SummaryScore {
   name: string;
   avg?: number;
@@ -52,6 +67,7 @@ export interface SummaryScore {
 export interface NewScoreObjectV2 {
   summary_scores: SummaryScore[];
   traces: TraceItem[] | GroupedTraceItem[];
+  category_metrics?: CategoryMetric[];
 }
 
 export interface PerItemScore {

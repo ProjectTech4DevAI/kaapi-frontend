@@ -275,7 +275,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   },
   {
     provider: "google",
-    model_name: "gemini-3.1-flash-lite-preview",
+    model_name: "gemini-3.1-flash-lite",
     config: GEMINI_THINKING_CONFIG,
   },
   {

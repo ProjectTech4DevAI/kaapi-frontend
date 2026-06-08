@@ -1,7 +1,7 @@
 // Shared TypeScript types for the Assessment feature.
 import type { Dispatch, SetStateAction } from "react";
 import type { Dataset } from "@/app/lib/types/dataset";
-import type { ConfigVersionItems } from "@/app/lib/types/configs";
+import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
 
 export type ValueSetter<T> = (value: T) => void;
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
@@ -20,8 +20,11 @@ export interface LabeledValue<T = string> {
 
 export interface Attachment {
   column: string;
-  type: "image" | "pdf";
+  type: "image" | "pdf" | "mixed";
   format: "url" | "base64";
+  // For 'mixed': column whose value decides each row's type + the value->type map.
+  type_column?: string | null;
+  type_value_map?: Record<string, string> | null;
 }
 
 export interface ConfigRef {
@@ -62,6 +65,28 @@ export interface SchemaProperty {
   enumValues: string[];
 }
 
+export interface PrefilterTopicRelevanceConfig {
+  columns: string[];
+  attachment_columns?: string[];
+  prompt: string;
+}
+
+export interface PrefilterDuplicateDetectionConfig {
+  columns: string[];
+}
+
+export interface PrefilterConfig {
+  topic_relevance?: PrefilterTopicRelevanceConfig;
+  duplicate_detection?: PrefilterDuplicateDetectionConfig;
+}
+
+export interface PrefilterStepProps extends StepNavigationProps {
+  columns: string[];
+  attachmentColumns?: string[];
+  prefilterConfig: PrefilterConfig | null;
+  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
+}
+
 export interface AssessmentFormState {
   experimentName: string;
   datasetId: string;
@@ -73,6 +98,8 @@ export interface AssessmentFormState {
   promptTemplate: string;
   outputSchema: SchemaProperty[];
   configs: ConfigSelection[];
+  prefilterConfig: PrefilterConfig | null;
+  postProcessingConfig: PostProcessingConfig | null;
 }
 
 export interface AssessmentDatasetState {
@@ -140,8 +167,12 @@ export interface WithForbiddenHandler {
 
 export interface ColumnConfig {
   role: ColumnRole;
-  attachmentType?: "image" | "pdf";
+  attachmentType?: "image" | "pdf" | "mixed";
   attachmentFormat?: string;
+  // For 'mixed': the type-deciding column + comma-separated values per type.
+  attachmentTypeColumn?: string;
+  attachmentImageValues?: string;
+  attachmentPdfValues?: string;
 }
 
 export interface RoleVisuals {
@@ -163,10 +194,12 @@ export interface ConfigPanelProps {
   completedSteps: Set<number>;
   configStep: number;
   configs: ConfigSelection[];
+  datasetId: string | null;
   experimentName: string;
   formState: AssessmentFormState;
   hasDataset: boolean;
   isSubmitting: boolean;
+  prefilterConfig: PrefilterConfig | null;
   outputSchema: SchemaProperty[];
   systemInstruction: string;
   promptTemplate: string;
@@ -176,9 +209,12 @@ export interface ConfigPanelProps {
   setConfigStep: ValueSetter<number>;
   setConfigs: StateSetter<ConfigSelection[]>;
   setExperimentName: ValueSetter<string>;
+  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
   setOutputSchema: ValueSetter<SchemaProperty[]>;
   setSystemInstruction: ValueSetter<string>;
   setPromptTemplate: ValueSetter<string>;
+  postProcessingConfig: PostProcessingConfig | null;
+  setPostProcessingConfig: ValueSetter<PostProcessingConfig | null>;
   submitBlockerMessage: string;
   onSubmit: () => void;
   onStepComplete: ValueSetter<number>;
@@ -203,6 +239,16 @@ export interface PageLayoutProps {
   evaluationsTabProps: EvaluationsTabProps;
 }
 
+export interface PipelineStageEntry {
+  stage: string;
+  type?: string;
+  order?: number;
+}
+
+export interface PipelineConfig {
+  stages: PipelineStageEntry[];
+}
+
 export interface AssessmentRunStat {
   run_id: number;
   config_id: string | null;
@@ -211,6 +257,11 @@ export interface AssessmentRunStat {
   total_items: number;
   error_message: string | null;
   updated_at: string | null;
+  prefilter_total_rows: number | null;
+  prefilter_total_passed: number | null;
+  prefilter_total_rejected: number | null;
+  stage: string | null;
+  stage_status: string | null;
 }
 
 export interface AssessmentRun {
@@ -230,6 +281,52 @@ export interface AssessmentRun {
   updated_at: string;
 }
 
+export interface PostProcessingComputedColumn {
+  name: string;
+  formula: string;
+}
+
+export interface PostProcessingSortRule {
+  column: string;
+  direction: "asc" | "desc";
+}
+
+export interface PostProcessingFilterRule {
+  column: string;
+  op:
+    | "eq"
+    | "ne"
+    | "gt"
+    | "lt"
+    | "gte"
+    | "lte"
+    | "contains"
+    | "not_contains"
+    | "is_empty"
+    | "is_not_empty";
+  value?: string | number;
+}
+
+export interface PostProcessingConfig {
+  computed_columns: PostProcessingComputedColumn[];
+  sort: PostProcessingSortRule[];
+  filter: PostProcessingFilterRule[];
+}
+
+export interface PostProcessingStepProps extends StepNavigationProps {
+  postProcessingConfig: PostProcessingConfig | null;
+  setPostProcessingConfig: (config: PostProcessingConfig | null) => void;
+  columnMapping: ColumnMapping;
+  outputSchema: SchemaProperty[];
+}
+
+export interface PostProcessingPanelProps {
+  availableColumns: string[];
+  fetchColumns?: () => Promise<string[]>;
+  initialConfig: PostProcessingConfig | null;
+  onSave: (config: PostProcessingConfig) => Promise<void>;
+}
+
 export interface AssessmentChildRun {
   id: number;
   assessment_id: number | null;
@@ -244,6 +341,13 @@ export interface AssessmentChildRun {
   organization_id: number;
   project_id: number;
   assessment_config: Record<string, unknown> | null;
+  prefilter_total_rows: number | null;
+  prefilter_total_passed: number | null;
+  prefilter_total_rejected: number | null;
+  stage: string | null;
+  stage_status: string | null;
+  pipeline: PipelineConfig | null;
+  post_processing_config: PostProcessingConfig | null;
   inserted_at: string;
   updated_at: string;
 }
@@ -347,7 +451,38 @@ export interface VersionListState {
   nextSkip: number;
 }
 
+export type LatestConfigModel = { provider: string; model: string } | null;
+
+export interface SavedConfigCardProps {
+  config: ConfigPublic;
+  versions: VersionListState;
+  latestModel: LatestConfigModel;
+  expanded: boolean;
+  loadingSelectionKeys: Record<string, boolean>;
+  isSelected: (configId: string, version: number) => boolean;
+  onLoadVersions: (configId: string, skip: number) => void;
+  onToggleExpansion: ValueSetter<string>;
+  onToggleVersionSelection: (
+    config: ConfigPublic,
+    version: number,
+  ) => void | Promise<void>;
+}
+
+export interface PromptAndConfigStepProps extends StepNavigationProps {
+  textColumns: string[];
+  sampleRow: SampleRow;
+  systemInstruction: string;
+  setSystemInstruction: ValueSetter<string>;
+  promptTemplate: string;
+  setPromptTemplate: ValueSetter<string>;
+  configs: ConfigSelection[];
+  setConfigs: StateSetter<ConfigSelection[]>;
+  outputSchema: SchemaProperty[];
+  setOutputSchema: ValueSetter<SchemaProperty[]>;
+}
+
 export const ATTACHMENT_FORMATS: Record<string, string[]> = {
+  mixed: ["url", "base64"],
   image: ["url", "base64"],
   pdf: ["url", "base64"],
 };

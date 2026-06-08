@@ -1,11 +1,13 @@
 "use client";
 
-// Multi-step wizard (Column Mapper → Prompt & Config → Review) for configuring an assessment run.
+// Multi-step wizard (Mapper → Eliminatory → Evaluation → Post Processing → Review)
 import { Button } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
 import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";
 import type { ConfigPanelProps } from "@/app/lib/types/assessment";
 import ColumnMapperStep from "./ColumnMapperStep";
+import PrefilterStep from "./PrefilterStep";
+import PostProcessingStep from "./PostProcessingStep";
 import PromptAndConfigStep from "./PromptAndConfigStep";
 import ReviewStep from "./ReviewStep";
 import Stepper from "./Stepper";
@@ -17,19 +19,24 @@ export default function ConfigPanel({
   completedSteps,
   configStep,
   configs,
+  datasetId,
   experimentName,
   formState,
   hasDataset,
   isSubmitting,
+  prefilterConfig,
   outputSchema,
   systemInstruction,
   promptTemplate,
+  postProcessingConfig,
+  setPostProcessingConfig,
   sampleRow,
   setActiveTabToDatasets,
   setColumnMapping,
   setConfigStep,
   setConfigs,
   setExperimentName,
+  setPrefilterConfig,
   setOutputSchema,
   setSystemInstruction,
   setPromptTemplate,
@@ -82,9 +89,26 @@ export default function ConfigPanel({
             onBack={setActiveTabToDatasets}
           />
         </div>
+
         <div
           className={
             configStep === 2 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
+          }
+        >
+          <PrefilterStep
+            key={datasetId ?? "no-dataset"}
+            columns={columnMapping.textColumns}
+            attachmentColumns={columnMapping.attachments.map((a) => a.column)}
+            prefilterConfig={prefilterConfig}
+            setPrefilterConfig={setPrefilterConfig}
+            onNext={() => onStepComplete(2)}
+            onBack={() => setConfigStep(1)}
+          />
+        </div>
+
+        <div
+          className={
+            configStep === 3 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
           }
         >
           <PromptAndConfigStep
@@ -98,13 +122,29 @@ export default function ConfigPanel({
             setConfigs={setConfigs}
             outputSchema={outputSchema}
             setOutputSchema={setOutputSchema}
-            onNext={() => onStepComplete(2)}
-            onBack={() => setConfigStep(1)}
+            onNext={() => onStepComplete(3)}
+            onBack={() => setConfigStep(2)}
           />
         </div>
+
         <div
           className={
-            configStep === 3 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
+            configStep === 4 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
+          }
+        >
+          <PostProcessingStep
+            postProcessingConfig={postProcessingConfig}
+            setPostProcessingConfig={setPostProcessingConfig}
+            columnMapping={columnMapping}
+            outputSchema={outputSchema}
+            onNext={() => onStepComplete(4)}
+            onBack={() => setConfigStep(3)}
+          />
+        </div>
+
+        <div
+          className={
+            configStep === 5 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
           }
         >
           <ReviewStep
@@ -115,7 +155,7 @@ export default function ConfigPanel({
             canSubmit={canSubmitAssessment}
             submitBlockerMessage={submitBlockerMessage}
             onSubmit={onSubmit}
-            onBack={() => setConfigStep(2)}
+            onBack={() => setConfigStep(4)}
             onEditStep={setConfigStep}
           />
         </div>

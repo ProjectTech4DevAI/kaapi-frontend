@@ -151,13 +151,23 @@ export function buildColumnConfigs(
     const attachment = columnMapping.attachments.find(
       (item) => item.column === column,
     );
-    return attachment
-      ? {
-          role: "attachment",
-          attachmentType: attachment.type,
-          attachmentFormat: attachment.format,
-        }
-      : { role: "unmapped" };
+    if (!attachment) {
+      return { role: "unmapped" };
+    }
+    const map = attachment.type_value_map ?? {};
+    const valuesFor = (t: string) =>
+      Object.entries(map)
+        .filter(([, v]) => v === t)
+        .map(([k]) => k)
+        .join(", ");
+    return {
+      role: "attachment",
+      attachmentType: attachment.type,
+      attachmentFormat: attachment.format,
+      attachmentTypeColumn: attachment.type_column ?? undefined,
+      attachmentImageValues: valuesFor("image"),
+      attachmentPdfValues: valuesFor("pdf"),
+    };
   });
 }
 

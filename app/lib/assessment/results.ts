@@ -1,5 +1,6 @@
 // Result status utilities: status checks, counts, filters, and label formatting for assessment runs.
 import type {
+  AssessmentChildRun,
   AssessmentRun,
   ResultTone,
   ResultsCounts,
@@ -12,7 +13,59 @@ import {
   FAILED_ASSESSMENT_STATUSES,
   SPREADSHEET_STATE_SCHEMA_VERSION,
   SPREADSHEET_STATE_STORAGE_PREFIX,
+  STAGE_LABELS,
 } from "@/app/lib/assessment/constants";
+
+export type StageProgressStatus =
+  | "completed"
+  | "processing"
+  | "pending"
+  | "failed";
+
+export interface StageProgress {
+  stage: string;
+  label: string;
+  status: StageProgressStatus;
+}
+
+// Per-stage progress for a child run, derived from pipeline + stage + stage_status.
+export function getStageProgress(run: AssessmentChildRun): StageProgress[] {
+  const stages = run.pipeline?.stages ?? [];
+  if (stages.length === 0 || !run.stage) return [];
+
+  // Terminal markers carry no pipeline position; let the status badge speak.
+  if (run.stage === "FAILED") return [];
+  if (run.stage === "COMPLETED") {
+    return stages.map((s) => ({
+      stage: s.stage,
+      label: STAGE_LABELS[s.stage] ?? s.stage,
+      status: "completed" as const,
+    }));
+  }
+
+  const currentIndex = stages.findIndex((s) => s.stage === run.stage);
+  return stages.map((s, i) => {
+    let status: StageProgressStatus;
+    if (i < currentIndex) {
+      status = "completed";
+    } else if (i > currentIndex) {
+      status = "pending";
+    } else if (run.stage_status === "COMPLETED") {
+      status = "completed";
+    } else if (run.stage_status === "FAILED") {
+      status = "failed";
+    } else {
+      status = "processing";
+    }
+    return { stage: s.stage, label: STAGE_LABELS[s.stage] ?? s.stage, status };
+  });
+}
+
+// True once any stage has completed, so partial results are worth previewing.
+export function hasViewableResults(run: AssessmentChildRun): boolean {
+  if (isCompletedStatus(run.status)) return true;
+  return getStageProgress(run).some((s) => s.status === "completed");
+}
 
 export function isActiveStatus(status: string): boolean {
   return ACTIVE_ASSESSMENT_STATUSES.has(status);
@@ -30,9 +83,52 @@ export function canRetryStatus(status: string): boolean {
   return isFailedStatus(status);
 }
 
+function safeCount(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/** Backfill run-count fields from run_stats when the API omits them. */
+export function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
+  const runStats = Array.isArray(run.run_stats) ? run.run_stats : [];
+  const pendingRuns = safeCount(
+    run.pending_runs,
+    runStats.filter((item) => item.status === "pending").length,
+  );
+  const processingRuns = safeCount(
+    run.processing_runs,
+    Math.max(
+      0,
+      runStats.filter((item) => isActiveStatus(item.status)).length -
+        pendingRuns,
+    ),
+  );
+  const completedRuns = safeCount(
+    run.completed_runs,
+    runStats.filter((item) => isCompletedStatus(item.status)).length,
+  );
+  const failedRuns = safeCount(
+    run.failed_runs,
+    runStats.filter((item) => isFailedStatus(item.status)).length,
+  );
+  const totalRuns = safeCount(
+    run.total_runs,
+    runStats.length ||
+      pendingRuns + processingRuns + completedRuns + failedRuns,
+  );
+
+  return {
+    ...run,
+    total_runs: totalRuns,
+    pending_runs: pendingRuns,
+    processing_runs: processingRuns,
+    completed_runs: completedRuns,
+    failed_runs: failedRuns,
+  };
+}
+
 export function getResultTone(status: string): ResultTone {
   if (isCompletedStatus(status)) return "success";
-  if (status === "failed") return "error";
+  if (status === "failed" || status === "prefilter_failed") return "error";
   if (isActiveStatus(status) || status === "completed_with_errors") {
     return "warning";
   }
@@ -185,6 +281,62 @@ export function buildSpreadsheetWorkbookData(
     },
     styles: {},
   };
+}
+
+type SpreadsheetSnapshot = {
+  sheetOrder?: string[];
+  sheets?: Record<
+    string,
+    { cellData?: Record<string, Record<string, { v?: unknown }>> }
+  >;
+};
+
+/** Extract a row-major string matrix from a Univer workbook snapshot (includes user edits). */
+export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
+  const snap = snapshot as SpreadsheetSnapshot;
+  const sheets = snap.sheets ?? {};
+  const sheetId = snap.sheetOrder?.[0] ?? Object.keys(sheets)[0];
+  const cellData = (sheetId && sheets[sheetId]?.cellData) || {};
+
+  let maxRow = -1;
+  let maxCol = -1;
+  for (const rKey of Object.keys(cellData)) {
+    maxRow = Math.max(maxRow, Number(rKey));
+    for (const cKey of Object.keys(cellData[rKey])) {
+      maxCol = Math.max(maxCol, Number(cKey));
+    }
+  }
+  if (maxRow < 0) return [];
+
+  const matrix: string[][] = [];
+  for (let r = 0; r <= maxRow; r++) {
+    const row: string[] = [];
+    for (let c = 0; c <= maxCol; c++) {
+      const v = cellData[r]?.[c]?.v;
+      row.push(v == null ? "" : String(v));
+    }
+    matrix.push(row);
+  }
+  return matrix;
+}
+
+/** True when a saved snapshot's header row still matches the fresh headers.
+ *  Lets us keep user edits when columns are unchanged but discard a stale
+ *  snapshot once new columns (e.g. duplicate detection) appear. */
+export function savedSnapshotMatchesHeaders(
+  snapshot: object,
+  headers: string[],
+): boolean {
+  const savedHeaders = spreadsheetSnapshotToRows(snapshot)[0] ?? [];
+  if (savedHeaders.length < headers.length) return false;
+  return headers.every((h, i) => savedHeaders[i] === h);
+}
+
+/** Serialize a string matrix to CSV with RFC-4180 quoting. */
+export function rowsToCsv(matrix: string[][]): string {
+  const escape = (cell: string) =>
+    /[",\n\r]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell;
+  return matrix.map((row) => row.map(escape).join(",")).join("\r\n");
 }
 
 export function jsonResultsToTableData(

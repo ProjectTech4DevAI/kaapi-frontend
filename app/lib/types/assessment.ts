@@ -321,9 +321,7 @@ export interface PostProcessingStepProps extends StepNavigationProps {
 }
 
 export interface PostProcessingPanelProps {
-  /** Seed columns — overridden by fetchColumns when panel opens */
   availableColumns: string[];
-  /** Called once when panel first opens to get actual column names */
   fetchColumns?: () => Promise<string[]>;
   initialConfig: PostProcessingConfig | null;
   onSave: (config: PostProcessingConfig) => Promise<void>;

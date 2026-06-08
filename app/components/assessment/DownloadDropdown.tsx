@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/app/components";
 import { ChevronDownIcon } from "@/app/components/icons";
-import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
+import { DownloadIcon } from "@/app/components/icons/assessment";
 import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";
 import type { ExportFormat } from "@/app/lib/types/assessment";
 

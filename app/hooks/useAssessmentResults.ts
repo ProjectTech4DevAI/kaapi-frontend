@@ -40,7 +40,6 @@ interface UseAssessmentResultsParams {
   toast: ToastContextType;
 }
 
-// Metadata/system fields excluded when deriving post-processing column names.
 const POST_PROCESSING_NON_DATA_FIELDS = new Set([
   "assessment_id",
   "dataset_id",
@@ -449,13 +448,11 @@ export default function useAssessmentResults({
         method: "PATCH",
         body: JSON.stringify(config),
       });
-      // Refresh child runs so post_processing_config is up to date
       if (expandedId !== null) void loadChildRuns(expandedId);
     },
     [apiKey, expandedId, loadChildRuns],
   );
 
-  /** Fetch first-row JSON result to extract available column names. */
   const handleFetchRunColumns = useCallback(
     async (runId: number): Promise<string[]> => {
       try {

@@ -10,11 +10,9 @@ interface FormulaInputProps {
   columns: string[];
   placeholder?: string;
   className?: string;
-  /** Show operator toolbar above the input. Default true. */
   showOperators?: boolean;
 }
 
-/** Operators inserted at cursor. `insert` is literal text; `caretBack` moves cursor left after insert (e.g. land inside parens). */
 const OPERATORS: {
   label: string;
   insert: string;
@@ -28,11 +26,6 @@ const OPERATORS: {
   { label: "( )", insert: "()", caretBack: 1, title: "Group / precedence" },
 ];
 
-/**
- * Single-line input with @-column autocomplete + operator toolbar.
- * Typing @col inserts `@col_name` (used by backend formula engine).
- * Dropdown renders in a portal so it overflows outside any card/scroll container.
- */
 export default function FormulaInput({
   value,
   onChange,
@@ -55,7 +48,6 @@ export default function FormulaInput({
     dropdownRef,
   });
 
-  // Compute viewport coords for the portal dropdown from input rect + caret offset.
   useLayoutEffect(() => {
     if (state.query !== null && state.pos && inputRef.current) {
       const r = inputRef.current.getBoundingClientRect();
@@ -68,7 +60,6 @@ export default function FormulaInput({
     }
   }, [state.query, state.pos]);
 
-  // Insert literal text (operator/function) at cursor position.
   const insertAtCursor = (text: string, caretBack = 0) => {
     const el = inputRef.current;
     const cursor = el?.selectionStart ?? value.length;

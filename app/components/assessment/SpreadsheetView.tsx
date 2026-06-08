@@ -6,7 +6,7 @@ import { UniverSheetsCorePreset } from "@univerjs/preset-sheets-core";
 import sheetsEnUS from "@univerjs/preset-sheets-core/locales/en-US";
 import "@univerjs/preset-sheets-core/lib/index.css";
 import { Button } from "@/app/components";
-import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
+import { DownloadIcon } from "@/app/components/icons/assessment";
 import {
   buildSpreadsheetWorkbookData,
   loadSpreadsheetState,

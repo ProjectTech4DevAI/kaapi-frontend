@@ -26,10 +26,10 @@ export default function CategoryMetricsTable({
           Per-category breakdown across all evaluated items
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="max-h-80 overflow-y-auto overflow-x-auto">
         <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-bg-secondary border-b border-border">
+          <thead className="sticky top-0 z-10 bg-bg-secondary">
+            <tr className="border-b border-border">
               <th className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
                 Category
               </th>

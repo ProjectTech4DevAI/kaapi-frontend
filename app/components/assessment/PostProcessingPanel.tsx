@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components";
+import Select from "@/app/components/Select";
 import { ChevronDownIcon, CloseIcon } from "@/app/components/icons";
 import FormulaInput from "@/app/components/shared/FormulaInput";
 import {
@@ -278,35 +279,27 @@ export default function PostProcessingPanel({
                   key={i}
                   className="flex items-center gap-2 rounded-lg border border-border bg-bg-secondary p-2"
                 >
-                  <select
-                    value={rule.column}
-                    onChange={(e) =>
-                      updateFilter(i, { column: e.target.value })
-                    }
-                    className="min-w-0 flex-1 rounded-lg border border-border bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent-primary"
-                  >
-                    {allColumns.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="min-w-0 flex-1">
+                    <Select
+                      value={rule.column}
+                      onChange={(e) =>
+                        updateFilter(i, { column: e.target.value })
+                      }
+                      options={allColumns.map((c) => ({ value: c, label: c }))}
+                    />
+                  </div>
 
-                  <select
-                    value={rule.op}
-                    onChange={(e) =>
-                      updateFilter(i, {
-                        op: e.target.value as PostProcessingFilterRule["op"],
-                      })
-                    }
-                    className="w-32 flex-shrink-0 rounded-lg border border-border bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent-primary"
-                  >
-                    {POST_PROCESSING_FILTER_OPS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-32 flex-shrink-0">
+                    <Select
+                      value={rule.op}
+                      onChange={(e) =>
+                        updateFilter(i, {
+                          op: e.target.value as PostProcessingFilterRule["op"],
+                        })
+                      }
+                      options={POST_PROCESSING_FILTER_OPS}
+                    />
+                  </div>
 
                   {!POST_PROCESSING_NO_VALUE_OPS.has(rule.op) && (
                     <input
@@ -367,17 +360,15 @@ export default function PostProcessingPanel({
                     {i + 1}
                   </span>
 
-                  <select
-                    value={rule.column}
-                    onChange={(e) => updateSort(i, { column: e.target.value })}
-                    className="min-w-0 flex-1 rounded-lg border border-border bg-bg-primary px-2 py-1.5 text-sm text-text-primary outline-none focus:border-accent-primary"
-                  >
-                    {allColumns.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="min-w-0 flex-1">
+                    <Select
+                      value={rule.column}
+                      onChange={(e) =>
+                        updateSort(i, { column: e.target.value })
+                      }
+                      options={allColumns.map((c) => ({ value: c, label: c }))}
+                    />
+                  </div>
 
                   <div className="flex flex-shrink-0 overflow-hidden rounded-lg border border-border">
                     {(["asc", "desc"] as const).map((d) => (

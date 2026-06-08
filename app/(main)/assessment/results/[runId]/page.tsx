@@ -29,12 +29,12 @@ export default function AssessmentResultsPage() {
   const { apiKeys, isAuthenticated, isHydrated } = useAuth();
   const apiKey = apiKeys[0]?.key ?? "";
 
-  const runId = Number(params?.runId);
-  const title = searchParams.get("title") ?? `Run ${runId}`;
-
   const [headers, setHeaders] = useState<string[] | null>(null);
   const [rows, setRows] = useState<string[][] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const runId = Number(params?.runId);
+  const title = searchParams.get("title") ?? `Run ${runId}`;
 
   useEffect(() => {
     if (!isHydrated) return;

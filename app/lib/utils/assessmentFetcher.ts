@@ -19,7 +19,6 @@ import type {
   CompletionParams,
   ConfigBlob,
   ConfigCreate,
-  ConfigListResponse,
   ConfigPublic,
   ConfigVersionCreate,
   ConfigVersionItems,
@@ -111,28 +110,6 @@ function normalizeConfigBlobForApi(configBlob: ConfigBlob): ConfigBlob {
       params: nextParams as CompletionParams,
     },
   };
-}
-
-export async function fetchConfigPage(params: {
-  apiKey: string;
-  skip?: number;
-  limit?: number;
-}): Promise<PagedResult<ConfigPublic>> {
-  const skip = params.skip ?? 0;
-  const limit = params.limit ?? DEFAULT_PAGE_LIMIT;
-  const query = new URLSearchParams({
-    skip: String(skip),
-    limit: String(limit),
-    tag: ASSESSMENT_TAG,
-  });
-  const data = await apiFetch<ConfigListResponse>(
-    `/api/configs?${query.toString()}`,
-    params.apiKey,
-  );
-  if (!data.success || !data.data) {
-    throw new Error(data.error || "Failed to fetch configs");
-  }
-  return buildPageResult(data.data, skip, limit);
 }
 
 export async function fetchConfigVersionsPage(

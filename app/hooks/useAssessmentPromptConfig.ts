@@ -1,0 +1,392 @@
+"use client";
+
+import { useCallback, useMemo, useState } from "react";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useToast } from "@/app/hooks/useToast";
+import { usePaginatedList } from "@/app/hooks/usePaginatedList";
+import {
+  ASSESSMENT_CONFIG_VERSION_PAGE_SIZE,
+  ASSESSMENT_TAG,
+} from "@/app/lib/assessment/constants";
+import {
+  buildDefaultParams,
+  buildInitialAssessmentConfigDraft,
+  buildInitialAssessmentVersionState,
+  fetchConfigSelection,
+  fetchConfigVersionsPage,
+  getDefaultModelForProvider,
+  getModelConfigDefinition,
+  getModelsByProvider,
+  saveAssessmentConfig,
+} from "@/app/lib/utils/assessmentFetcher";
+import {
+  MAX_CONFIGS,
+  type ConfigMode,
+  type ConfigSelection,
+  type SchemaProperty,
+  type StateSetter,
+  type VersionListState,
+} from "@/app/lib/types/assessment";
+import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
+
+interface UseAssessmentPromptConfigParams {
+  textColumns: string[];
+  promptTemplate: string;
+  configs: ConfigSelection[];
+  setConfigs: StateSetter<ConfigSelection[]>;
+  outputSchema: SchemaProperty[];
+}
+
+// Stable ref so usePaginatedList doesn't re-fetch every render.
+const ASSESSMENT_CONFIG_PARAMS = { tag: ASSESSMENT_TAG } as const;
+
+export function useAssessmentPromptConfig({
+  textColumns,
+  promptTemplate,
+  configs,
+  setConfigs,
+  outputSchema,
+}: UseAssessmentPromptConfigParams) {
+  const toast = useToast();
+  const { activeKey, isAuthenticated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
+
+  const {
+    items: configCards,
+    isLoading: isLoadingConfigs,
+    hasMore: hasMoreConfigs,
+    loadMore: loadMoreConfigs,
+    refetch: refetchConfigs,
+  } = usePaginatedList<ConfigPublic>({
+    endpoint: "/api/configs",
+    extraParams: ASSESSMENT_CONFIG_PARAMS,
+  });
+
+  const [configMode, setConfigMode] = useState<ConfigMode>("existing");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
+  const [versionStateByConfig, setVersionStateByConfig] = useState<
+    Record<string, VersionListState>
+  >({});
+  const [loadingSelectionKeys, setLoadingSelectionKeys] = useState<
+    Record<string, boolean>
+  >({});
+
+  const [draft, setDraft] = useState<ConfigBlob>(() =>
+    buildInitialAssessmentConfigDraft(),
+  );
+  const [configName, setConfigName] = useState("");
+  const [commitMessage, setCommitMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const draftParams = draft.completion.params as Record<
+    string,
+    string | number | undefined
+  >;
+  const currentProvider = draft.completion.provider ?? "openai";
+  const providerModels = useMemo(
+    () => getModelsByProvider(currentProvider),
+    [currentProvider],
+  );
+  const currentModel = String(draftParams.model || providerModels[0]?.value);
+  const currentParamDefs = useMemo(
+    () => getModelConfigDefinition(currentModel),
+    [currentModel],
+  );
+
+  const usedColumns = useMemo(
+    () => textColumns.filter((col) => promptTemplate.includes(`{${col}}`)),
+    [promptTemplate, textColumns],
+  );
+  const namedSchemaFields = outputSchema.filter((field) => field.name.trim());
+  const hasPromptTemplate = promptTemplate.trim().length > 0;
+  const hasConfiguredResponseFormat = namedSchemaFields.length > 0;
+  const canProceed =
+    hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
+  const nextBlockerMessage = !hasPromptTemplate
+    ? "Write a prompt to continue"
+    : configs.length === 0
+      ? "Select at least one configuration to continue"
+      : !hasConfiguredResponseFormat
+        ? "Set response format to continue"
+        : "";
+  const responseSummary =
+    namedSchemaFields.length > 0
+      ? `${namedSchemaFields.length} fields`
+      : "Not set";
+  const promptStatus = promptTemplate.trim()
+    ? `${usedColumns.length} placeholders`
+    : "Empty";
+
+  const isSelected = useCallback(
+    (configId: string, version: number) =>
+      configs.some(
+        (config) =>
+          config.config_id === configId && config.config_version === version,
+      ),
+    [configs],
+  );
+
+  const addSelection = useCallback(
+    (selection: ConfigSelection) => {
+      if (
+        configs.some(
+          (config) =>
+            config.config_id === selection.config_id &&
+            config.config_version === selection.config_version,
+        )
+      ) {
+        toast.error("This configuration version is already selected");
+        return;
+      }
+      if (configs.length >= MAX_CONFIGS) {
+        toast.error(`You can select up to ${MAX_CONFIGS} configurations`);
+        return;
+      }
+      setConfigs((prev) => [...prev, selection]);
+    },
+    [configs, setConfigs, toast],
+  );
+
+  const removeSelection = useCallback(
+    (configId: string, version: number) => {
+      setConfigs((prev) =>
+        prev.filter(
+          (config) =>
+            !(
+              config.config_id === configId && config.config_version === version
+            ),
+        ),
+      );
+    },
+    [setConfigs],
+  );
+
+  const toggleVersionSelection = useCallback(
+    async (config: ConfigPublic, version: number) => {
+      if (!isAuthenticated) return;
+      const key = `${config.id}:${version}`;
+      if (isSelected(config.id, version)) {
+        removeSelection(config.id, version);
+        return;
+      }
+      setLoadingSelectionKeys((prev) => ({ ...prev, [key]: true }));
+      try {
+        const selection = await fetchConfigSelection(apiKey, config, version);
+        addSelection(selection);
+      } catch {
+        toast.error("Failed to load configuration details");
+      } finally {
+        setLoadingSelectionKeys((prev) => ({ ...prev, [key]: false }));
+      }
+    },
+    [addSelection, apiKey, isAuthenticated, isSelected, removeSelection, toast],
+  );
+
+  // Preserves the (skip, replace) signature callers expect; pagination state
+  // is owned by usePaginatedList (skip tracked internally).
+  const loadConfigs = useCallback(
+    (_skip: number, replace: boolean) => {
+      if (replace) refetchConfigs();
+      else loadMoreConfigs();
+    },
+    [loadMoreConfigs, refetchConfigs],
+  );
+
+  const filteredConfigCards = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return configCards;
+    return configCards.filter((config) =>
+      `${config.name} ${config.description || ""}`
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [configCards, searchQuery]);
+
+  const loadVersions = useCallback(
+    async (configId: string, skip: number) => {
+      if (!isAuthenticated) return;
+      setVersionStateByConfig((prev) => ({
+        ...prev,
+        [configId]: {
+          ...(prev[configId] ?? buildInitialAssessmentVersionState()),
+          isLoading: true,
+          error: null,
+        },
+      }));
+      try {
+        const result = await fetchConfigVersionsPage(apiKey, configId, {
+          skip,
+          limit: ASSESSMENT_CONFIG_VERSION_PAGE_SIZE,
+        });
+        setVersionStateByConfig((prev) => {
+          const existing =
+            prev[configId] ?? buildInitialAssessmentVersionState();
+          return {
+            ...prev,
+            [configId]: {
+              items:
+                skip === 0
+                  ? result.items
+                  : [...existing.items, ...result.items],
+              isLoading: false,
+              error: null,
+              hasMore: result.hasMore,
+              nextSkip: result.nextSkip,
+            },
+          };
+        });
+      } catch {
+        setVersionStateByConfig((prev) => ({
+          ...prev,
+          [configId]: {
+            ...(prev[configId] ?? buildInitialAssessmentVersionState()),
+            isLoading: false,
+            error: "Failed to load versions",
+          },
+        }));
+      }
+    },
+    [apiKey, isAuthenticated],
+  );
+
+  const toggleConfigExpansion = useCallback(
+    (configId: string) => {
+      if (expandedConfigId === configId) {
+        setExpandedConfigId(null);
+        return;
+      }
+      setExpandedConfigId(configId);
+      if (!versionStateByConfig[configId]) {
+        void loadVersions(configId, 0);
+      }
+    },
+    [expandedConfigId, loadVersions, versionStateByConfig],
+  );
+
+  const updateDraftParam = (key: string, value: string | number) => {
+    setDraft((prev) => ({
+      ...prev,
+      completion: {
+        ...prev.completion,
+        params: { ...prev.completion.params, [key]: value },
+      },
+    }));
+  };
+
+  const handleProviderChange = (provider: "openai") => {
+    const defaultModel = getDefaultModelForProvider(provider);
+    setDraft((prev) => ({
+      ...prev,
+      completion: {
+        ...prev.completion,
+        provider,
+        params: {
+          instructions: String(prev.completion.params.instructions || ""),
+          model: defaultModel,
+          ...buildDefaultParams(defaultModel),
+        },
+      },
+    }));
+  };
+
+  const handleModelChange = (modelName: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      completion: {
+        ...prev.completion,
+        params: {
+          instructions: String(prev.completion.params.instructions || ""),
+          model: modelName,
+          ...buildDefaultParams(modelName),
+        },
+      },
+    }));
+  };
+
+  const handleCreateAndAdd = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to create configurations");
+      return;
+    }
+    if (!configName.trim()) {
+      toast.error("Configuration name is required");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const existingConfig =
+        configCards.find(
+          (c) =>
+            c.name.trim().toLowerCase() === configName.trim().toLowerCase(),
+        ) ?? null;
+      const saved = await saveAssessmentConfig({
+        apiKey,
+        configName: configName.trim(),
+        commitMessage: commitMessage.trim(),
+        configBlob: draft,
+        existingConfig: existingConfig
+          ? { id: existingConfig.id, name: existingConfig.name }
+          : null,
+      });
+      addSelection({
+        config_id: saved.config_id,
+        config_version: saved.config_version,
+        name: configName.trim(),
+        provider: draft.completion.provider,
+        model: currentModel,
+      });
+      setDraft(buildInitialAssessmentConfigDraft());
+      setConfigName("");
+      setCommitMessage("");
+      setConfigMode("existing");
+      toast.success("Configuration saved and added!");
+      refetchConfigs();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save configuration",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return {
+    configMode,
+    setConfigMode,
+    removeSelection,
+    filteredConfigCards,
+    searchQuery,
+    setSearchQuery,
+    isLoadingConfigs,
+    hasMoreConfigs,
+    nextConfigSkip: 0,
+    expandedConfigId,
+    versionStateByConfig,
+    loadingSelectionKeys,
+    isSelected,
+    loadConfigs,
+    loadVersions,
+    toggleConfigExpansion,
+    toggleVersionSelection,
+    currentProvider,
+    currentModel,
+    providerModels,
+    currentParamDefs,
+    draftParams,
+    configName,
+    commitMessage,
+    isSaving,
+    setConfigName,
+    setCommitMessage,
+    handleProviderChange,
+    handleModelChange,
+    updateDraftParam,
+    handleCreateAndAdd,
+    responseSummary,
+    hasConfiguredResponseFormat,
+    promptStatus,
+    canProceed,
+    nextBlockerMessage,
+  };
+}

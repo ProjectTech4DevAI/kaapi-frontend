@@ -106,29 +106,13 @@ export default function InputReview({
             <h3 className="text-sm font-bold text-neutral-900">
               System Prompt
             </h3>
-            <pre
-              className="mt-1 whitespace-pre-wrap font-mono text-xs text-neutral-700"
-              style={{
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
+            <pre className="mt-1 line-clamp-2 whitespace-pre-wrap font-mono text-xs text-neutral-700">
               {llmInputGist.system}
             </pre>
           </div>
           <div>
             <h3 className="text-sm font-bold text-neutral-900">User Prompt</h3>
-            <pre
-              className="mt-1 whitespace-pre-wrap font-mono text-xs text-neutral-700"
-              style={{
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
+            <pre className="mt-1 line-clamp-2 whitespace-pre-wrap font-mono text-xs text-neutral-700">
               {llmInputGist.user}
             </pre>
           </div>

@@ -21,6 +21,25 @@ export const GPT4_STYLE_CONFIG = {
   },
 } as const satisfies Record<string, ConfigParamDefinition>;
 
+const REASONING_EFFORT_DESCRIPTION =
+  "How long the model spends reasoning. Higher = better but slower.";
+
+const SUMMARY_PARAM: ConfigParamDefinition = {
+  type: "enum",
+  default: "auto",
+  options: ["auto", "detailed", "concise"],
+  description: "Summarize the reasoning result.",
+};
+
+function effortParam(options: string[]): ConfigParamDefinition {
+  return {
+    type: "enum",
+    default: "medium",
+    options,
+    description: REASONING_EFFORT_DESCRIPTION,
+  };
+}
+
 export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   { provider: "openai", model_name: "gpt-4o-mini", config: GPT4_STYLE_CONFIG },
   { provider: "openai", model_name: "gpt-4o", config: GPT4_STYLE_CONFIG },
@@ -31,189 +50,80 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
     provider: "openai",
     model_name: "o3-mini",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "o3",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "o4-mini",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "gpt-5",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["minimal", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["minimal", "low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "gpt-5-mini",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["minimal", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["minimal", "low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "gpt-5-nano",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["minimal", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["minimal", "low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "gpt-5.1",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["none", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["none", "low", "medium", "high"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "gpt-5.1-chat-latest",
-    config: {
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: { summary: SUMMARY_PARAM },
   },
   {
     provider: "openai",
     model_name: "gpt-5.2",
     config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["none", "low", "medium", "high", "xhigh"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
+      effort: effortParam(["none", "low", "medium", "high", "xhigh"]),
+      summary: SUMMARY_PARAM,
     },
   },
   {
     provider: "openai",
     model_name: "gpt-5.2-chat-latest",
-    config: {
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: { summary: SUMMARY_PARAM },
   },
   {
     provider: "openai",
     model_name: "gpt-5.2-pro",
-    config: {
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: { summary: SUMMARY_PARAM },
   },
 ];
 

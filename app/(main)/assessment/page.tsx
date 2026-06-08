@@ -1,6 +1,13 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { Loader } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
@@ -15,6 +22,8 @@ import type {
   AssessmentTab,
   AssessmentTabId,
   ConfigSelection,
+  PrefilterConfig,
+  PostProcessingConfig,
   SchemaProperty,
 } from "@/app/lib/types/assessment";
 import PageLayout from "@/app/components/assessment/PageLayout";
@@ -93,6 +102,10 @@ function PageContent() {
   const [systemInstruction, setSystemInstruction] = useState("");
   const [outputSchema, setOutputSchema] = useState<SchemaProperty[]>([]);
   const [configs, setConfigs] = useState<ConfigSelection[]>([]);
+  const [prefilterConfig, setPrefilterConfig] =
+    useState<PrefilterConfig | null>(null);
+  const [postProcessingConfig, setPostProcessingConfig] =
+    useState<PostProcessingConfig | null>(null);
 
   const handleForbidden = useCallback(
     (options?: { notify?: boolean }) => {
@@ -141,6 +154,10 @@ function PageContent() {
     [setDataset],
   );
 
+  useEffect(() => {
+    setPrefilterConfig(null);
+  }, [datasetId]);
+
   const outputSchemaJson = useMemo(
     () => schemaToJsonSchema(outputSchema),
     [outputSchema],
@@ -183,13 +200,20 @@ function PageContent() {
           system_instruction: systemInstruction.trim() || null,
           text_columns: columnMapping.textColumns,
           attachments: columnMapping.attachments.map(
-            ({ column, type, format }) => ({ column, type, format }),
+            ({ column, type, format, type_column, type_value_map }) => ({
+              column,
+              type,
+              format,
+              ...(type_column ? { type_column, type_value_map } : {}),
+            }),
           ),
           output_schema: outputSchemaJson,
           configs: configs.map(({ config_id, config_version }) => ({
             config_id,
             config_version,
           })),
+          prefilter_config: prefilterConfig ?? null,
+          post_processing_config: postProcessingConfig ?? null,
         }),
       });
 
@@ -202,6 +226,8 @@ function PageContent() {
       setPromptTemplate("");
       setOutputSchema([]);
       setConfigs([]);
+      setPrefilterConfig(null);
+      setPostProcessingConfig(null);
       setActiveTab("results");
     } catch (error) {
       if (handleForbiddenError(error, handleForbiddenWithNotify)) return;
@@ -218,8 +244,10 @@ function PageContent() {
     datasetId,
     experimentName,
     handleForbiddenWithNotify,
+    prefilterConfig,
     outputSchema,
     outputSchemaJson,
+    postProcessingConfig,
     promptTemplate,
     activeKey,
     systemInstruction,
@@ -238,6 +266,8 @@ function PageContent() {
     promptTemplate,
     outputSchema,
     configs,
+    prefilterConfig,
+    postProcessingConfig,
   };
 
   const hasDataset = !!datasetId && columns.length > 0;
@@ -272,7 +302,9 @@ function PageContent() {
   const effectiveCompletedConfigSteps = useMemo(() => {
     const merged = new Set(completedConfigSteps);
     if (hasMapperSelection) merged.add(1);
-    if (canReachReview) merged.add(2);
+    if (hasMapperSelection) merged.add(2); // Prefilter is optional and always passable
+    if (canReachReview) merged.add(3);
+    if (canReachReview) merged.add(4); // Post Processing is optional and always passable
     return merged;
   }, [canReachReview, completedConfigSteps, hasMapperSelection]);
 
@@ -299,10 +331,12 @@ function PageContent() {
         completedSteps: effectiveCompletedConfigSteps,
         configStep,
         configs,
+        datasetId,
         experimentName,
         formState,
         hasDataset,
         isSubmitting,
+        prefilterConfig,
         outputSchema,
         systemInstruction,
         promptTemplate,
@@ -312,9 +346,12 @@ function PageContent() {
         setConfigStep,
         setConfigs,
         setExperimentName,
+        setPrefilterConfig,
         setOutputSchema,
         setSystemInstruction,
         setPromptTemplate,
+        postProcessingConfig,
+        setPostProcessingConfig,
         submitBlockerMessage,
         onSubmit: handleSubmit,
         onStepComplete: handleConfigNext,

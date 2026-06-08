@@ -260,7 +260,7 @@ export default function PromptEditor({
 
   if (previewMode) {
     return (
-      <div className="min-h-[260px] whitespace-pre-wrap break-words rounded-xl border border-border bg-bg-secondary px-4 py-3 text-sm leading-7 text-text-primary">
+      <div className="h-[260px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-border bg-bg-secondary px-4 py-3 text-sm leading-7 text-text-primary">
         {!value.trim() ? (
           <span className="text-text-secondary">{emptyPreviewText}</span>
         ) : enablePlaceholders && Object.keys(sampleRow).length === 0 ? (

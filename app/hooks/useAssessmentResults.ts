@@ -13,10 +13,7 @@ import {
   filterAssessments,
   getAsyncErrorMessage,
   getResultsCounts,
-  isActiveStatus,
-  isCompletedStatus,
-  isFailedStatus,
-  jsonResultsToTableData,
+  normalizeAssessmentRun,
 } from "@/app/lib/assessment/results";
 import {
   ASSESSMENT_TAG,
@@ -30,10 +27,10 @@ import type {
   AssessmentChildRun,
   AssessmentChildRunListResponse,
   AssessmentListResponse,
-  AssessmentResultsPreview,
   AssessmentRun,
   ConfigRunDetail,
   ExportFormat,
+  PostProcessingConfig,
   StatusFilter,
 } from "@/app/lib/types/assessment";
 import type { ToastContextType } from "@/app/lib/types/toast";
@@ -43,47 +40,25 @@ interface UseAssessmentResultsParams {
   toast: ToastContextType;
 }
 
-function safeCount(value: unknown, fallback = 0): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
-  const runStats = Array.isArray(run.run_stats) ? run.run_stats : [];
-  const pendingRuns = safeCount(
-    run.pending_runs,
-    runStats.filter((item) => item.status === "pending").length,
-  );
-  const processingRuns = safeCount(
-    run.processing_runs,
-    Math.max(
-      0,
-      runStats.filter((item) => isActiveStatus(item.status)).length -
-        pendingRuns,
-    ),
-  );
-  const completedRuns = safeCount(
-    run.completed_runs,
-    runStats.filter((item) => isCompletedStatus(item.status)).length,
-  );
-  const failedRuns = safeCount(
-    run.failed_runs,
-    runStats.filter((item) => isFailedStatus(item.status)).length,
-  );
-  const totalRuns = safeCount(
-    run.total_runs,
-    runStats.length ||
-      pendingRuns + processingRuns + completedRuns + failedRuns,
-  );
-
-  return {
-    ...run,
-    total_runs: totalRuns,
-    pending_runs: pendingRuns,
-    processing_runs: processingRuns,
-    completed_runs: completedRuns,
-    failed_runs: failedRuns,
-  };
-}
+const POST_PROCESSING_NON_DATA_FIELDS = new Set([
+  "assessment_id",
+  "dataset_id",
+  "dataset_name",
+  "run_id",
+  "run_name",
+  "run_status",
+  "config_id",
+  "config_version",
+  "response_id",
+  "input_tokens",
+  "output_tokens",
+  "total_tokens",
+  "updated_at",
+  "result_status",
+  "error",
+  "row_id",
+  "experiment_name",
+]);
 
 export default function useAssessmentResults({
   onForbidden,
@@ -107,14 +82,12 @@ export default function useAssessmentResults({
   const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [rerunningId, setRerunningId] = useState<number | null>(null);
+  const [resumingId, setResumingId] = useState<number | null>(null);
   const [retryingAssessmentId, setRetryingAssessmentId] = useState<
     number | null
   >(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState<number | null>(null);
-  const [previewModal, setPreviewModal] =
-    useState<AssessmentResultsPreview | null>(null);
   const configDetailControllersRef = useRef<Record<string, AbortController>>(
     {},
   );
@@ -374,6 +347,41 @@ export default function useAssessmentResults({
     ],
   );
 
+  const handleResume = useCallback(
+    async (run: AssessmentChildRun) => {
+      if (!isAuthenticated) {
+        toast.error("Please sign in to resume this run");
+        return;
+      }
+
+      setResumingId(run.id);
+      try {
+        await apiFetch(`/api/assessment/runs/${run.id}/resume`, apiKey, {
+          method: "POST",
+        });
+
+        toast.success("Run resumed from failed stage!");
+        void loadAssessments();
+        if (run.assessment_id) {
+          void loadChildRuns(run.assessment_id);
+        }
+      } catch (error) {
+        if (handleForbiddenError(error, onForbidden)) return;
+        toast.error(getAsyncErrorMessage("Resume failed", error));
+      } finally {
+        setResumingId(null);
+      }
+    },
+    [
+      apiKey,
+      isAuthenticated,
+      loadAssessments,
+      loadChildRuns,
+      onForbidden,
+      toast,
+    ],
+  );
+
   const handleRetryAssessment = useCallback(
     async (assessmentId: number) => {
       if (!isAuthenticated) {
@@ -426,26 +434,43 @@ export default function useAssessmentResults({
   );
 
   const handlePreview = useCallback(
-    async (runId: number, label: string) => {
+    (runId: number, label: string) => {
       if (!isAuthenticated) return;
-      setPreviewLoading(runId);
+      const url = `/assessment/results/${runId}?title=${encodeURIComponent(label)}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    },
+    [isAuthenticated],
+  );
+
+  const handleSavePostProcessing = useCallback(
+    async (runId: number, config: PostProcessingConfig | null) => {
+      await apiFetch(`/api/assessment/runs/${runId}/post-processing`, apiKey, {
+        method: "PATCH",
+        body: JSON.stringify(config),
+      });
+      if (expandedId !== null) void loadChildRuns(expandedId);
+    },
+    [apiKey, expandedId, loadChildRuns],
+  );
+
+  const handleFetchRunColumns = useCallback(
+    async (runId: number): Promise<string[]> => {
       try {
-        const json = await apiFetch<
+        const res = await apiFetch<
           { data?: Record<string, unknown>[] } | Record<string, unknown>[]
         >(`/api/assessment/runs/${runId}/results?export_format=json`, apiKey);
-        const results: Record<string, unknown>[] = Array.isArray(json)
-          ? json
-          : json.data || [];
-        const { headers, rows } = jsonResultsToTableData(results);
-        setPreviewModal({ title: label, headers, rows });
-      } catch (error) {
-        if (handleForbiddenError(error, onForbidden)) return;
-        toast.error(getAsyncErrorMessage("Preview failed", error));
-      } finally {
-        setPreviewLoading(null);
+        const rows: Record<string, unknown>[] = Array.isArray(res)
+          ? res
+          : (res.data ?? []);
+        if (rows.length === 0) return [];
+        return Object.keys(rows[0]).filter(
+          (k) => !POST_PROCESSING_NON_DATA_FIELDS.has(k),
+        );
+      } catch {
+        return [];
       }
     },
-    [apiKey, isAuthenticated, onForbidden, toast],
+    [apiKey],
   );
 
   return {
@@ -460,18 +485,19 @@ export default function useAssessmentResults({
     statusFilter,
     setStatusFilter,
     rerunningId,
+    resumingId,
     retryingAssessmentId,
     expandedId,
     downloadingId,
-    previewLoading,
-    previewModal,
-    setPreviewModal,
     loadAssessments,
     handleExpand,
     handleRetryAssessment,
     handleRerun,
+    handleResume,
     handlePreview,
     handleAssessmentDownload,
     handleRunDownload,
+    handleSavePostProcessing,
+    handleFetchRunColumns,
   };
 }

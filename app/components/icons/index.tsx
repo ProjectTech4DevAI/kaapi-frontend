@@ -16,6 +16,7 @@ export { default as GearIcon } from "./common/GearIcon";
 export { default as WarningTriangleIcon } from "./common/WarningTriangleIcon";
 export { default as PlusIcon } from "./common/PlusIcon";
 export { default as SearchIcon } from "./common/SearchIcon";
+export { default as ExpandIcon } from "./common/ExpandIcon";
 export { default as SidebarToggleIcon } from "./common/SidebarToggleIcon";
 export { default as MailIcon } from "./common/MailIcon";
 export { default as ErrorCircleIcon } from "./common/ErrorCircleIcon";

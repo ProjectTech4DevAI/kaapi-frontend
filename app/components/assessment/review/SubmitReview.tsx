@@ -2,7 +2,7 @@
 
 import { Button } from "@/app/components/ui";
 import { ChevronLeftIcon } from "@/app/components/icons";
-import PlayIcon from "@/app/components/icons/assessment/PlayIcon";
+import { PlayIcon } from "@/app/components/icons/assessment";
 
 interface SubmitReviewProps {
   isSubmitting: boolean;

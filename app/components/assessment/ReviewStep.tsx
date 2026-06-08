@@ -113,14 +113,14 @@ export default function ReviewStep({
           configs={configs}
           isOpen={openSections.has(REVIEW_SECTIONS.configs)}
           onToggle={() => toggleSection(REVIEW_SECTIONS.configs)}
-          onEdit={() => onEditStep(2)}
+          onEdit={() => onEditStep(3)}
         />
 
         <SchemaReview
           outputSchema={outputSchema}
           isOpen={openSections.has(REVIEW_SECTIONS.schema)}
           onToggle={() => toggleSection(REVIEW_SECTIONS.schema)}
-          onEdit={() => onEditStep(2)}
+          onEdit={() => onEditStep(3)}
         />
       </div>
 

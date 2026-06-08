@@ -9,7 +9,6 @@ import {
   ClipboardIcon,
   RefreshIcon,
 } from "@/app/components/icons";
-import DataViewModal from "./DataViewModal";
 import DownloadDropdown from "./DownloadDropdown";
 import RunResultCard from "./RunResultCard";
 import {
@@ -39,19 +38,20 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
     statusFilter,
     setStatusFilter,
     rerunningId,
+    resumingId,
     retryingAssessmentId,
     expandedId,
     downloadingId,
-    previewLoading,
-    previewModal,
-    setPreviewModal,
     loadAssessments,
     handleExpand,
     handleRetryAssessment,
     handleRerun,
+    handleResume,
     handlePreview,
     handleAssessmentDownload,
     handleRunDownload,
+    handleSavePostProcessing,
+    handleFetchRunColumns,
   } = useAssessmentResults({ onForbidden, toast });
 
   return (
@@ -229,11 +229,16 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                                   configLoadingKeys={configLoadingKeys}
                                   configErrorKeys={configErrorKeys}
                                   rerunningId={rerunningId}
-                                  previewLoading={previewLoading}
+                                  resumingId={resumingId}
                                   downloadingId={downloadingId}
                                   onPreview={handlePreview}
                                   onDownload={handleRunDownload}
                                   onRerun={handleRerun}
+                                  onResume={handleResume}
+                                  onSavePostProcessing={
+                                    handleSavePostProcessing
+                                  }
+                                  onFetchColumns={handleFetchRunColumns}
                                 />
                               ))
                             )}
@@ -256,16 +261,6 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
             ))}
         </div>
       </div>
-
-      {previewModal && (
-        <DataViewModal
-          title={previewModal.title}
-          subtitle={`${previewModal.rows.length} rows · ${previewModal.headers.length} columns`}
-          headers={previewModal.headers}
-          rows={previewModal.rows}
-          onClose={() => setPreviewModal(null)}
-        />
-      )}
     </div>
   );
 }

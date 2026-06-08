@@ -46,14 +46,17 @@ export default function ColumnMapperStep({
 
       next[index] = {
         role,
-        attachmentType: current?.attachmentType || "image",
+        attachmentType: current?.attachmentType || "mixed",
         attachmentFormat: current?.attachmentFormat || "url",
       };
       return next;
     });
   };
 
-  const updateAttachmentType = (index: number, type: "image" | "pdf") => {
+  const updateAttachmentType = (
+    index: number,
+    type: "image" | "pdf" | "mixed",
+  ) => {
     setColumnConfigs((prev) => {
       const next = [...prev];
       next[index] = {
@@ -78,6 +81,14 @@ export default function ColumnMapperStep({
     });
   };
 
+  const patchAttachment = (index: number, patch: Partial<ColumnConfig>) => {
+    setColumnConfigs((prev) => {
+      const next = [...prev];
+      next[index] = { ...prev[index], role: "attachment", ...patch };
+      return next;
+    });
+  };
+
   const handleNext = () => {
     const textColumns: string[] = [];
     const attachments: Attachment[] = [];
@@ -93,11 +104,28 @@ export default function ColumnMapperStep({
         config.attachmentType &&
         config.attachmentFormat
       ) {
-        attachments.push({
+        const attachment: Attachment = {
           column,
           type: config.attachmentType,
           format: config.attachmentFormat as Attachment["format"],
-        });
+        };
+        if (config.attachmentType === "mixed" && config.attachmentTypeColumn) {
+          const map: Record<string, string> = {};
+          const split = (s?: string) =>
+            (s || "")
+              .split(",")
+              .map((v) => v.trim())
+              .filter(Boolean);
+          split(config.attachmentImageValues).forEach(
+            (v) => (map[v] = "image"),
+          );
+          split(config.attachmentPdfValues).forEach((v) => (map[v] = "pdf"));
+          if (Object.keys(map).length > 0) {
+            attachment.type_column = config.attachmentTypeColumn;
+            attachment.type_value_map = map;
+          }
+        }
+        attachments.push(attachment);
       }
     });
 
@@ -157,19 +185,19 @@ export default function ColumnMapperStep({
                   <div
                     className={`flex flex-col gap-3 rounded-xl border px-3 py-3 ${roleVisuals.panelClass}`}
                   >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1 sm:max-w-[50%]">
+                        <div className="flex items-start gap-2">
                           <span
-                            className={`h-2 w-2 rounded-full ${roleVisuals.dotClass}`}
+                            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${roleVisuals.dotClass}`}
                           />
-                          <span className="font-mono text-sm font-semibold text-text-primary">
+                          <span className="min-w-0 break-words font-mono text-sm font-semibold text-text-primary">
                             {column}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 sm:shrink-0">
                         {ASSESSMENT_ROLE_OPTIONS.map((option) => {
                           const isGroundTruth = option.value === "ground_truth";
                           const isActive = config.role === option.value;
@@ -211,46 +239,126 @@ export default function ColumnMapperStep({
                     </div>
 
                     {config.role === "attachment" && (
-                      <div className="flex flex-col gap-3 pt-1 sm:flex-row">
-                        <label className="flex-1">
-                          <span className="mb-1 block text-xs font-medium text-text-secondary">
-                            Attachment Type
-                          </span>
-                          <Select
-                            value={config.attachmentType || "image"}
-                            onChange={(event) =>
-                              updateAttachmentType(
-                                index,
-                                event.target.value as "image" | "pdf",
-                              )
-                            }
-                            options={[
-                              { value: "image", label: "Image" },
-                              { value: "pdf", label: "PDF" },
-                            ]}
-                            className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
-                          />
-                        </label>
+                      <>
+                        <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+                          <label className="flex-1">
+                            <span className="mb-1 block text-xs font-medium text-text-secondary">
+                              Attachment Type
+                            </span>
+                            <Select
+                              value={config.attachmentType || "mixed"}
+                              onChange={(event) =>
+                                updateAttachmentType(
+                                  index,
+                                  event.target.value as
+                                    | "image"
+                                    | "pdf"
+                                    | "mixed",
+                                )
+                              }
+                              options={[
+                                {
+                                  value: "mixed",
+                                  label: "Mixed (image or PDF)",
+                                },
+                                { value: "image", label: "Image" },
+                                { value: "pdf", label: "PDF" },
+                              ]}
+                              className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                            />
+                          </label>
 
-                        <label className="flex-1">
-                          <span className="mb-1 block text-xs font-medium text-text-secondary">
-                            Source
-                          </span>
-                          <Select
-                            value={config.attachmentFormat || "url"}
-                            onChange={(event) =>
-                              updateAttachmentFormat(index, event.target.value)
-                            }
-                            options={ATTACHMENT_FORMATS[
-                              config.attachmentType || "image"
-                            ].map((format) => ({
-                              value: format,
-                              label: format,
-                            }))}
-                            className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
-                          />
-                        </label>
-                      </div>
+                          <label className="flex-1">
+                            <span className="mb-1 block text-xs font-medium text-text-secondary">
+                              Source
+                            </span>
+                            <Select
+                              value={config.attachmentFormat || "url"}
+                              onChange={(event) =>
+                                updateAttachmentFormat(
+                                  index,
+                                  event.target.value,
+                                )
+                              }
+                              options={ATTACHMENT_FORMATS[
+                                config.attachmentType || "mixed"
+                              ].map((format) => ({
+                                value: format,
+                                label: format,
+                              }))}
+                              className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                            />
+                          </label>
+                        </div>
+
+                        {(config.attachmentType || "mixed") === "mixed" && (
+                          <div className="mt-2 flex flex-col gap-2 rounded-lg border border-border bg-bg-primary/50 p-3">
+                            <span className="text-[11px] text-text-secondary">
+                              Mixed: pick a column whose value tells each
+                              row&apos;s type, then list which values mean image
+                              vs PDF.
+                            </span>
+                            <label className="block">
+                              <span className="mb-1 block text-xs font-medium text-text-secondary">
+                                Type column
+                              </span>
+                              <Select
+                                value={config.attachmentTypeColumn || ""}
+                                onChange={(event) =>
+                                  patchAttachment(index, {
+                                    attachmentTypeColumn:
+                                      event.target.value || undefined,
+                                  })
+                                }
+                                options={[
+                                  { value: "", label: "Select column…" },
+                                  ...columns
+                                    .filter((_, i) => i !== index)
+                                    .map((col) => ({ value: col, label: col })),
+                                ]}
+                                className="w-full cursor-pointer rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                              />
+                            </label>
+                            {config.attachmentTypeColumn && (
+                              <div className="flex flex-col gap-2 sm:flex-row">
+                                <label className="flex-1">
+                                  <span className="mb-1 block text-xs font-medium text-text-secondary">
+                                    Values meaning Image
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={config.attachmentImageValues || ""}
+                                    onChange={(event) =>
+                                      patchAttachment(index, {
+                                        attachmentImageValues:
+                                          event.target.value,
+                                      })
+                                    }
+                                    placeholder="e.g. image, photo, jpg"
+                                    className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                                  />
+                                </label>
+                                <label className="flex-1">
+                                  <span className="mb-1 block text-xs font-medium text-text-secondary">
+                                    Values meaning PDF
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={config.attachmentPdfValues || ""}
+                                    onChange={(event) =>
+                                      patchAttachment(index, {
+                                        attachmentPdfValues: event.target.value,
+                                      })
+                                    }
+                                    placeholder="e.g. pdf, document, doc"
+                                    className="w-full rounded-lg border border-border bg-bg-primary px-3 py-2 text-sm text-text-primary outline-none focus:ring-1"
+                                  />
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -287,7 +395,7 @@ export default function ColumnMapperStep({
               disabled={!hasText}
               className="!rounded-lg"
             >
-              Next: Prompt Editor
+              Next: Eliminatory
             </Button>
           </div>
         </div>

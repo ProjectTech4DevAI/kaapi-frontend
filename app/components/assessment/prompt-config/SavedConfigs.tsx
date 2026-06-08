@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Loader } from "@/app/components/ui";
 import type { ConfigPublic } from "@/app/lib/types/configs";
-import type { ValueSetter, VersionListState } from "@/app/lib/types/assessment";
+import type {
+  LatestConfigModel,
+  ValueSetter,
+  VersionListState,
+} from "@/app/lib/types/assessment";
 import { buildInitialAssessmentVersionState } from "@/app/lib/utils/assessmentFetcher";
 import SavedConfigCard from "./SavedConfigCard";
 
@@ -16,6 +20,7 @@ interface SavedConfigsProps {
   nextConfigSkip: number;
   expandedConfigId: string | null;
   versionStateByConfig: Record<string, VersionListState>;
+  latestModelByConfig: Record<string, LatestConfigModel>;
   loadingSelectionKeys: Record<string, boolean>;
   isSelected: (configId: string, version: number) => boolean;
   onLoadMoreConfigs: (skip: number) => void | Promise<void>;
@@ -36,6 +41,7 @@ export default function SavedConfigs({
   nextConfigSkip,
   expandedConfigId,
   versionStateByConfig,
+  latestModelByConfig,
   loadingSelectionKeys,
   isSelected,
   onLoadMoreConfigs,
@@ -123,6 +129,7 @@ export default function SavedConfigs({
                 versionStateByConfig[config.id] ??
                 buildInitialAssessmentVersionState()
               }
+              latestModel={latestModelByConfig[config.id] ?? null}
               expanded={expandedConfigId === config.id}
               loadingSelectionKeys={loadingSelectionKeys}
               isSelected={isSelected}

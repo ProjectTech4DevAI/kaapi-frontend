@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  ToggleOffIcon,
-  ToggleOnIcon,
-} from "@/app/components/icons/assessment/ToggleThumbIcons";
+import { ToggleOffIcon, ToggleOnIcon } from "@/app/components/icons/assessment";
 
 interface CompactToggleSwitchProps {
   checked: boolean;

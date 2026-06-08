@@ -2,21 +2,10 @@ import { Button } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { formatRelativeTime } from "@/app/lib/utils";
 import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
-import type { ValueSetter, VersionListState } from "@/app/lib/types/assessment";
-
-interface SavedConfigCardProps {
-  config: ConfigPublic;
-  versions: VersionListState;
-  expanded: boolean;
-  loadingSelectionKeys: Record<string, boolean>;
-  isSelected: (configId: string, version: number) => boolean;
-  onLoadVersions: (configId: string, skip: number) => void;
-  onToggleExpansion: ValueSetter<string>;
-  onToggleVersionSelection: (
-    config: ConfigPublic,
-    version: number,
-  ) => void | Promise<void>;
-}
+import type {
+  SavedConfigCardProps,
+  VersionListState,
+} from "@/app/lib/types/assessment";
 
 function VersionSummary({
   previewVersions,
@@ -154,6 +143,7 @@ function VersionPanel({
 export default function SavedConfigCard({
   config,
   versions,
+  latestModel,
   expanded,
   loadingSelectionKeys,
   isSelected,
@@ -208,6 +198,13 @@ export default function SavedConfigCard({
           {config.description && (
             <div className="mt-1.5 text-xs leading-5 text-text-secondary">
               {config.description}
+            </div>
+          )}
+          {latestModel?.model && (
+            <div className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-border bg-bg-secondary px-2 py-0.5 text-[10px] font-medium text-text-secondary">
+              {latestModel.provider
+                ? `${latestModel.provider} · ${latestModel.model}`
+                : latestModel.model}
             </div>
           )}
         </div>

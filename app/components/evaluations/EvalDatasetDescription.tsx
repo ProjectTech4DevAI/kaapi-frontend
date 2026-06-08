@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { colors } from "@/app/lib/colors";
 
 const EVAL_DESCRIPTION_CHAR_LIMIT = 100;
 
@@ -14,10 +13,7 @@ export default function EvalDatasetDescription({
   const isLong = description.length > EVAL_DESCRIPTION_CHAR_LIMIT;
 
   return (
-    <div
-      className="mt-2 text-xs leading-relaxed wrap-break-word overflow-hidden"
-      style={{ color: colors.text.secondary }}
-    >
+    <div className="mt-2 text-xs leading-relaxed wrap-break-word overflow-hidden text-text-secondary">
       <span>
         {isLong && !expanded
           ? description.slice(0, EVAL_DESCRIPTION_CHAR_LIMIT).trimEnd() + "..."
@@ -29,8 +25,7 @@ export default function EvalDatasetDescription({
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          className="mt-1 block text-xs font-medium"
-          style={{ color: colors.text.primary }}
+          className="mt-1 block text-xs font-medium text-text-primary cursor-pointer"
         >
           {expanded ? "Show less" : "Read more"}
         </button>

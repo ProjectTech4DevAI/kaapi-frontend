@@ -1,6 +1,6 @@
 /**
  * Guardrails — 2-panel layout:
- * [LEFT: Config Form] | [RIGHT: Saved Configs List]
+ * [LEFT: Saved Configs List] | [RIGHT: Config Form]
  */
 
 "use client";
@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import PageHeader from "@/app/components/PageHeader";
 import {
@@ -61,9 +61,9 @@ export default function GuardrailsPage() {
     setValidatorsLoading(true);
     guardrailsFetch<{ validators?: Validator[] }>("/api/guardrails", apiKey)
       .then((data) => {
-        const list: Validator[] = Array.isArray(data?.validators)
-          ? data.validators
-          : [];
+        const list: Validator[] = (
+          Array.isArray(data?.validators) ? data.validators : []
+        ).filter((v) => v.type !== "llm_critic");
         setValidators(list);
       })
       .catch(() => toast.error("Failed to load validators"))
@@ -74,28 +74,34 @@ export default function GuardrailsPage() {
     ? `?organization_id=${parseInt(String(orgContext.organization_id), 10)}&project_id=${parseInt(String(orgContext.project_id), 10)}`
     : null;
 
-  const fetchSavedConfigs = useCallback(() => {
-    if (!configsQueryString) return;
+  const fetchSavedConfigs = useCallback(async (): Promise<
+    SavedValidatorConfig[]
+  > => {
+    if (!configsQueryString) return [];
     setSavedConfigsLoading(true);
-    guardrailsFetch<{
-      data?: { configs?: SavedValidatorConfig[] } | SavedValidatorConfig[];
-      configs?: SavedValidatorConfig[];
-    }>(`/api/guardrails/validators/configs${configsQueryString}`, apiKey)
-      .then((data) => {
-        const nested = data?.data;
-        const list: SavedValidatorConfig[] = Array.isArray(
-          (nested as { configs?: SavedValidatorConfig[] })?.configs,
-        )
-          ? (nested as { configs: SavedValidatorConfig[] }).configs
-          : Array.isArray(nested)
-            ? (nested as SavedValidatorConfig[])
-            : Array.isArray(data?.configs)
-              ? data.configs!
-              : [];
-        setSavedConfigs(list);
-      })
-      .catch(() => toast.error("Failed to load saved configs"))
-      .finally(() => setSavedConfigsLoading(false));
+    try {
+      const data = await guardrailsFetch<{
+        data?: { configs?: SavedValidatorConfig[] } | SavedValidatorConfig[];
+        configs?: SavedValidatorConfig[];
+      }>(`/api/guardrails/validators/configs${configsQueryString}`, apiKey);
+      const nested = data?.data;
+      const list: SavedValidatorConfig[] = Array.isArray(
+        (nested as { configs?: SavedValidatorConfig[] })?.configs,
+      )
+        ? (nested as { configs: SavedValidatorConfig[] }).configs
+        : Array.isArray(nested)
+          ? (nested as SavedValidatorConfig[])
+          : Array.isArray(data?.configs)
+            ? data.configs!
+            : [];
+      setSavedConfigs(list);
+      return list;
+    } catch {
+      toast.error("Failed to load saved configs");
+      return [];
+    } finally {
+      setSavedConfigsLoading(false);
+    }
   }, [configsQueryString, apiKey]);
 
   useEffect(() => {
@@ -112,29 +118,11 @@ export default function GuardrailsPage() {
     setSelectedSavedConfig(null);
   };
 
-  const handleDeleteConfig = async (configId: string) => {
-    if (!configsQueryString) return;
-    try {
-      await guardrailsFetch(
-        `/api/guardrails/validators/configs/${configId}${configsQueryString}`,
-        apiKey,
-        { method: "DELETE" },
-      );
-      toast.success("Config deleted");
-      if (selectedSavedConfig?.id === configId) {
-        handleClearForm();
-      }
-      fetchSavedConfigs();
-    } catch {
-      toast.error("Failed to delete config");
-    }
-  };
-
-  const handleSaveConfig = async (
-    name: string,
-    configValues: Record<string, unknown>,
-  ) => {
-    if (!name.trim()) {
+  const handleSaveConfig = async (configValues: Record<string, unknown>) => {
+    if (selectedSavedConfig) return;
+    const name =
+      typeof configValues.name === "string" ? configValues.name.trim() : "";
+    if (!name) {
       toast.error("Please enter a config name");
       return;
     }
@@ -144,23 +132,18 @@ export default function GuardrailsPage() {
     }
     setIsSaving(true);
     try {
-      const isUpdate = !!selectedSavedConfig;
-      const base = `/api/guardrails/validators/configs`;
-      const url = isUpdate
-        ? `${base}/${selectedSavedConfig!.id}${configsQueryString}`
-        : `${base}${configsQueryString}`;
-
-      const body = configValues;
-
-      await guardrailsFetch(url, apiKey, {
-        method: isUpdate ? "PATCH" : "POST",
-        body: JSON.stringify(body),
-      });
-      toast.success(
-        isUpdate ? `Config "${name}" updated` : `Config "${name}" saved`,
+      await guardrailsFetch(
+        `/api/guardrails/validators/configs${configsQueryString}`,
+        apiKey,
+        {
+          method: "POST",
+          body: JSON.stringify(configValues),
+        },
       );
-      fetchSavedConfigs();
+      toast.success(`Config "${name}" saved`);
+      await fetchSavedConfigs();
       setSelectedSavedConfig(null);
+      setSelectedValidatorType(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save config");
     } finally {
@@ -187,7 +170,7 @@ export default function GuardrailsPage() {
     : null;
 
   return (
-    <div className="w-full h-screen flex bg-bg-secondary">
+    <div className="w-full h-screen flex bg-bg-primary">
       <Sidebar collapsed={sidebarCollapsed} activeRoute="/guardrails" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -197,7 +180,17 @@ export default function GuardrailsPage() {
         />
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="shrink-0 border-r border-border overflow-hidden w-[450px]">
+          <div className="w-full lg:w-1/2 lg:border-r border-border flex flex-col overflow-hidden">
+            <SavedConfigsList
+              configs={savedConfigs}
+              isLoading={savedConfigsLoading}
+              selectedConfigId={selectedSavedConfig?.id ?? null}
+              onSelectConfig={handleSelectSavedConfig}
+              onNewConfig={handleClearForm}
+            />
+          </div>
+
+          <div className="hidden lg:flex w-1/2 flex-col overflow-hidden">
             <ValidatorConfigPanel
               validators={validators}
               validatorsLoading={validatorsLoading}
@@ -208,17 +201,7 @@ export default function GuardrailsPage() {
               isSaving={isSaving}
               onSave={handleSaveConfig}
               onClear={handleClearForm}
-            />
-          </div>
-
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <SavedConfigsList
-              configs={savedConfigs}
-              isLoading={savedConfigsLoading}
-              selectedConfigId={selectedSavedConfig?.id ?? null}
-              onSelectConfig={handleSelectSavedConfig}
-              onDeleteConfig={handleDeleteConfig}
-              onNewConfig={handleClearForm}
+              readOnly={!!selectedSavedConfig}
             />
           </div>
         </div>

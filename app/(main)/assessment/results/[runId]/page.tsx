@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import Loader from "@/app/components/Loader";
-import { useToast } from "@/app/components/Toast";
+import { Loader } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { jsonResultsToTableData } from "@/app/lib/assessment/results";

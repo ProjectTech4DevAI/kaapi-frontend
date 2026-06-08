@@ -1,6 +1,6 @@
 "use client";
 
-import { Field } from "@/app/components";
+import { Field } from "@/app/components/ui";
 import type { ValueSetter } from "@/app/lib/types/assessment";
 
 interface ExperimentReviewProps {

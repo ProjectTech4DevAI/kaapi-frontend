@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
-import Modal from "@/app/components/Modal";
-import { Button, Field } from "@/app/components";
+import { Button, Field, Modal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { MailIcon } from "@/app/components/icons";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { GoogleAuthResponse } from "@/app/lib/types/auth";
-import { useToast } from "@/app/components/Toast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { isValidEmail } from "@/app/lib/utils";
 
@@ -48,9 +47,12 @@ export default function LoginModal({ open, onClose }: LoginModalProps) {
       loginWithToken(access_token, user, google_profile);
       onClose();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to connect to server.",
-      );
+      const raw =
+        err instanceof Error ? err.message : "Failed to connect to server.";
+      const message = /no account found/i.test(raw)
+        ? "Your Google email isn't assigned to any organization or projects on Kaapi. Please contact Kaapi Support to request access."
+        : raw;
+      toast.error(message);
     } finally {
       setIsLoggingIn(false);
     }

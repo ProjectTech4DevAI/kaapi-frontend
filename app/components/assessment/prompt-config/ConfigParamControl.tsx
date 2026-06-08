@@ -1,4 +1,4 @@
-import Select from "@/app/components/Select";
+import { Select } from "@/app/components/ui";
 import type { ConfigParamDefinition } from "@/app/lib/types/assessment";
 
 const selectClass =

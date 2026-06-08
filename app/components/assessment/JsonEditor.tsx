@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useId } from "react";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { JSON_EDITOR_FONT_CLASSES } from "@/app/lib/assessment/constants";
 import { highlightJson } from "@/app/lib/utils/assessment";
 import type { ValueSetter } from "@/app/lib/types/assessment";

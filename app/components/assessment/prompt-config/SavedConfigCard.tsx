@@ -1,4 +1,4 @@
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { formatRelativeTime } from "@/app/lib/utils";
 import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";

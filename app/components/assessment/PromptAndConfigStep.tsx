@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { useToast } from "@/app/components/Toast";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import { ASSESSMENT_CONFIG_VERSION_PAGE_SIZE } from "@/app/lib/assessment/constants";

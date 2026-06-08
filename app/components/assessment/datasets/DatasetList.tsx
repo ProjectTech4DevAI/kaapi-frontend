@@ -1,10 +1,11 @@
 "use client";
 
-import { Button, DatasetListSkeleton } from "@/app/components";
+import { DatasetListSkeleton } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import type { ValueSetter } from "@/app/lib/types/assessment";
 import type { Dataset } from "@/app/lib/types/dataset";
+import { Button } from "@/app/components/ui";
 
 interface DatasetsListProps {
   datasets: Dataset[];

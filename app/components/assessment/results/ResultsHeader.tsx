@@ -1,5 +1,5 @@
 import { RefreshIcon } from "@/app/components/icons";
-import Select from "@/app/components/Select";
+import { Select } from "@/app/components/ui";
 import {
   RESULT_SUMMARY_ITEMS,
   SUMMARY_BADGE_CLASSES,

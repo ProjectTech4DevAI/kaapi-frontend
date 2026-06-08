@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/components";
+import { Button, InfoTooltip } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
-import InfoTooltip from "@/app/components/InfoTooltip";
 import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
 import PromptEditor from "./PromptEditor";
 

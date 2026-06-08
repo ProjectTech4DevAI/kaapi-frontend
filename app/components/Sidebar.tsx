@@ -20,6 +20,7 @@ import {
   ShieldCheckIcon,
   SlidersIcon,
   ChatIcon,
+  ChartBarIcon,
 } from "@/app/components/icons";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 import { LoginModal } from "@/app/components/auth";
@@ -126,6 +127,7 @@ export default function Sidebar({
     shield: <ShieldCheckIcon />,
     sliders: <SlidersIcon />,
     assessment: <AssessmentIcon />,
+    chart: <ChartBarIcon />,
   };
 
   const navItems: MenuItem[] = NAV_ITEMS.filter((item) => {
@@ -326,7 +328,7 @@ export default function Sidebar({
       <div className="w-60">
         {isAuthenticated && (currentUser || googleProfile) ? (
           <div
-            className="px-3 pb-3 pt-1 border-t border-border relative"
+            className="h-16 px-3 flex items-center border-t border-border relative"
             ref={userMenuRef}
           >
             {showUserMenu && (
@@ -373,7 +375,7 @@ export default function Sidebar({
             </button>
           </div>
         ) : !isAuthenticated ? (
-          <div className="px-4 py-4 w-60 border-t border-border">
+          <div className="px-4 py-4 w-60 bg-bg-primary border-t border-r border-border">
             <div className="p-2">
               <p className="text-sm font-bold text-text-primary">
                 Get full access

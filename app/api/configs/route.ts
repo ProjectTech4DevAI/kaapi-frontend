@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
-    const endpoint = `/api/v1/configs/${queryString ? `?${queryString}` : ""}`;
+    const endpoint = `/api/v1/configs${queryString ? `?${queryString}` : ""}`;
     const { status, data } = await apiClient(request, endpoint);
     return NextResponse.json(data, { status });
   } catch (error) {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const { status, data } = await apiClient(request, "/api/v1/configs/", {
+    const { status, data } = await apiClient(request, "/api/v1/configs", {
       method: "POST",
       body: JSON.stringify(body),
     });

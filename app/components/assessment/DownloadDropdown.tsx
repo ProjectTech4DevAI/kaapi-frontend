@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { DownloadIcon } from "@/app/components/icons/assessment";
 import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";

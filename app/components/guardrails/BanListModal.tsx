@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import Button from "@/app/components/Button";
-import { CloseIcon } from "@/app/components/icons";
-import Field from "@/app/components/Field";
+import { Button, Field, Modal } from "@/app/components/ui";
 
 interface BanListModalProps {
   onClose: () => void;
@@ -23,6 +21,7 @@ export default function BanListModal({
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
   const [wordsError, setWordsError] = useState("");
 
   const handleCreate = async () => {
@@ -32,6 +31,12 @@ export default function BanListModal({
       hasError = true;
     } else {
       setNameError("");
+    }
+    if (!description.trim()) {
+      setDescriptionError("Description is required");
+      hasError = true;
+    } else {
+      setDescriptionError("");
     }
     if (!bannedWords.trim()) {
       setWordsError("At least one banned word is required");
@@ -70,28 +75,13 @@ export default function BanListModal({
     "w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 resize-none";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+    <Modal open onClose={onClose} title="Create Ban List" maxWidth="max-w-md">
+      <div className="px-6 pb-2">
+        <p className="text-xs text-text-secondary mb-4">
+          Define a list of words to ban from outputs.
+        </p>
 
-      <div className="relative w-full max-w-md rounded-xl shadow-xl flex flex-col bg-bg-primary border border-border">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary">
-              Create Ban List
-            </h2>
-            <p className="text-xs mt-0.5 text-text-secondary">
-              Define a list of words to ban from outputs
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-neutral-100 transition-colors text-text-secondary"
-          >
-            <CloseIcon className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="px-5 py-4 space-y-4 overflow-y-auto max-h-[70vh]">
+        <div className="space-y-4">
           <Field
             label="Name *"
             value={name}
@@ -102,15 +92,20 @@ export default function BanListModal({
 
           <div>
             <label className="block text-xs font-medium mb-1 text-text-secondary">
-              Description
+              Description *
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this ban list covers…"
               rows={2}
-              className={textareaClass}
+              className={`${textareaClass} ${descriptionError ? "border-status-error-border" : ""}`}
             />
+            {descriptionError && (
+              <p className="text-xs text-status-error-text">
+                {descriptionError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -123,10 +118,10 @@ export default function BanListModal({
               onChange={(e) => setBannedWords(e.target.value)}
               placeholder="word1, word2, word3"
               rows={3}
-              className={`${textareaClass} ${wordsError ? "border-red-400" : ""}`}
+              className={`${textareaClass} ${wordsError ? "border-status-error-border" : ""}`}
             />
             {wordsError && (
-              <p className="text-xs text-red-500 mt-1">{wordsError}</p>
+              <p className="text-xs text-status-error-text">{wordsError}</p>
             )}
           </div>
 
@@ -149,16 +144,16 @@ export default function BanListModal({
             </span>
           </label>
         </div>
-
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button size="sm" onClick={handleCreate} disabled={isSaving}>
-            {isSaving ? "Creating…" : "Create Ban List"}
-          </Button>
-        </div>
       </div>
-    </div>
+
+      <div className="px-6 py-4 flex items-center justify-end gap-3 shrink-0">
+        <Button variant="outline" onClick={onClose} disabled={isSaving}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={handleCreate} disabled={isSaving}>
+          {isSaving ? "Creating…" : "Create Ban List"}
+        </Button>
+      </div>
+    </Modal>
   );
 }

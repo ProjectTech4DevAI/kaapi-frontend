@@ -2,7 +2,7 @@
 
 // Top-level layout for /assessment: sidebar, tab navigation, and active tab content.
 import Sidebar from "@/app/components/Sidebar";
-import TabNavigation from "@/app/components/TabNavigation";
+import { TabNavigation } from "@/app/components/ui";
 import PageHeader from "@/app/components/PageHeader";
 import { useApp } from "@/app/lib/context/AppContext";
 import type { PageLayoutProps } from "@/app/lib/types/assessment";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import type { SchemaProperty, ValueSetter } from "@/app/lib/types/assessment";
 
 interface ResponseSchemaProps {

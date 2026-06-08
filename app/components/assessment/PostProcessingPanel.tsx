@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Select } from "@/app/components/ui";
 import { ChevronDownIcon, CloseIcon } from "@/app/components/icons";
 import FormulaInput from "@/app/components/shared/FormulaInput";
 import {

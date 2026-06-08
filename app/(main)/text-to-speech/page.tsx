@@ -8,17 +8,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { colors } from "@/app/lib/colors";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import TabNavigation from "@/app/components/TabNavigation";
-import { useToast } from "@/app/components/Toast";
+import { ErrorModal, TabNavigation } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { apiFetch } from "@/app/lib/apiClient";
-import ErrorModal from "@/app/components/ErrorModal";
-import DatasetsTab from "@/app/components/text-to-speech/DatasetsTab";
-import EvaluationsTab from "@/app/components/text-to-speech/EvaluationsTab";
+import { DatasetsTab, EvaluationsTab } from "@/app/components/text-to-speech";
 import {
   TTSTab,
   TextSample,
@@ -70,7 +67,6 @@ export default function TextToSpeechPage() {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMessage, setErrorModalMessage] = useState("");
 
-  // Load languages
   const loadLanguages = async () => {
     if (!isAuthenticated) return;
 
@@ -358,10 +354,7 @@ export default function TextToSpeechPage() {
   const selectedDataset = datasets.find((d) => d.id === selectedDatasetId);
 
   return (
-    <div
-      className="w-full h-screen flex flex-col"
-      style={{ backgroundColor: colors.bg.secondary }}
-    >
+    <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/text-to-speech" />
 
@@ -381,11 +374,8 @@ export default function TextToSpeechPage() {
           />
 
           {!isAuthenticated ? (
-            <div
-              className="flex-1 flex items-center justify-center"
-              style={{ backgroundColor: colors.bg.secondary }}
-            >
-              <p className="text-sm" style={{ color: colors.text.secondary }}>
+            <div className="flex-1 flex items-center justify-center bg-bg-secondary">
+              <p className="text-sm text-text-secondary">
                 Please sign in to start creating datasets and running
                 evaluations.
               </p>

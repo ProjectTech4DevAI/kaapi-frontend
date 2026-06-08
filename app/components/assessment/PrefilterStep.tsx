@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/components";
-import Modal from "@/app/components/Modal";
+import { Button, Modal } from "@/app/components/ui";
 import { ExpandIcon } from "@/app/components/icons";
 import CompactToggleSwitch from "@/app/components/assessment/CompactToggleSwitch";
 import { DEFAULT_PREFILTER_TOPIC_RELEVANCE_PROMPT } from "@/app/lib/assessment/constants";

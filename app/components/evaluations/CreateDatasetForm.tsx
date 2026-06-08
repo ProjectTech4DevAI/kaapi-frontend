@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Field } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Field, Select } from "@/app/components/ui";
 import {
   CheckLineIcon,
   CloseIcon,
@@ -20,7 +19,7 @@ interface CreateDatasetFormProps {
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: () => void;
   isUploading: boolean;
-  handleCreateDataset: () => void;
+  handleCreateDataset: () => void | Promise<boolean>;
   resetForm: () => void;
 }
 

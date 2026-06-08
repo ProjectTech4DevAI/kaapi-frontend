@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button, Modal } from "@/app/components";
+import { Button, Modal } from "@/app/components/ui";
 import { CloseIcon } from "@/app/components/icons";
 import type { SchemaProperty, ValueSetter } from "@/app/lib/types/assessment";
 import { createProperty } from "@/app/lib/utils/outputSchema";

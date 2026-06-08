@@ -1,4 +1,4 @@
-import { colors } from "@/app/lib/colors";
+import { VersionPill } from "@/app/components";
 import { SavedConfig } from "@/app/lib/types/configs";
 
 interface PromptDiffPaneProps {
@@ -12,7 +12,6 @@ interface DiffLine {
   lineNumber: number;
 }
 
-// Simple diff utility - matches SimplifiedConfigEditor implementation
 function generateDiff(
   text1: string,
   text2: string,
@@ -28,19 +27,15 @@ function generateDiff(
     const line2 = lines2[i] !== undefined ? lines2[i] : null;
 
     if (line1 === null && line2 !== null) {
-      // Line only exists in text2 (added)
       left.push({ type: "same", content: "", lineNumber: i + 1 });
       right.push({ type: "added", content: line2, lineNumber: i + 1 });
     } else if (line1 !== null && line2 === null) {
-      // Line only exists in text1 (removed)
       left.push({ type: "removed", content: line1, lineNumber: i + 1 });
       right.push({ type: "same", content: "", lineNumber: i + 1 });
     } else if (line1 !== line2) {
-      // Lines are different
       left.push({ type: "removed", content: line1 || "", lineNumber: i + 1 });
       right.push({ type: "added", content: line2 || "", lineNumber: i + 1 });
     } else {
-      // Lines are the same
       left.push({ type: "same", content: line1 || "", lineNumber: i + 1 });
       right.push({ type: "same", content: line2 || "", lineNumber: i + 1 });
     }
@@ -63,130 +58,86 @@ export default function PromptDiffPane({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div
-        className="px-4 py-3 border-b"
-        style={{
-          backgroundColor: colors.bg.primary,
-          borderColor: colors.border,
-        }}
-      >
-        <h3
-          className="text-sm font-semibold"
-          style={{ color: colors.text.primary }}
-        >
+      <div className="px-4 py-3 border-b border-border bg-bg-primary">
+        <h3 className="text-sm font-semibold text-text-primary">
           Prompt Changes
         </h3>
-        <div className="text-xs mt-1" style={{ color: colors.text.secondary }}>
-          Side-by-side comparison: v{compareWith.version} ↔ v
-          {selectedCommit.version}
+        <div className="text-xs mt-1 text-text-secondary inline-flex items-center gap-1.5">
+          Side-by-side comparison:{" "}
+          <VersionPill version={compareWith.version} size="sm" /> ↔
+          <VersionPill
+            version={selectedCommit.version}
+            size="sm"
+            tone="accent"
+          />
         </div>
       </div>
 
       {!hasChanges ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm" style={{ color: colors.text.secondary }}>
-            No prompt changes
-          </p>
+          <p className="text-sm text-text-secondary">No prompt changes</p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Column Headers */}
-          <div
-            className="grid grid-cols-2 border-b"
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.bg.secondary,
-            }}
-          >
-            <div
-              className="px-3 py-2 text-xs font-semibold"
-              style={{ color: colors.text.primary }}
-            >
+          <div className="grid grid-cols-2 border-b border-border bg-bg-secondary">
+            <div className="px-3 py-2 text-xs font-semibold text-text-primary">
               v{compareWith.version} (Before)
             </div>
-            <div
-              className="px-3 py-2 text-xs font-semibold border-l"
-              style={{ color: colors.text.primary, borderColor: colors.border }}
-            >
+            <div className="px-3 py-2 text-xs font-semibold border-l border-border text-text-primary">
               v{selectedCommit.version} (After)
             </div>
           </div>
 
-          {/* Side-by-Side Diff */}
           <div className="flex-1 overflow-auto">
-            <div
-              className="grid grid-cols-2"
-              style={{
-                fontFamily:
-                  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                fontSize: "12px",
-              }}
-            >
-              {/* Left Panel */}
-              <div style={{ backgroundColor: colors.bg.primary }}>
+            <div className="grid grid-cols-2 font-mono text-xs">
+              <div className="bg-bg-primary">
                 {left.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className="px-3 py-1"
-                    style={{
-                      backgroundColor:
-                        line.type === "removed"
-                          ? "#fee2e2"
-                          : line.type === "added"
-                            ? "transparent"
-                            : colors.bg.primary,
-                      color:
-                        line.type === "removed"
-                          ? colors.status.error
-                          : colors.text.primary,
-                      minHeight: "24px",
-                      lineHeight: "1.5",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {line.type === "removed" && "- "}
-                    {line.content || "\u00A0"}
-                  </div>
+                  <DiffLineRow key={idx} line={line} side="left" />
                 ))}
               </div>
 
-              {/* Right Panel */}
-              <div
-                className="border-l"
-                style={{
-                  borderColor: colors.border,
-                  backgroundColor: colors.bg.primary,
-                }}
-              >
+              <div className="border-l border-border bg-bg-primary">
                 {right.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className="px-3 py-1"
-                    style={{
-                      backgroundColor:
-                        line.type === "added"
-                          ? "#dcfce7"
-                          : line.type === "removed"
-                            ? "transparent"
-                            : colors.bg.primary,
-                      color:
-                        line.type === "added" ? "#15803d" : colors.text.primary,
-                      minHeight: "24px",
-                      lineHeight: "1.5",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {line.type === "added" && "+ "}
-                    {line.content || "\u00A0"}
-                  </div>
+                  <DiffLineRow key={idx} line={line} side="right" />
                 ))}
               </div>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function DiffLineRow({
+  line,
+  side,
+}: {
+  line: DiffLine;
+  side: "left" | "right";
+}) {
+  const tone =
+    side === "left"
+      ? line.type === "removed"
+        ? "bg-status-error-bg text-status-error-text"
+        : "text-text-primary"
+      : line.type === "added"
+        ? "bg-status-success-bg text-status-success-text"
+        : "text-text-primary";
+
+  const prefix =
+    side === "left" && line.type === "removed"
+      ? "- "
+      : side === "right" && line.type === "added"
+        ? "+ "
+        : "";
+
+  return (
+    <div
+      className={`px-3 py-1 min-h-6 leading-relaxed whitespace-pre-wrap wrap-break-word ${tone}`}
+    >
+      {prefix}
+      {line.content || " "}
     </div>
   );
 }

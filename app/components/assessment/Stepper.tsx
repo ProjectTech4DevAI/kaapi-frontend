@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { CheckIcon } from "@/app/components/icons";
 import type { Step, ValueSetter } from "@/app/lib/types/assessment";
 

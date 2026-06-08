@@ -48,7 +48,7 @@ export default function ChatEmptyState({
                 key={s}
                 type="button"
                 onClick={() => onSuggestion(s)}
-                className="text-left text-sm text-text-primary px-4 py-3 rounded-xl border border-border bg-bg-primary hover:bg-neutral-50 transition-colors cursor-pointer"
+                className="text-left text-sm text-text-primary px-4 py-3 rounded-xl bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow cursor-pointer"
               >
                 {s}
               </button>

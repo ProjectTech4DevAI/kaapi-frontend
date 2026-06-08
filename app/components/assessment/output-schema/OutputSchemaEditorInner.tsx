@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import type { SchemaProperty } from "@/app/lib/types/assessment";
 import JsonEditor from "../JsonEditor";
 import {

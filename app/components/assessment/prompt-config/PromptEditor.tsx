@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
 
 interface PromptEditorProps {

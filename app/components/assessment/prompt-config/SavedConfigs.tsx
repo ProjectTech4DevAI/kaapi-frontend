@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/app/components";
-import Loader from "@/app/components/Loader";
+import { Button, Loader } from "@/app/components/ui";
 import type { ConfigPublic } from "@/app/lib/types/configs";
 import type {
   LatestConfigModel,

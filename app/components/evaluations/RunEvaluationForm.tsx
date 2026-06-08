@@ -1,8 +1,7 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/dataset";
-import { Button, Field } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Field, Select } from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";

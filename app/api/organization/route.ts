@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     const { status, data } = await apiClient(
       request,
-      `/api/v1/organizations/${queryString ? `?${queryString}` : ""}`,
+      `/api/v1/organizations${queryString ? `?${queryString}` : ""}`,
     );
     return NextResponse.json(data, { status });
   } catch {

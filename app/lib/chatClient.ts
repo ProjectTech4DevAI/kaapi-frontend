@@ -14,6 +14,7 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import {
+  ChatAudioPayload,
   LLMCallCreateResponse,
   LLMCallRequest,
   LLMCallStatusData,
@@ -85,9 +86,11 @@ export async function pollLLMCall(
     }
     if (FAILURE_STATUSES.has(status)) {
       throw new Error(
-        res.data.error_message ||
-          res.error ||
-          `Job ${status}. Please try again.`,
+        sanitizeAssistantText(
+          res.data.error_message ||
+            res.error ||
+            `Job ${status}. Please try again.`,
+        ),
       );
     }
 
@@ -155,17 +158,59 @@ function findText(node: unknown, depth = 0): string | null {
   return null;
 }
 
+const DATA_URL_RE = /data:([\w.+-]+\/[\w.+-]+);base64,[A-Za-z0-9+/=]{32,}/g;
+
+function sanitizeAssistantText(text: string): string {
+  return text.replace(DATA_URL_RE, (_match, mime: string) => {
+    const [, sub] = mime.split("/");
+    const label = (sub ?? mime).toUpperCase();
+    return `[${label} attachment]`;
+  });
+}
+
 export function extractAssistantText(
   response?: LLMResponseBody | null,
 ): string {
   if (!response) return "";
   const text = findText(response.output);
-  if (text) return text;
+  if (text) return sanitizeAssistantText(text);
   try {
-    return JSON.stringify(response.output ?? "");
+    return sanitizeAssistantText(JSON.stringify(response.output ?? ""));
   } catch {
     return "";
   }
+}
+
+interface AudioOutputContent {
+  format?: string;
+  value?: string;
+  mime_type?: string;
+  uri?: string;
+}
+
+interface AudioOutputNode {
+  type?: string;
+  content?: AudioOutputContent;
+}
+
+export function extractAssistantAudio(
+  response?: LLMResponseBody | null,
+): ChatAudioPayload | null {
+  const output = response?.output as AudioOutputNode | null | undefined;
+  if (!output || typeof output !== "object") return null;
+  if (output.type !== "audio" || !output.content) return null;
+  const { uri, value, format, mime_type } = output.content;
+  const mimeType = mime_type || "audio/wav";
+  if (format === "url" && typeof value === "string" && value) {
+    return { url: value, mimeType };
+  }
+  if (typeof uri === "string" && uri) {
+    return { url: uri, mimeType };
+  }
+  if (format === "base64" && typeof value === "string" && value) {
+    return { url: `data:${mimeType};base64,${value}`, mimeType };
+  }
+  return null;
 }
 
 /**

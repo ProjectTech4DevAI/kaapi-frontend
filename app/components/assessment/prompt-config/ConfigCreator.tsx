@@ -1,5 +1,4 @@
-import { Button, Field } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Field, Select } from "@/app/components/ui";
 import { PROVIDER_OPTIONS } from "@/app/lib/data/assessmentModels";
 import type {
   ConfigParamDefinition,

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { colors } from "@/app/lib/colors";
 import WaveformVisualizer from "./WaveformVisualizer";
 
 interface AudioPlayerProps {
@@ -57,6 +56,8 @@ export default function AudioPlayer({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div className="space-y-1.5">
       <audio ref={audioRef} src={audioSrc} preload="metadata" />
@@ -64,13 +65,11 @@ export default function AudioPlayer({
       <div className="flex items-center gap-2">
         <button
           onClick={onPlayToggle}
-          className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0"
-          style={{
-            backgroundColor: isPlaying
-              ? colors.accent.primary
-              : colors.bg.secondary,
-            color: isPlaying ? "#fff" : colors.text.primary,
-          }}
+          className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 cursor-pointer ${
+            isPlaying
+              ? "bg-accent-primary text-white"
+              : "bg-bg-secondary text-text-primary"
+          }`}
         >
           {isPlaying ? (
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -84,7 +83,6 @@ export default function AudioPlayer({
           )}
         </button>
 
-        {/* Waveform Visualizer */}
         <div className="flex-1 min-w-0">
           {/* eslint-disable react-hooks/refs -- accessing ref in render for waveform display */}
           <WaveformVisualizer
@@ -95,26 +93,15 @@ export default function AudioPlayer({
           {/* eslint-enable react-hooks/refs */}
         </div>
 
-        <span
-          className="text-xs tabular-nums flex-shrink-0"
-          style={{ color: colors.text.secondary }}
-        >
+        <span className="text-xs tabular-nums shrink-0 text-text-secondary">
           {isPlaying ? formatTime(currentTime) : formatTime(duration)}
         </span>
       </div>
 
-      {/* Progress bar */}
-      <div
-        className="h-0.5 rounded-full overflow-hidden mt-1"
-        style={{ backgroundColor: colors.border }}
-      >
+      <div className="h-0.5 rounded-full overflow-hidden mt-1 bg-border">
         <div
-          className="h-full rounded-full"
-          style={{
-            width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%",
-            backgroundColor: colors.accent.primary,
-            transition: "width 0.1s linear",
-          }}
+          className="h-full rounded-full bg-accent-primary transition-[width] duration-100 ease-linear"
+          style={{ width: `${progressPercent}%` }}
         />
       </div>
     </div>

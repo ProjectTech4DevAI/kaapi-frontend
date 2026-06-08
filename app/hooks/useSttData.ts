@@ -14,30 +14,9 @@ import {
   DatasetsResponse,
   RunsResponse,
   RunDetailResponse,
+  UseSttDataResult,
 } from "@/app/lib/types/speechToText";
 
-interface UseSttDataResult {
-  languages: Language[];
-  datasets: Dataset[];
-  runs: STTRun[];
-  results: STTResult[];
-  selectedRunId: number | null;
-  setSelectedRunId: (id: number | null) => void;
-  setResults: React.Dispatch<React.SetStateAction<STTResult[]>>;
-  isLoadingDatasets: boolean;
-  isLoadingRuns: boolean;
-  isLoadingResults: boolean;
-  loadDatasets: () => Promise<void>;
-  loadRuns: () => Promise<void>;
-  loadResults: (runId: number) => Promise<void>;
-}
-
-/**
- * Owns the read-side state for the speech-to-text page: the list of
- * languages, datasets, runs, and the currently-loaded results, plus the
- * loaders that populate them. The page passes the active tab so we only
- * fetch runs when it's relevant.
- */
 export function useSttData(
   activeTab: "datasets" | "evaluations",
 ): UseSttDataResult {

@@ -138,7 +138,7 @@ export default function BreakdownPanel({
             {groupHeader}-wise {metricLabel}
           </h4>
         </header>
-        <div className="flex-1 min-h-0 max-h-80 overflow-y-auto custom-scroll-accent">
+        <div className="flex-1 min-h-0 max-h-80 overflow-y-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-accent-primary/10 backdrop-blur-3xl">
               <tr className="text-[11px] uppercase tracking-wide text-black">

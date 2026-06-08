@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
 import DownloadIcon from "@/app/components/icons/assessment/DownloadIcon";
 import type { ExportFormat } from "@/app/lib/types/assessment";

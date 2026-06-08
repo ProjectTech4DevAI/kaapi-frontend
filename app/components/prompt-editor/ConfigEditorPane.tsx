@@ -7,15 +7,19 @@ import {
   ConfigVersionItems,
   CompletionConfig,
 } from "@/app/lib/types/configs";
-import { MODEL_OPTIONS, isGpt5Model } from "@/app/lib/models";
+import {
+  ConfigType,
+  MODEL_OPTIONS,
+  getModelsForType,
+  isGpt5Model,
+} from "@/app/lib/models";
 import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
 import GuardrailsSection from "./GuardrailsSection";
 import SaveConfigModal from "./SaveConfigModal";
 import LoadConfigDropdown from "./LoadConfigDropdown";
 import ConfigNameSection from "./ConfigNameSection";
 import ToolsSection from "./ToolsSection";
-import { Button } from "@/app/components";
-
+import { Button } from "@/app/components/ui";
 const inputClass =
   "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
 
@@ -105,25 +109,39 @@ export default function ConfigEditorPane({
     ? allConfigMeta.find((m) => m.name === configName.trim())
     : undefined;
 
+  const currentType = (configBlob.completion.type || "text") as ConfigType;
+
   const handleProviderChange = (newProvider: string) => {
+    const candidates = getModelsForType(newProvider, currentType);
+    const fallback = MODEL_OPTIONS[newProvider]?.[0]?.value ?? "";
+    const nextModel = candidates[0]?.value ?? fallback;
     onConfigChange({
       ...configBlob,
       completion: {
         ...configBlob.completion,
         provider: newProvider as CompletionConfig["provider"],
-        params: {
-          ...params,
-          model:
-            MODEL_OPTIONS[newProvider as keyof typeof MODEL_OPTIONS][0].value,
-        },
+        params: { ...params, model: nextModel },
       },
     });
   };
 
-  const handleTypeChange = (newType: "text" | "stt" | "tts") => {
+  const handleTypeChange = (newType: ConfigType) => {
+    const provider = configBlob.completion.provider;
+    const candidates = getModelsForType(provider, newType);
+    const currentModel = params.model;
+    const stillValid = candidates.some((m) => m.value === currentModel);
+    const nextModel = stillValid
+      ? currentModel
+      : (candidates[0]?.value ??
+        MODEL_OPTIONS[provider]?.[0]?.value ??
+        currentModel);
     onConfigChange({
       ...configBlob,
-      completion: { ...configBlob.completion, type: newType },
+      completion: {
+        ...configBlob.completion,
+        type: newType,
+        params: { ...params, model: nextModel },
+      },
     });
   };
 
@@ -259,7 +277,9 @@ export default function ConfigEditorPane({
               ))}
             </select>
             <p className="text-xs mt-1.5 text-text-secondary">
-              Standard text-based LLM completion
+              {PROVIDER_TYPES.find(
+                (t) => t.value === (configBlob.completion.type || "text"),
+              )?.description ?? ""}
             </p>
           </div>
 
@@ -272,10 +292,7 @@ export default function ConfigEditorPane({
               onChange={(e) => handleModelChange(e.target.value)}
               className={inputClass}
             >
-              {(
-                MODEL_OPTIONS[provider as keyof typeof MODEL_OPTIONS] ??
-                MODEL_OPTIONS.openai
-              ).map((model) => (
+              {getModelsForType(provider, currentType).map((model) => (
                 <option key={model.value} value={model.value}>
                   {model.label}
                 </option>

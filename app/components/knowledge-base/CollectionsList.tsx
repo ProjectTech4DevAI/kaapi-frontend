@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/app/components";
-import { BookOpenIcon, TrashIcon } from "@/app/components/icons";
+import { Button } from "@/app/components/ui";
+import { BookOpenIcon, EditIcon, TrashIcon } from "@/app/components/icons";
 import { formatDate } from "@/app/components/utils";
 import { Collection } from "@/app/lib/types/document";
 import CollectionsListSkeleton from "./CollectionsListSkeleton";
@@ -12,6 +12,7 @@ interface CollectionsListProps {
   isLoading: boolean;
   onSelect: (collectionId: string) => void;
   onRequestDelete: (collectionId: string) => void;
+  onRequestEdit: (collection: Collection) => void;
   onCreateNew: () => void;
 }
 
@@ -21,6 +22,7 @@ export default function CollectionsList({
   isLoading,
   onSelect,
   onRequestDelete,
+  onRequestEdit,
   onCreateNew,
 }: CollectionsListProps) {
   return (
@@ -56,10 +58,10 @@ export default function CollectionsList({
                 <button
                   key={collection.id}
                   onClick={() => onSelect(collection.id)}
-                  className={`w-full text-left rounded-lg p-3 transition-shadow cursor-pointer ${
+                  className={`w-full text-left rounded-lg p-4 transition-shadow cursor-pointer ${
                     isSelected
-                      ? "bg-accent-primary/5 shadow-[0_2px_6px_rgba(31,68,150,0.12),0_1px_2px_rgba(0,0,0,0.04)]"
-                      : "bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+                      ? "bg-accent-primary/5 shadow-[0_6px_18px_rgba(31,68,150,0.18),0_2px_4px_rgba(31,68,150,0.08)]"
+                      : "bg-bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.12),0_2px_4px_rgba(0,0,0,0.06)]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -81,15 +83,27 @@ export default function CollectionsList({
                       </p>
                     </div>
                     {!isOptimistic && (
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRequestDelete(collection.id);
-                        }}
-                        className="p-1.5 rounded-md border border-status-error-border bg-bg-primary text-status-error-text hover:bg-status-error-bg transition-colors shrink-0 cursor-pointer"
-                        title="Delete Knowledge Base"
-                      >
-                        <TrashIcon className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRequestEdit(collection);
+                          }}
+                          className="p-1.5 rounded-md border border-border bg-bg-primary text-text-secondary hover:text-accent-primary hover:border-accent-primary hover:bg-accent-primary/10 transition-colors cursor-pointer"
+                          title="Edit Knowledge Base"
+                        >
+                          <EditIcon className="w-3.5 h-3.5" />
+                        </span>
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRequestDelete(collection.id);
+                          }}
+                          className="p-1.5 rounded-md border border-status-error-border bg-bg-primary text-status-error-text hover:bg-status-error-bg transition-colors cursor-pointer"
+                          title="Delete Knowledge Base"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" />
+                        </span>
                       </span>
                     )}
                   </div>

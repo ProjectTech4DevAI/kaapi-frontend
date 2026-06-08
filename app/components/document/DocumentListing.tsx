@@ -4,9 +4,7 @@ import { formatDate } from "@/app/components/utils";
 import { Document } from "@/app/lib/types/document";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { DocumentFileIcon, TrashIcon } from "@/app/components/icons";
-import { Button } from "@/app/components";
-import Loader from "@/app/components/Loader";
-import FileExtBadge from "@/app/components/FileExtBadge";
+import { Button, FileExtBadge, Loader } from "@/app/components/ui";
 import DocumentListingSkeleton from "./DocumentListingSkeleton";
 
 interface DocumentListingProps {
@@ -79,10 +77,10 @@ export function DocumentListing({
                 <button
                   key={doc.id}
                   onClick={() => onSelect(doc)}
-                  className={`w-full text-left rounded-lg p-3 transition-shadow cursor-pointer ${
+                  className={`w-full text-left rounded-lg p-4 transition-shadow cursor-pointer ${
                     isSelected
-                      ? "bg-accent-primary/5 shadow-[0_2px_6px_rgba(31,68,150,0.12),0_1px_2px_rgba(0,0,0,0.04)]"
-                      : "bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
+                      ? "bg-accent-primary/5 shadow-[0_6px_18px_rgba(31,68,150,0.18),0_2px_4px_rgba(31,68,150,0.08)]"
+                      : "bg-bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.12),0_2px_4px_rgba(0,0,0,0.06)]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">

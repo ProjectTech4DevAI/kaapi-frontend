@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
-import { Button, Loader } from "@/app/components";
+import { Button, Loader } from "@/app/components/ui";
 import ConfigCard from "@/app/components/ConfigCard";
 import ConfigLibrarySkeleton from "@/app/components/ConfigLibrarySkeleton";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
@@ -24,7 +24,7 @@ import {
   configState,
   pendingVersionLoads,
   pendingSingleVersionLoads,
-} from "@/app/lib/store/config";
+} from "@/app/lib/store/configStore";
 import { flattenConfigVersion } from "@/app/lib/utils";
 import {
   SearchIcon,

@@ -14,7 +14,7 @@ import {
   isGroupedFormat,
 } from "@/app/lib/utils/evaluation";
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
-import { InfoTooltip } from "@/app/components";
+import { InfoTooltip } from "@/app/components/ui";
 import GroupedResultsTable from "@/app/components/evaluations/GroupedResultsTable";
 
 interface DetailedResultsTableProps {

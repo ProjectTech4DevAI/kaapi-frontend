@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { Dataset, ViewDatasetModalData } from "@/app/lib/types/dataset";
-import { useToast } from "@/app/components/Toast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { DatabaseIcon, PlusIcon } from "@/app/components/icons";
-import { Button, DatasetListSkeleton, Modal } from "@/app/components";
+import { Button, Modal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
+import { DatasetListSkeleton } from "@/app/components";
+import { parseCsvRow } from "@/app/lib/utils/csv";
 import DatasetCard from "./DatasetCard";
 import CreateDatasetForm from "./CreateDatasetForm";
 import ViewDatasetModal from "./ViewDatasetModal";
@@ -32,29 +34,6 @@ export interface DatasetsTabProps {
   loadStoredDatasets: () => void;
   toast: ReturnType<typeof useToast>;
 }
-
-const parseCsvRow = (line: string): string[] => {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (line[i] === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += line[i];
-    }
-  }
-  result.push(current.trim());
-  return result;
-};
 
 export default function DatasetsTab({
   leftPanelWidth,

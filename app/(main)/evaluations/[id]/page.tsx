@@ -26,12 +26,12 @@ import {
   exportGroupedCSV,
   exportRowCSV,
 } from "@/app/lib/utils/evaluationExport";
-import ConfigModal from "@/app/components/ConfigModal";
 import Sidebar from "@/app/components/Sidebar";
 import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
 import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
-import { Button, Modal, ResultsTableSkeleton, Loader } from "@/app/components";
-import { useToast } from "@/app/components/Toast";
+import { Button, Modal, Loader, ConfigModal } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
+import { ResultsTableSkeleton } from "@/app/components";
 import {
   MenuIcon,
   ChevronLeftIcon,
@@ -60,33 +60,6 @@ export default function EvaluationReport() {
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
-
-  const fetchAssistantConfig = async (assistantId: string) => {
-    try {
-      const result = await apiFetch<{
-        success: boolean;
-        data?: AssistantConfig;
-      }>(`/api/assistant/${assistantId}`, apiKey);
-      if (result.success && result.data) setAssistantConfig(result.data);
-    } catch (err) {
-      console.error(
-        `Failed to fetch assistant config for ${assistantId}:`,
-        err,
-      );
-    }
-  };
-
-  const fetchConfigInfo = async (configId: string, configVersion: number) => {
-    try {
-      await apiFetch(`/api/configs/${configId}`, apiKey);
-      await apiFetch(
-        `/api/configs/${configId}/versions/${configVersion}`,
-        apiKey,
-      );
-    } catch (error) {
-      console.error("Error fetching config version info:", error);
-    }
-  };
 
   const fetchJobDetails = useCallback(async () => {
     if (!isAuthenticated || !jobId) return;
@@ -137,6 +110,33 @@ export default function EvaluationReport() {
       setIsFormatSwitching(false);
     }
   }, [apiKey, isAuthenticated, jobId, exportFormat]);
+
+  const fetchAssistantConfig = async (assistantId: string) => {
+    try {
+      const result = await apiFetch<{
+        success: boolean;
+        data?: AssistantConfig;
+      }>(`/api/assistant/${assistantId}`, apiKey);
+      if (result.success && result.data) setAssistantConfig(result.data);
+    } catch (err) {
+      console.error(
+        `Failed to fetch assistant config for ${assistantId}:`,
+        err,
+      );
+    }
+  };
+
+  const fetchConfigInfo = async (configId: string, configVersion: number) => {
+    try {
+      await apiFetch(`/api/configs/${configId}`, apiKey);
+      await apiFetch(
+        `/api/configs/${configId}/versions/${configVersion}`,
+        apiKey,
+      );
+    } catch (error) {
+      console.error("Error fetching config version info:", error);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && jobId) fetchJobDetails();

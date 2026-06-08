@@ -9,11 +9,12 @@ import {
 } from "@/app/lib/types/textToSpeech";
 import { Language } from "@/app/lib/types/speechToText";
 import { APIKey } from "@/app/lib/types/credentials";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { DatabaseIcon } from "@/app/components/icons";
 import { DatasetListSkeleton } from "@/app/components";
+import { parseCsvRow } from "@/app/lib/utils/csv";
 import TTSDatasetCard from "./TTSDatasetCard";
 import CreateTTSDatasetForm from "./CreateTTSDatasetForm";
 import TTSViewDatasetModal from "./TTSViewDatasetModal";
@@ -62,29 +63,6 @@ const splitCSVRecords = (text: string): string[] => {
   }
   if (current.trim()) records.push(current);
   return records;
-};
-
-const parseCsvRow = (line: string): string[] => {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (line[i] === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += line[i];
-    }
-  }
-  result.push(current.trim());
-  return result;
 };
 
 export default function DatasetsTab({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Button, Field, Modal } from "@/app/components";
+import { Button, Field, Modal } from "@/app/components/ui";
 import { CloudUploadIcon, InfoIcon } from "@/app/components/icons";
 
 export interface UploadDatasetModalProps {

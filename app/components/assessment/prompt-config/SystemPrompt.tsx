@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDownIcon } from "@/app/components/icons";
-import InfoTooltip from "@/app/components/InfoTooltip";
+import { InfoTooltip } from "@/app/components/ui";
 import type { ValueSetter } from "@/app/lib/types/assessment";
 import PromptEditor from "./PromptEditor";
 

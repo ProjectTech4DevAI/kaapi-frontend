@@ -1,7 +1,7 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/dataset";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 
 interface DatasetCardProps {

@@ -64,4 +64,10 @@ export const NAV_ITEMS: NavItemConfig[] = [
     featureFlag: FeatureFlag.ASSESSMENT,
     gateDescription: "Log in to run assessments.",
   },
+  {
+    name: "Analytics",
+    route: "/analytics",
+    icon: "chart",
+    gateDescription: "Log in to view the analytics dashboard.",
+  },
 ];

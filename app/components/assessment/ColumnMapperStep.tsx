@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Select } from "@/app/components/ui";
 import {
   ASSESSMENT_ROLE_OPTION_MAP,
   ASSESSMENT_ROLE_OPTIONS,

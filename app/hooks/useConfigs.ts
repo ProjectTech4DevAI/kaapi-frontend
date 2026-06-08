@@ -25,7 +25,7 @@ import {
   pendingSingleVersionLoads,
   loadCache,
   saveCache,
-} from "@/app/lib/store/config";
+} from "@/app/lib/store/configStore";
 import {
   fetchAllConfigs,
   fetchNextConfigBatch,

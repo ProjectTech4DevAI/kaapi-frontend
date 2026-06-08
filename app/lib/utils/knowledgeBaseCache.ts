@@ -40,6 +40,26 @@ export const saveCollectionData = (
   writeCache(cache);
 };
 
+export const updateCollectionCacheByCollectionId = (
+  collectionId: string,
+  patch: { name?: string; description?: string },
+) => {
+  const cache = readCache();
+  for (const [jobId, data] of Object.entries(cache)) {
+    if (data.collection_id === collectionId) {
+      cache[jobId] = {
+        ...data,
+        ...(patch.name !== undefined ? { name: patch.name } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description }
+          : {}),
+      };
+      writeCache(cache);
+      return;
+    }
+  }
+};
+
 export const getCollectionDataByCollectionId = (
   collectionId: string,
 ): { name?: string; description?: string; job_id?: string } => {

@@ -12,9 +12,11 @@ import KeysCard from "@/app/components/keystore/KeysCard";
 import AddKeyModal from "@/app/components/keystore/AddKeyModal";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
-import { useToast } from "@/app/components/Toast";
+import { useToast } from "@/app/hooks/useToast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { APIKey } from "@/app/lib/types/credentials";
+
+export const STORAGE_KEY = "kaapi_api_keys";
 
 export default function KaapiKeystore() {
   const { sidebarCollapsed } = useApp();

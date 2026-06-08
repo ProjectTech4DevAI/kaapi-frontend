@@ -1,17 +1,18 @@
 import { ValidatorConfigSchema } from "@/app/lib/types/guardrails";
-import InfoTooltip from "@/app/components/InfoTooltip";
-import MultiSelect from "../MultiSelect";
-import Field from "@/app/components/Field";
-import Select from "@/app/components/Select";
+import { Field, InfoTooltip, MultiSelect, Select } from "@/app/components/ui";
 import { resolveRef } from "@/app/lib/utils/guardrails";
 import {
   GUARDRAILS_FIELD_TOOLTIPS,
   KNOWN_ARRAY_OPTIONS,
   KNOWN_SINGLE_OPTIONS,
+  VALIDATOR_FIELD_OPTIONS,
 } from "@/app/lib/data/guardrails/validators";
 
 type SchemaProp = ValidatorConfigSchema["properties"][string];
 type AnyOfMember = { $ref?: string; enum?: string[]; type?: string };
+
+const capitalize = (v: string) =>
+  v ? v.charAt(0).toUpperCase() + v.slice(1) : v;
 
 interface SchemaFieldProps {
   name: string;
@@ -19,6 +20,7 @@ interface SchemaFieldProps {
   defs: ValidatorConfigSchema["$defs"];
   value: unknown;
   onChange: (name: string, value: unknown) => void;
+  validatorType?: string;
 }
 
 export default function SchemaField({
@@ -27,6 +29,7 @@ export default function SchemaField({
   defs,
   value,
   onChange,
+  validatorType,
 }: SchemaFieldProps) {
   const label =
     schema.title ??
@@ -51,13 +54,15 @@ export default function SchemaField({
     (anyOf?.some((item) => item.type === "array") ?? false);
 
   const labelEl = (
-    <label className="block text-xs font-medium mb-1 text-text-primary">
+    <label className="block text-xs font-medium text-text-secondary mb-1">
       {label}
       {tooltip && <InfoTooltip text={tooltip} />}
     </label>
   );
 
-  const singleOptions = KNOWN_SINGLE_OPTIONS[name];
+  const singleOptions =
+    (validatorType && VALIDATOR_FIELD_OPTIONS[validatorType]?.[name]) ||
+    KNOWN_SINGLE_OPTIONS[name];
   if (singleOptions) {
     return (
       <div>
@@ -66,7 +71,10 @@ export default function SchemaField({
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value || null)}
           placeholder="Select…"
-          options={singleOptions.map((v) => ({ value: v, label: v }))}
+          options={singleOptions.map((v) => ({
+            value: v,
+            label: capitalize(v),
+          }))}
         />
       </div>
     );
@@ -79,7 +87,7 @@ export default function SchemaField({
         <Select
           value={(value as string) ?? ""}
           onChange={(e) => onChange(name, e.target.value)}
-          options={enumValues.map((v) => ({ value: v, label: v }))}
+          options={enumValues.map((v) => ({ value: v, label: capitalize(v) }))}
         />
       </div>
     );

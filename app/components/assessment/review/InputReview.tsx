@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Modal } from "@/app/components";
+import { Modal } from "@/app/components/ui";
 import { ChevronRightIcon } from "@/app/components/icons";
 import {
   DEFAULT_SYSTEM_PROMPT,

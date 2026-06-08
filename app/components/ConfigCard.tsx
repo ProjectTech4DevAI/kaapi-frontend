@@ -16,7 +16,8 @@ import {
   EditIcon,
   PlayIcon,
 } from "@/app/components/icons";
-import { Button, VersionPill, Loader } from "@/app/components";
+import { Button, Loader } from "@/app/components/ui";
+import { VersionPill } from "@/app/components";
 import { useToast } from "@/app/hooks/useToast";
 
 interface ConfigCardProps {
@@ -93,7 +94,7 @@ export default function ConfigCard({
     try {
       await onLoadVersions(config.id);
 
-      const { configState } = await import("@/app/lib/store/config");
+      const { configState } = await import("@/app/lib/store/configStore");
       const versionItems = configState.versionItemsCache[config.id];
       if (!versionItems || versionItems.length === 0) {
         setIsLoadingDetails(false);

@@ -15,13 +15,13 @@ import HistorySidebar from "@/app/components/prompt-editor/HistorySidebar";
 import PromptEditorPane from "@/app/components/prompt-editor/PromptEditorPane";
 import ConfigEditorPane from "@/app/components/prompt-editor/ConfigEditorPane";
 import DiffView from "@/app/components/prompt-editor/DiffView";
-import { Loader } from "@/app/components";
+import { Loader } from "@/app/components/ui";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useConfigs } from "@/app/hooks";
 import { useConfigPersistence } from "@/app/hooks/useConfigPersistence";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
-import { configState } from "@/app/lib/store/config";
+import { configState } from "@/app/lib/store/configStore";
 import { DEFAULT_CONFIG } from "@/app/lib/constants";
 
 function PromptEditorContent() {
@@ -238,6 +238,9 @@ function PromptEditorContent() {
   ]);
 
   const handleSave = async () => {
+    const wasNewConfig = !allConfigMeta.find(
+      (m) => m.name === currentConfigName.trim(),
+    );
     const ok = await saveConfig({
       currentConfigName,
       currentConfigBlob,
@@ -248,6 +251,7 @@ function PromptEditorContent() {
     if (ok) {
       setHasUnsavedChanges(false);
       setCommitMessage("");
+      if (wasNewConfig) resetEditor();
     }
   };
 

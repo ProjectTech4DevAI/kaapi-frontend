@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
-import Select from "@/app/components/Select";
+import { Button, Select } from "@/app/components/ui";
 import { CloseIcon, TrashIcon } from "@/app/components/icons";
 import { SCHEMA_TYPE_OPTIONS } from "@/app/lib/assessment/constants";
 import type {

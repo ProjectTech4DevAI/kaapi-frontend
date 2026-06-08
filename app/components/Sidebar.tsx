@@ -20,6 +20,7 @@ import {
   ShieldCheckIcon,
   SlidersIcon,
   ChatIcon,
+  ChartBarIcon,
 } from "@/app/components/icons";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 import { LoginModal } from "@/app/components/auth";
@@ -126,6 +127,7 @@ export default function Sidebar({
     shield: <ShieldCheckIcon />,
     sliders: <SlidersIcon />,
     assessment: <AssessmentIcon />,
+    chart: <ChartBarIcon />,
   };
 
   const navItems: MenuItem[] = NAV_ITEMS.filter((item) => {

@@ -8,7 +8,7 @@ import {
   ChevronRightIcon,
   EditIcon,
 } from "@/app/components/icons";
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import AddProjectModal from "./AddProjectModal";
 import EditProjectModal from "./EditProjectModal";

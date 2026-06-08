@@ -4,6 +4,20 @@ export type ChatRole = "user" | "assistant";
 
 export type ChatMessageStatus = "pending" | "complete" | "error";
 
+export interface ChatAudioPayload {
+  url: string;
+  mimeType: string;
+}
+
+export type ChatAttachmentKind = "image" | "pdf";
+
+export interface ChatAttachment {
+  kind: ChatAttachmentKind;
+  name: string;
+  mimeType: string;
+  previewUrl?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
@@ -12,6 +26,9 @@ export interface ChatMessage {
   status?: ChatMessageStatus;
   jobId?: string;
   error?: string;
+  isVoice?: boolean;
+  audio?: ChatAudioPayload;
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatConfigSelection {
@@ -19,13 +36,40 @@ export interface ChatConfigSelection {
   version: number;
 }
 
+export interface SendAttachment {
+  kind: ChatAttachmentKind;
+  name: string;
+  mimeType: string;
+  base64: string;
+}
+
+export type SendInput =
+  | { kind: "text"; text: string; attachments?: SendAttachment[] }
+  | {
+      kind: "audio";
+      base64: string;
+      mimeType: string;
+      transcript?: string;
+    };
+
 export type LLMCallConfigSelector =
   | { id: string; version: number }
   | { blob: ConfigBlob };
 
+export interface LLMStructuredInput {
+  type: "text" | "audio" | "image" | "pdf";
+  content: {
+    format: "text" | "base64" | "url";
+    value: string;
+    mime_type?: string;
+  };
+}
+
+export type LLMInput = string | LLMStructuredInput | LLMStructuredInput[];
+
 export interface LLMCallRequest {
   query: {
-    input: string;
+    input: LLMInput;
     conversation?: {
       id?: string;
       auto_create?: boolean;
@@ -88,4 +132,9 @@ export interface PollOptions {
   signal?: AbortSignal;
   intervalMs?: number;
   timeoutMs?: number;
+}
+
+export interface ChatAudioPayload {
+  url: string;
+  mimeType: string;
 }

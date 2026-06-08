@@ -10,7 +10,7 @@ export default function CollectionsListSkeleton({
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="rounded-lg p-3 bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
+          className="rounded-lg p-4 bg-bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.05)]"
         >
           <div className="flex items-center justify-between gap-2">
             <div className="w-6 h-6 rounded bg-neutral-200 shrink-0" />

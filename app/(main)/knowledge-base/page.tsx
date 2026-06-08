@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import CollectionsList from "@/app/components/knowledge-base/CollectionsList";
-import CreateCollectionForm from "@/app/components/knowledge-base/CreateCollectionForm";
-import CollectionDetail from "@/app/components/knowledge-base/CollectionDetail";
-import DocumentPickerModal from "@/app/components/knowledge-base/DocumentPickerModal";
-import DeleteCollectionModal from "@/app/components/knowledge-base/DeleteCollectionModal";
-import DocumentPreviewModal from "@/app/components/knowledge-base/DocumentPreviewModal";
-import { Modal, Loader, Sidebar, PageHeader } from "@/app/components";
+import {
+  CollectionDetail,
+  CollectionsList,
+  CreateCollectionForm,
+  DeleteCollectionModal,
+  DocumentPickerModal,
+  DocumentPreviewModal,
+  EditCollectionModal,
+} from "@/app/components/knowledge-base";
+import { Modal, Loader } from "@/app/components/ui";
+import { Sidebar, PageHeader } from "@/app/components";
 import { BookOpenIcon } from "@/app/components/icons";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useCollections } from "@/app/hooks/useCollections";
-import { Document } from "@/app/lib/types/document";
+import { Document, Collection } from "@/app/lib/types/document";
 
 export default function KnowledgeBasePage() {
   const { sidebarCollapsed } = useApp();
@@ -21,12 +25,15 @@ export default function KnowledgeBasePage() {
     selectedCollection,
     isLoading,
     isLoadingDetail,
+    isLoadingDocuments,
     isCreating,
     setSelectedCollection,
     fetchCollectionDetails,
     createCollection,
     deleteCollection,
+    updateCollection,
     fetchAndPreviewDoc,
+    fetchDocuments,
   } = useCollections();
 
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -38,6 +45,9 @@ export default function KnowledgeBasePage() {
   const [showDocPreviewModal, setShowDocPreviewModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [collectionToEdit, setCollectionToEdit] = useState<Collection | null>(
+    null,
+  );
 
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
@@ -64,6 +74,7 @@ export default function KnowledgeBasePage() {
   const handleCreateNew = () => {
     setShowCreateForm(true);
     setSelectedCollection(null);
+    fetchDocuments();
   };
 
   const handleCancelCreate = () => {
@@ -80,17 +91,30 @@ export default function KnowledgeBasePage() {
       description: collectionDescription,
       documentIds: Array.from(selectedDocuments),
     };
+    const ok = await createCollection(params);
+    if (!ok) return;
     setShowCreateForm(false);
     setShowDocumentPicker(false);
     setCollectionName("");
     setCollectionDescription("");
     setSelectedDocuments(new Set());
-    await createCollection(params);
   };
 
   const handleRequestDelete = (collectionId: string) => {
     setCollectionToDelete(collectionId);
     setShowConfirmDelete(true);
+  };
+
+  const handleRequestEdit = (collection: Collection) => {
+    setCollectionToEdit(collection);
+  };
+
+  const handleSaveEdit = async (patch: {
+    name?: string;
+    description?: string;
+  }) => {
+    if (!collectionToEdit) return false;
+    return updateCollection(collectionToEdit.id, patch);
   };
 
   const handleConfirmDelete = async () => {
@@ -141,6 +165,7 @@ export default function KnowledgeBasePage() {
             isLoading={isLoading}
             onSelect={handleSelectCollection}
             onRequestDelete={handleRequestDelete}
+            onRequestEdit={handleRequestEdit}
             onCreateNew={handleCreateNew}
           />
 
@@ -153,6 +178,7 @@ export default function KnowledgeBasePage() {
                 setCollectionDescription={setCollectionDescription}
                 selectedDocuments={selectedDocuments}
                 availableDocuments={availableDocuments}
+                isLoadingDocuments={isLoadingDocuments}
                 onToggleDocument={toggleDocumentSelection}
                 onOpenDocumentPicker={() => setShowDocumentPicker(true)}
                 isCreating={isCreating}
@@ -206,6 +232,7 @@ export default function KnowledgeBasePage() {
           onClose={handleCancelCreate}
           maxWidth="max-w-2xl"
           maxHeight="max-h-[90vh]"
+          showClose={false}
         >
           <CreateCollectionForm
             collectionName={collectionName}
@@ -219,6 +246,7 @@ export default function KnowledgeBasePage() {
             isCreating={isCreating}
             onCancel={handleCancelCreate}
             onCreate={handleCreateClick}
+            onClose={handleCancelCreate}
           />
         </Modal>
 
@@ -227,6 +255,7 @@ export default function KnowledgeBasePage() {
           onClose={() => setSelectedCollection(null)}
           maxWidth="max-w-2xl"
           maxHeight="max-h-[90vh]"
+          showClose={false}
         >
           {selectedCollection && (
             <CollectionDetail
@@ -236,6 +265,7 @@ export default function KnowledgeBasePage() {
                 handleRequestDelete(id);
               }}
               onPreviewDocument={handlePreviewDocument}
+              onClose={() => setSelectedCollection(null)}
             />
           )}
         </Modal>
@@ -270,6 +300,13 @@ export default function KnowledgeBasePage() {
         previewDoc={previewDoc}
         isLoading={isPreviewLoading}
         onSelectDocument={handleSelectPreviewDoc}
+      />
+
+      <EditCollectionModal
+        open={!!collectionToEdit}
+        collection={collectionToEdit}
+        onClose={() => setCollectionToEdit(null)}
+        onSave={handleSaveEdit}
       />
     </div>
   );

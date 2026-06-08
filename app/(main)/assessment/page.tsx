@@ -2,8 +2,8 @@
 
 import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Loader from "@/app/components/Loader";
-import { useToast } from "@/app/components/Toast";
+import { Loader } from "@/app/components/ui";
+import { useToast } from "@/app/hooks/useToast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { handleForbiddenError } from "@/app/lib/utils/assessment";
 import { FeatureFlag } from "@/app/lib/constants";

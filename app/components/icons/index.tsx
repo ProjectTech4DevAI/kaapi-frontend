@@ -1,8 +1,11 @@
 // Common Icons (shared across multiple pages)
 export { default as ArrowLeftIcon } from "./common/ArrowLeftIcon";
+export { default as TooltipIcon } from "./common/TooltipIcon";
 export { default as ChevronDownIcon } from "./common/ChevronDownIcon";
 export { default as CheckIcon } from "./common/CheckIcon";
 export { default as CheckLineIcon } from "./common/CheckLineIcon";
+export { default as MicIcon } from "./common/MicIcon";
+export { default as SpeakerIcon } from "./common/SpeakerIcon";
 export { default as MusicNoteIcon } from "./common/MusicNoteIcon";
 export { default as PlayIcon } from "./common/PlayIcon";
 export { default as CopyIcon } from "./common/CopyIcon";
@@ -44,9 +47,10 @@ export { default as BookOpenIcon } from "./sidebar/BookOpenIcon";
 export { default as SlidersIcon } from "./sidebar/SlidersIcon";
 export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
 export { default as LogoutIcon } from "./sidebar/LogoutIcon";
-export { default as AssessmentIcon } from "./sidebar/AssessmentIcon";
 export { default as ChatIcon } from "./sidebar/ChatIcon";
 export { default as SendIcon } from "./sidebar/SendIcon";
+export { default as ChartBarIcon } from "./sidebar/ChartBarIcon";
+export { default as AssessmentIcon } from "./sidebar/AssessmentIcon";
 
 // Prompt Editor Icons
 export { default as ChevronRightIcon } from "./prompt-editor/ChevronRightIcon";

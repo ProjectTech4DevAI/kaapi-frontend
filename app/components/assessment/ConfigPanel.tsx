@@ -1,7 +1,7 @@
 "use client";
 
 // Multi-step wizard (Column Mapper → Prompt & Config → Review) for configuring an assessment run.
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { DatabaseIcon } from "@/app/components/icons";
 import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";
 import type { ConfigPanelProps } from "@/app/lib/types/assessment";

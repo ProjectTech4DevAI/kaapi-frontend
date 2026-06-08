@@ -55,8 +55,8 @@ export const enrichCollectionWithCache = (
 
   return {
     ...collection,
-    name: name || "Untitled Collection",
-    description: description || "",
+    name: collection.name || name || "Untitled Collection",
+    description: collection.description || description || "",
     status: collectionJobStatus || undefined,
     job_id: jobId,
   };

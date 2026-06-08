@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "highlight.js/styles/github.css";
 
 :root {
   --background: #ffffff;
@@ -223,4 +224,55 @@ a {
     opacity: 1;
     transform: translateY(-2px);
   }
+}
+
+/**
+ * Read-only form styling.
+ * Usage:
+ *   <fieldset disabled={readOnly} className="read-only-fields">…</fieldset>
+ */
+.read-only-fields
+  :where(input, select, textarea, button[role="combobox"]):disabled {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 4%, white);
+  border-color: color-mix(in srgb, var(--color-accent-primary) 15%, white);
+  color: color-mix(
+    in srgb,
+    var(--color-accent-primary) 55%,
+    var(--color-text-primary)
+  );
+  font-weight: 500;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.read-only-fields button:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/**
+ * Global scrollbar styling — applies the accent-primary colour to every scrollable container
+ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-accent-primary) 50%, white);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-accent-primary);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-accent-primary) 50%, white)
+    transparent;
 }

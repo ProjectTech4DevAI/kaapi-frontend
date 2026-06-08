@@ -2,20 +2,17 @@ import {
   SavedValidatorConfig,
   formatValidatorName,
 } from "@/app/lib/types/guardrails";
-import {
-  TrashIcon,
-  GuardrailsShieldCheckIcon,
-  EditIcon,
-} from "@/app/components/icons";
-import Loader from "@/app/components/Loader";
+import { GuardrailsShieldCheckIcon } from "@/app/components/icons";
+import { Button } from "@/app/components/ui";
 import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
+import SavedConfigsListSkeleton from "./SavedConfigsListSkeleton";
 
 interface SavedConfigsListProps {
   configs: SavedValidatorConfig[];
   isLoading: boolean;
   selectedConfigId: string | null;
   onSelectConfig: (cfg: SavedValidatorConfig) => void;
-  onDeleteConfig: (id: string) => void;
+  onNewConfig: () => void;
 }
 
 export default function SavedConfigsList({
@@ -23,40 +20,44 @@ export default function SavedConfigsList({
   isLoading,
   selectedConfigId,
   onSelectConfig,
-  onDeleteConfig,
+  onNewConfig,
 }: SavedConfigsListProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0 bg-bg-primary">
+      <div className="flex items-center justify-between px-6 py-4 shrink-0">
         <div>
           <div className="text-sm font-semibold text-text-primary">
             Saved Configurations
           </div>
           {!isLoading && (
-            <div className="text-xs text-text-secondary">
+            <div className="text-xs text-text-secondary mt-0.5">
               {configs.length} config{configs.length !== 1 ? "s" : ""}
             </div>
           )}
         </div>
+        <Button variant="primary" size="sm" onClick={onNewConfig}>
+          + New Config
+        </Button>
       </div>
 
-      <div className="flex-1 overflow-auto p-5">
+      <div className="flex-1 overflow-y-auto px-6 pb-6">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader size="md" message="Loading saved configurations..." />
-          </div>
+          <SavedConfigsListSkeleton />
         ) : configs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg py-16 text-center">
-            <GuardrailsShieldCheckIcon className="w-10 h-10 mb-3 text-border" />
-            <p className="text-sm font-medium mb-1 text-text-primary">
+          <div className="text-center py-12">
+            <div className="mx-auto mb-3 inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent-primary/10">
+              <GuardrailsShieldCheckIcon className="w-6 h-6 text-accent-primary" />
+            </div>
+            <p className="text-sm font-medium text-text-primary mb-1">
               No saved configurations yet
             </p>
             <p className="text-xs text-text-secondary">
-              Select a validator type on the left and save your first config
+              Click <span className="font-medium">+ New Config</span> to add
+              your first one.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {configs.map((cfg) => {
               const isSelected = selectedConfigId === cfg.id;
               const displayName =
@@ -65,61 +66,52 @@ export default function SavedConfigsList({
               return (
                 <div
                   key={cfg.id}
-                  className={`rounded-xl border-l-2 bg-bg-primary shadow-sm cursor-pointer transition-shadow hover:shadow-md ${
-                    isSelected
-                      ? "border-l-status-success"
-                      : "border-l-[rgb(220,207,195)]"
-                  }`}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
                   onClick={() => onSelectConfig(cfg)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectConfig(cfg);
+                    }
+                  }}
+                  className={`w-full text-left rounded-lg p-4 transition-shadow cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/40 ${
+                    isSelected
+                      ? "bg-accent-primary/5 shadow-[0_6px_18px_rgba(31,68,150,0.18),0_2px_4px_rgba(31,68,150,0.08)]"
+                      : "bg-bg-primary shadow-[0_4px_12px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.12),0_2px_4px_rgba(0,0,0,0.06)]"
+                  }`}
                 >
-                  <div className="flex items-center gap-3 px-4 py-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold mb-2 truncate text-text-primary">
-                        {cfg.name}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] px-2 py-0.5 rounded-md border border-border bg-bg-secondary text-text-secondary">
-                          {displayName}
+                  <div className="flex-1 min-w-0">
+                    <h3
+                      title={cfg.name}
+                      className={`text-sm truncate max-w-[18rem] ${
+                        isSelected
+                          ? "font-semibold text-accent-primary"
+                          : "font-medium text-text-primary"
+                      }`}
+                    >
+                      {cfg.name}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
+                        {displayName}
+                      </span>
+                      {cfg.stage && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-bg-secondary text-text-primary border border-border">
+                          {cfg.stage}
                         </span>
-                        {cfg.stage && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-md border border-border bg-bg-secondary text-text-secondary">
-                            {cfg.stage}
-                          </span>
-                        )}
-                        {cfg.on_fail_action && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-md border border-border bg-bg-secondary text-text-secondary">
-                            on fail: {cfg.on_fail_action}
-                          </span>
-                        )}
-                        {cfg.is_enabled === false && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-md border bg-amber-50 border-amber-200 text-amber-700">
-                            disabled
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectConfig(cfg);
-                        }}
-                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border bg-bg-secondary text-text-primary transition-colors font-medium hover:bg-neutral-200"
-                      >
-                        <EditIcon className="w-3 h-3" />
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteConfig(cfg.id);
-                        }}
-                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 text-status-error transition-colors font-medium hover:bg-red-100"
-                      >
-                        <TrashIcon className="w-3 h-3" />
-                        Delete
-                      </button>
+                      )}
+                      {cfg.on_fail_action && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-status-warning-bg text-status-warning-text border border-status-warning-border">
+                          on fail: {cfg.on_fail_action}
+                        </span>
+                      )}
+                      {cfg.is_enabled === false && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-status-error-bg text-status-error-text border border-status-error-border">
+                          disabled
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

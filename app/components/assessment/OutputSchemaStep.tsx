@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import type { SchemaProperty, ValueSetter } from "@/app/lib/types/assessment";
 import { OutputSchemaEditor } from "./OutputSchemaEditor";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Field } from "@/app/components";
+import { Field } from "@/app/components/ui";
 import { InfoIcon } from "@/app/components/icons";
 import { Tool } from "@/app/lib/types/promptEditor";
 

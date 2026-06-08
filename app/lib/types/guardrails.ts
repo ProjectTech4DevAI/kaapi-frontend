@@ -58,6 +58,32 @@ export function formatValidatorName(type: string): string {
     .join(" ");
 }
 
+export interface BanList {
+  id: string;
+  name: string;
+}
+
+export interface BanListFieldProps {
+  value: string | null;
+  onChange: (id: string | null) => void;
+}
+
+export interface TopicRelevanceConfig {
+  id: string;
+  name: string;
+}
+
+export interface TopicRelevanceConfigDetails {
+  description?: string | null;
+  configuration?: string | null;
+}
+
+export interface TopicRelevanceFieldProps {
+  value: string | null;
+  onChange: (id: string | null) => void;
+  disabled?: boolean;
+}
+
 export interface OrgContext {
   organization_id: number;
   project_id: number;

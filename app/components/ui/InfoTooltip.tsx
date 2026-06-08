@@ -8,6 +8,7 @@ import {
   useCallback,
 } from "react";
 import { createPortal } from "react-dom";
+import { TooltipIcon } from "@/app/components/icons";
 
 interface InfoTooltipProps {
   text: ReactNode;
@@ -62,9 +63,9 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
         onMouseLeave={() => setVisible(false)}
         onFocus={() => setVisible(true)}
         onBlur={() => setVisible(false)}
-        className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none bg-neutral-200 text-neutral-600 border border-neutral-300 cursor-pointer hover:bg-neutral-300 hover:text-neutral-700 transition-colors"
+        className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none cursor-pointer"
       >
-        i
+        <TooltipIcon className="w-4 h-4 text-[#99B3C1]" />
       </button>
       {visible &&
         createPortal(

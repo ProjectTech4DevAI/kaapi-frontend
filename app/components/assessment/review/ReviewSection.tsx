@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/app/components";
+import { Button } from "@/app/components/ui";
 import { ChevronRightIcon } from "@/app/components/icons";
 import type { ReactNode } from "react";
 

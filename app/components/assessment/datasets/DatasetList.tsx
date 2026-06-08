@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, DatasetListSkeleton } from "@/app/components";
+import { Button } from "@/app/components/ui";
+import { DatasetListSkeleton } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import type { ValueSetter } from "@/app/lib/types/assessment";

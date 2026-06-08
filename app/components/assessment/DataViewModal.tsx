@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal } from "@/app/components";
+import { Modal } from "@/app/components/ui";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
 interface DataViewModalProps {
   title: string;

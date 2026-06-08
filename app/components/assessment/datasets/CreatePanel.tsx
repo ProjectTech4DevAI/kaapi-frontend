@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Field } from "@/app/components";
+import { Button, Field } from "@/app/components/ui";
 import { CheckIcon, CloseIcon, CloudUploadIcon } from "@/app/components/icons";
 import { DATASET_LEFT_PANEL_CLASSES } from "@/app/lib/assessment/constants";
 import type { ChangeEvent, DragEvent, RefObject } from "react";

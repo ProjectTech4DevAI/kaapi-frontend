@@ -44,10 +44,6 @@ export interface IndividualScore {
   trace_scores: TraceScore[];
 }
 
-/**
- * Aggregate metrics for one category, computed server-side from the eval
- * traces. `avg_correctness` is null when the eval didn't run an LLM judge.
- */
 export interface CategoryMetric {
   category: string;
   total_evals: number;

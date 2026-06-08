@@ -214,6 +214,9 @@ export default function CreateDatasetForm({
               Format:{" "}
               <span className="font-mono text-text-primary">
                 question,answer
+              </span>{" "}
+              <span className="text-text-secondary">
+                (optional: <span className="font-mono">category</span>)
               </span>
             </p>
           </div>

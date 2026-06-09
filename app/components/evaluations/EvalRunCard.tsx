@@ -7,9 +7,8 @@ import { getScoreObject } from "@/app/lib/utils/evaluation";
 import { getStatusColor } from "@/app/components/utils";
 import { timeAgo, formatCostUSD } from "@/app/lib/utils";
 import { Button, ConfigModal, InfoTooltip } from "@/app/components/ui";
-import ScoreDisplay from "@/app/components/evaluations/ScoreDisplay";
-import CostIcon from "@/app/components/icons/evaluations/CostIcon";
-import DatabaseIcon from "@/app/components/icons/evaluations/DatabaseIcon";
+import { ScoreDisplay } from "@/app/components/evaluations";
+import { CostIcon, DatabaseIcon } from "@/app/components/icons/evaluations";
 
 export interface EvalRunCardProps {
   job: EvalJob;

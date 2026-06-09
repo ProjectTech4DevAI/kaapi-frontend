@@ -27,8 +27,11 @@ import {
   exportRowCSV,
 } from "@/app/lib/utils/evaluationExport";
 import Sidebar from "@/app/components/Sidebar";
-import DetailedResultsTable from "@/app/components/evaluations/DetailedResultsTable";
-import MetricsOverview from "@/app/components/evaluations/MetricsOverview";
+import {
+  CategoryMetricsTable,
+  DetailedResultsTable,
+  MetricsOverview,
+} from "@/app/components/evaluations";
 import { Button, Modal, Loader, ConfigModal } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import { ResultsTableSkeleton } from "@/app/components";
@@ -245,6 +248,10 @@ export default function EvaluationReport() {
   const isNewFormat = hasSummaryScores(scoreObject);
   const summaryScores =
     isNewFormat && scoreObject ? scoreObject.summary_scores || [] : [];
+  const categoryMetrics =
+    scoreObject && isNewScoreObjectV2(scoreObject)
+      ? (scoreObject.category_metrics ?? [])
+      : [];
 
   const isJobInProgress =
     job.status.toLowerCase() !== "completed" &&
@@ -338,13 +345,18 @@ export default function EvaluationReport() {
           <div className="flex-1 overflow-auto p-6 bg-bg-secondary">
             <div className="max-w-7xl mx-auto space-y-6">
               {hasScore && isNewFormat ? (
-                <MetricsOverview
-                  job={job}
-                  summaryScores={summaryScores}
-                  isJobInProgress={isJobInProgress}
-                  isResyncing={isResyncing || isFormatSwitching}
-                  onResync={handleResync}
-                />
+                <>
+                  <MetricsOverview
+                    job={job}
+                    summaryScores={summaryScores}
+                    isJobInProgress={isJobInProgress}
+                    isResyncing={isResyncing || isFormatSwitching}
+                    onResync={handleResync}
+                  />
+                  {categoryMetrics.length > 0 && (
+                    <CategoryMetricsTable categoryMetrics={categoryMetrics} />
+                  )}
+                </>
               ) : (
                 <div className="rounded-lg p-6 text-center bg-bg-primary shadow-sm">
                   <p

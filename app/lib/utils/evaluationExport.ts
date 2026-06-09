@@ -27,7 +27,12 @@ export const exportGroupedCSV = (
 ): number => {
   const maxAnswers = Math.max(...traces.map((g) => g.llm_answers.length));
   const scoreNames = traces[0]?.scores[0]?.map((s) => s.name) || [];
-  let csvContent = "Question ID,Question,Ground Truth";
+  const hasAnyCategory = traces.some(
+    (t) => (t.category ?? "").trim().length > 0,
+  );
+  let csvContent = "Question ID";
+  if (hasAnyCategory) csvContent += ",Category";
+  csvContent += ",Question,Ground Truth";
   for (let i = 1; i <= maxAnswers; i++) {
     csvContent += `,LLM Answer ${i},Trace ID ${i}`;
     scoreNames.forEach((name) => {
@@ -36,11 +41,12 @@ export const exportGroupedCSV = (
   }
   csvContent += "\n";
   traces.forEach((group) => {
-    const row: string[] = [
-      String(group.question_id),
+    const row: string[] = [String(group.question_id)];
+    if (hasAnyCategory) row.push(sanitizeCSVCell(group.category || ""));
+    row.push(
       sanitizeCSVCell(group.question || ""),
       sanitizeCSVCell(group.ground_truth_answer || ""),
-    ];
+    );
     for (let i = 0; i < maxAnswers; i++) {
       row.push(
         `"${(group.llm_answers[i] || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
@@ -75,8 +81,12 @@ export const exportRowCSV = (
   let csvContent = "";
   const firstItem = individual_scores[0];
   const scoreNames = firstItem?.trace_scores?.map((s) => s.name) || [];
+  const hasAnyCategory = individual_scores.some(
+    (s) => (s.category ?? "").trim().length > 0,
+  );
   csvContent +=
     "Counter,Trace ID,Job ID,Run Name,Dataset,Model,Status,Total Items,";
+  if (hasAnyCategory) csvContent += "Category,";
   csvContent += "Question,Answer,Ground Truth,";
   csvContent +=
     scoreNames.map((name) => `${name},${name} (comment)`).join(",") + "\n";
@@ -92,6 +102,7 @@ export const exportRowCSV = (
       assistantConfig?.model || job.config?.model || "N/A",
       job.status,
       job.total_items,
+      ...(hasAnyCategory ? [sanitizeCSVCell(item.category || "")] : []),
       `"${(item.input?.question || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
       `"${(item.output?.answer || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
       `"${(item.metadata?.ground_truth || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,

@@ -1,4 +1,4 @@
-import { MAX_CONFIGS } from "@/app/lib/types/assessment";
+import { MAX_CONFIGS } from "@/app/lib/assessment/constants";
 
 interface StatusPillProps {
   label: string;

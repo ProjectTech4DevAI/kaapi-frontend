@@ -7,9 +7,8 @@ import type {
   VersionListState,
 } from "@/app/lib/types/assessment";
 import { buildInitialAssessmentVersionState } from "@/app/lib/utils/assessmentFetcher";
+import { CONFIGS_VISIBLE_BATCH_SIZE } from "@/app/lib/assessment/constants";
 import SavedConfigCard from "./SavedConfigCard";
-
-const CONFIGS_VISIBLE_BATCH_SIZE = 2;
 
 interface SavedConfigsProps {
   configCards: ConfigPublic[];

@@ -6,6 +6,7 @@ import { Button } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { DownloadIcon } from "@/app/components/icons/assessment";
 import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";
+import { DOWNLOAD_MENU_WIDTH } from "@/app/lib/assessment/constants";
 import type { ExportFormat } from "@/app/lib/types/assessment";
 
 interface DownloadDropdownProps {
@@ -13,8 +14,6 @@ interface DownloadDropdownProps {
   disabled?: boolean;
   loading?: boolean;
 }
-
-const MENU_WIDTH = 144;
 
 export default function DownloadDropdown({
   onDownload,
@@ -30,7 +29,7 @@ export default function DownloadDropdown({
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
-    setRect({ top: r.bottom + 4, left: r.right - MENU_WIDTH });
+    setRect({ top: r.bottom + 4, left: r.right - DOWNLOAD_MENU_WIDTH });
   }, [open]);
 
   useEffect(() => {
@@ -80,7 +79,11 @@ export default function DownloadDropdown({
           <div
             ref={menuRef}
             className="fixed z-50 rounded-md border border-border bg-bg-primary py-1 shadow-lg"
-            style={{ top: rect.top, left: rect.left, width: MENU_WIDTH }}
+            style={{
+              top: rect.top,
+              left: rect.left,
+              width: DOWNLOAD_MENU_WIDTH,
+            }}
           >
             {(
               [

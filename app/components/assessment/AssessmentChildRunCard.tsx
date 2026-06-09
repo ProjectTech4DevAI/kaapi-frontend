@@ -1,20 +1,14 @@
 "use client";
 
-import { Fragment } from "react";
-import { Button } from "@/app/components/ui";
-import { EyeIcon } from "@/app/components/icons";
 import { useToast } from "@/app/hooks/useToast";
-import DownloadDropdown from "./DownloadDropdown";
 import PostProcessingPanel from "./PostProcessingPanel";
+import ChildRunStageProgress from "./ChildRunStageProgress";
+import ChildRunActions from "./ChildRunActions";
 import {
-  formatStatusLabel,
-  getResultTone,
   getStageProgress,
-  hasViewableResults,
   isCompletedStatus,
   isFailedStatus,
 } from "@/app/lib/assessment/results";
-import { STATUS_BADGE_CLASSES } from "@/app/lib/assessment/constants";
 import { formatRelativeTime } from "@/app/lib/utils";
 import type {
   AssessmentChildRun,
@@ -59,14 +53,11 @@ export default function AssessmentChildRunCard({
 }: AssessmentChildRunCardProps) {
   const toast = useToast();
 
-  const childStatusClass = STATUS_BADGE_CLASSES[getResultTone(childRun.status)];
   const isFailedChild = isFailedStatus(childRun.status);
   const isCompletedChild = isCompletedStatus(childRun.status);
   const stageProgress = getStageProgress(childRun);
-  const canPreview = hasViewableResults(childRun);
   const isRerunning = rerunningId === childRun.id;
   const isResuming = resumingId === childRun.id;
-  const canResume = Boolean(childRun.stage);
   const configKey =
     childRun.config_id && childRun.config_version
       ? `${childRun.config_id}:${childRun.config_version}`
@@ -135,52 +126,7 @@ export default function AssessmentChildRunCard({
               </div>
             )}
 
-            {stageProgress.length > 0 && (
-              <div className="mt-3 flex items-center">
-                {stageProgress.map((s, i) => {
-                  const done = s.status === "completed";
-                  const failed = s.status === "failed";
-                  const active = s.status === "processing";
-                  const nodeClass = done
-                    ? "bg-status-success border-status-success text-white"
-                    : failed
-                      ? "bg-status-error border-status-error text-white"
-                      : active
-                        ? "border-status-warning text-status-warning-text"
-                        : "border-border text-text-secondary";
-                  const labelClass = done
-                    ? "text-text-primary"
-                    : active
-                      ? "text-status-warning-text"
-                      : failed
-                        ? "text-status-error-text"
-                        : "text-text-secondary";
-                  const prevDone =
-                    i > 0 && stageProgress[i - 1].status === "completed";
-                  return (
-                    <Fragment key={s.stage}>
-                      {i > 0 && (
-                        <div
-                          className={`h-px w-6 ${prevDone ? "bg-status-success" : "bg-border"}`}
-                        />
-                      )}
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`flex h-4 w-4 items-center justify-center rounded-full border text-[9px] font-bold leading-none ${nodeClass} ${active ? "animate-pulse" : ""}`}
-                        >
-                          {done ? "✓" : failed ? "✗" : active ? "●" : ""}
-                        </span>
-                        <span
-                          className={`text-[11px] font-medium ${labelClass}`}
-                        >
-                          {s.label}
-                        </span>
-                      </div>
-                    </Fragment>
-                  );
-                })}
-              </div>
-            )}
+            <ChildRunStageProgress stages={stageProgress} />
 
             {configError && (
               <div className="mt-2 text-xs text-status-error-text">
@@ -194,54 +140,17 @@ export default function AssessmentChildRunCard({
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span
-              className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${childStatusClass}`}
-            >
-              {formatStatusLabel(childRun.status)}
-            </span>
-            {canPreview && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onPreview(childRun.id, previewLabel)}
-                className="!rounded-md !px-2.5 !py-1.5 !text-xs"
-              >
-                <EyeIcon className="w-3.5 h-3.5" />
-                Preview
-              </Button>
-            )}
-            {isCompletedChild && (
-              <DownloadDropdown
-                onDownload={(fmt) => onRunDownload(childRun.id, fmt)}
-                loading={downloadingId === `run-${childRun.id}`}
-              />
-            )}
-            {isFailedChild && canResume && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => onResume(childRun)}
-                disabled={isResuming || isRerunning}
-                className="!rounded-lg !px-3 !py-1.5 !text-xs"
-              >
-                {isResuming ? "Resuming..." : "Retry from failed stage"}
-              </Button>
-            )}
-            {isFailedChild && (
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => onRerun(childRun)}
-                disabled={isRerunning || isResuming}
-                className="!rounded-lg !px-3 !py-1.5 !text-xs"
-              >
-                {isRerunning ? "Re-running..." : "Retry all"}
-              </Button>
-            )}
-          </div>
+          <ChildRunActions
+            childRun={childRun}
+            previewLabel={previewLabel}
+            isResuming={isResuming}
+            isRerunning={isRerunning}
+            downloadingId={downloadingId}
+            onPreview={onPreview}
+            onRunDownload={onRunDownload}
+            onResume={onResume}
+            onRerun={onRerun}
+          />
         </div>
       </div>
       {isCompletedChild && (

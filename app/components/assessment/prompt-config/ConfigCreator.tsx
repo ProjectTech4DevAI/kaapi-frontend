@@ -1,28 +1,7 @@
 import { Button, Field, Select } from "@/app/components/ui";
 import { PROVIDER_OPTIONS } from "@/app/lib/data/assessmentModels";
-import type {
-  ConfigParamDefinition,
-  ModelOption,
-  ValueSetter,
-} from "@/app/lib/types/assessment";
+import type { ConfigCreatorProps } from "@/app/lib/types/assessment";
 import ConfigParamControl from "./ConfigParamControl";
-
-export interface ConfigCreatorProps {
-  currentProvider: string;
-  currentModel: string;
-  providerModels: ModelOption[];
-  currentParamDefs: Record<string, ConfigParamDefinition>;
-  draftParams: Record<string, string | number | undefined>;
-  configName: string;
-  commitMessage: string;
-  isSaving: boolean;
-  setConfigName: ValueSetter<string>;
-  setCommitMessage: ValueSetter<string>;
-  onProviderChange: ValueSetter<"openai">;
-  onModelChange: ValueSetter<string>;
-  onParamChange: (key: string, value: string | number) => void;
-  onSave: () => void | Promise<void>;
-}
 
 const inputClass = "!rounded-xl !bg-bg-primary !px-4 !py-3";
 const selectClass =

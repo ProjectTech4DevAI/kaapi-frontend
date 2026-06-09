@@ -15,10 +15,12 @@ import {
   savedSnapshotMatchesHeaders,
   spreadsheetSnapshotToRows,
 } from "@/app/lib/assessment/results";
-import { SPREADSHEET_STATE_DEBOUNCE_MS } from "@/app/lib/assessment/constants";
+import {
+  SPREADSHEET_STATE_DEBOUNCE_MS,
+  UNIVER_MUTATION_TYPE,
+} from "@/app/lib/assessment/constants";
 import type { UniverAPI } from "@/app/lib/types/assessment";
 
-const UNIVER_MUTATION_TYPE = 2;
 const BOM_UTF8 = String.fromCharCode(0xfeff);
 
 interface SpreadsheetViewProps {

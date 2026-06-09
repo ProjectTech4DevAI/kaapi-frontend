@@ -1,4 +1,5 @@
 import type {
+  AssessmentTab,
   ColumnRole,
   PostProcessingConfig,
   PostProcessingFilterRule,
@@ -237,3 +238,23 @@ export const POST_PROCESSING_NO_VALUE_OPS = new Set<
 export function emptyPostProcessingConfig(): PostProcessingConfig {
   return { computed_columns: [], sort: [], filter: [] };
 }
+
+export const DOWNLOAD_MENU_WIDTH = 144;
+
+export const UNIVER_MUTATION_TYPE = 2;
+
+export const CONFIGS_VISIBLE_BATCH_SIZE = 2;
+
+export const PAGE_TABS: ReadonlyArray<AssessmentTab> = [
+  { id: "datasets", label: "Datasets" },
+  { id: "config", label: "Config" },
+  { id: "results", label: "Result" },
+];
+
+export const MAX_CONFIGS = 4;
+
+export const ATTACHMENT_FORMATS: Record<string, string[]> = {
+  mixed: ["url", "base64"],
+  image: ["url", "base64"],
+  pdf: ["url", "base64"],
+};

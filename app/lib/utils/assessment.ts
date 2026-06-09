@@ -12,6 +12,7 @@ import type {
   DatasetPreviewResponse,
   ReviewColumn,
   RoleVisuals,
+  SchemaProperty,
 } from "@/app/lib/types/assessment";
 
 export function isAllowedDatasetFile(fileName: string): boolean {
@@ -232,4 +233,95 @@ export function highlightJson(code: string): string {
   }
 
   return result;
+}
+
+export function isBlankCell(cell: string | undefined): boolean {
+  return cell == null || String(cell).trim() === "";
+}
+
+interface AssessmentSubmitChecks {
+  datasetId: string | null;
+  textColumnCount: number;
+  promptTemplate: string;
+  hasResponseFormat: boolean;
+  configCount: number;
+  experimentName: string;
+}
+
+export function getAssessmentSubmitError(
+  checks: AssessmentSubmitChecks,
+): string | null {
+  if (!checks.datasetId) return "Dataset is required";
+  if (checks.textColumnCount === 0) return "Map at least one text column";
+  if (!checks.promptTemplate.trim()) return "Prompt is required";
+  if (!checks.hasResponseFormat) return "Response format is required";
+  if (checks.configCount === 0) return "Select at least one configuration";
+  if (!checks.experimentName.trim()) return "Experiment name is required";
+  return null;
+}
+
+interface AssessmentSubmitBlockerChecks {
+  datasetId: string | null;
+  hasMapperSelection: boolean;
+  hasPromptTemplate: boolean;
+  hasResponseFormat: boolean;
+  configCount: number;
+  experimentName: string;
+}
+
+export function getAssessmentSubmitBlocker(
+  checks: AssessmentSubmitBlockerChecks,
+): string {
+  if (!checks.datasetId) return "Select a dataset to submit";
+  if (!checks.hasMapperSelection)
+    return "Map at least one text column to submit";
+  if (!checks.hasPromptTemplate) return "Write a prompt to submit";
+  if (!checks.hasResponseFormat) return "Set response format to submit";
+  if (checks.configCount === 0)
+    return "Select at least one configuration to submit";
+  if (!checks.experimentName.trim())
+    return "Enter an experiment name to submit";
+  return "";
+}
+
+export function schemaToJsonSchema(
+  properties: SchemaProperty[],
+): object | null {
+  if (properties.length === 0) return null;
+
+  const props: Record<string, object> = {};
+  const required: string[] = [];
+
+  properties.forEach((property) => {
+    if (!property.name.trim()) return;
+
+    let definition: object;
+    if (property.type === "object") {
+      definition = schemaToJsonSchema(property.children) || { type: "object" };
+    } else if (property.type === "enum") {
+      definition = {
+        type: "string",
+        enum: property.enumValues.filter((value) => value.trim()),
+      };
+    } else {
+      definition = { type: property.type };
+    }
+
+    if (property.isArray) {
+      definition = { type: "array", items: definition };
+    }
+
+    props[property.name] = definition;
+    if (property.isRequired) {
+      required.push(property.name);
+    }
+  });
+
+  if (Object.keys(props).length === 0) return null;
+
+  return {
+    type: "object",
+    properties: props,
+    ...(required.length > 0 ? { required } : {}),
+  };
 }

@@ -5,13 +5,13 @@ import { Button, Select } from "@/app/components/ui";
 import {
   ASSESSMENT_ROLE_OPTION_MAP,
   ASSESSMENT_ROLE_OPTIONS,
-} from "@/app/lib/assessment/constants";
-import {
   ATTACHMENT_FORMATS,
-  type Attachment,
-  type ColumnConfig,
-  type ColumnRole,
-  type ColumnMapperStepProps,
+} from "@/app/lib/assessment/constants";
+import type {
+  Attachment,
+  ColumnConfig,
+  ColumnRole,
+  ColumnMapperStepProps,
 } from "@/app/lib/types/assessment";
 import { buildColumnConfigs, colorMapping } from "@/app/lib/utils/assessment";
 

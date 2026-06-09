@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { Modal } from "@/app/components/ui";
 import CloseIcon from "@/app/components/icons/document/CloseIcon";
+import { isBlankCell } from "@/app/lib/utils/assessment";
+
 interface DataViewModalProps {
   title: string;
   subtitle?: string;
@@ -10,9 +12,6 @@ interface DataViewModalProps {
   rows: string[][];
   onClose: () => void;
 }
-
-const isBlank = (cell: string | undefined) =>
-  cell == null || String(cell).trim() === "";
 
 export default function DataViewModal({
   title,
@@ -24,12 +23,12 @@ export default function DataViewModal({
   const { headers, rows } = useMemo(() => {
     const keptColIdx = rawHeaders
       .map((_, colIdx) => colIdx)
-      .filter((colIdx) => rawRows.some((row) => !isBlank(row[colIdx])));
+      .filter((colIdx) => rawRows.some((row) => !isBlankCell(row[colIdx])));
 
     const filteredHeaders = keptColIdx.map((idx) => rawHeaders[idx]);
     const filteredRows = rawRows
       .map((row) => keptColIdx.map((idx) => row[idx] ?? ""))
-      .filter((row) => row.some((cell) => !isBlank(cell)));
+      .filter((row) => row.some((cell) => !isBlankCell(cell)));
 
     return { headers: filteredHeaders, rows: filteredRows };
   }, [rawHeaders, rawRows]);

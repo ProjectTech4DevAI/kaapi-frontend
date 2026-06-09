@@ -34,7 +34,7 @@ export default function CategoryMetricsTable({
                 Category
               </th>
               <th className="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-                Total Evals
+                Total Questions
               </th>
               <th className="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
                 Avg Cosine

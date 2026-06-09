@@ -119,13 +119,13 @@ function SimplifiedEvalContent() {
           .toLowerCase(),
       );
       const required = ["question", "answer"];
-      const allowed = new Set([...required, "category"]);
+      const allowed = new Set([...required, "category", "id"]);
       const hasRequired = required.every((col) => headers.includes(col));
       const hasExtra = headers.some((col) => !allowed.has(col));
 
       if (!hasRequired || hasExtra) {
         toast.error(
-          'CSV must have "question" and "answer" columns (optional: "category")',
+          'CSV must have "question" and "answer" columns (optional: "category", "id")',
         );
         event.target.value = "";
         return;

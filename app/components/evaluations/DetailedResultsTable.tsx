@@ -95,9 +95,7 @@ export default function DetailedResultsTable({
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{ width: `${COLUMN_WIDTHS.index}px` }}
-              >
-                ID
-              </th>
+              ></th>
               {hasAnyCategory && (
                 <th
                   className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"

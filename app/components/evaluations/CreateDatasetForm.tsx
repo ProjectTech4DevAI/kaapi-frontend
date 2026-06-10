@@ -216,8 +216,7 @@ export default function CreateDatasetForm({
                 question,answer
               </span>{" "}
               <span className="text-text-secondary">
-                (optional: <span className="font-mono">category</span>,{" "}
-                <span className="font-mono">id</span>)
+                (optional: <span className="font-mono">category</span>)
               </span>
             </p>
           </div>

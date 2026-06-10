@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Validator, formatValidatorName } from "@/app/lib/types/guardrails";
+import { Validator } from "@/app/lib/types/guardrails";
 import {
   Button,
   Field,
@@ -17,6 +17,7 @@ import {
 import {
   buildDefaultValues,
   VALIDATOR_META_BY_TYPE,
+  formatValidatorName,
 } from "@/app/lib/utils/guardrails";
 import BanListField from "@/app/components/guardrails/BanListField";
 import TopicRelevanceField from "@/app/components/guardrails/TopicRelevanceField";
@@ -188,47 +189,6 @@ export default function ValidatorConfigPanel({
 
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">
-              Stage
-              <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.stage} />
-            </label>
-            <Select
-              value={stage}
-              onChange={(e) => setStage(e.target.value as "input" | "output")}
-              options={[
-                { value: "input", label: "Input" },
-                { value: "output", label: "Output" },
-              ]}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
-              On Fail Action
-              <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.on_fail_action} />
-            </label>
-            <Select
-              value={onFailAction}
-              onChange={(e) => setOnFailAction(e.target.value)}
-              options={[
-                { value: "fix", label: "Fix" },
-                { value: "exception", label: "Exception" },
-                { value: "rephrase", label: "Rephrase" },
-              ]}
-            />
-          </div>
-
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isEnabled}
-              onChange={(e) => setIsEnabled(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-sm text-text-primary">Enabled</span>
-          </label>
-
-          <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">
               Validator Type *
               <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.validator_type} />
             </label>
@@ -331,6 +291,47 @@ export default function ValidatorConfigPanel({
               )}
             </>
           )}
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              Stage
+              <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.stage} />
+            </label>
+            <Select
+              value={stage}
+              onChange={(e) => setStage(e.target.value as "input" | "output")}
+              options={[
+                { value: "input", label: "Input" },
+                { value: "output", label: "Output" },
+              ]}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              On Fail Action
+              <InfoTooltip text={GUARDRAILS_FIELD_TOOLTIPS.on_fail_action} />
+            </label>
+            <Select
+              value={onFailAction}
+              onChange={(e) => setOnFailAction(e.target.value)}
+              options={[
+                { value: "fix", label: "Fix" },
+                { value: "exception", label: "Exception" },
+                { value: "rephrase", label: "Rephrase" },
+              ]}
+            />
+          </div>
+
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isEnabled}
+              onChange={(e) => setIsEnabled(e.target.checked)}
+              className="w-4 h-4 rounded"
+            />
+            <span className="text-sm text-text-primary">Enabled</span>
+          </label>
         </fieldset>
 
         {!readOnly && (

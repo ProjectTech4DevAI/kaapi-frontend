@@ -49,6 +49,12 @@ export const VALIDATOR_META: readonly ValidatorMeta[] = [
     description:
       "Detects and filters not-safe-for-work (NSFW) content from generated text.",
   },
+  {
+    validator_type: "topic_relevance_llm",
+    validator_name: "Topic Relevance (LLM)",
+    description:
+      "Uses an LLM judge to validate that the generated text stays on topic and is relevant to the given context.",
+  },
 ] as const;
 
 export const KNOWN_ARRAY_OPTIONS: Record<string, string[]> = {
@@ -82,7 +88,14 @@ export const KNOWN_ARRAY_OPTIONS: Record<string, string[]> = {
 
 export const KNOWN_SINGLE_OPTIONS: Record<string, string[]> = {
   categories: ["generic", "healthcare", "education", "all"],
-  llm_callable: ["gpt-4o-mini"],
+  llm_callable: [
+    "gpt-4o-mini",
+    "gpt-4o",
+    "gpt-5-mini",
+    "gpt-5.4-mini",
+    "gpt-5.4-nano",
+    "gpt-5-nano",
+  ],
   validation_method: ["sentence", "full"],
   device: ["cpu", "cuda"],
   model_name: [
@@ -122,7 +135,7 @@ export const GUARDRAILS_FIELD_TOOLTIPS: Record<string, string> = {
   on_fail_action:
     '"fix" attempts to auto-remediate the violation, "exception" raises an error and blocks the response, "rephrase" asks the model to rewrite the output.',
   llm_callable:
-    "Model identifier passed to LiteLLM for evaluation (e.g. gpt-4o-mini, gpt-4o).",
+    "Model identifier passed to LiteLLM for evaluation (e.g. gpt-4o-mini, gpt-4o and gpt-5 family support).",
   policies:
     "Content safety policies to enforce. Defaults to all policies. Each value maps to a specific rule (e.g. no_violence_hate, no_sexual_content).",
   threshold:

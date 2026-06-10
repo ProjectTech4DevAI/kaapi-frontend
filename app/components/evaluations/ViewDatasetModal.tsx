@@ -13,18 +13,6 @@ export default function ViewDatasetModal({
   data,
   onClose,
 }: ViewDatasetModalProps) {
-  const idIndex = data.headers.findIndex(
-    (h) => h.trim().toLowerCase() === "id",
-  );
-  const visibleHeaders =
-    idIndex === -1
-      ? data.headers
-      : data.headers.filter((_, i) => i !== idIndex);
-  const visibleRows =
-    idIndex === -1
-      ? data.rows
-      : data.rows.map((row) => row.filter((_, i) => i !== idIndex));
-
   const handleDownload = () => {
     const csvLines = [data.headers.join(",")];
     data.rows.forEach((row) => {
@@ -65,7 +53,7 @@ export default function ViewDatasetModal({
             {data.name}
           </h2>
           <p className="text-xs text-text-secondary mt-1">
-            {visibleRows.length} rows · {visibleHeaders.length} columns
+            {data.rows.length} rows · {data.headers.length} columns
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0">
@@ -87,7 +75,7 @@ export default function ViewDatasetModal({
         <thead>
           <tr className="bg-bg-secondary border-b border-border">
             <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-13 text-text-secondary bg-bg-secondary w-10" />
-            {visibleHeaders.map((header, i) => (
+            {data.headers.map((header, i) => (
               <th
                 key={i}
                 className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide sticky top-13 text-text-secondary bg-bg-secondary"
@@ -98,7 +86,7 @@ export default function ViewDatasetModal({
           </tr>
         </thead>
         <tbody>
-          {visibleRows.map((row, rowIdx) => (
+          {data.rows.map((row, rowIdx) => (
             <tr key={rowIdx} className="border-b border-border">
               <td className="px-4 py-2.5 text-xs text-text-secondary">
                 {rowIdx + 1}

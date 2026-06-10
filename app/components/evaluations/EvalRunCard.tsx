@@ -79,22 +79,22 @@ export default function EvalRunCard({
                 {formatCostUSD(job.cost.total_cost_usd)}
                 <InfoTooltip
                   text={
-                    <div className="space-y-1">
+                    <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 tabular-nums">
                       {job.cost.response && (
-                        <div className="flex justify-between gap-3">
+                        <>
                           <span>Response generation</span>
-                          <span>
+                          <span className="text-left">
                             {formatCostUSD(job.cost.response.cost_usd)}
                           </span>
-                        </div>
+                        </>
                       )}
                       {job.cost.embedding && (
-                        <div className="flex justify-between gap-3">
+                        <>
                           <span>Cosine similarity calculation</span>
-                          <span>
+                          <span className="text-left">
                             {formatCostUSD(job.cost.embedding.cost_usd)}
                           </span>
-                        </div>
+                        </>
                       )}
                     </div>
                   }

@@ -1,11 +1,11 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/dataset";
-import { Button, Field, Select } from "@/app/components/ui";
+import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { Tab } from "@/app/lib/types/evaluation";
+import { RunMode, Tab } from "@/app/lib/types/evaluation";
 
 interface RunEvaluationFormProps {
   storedDatasets: Dataset[];
@@ -21,6 +21,10 @@ interface RunEvaluationFormProps {
   canRun: boolean;
   onRun: () => void;
   setActiveTab: (tab: Tab) => void;
+  runMode: RunMode;
+  setRunMode: (mode: RunMode) => void;
+  nameError?: string;
+  submitError?: string;
 }
 
 export default function RunEvaluationForm({
@@ -37,7 +41,13 @@ export default function RunEvaluationForm({
   canRun,
   onRun,
   setActiveTab,
+  runMode,
+  setRunMode,
+  nameError,
+  submitError,
 }: RunEvaluationFormProps) {
+  const fastEligible = selectedDataset?.eligible_for_fast !== false;
+
   return (
     <div className="flex-1 overflow-auto p-4 space-y-4">
       <div>
@@ -49,13 +59,16 @@ export default function RunEvaluationForm({
         </p>
       </div>
 
-      <Field
-        label="Name *"
-        value={experimentName}
-        onChange={setExperimentName}
-        placeholder="e.g., test_run_1"
-        disabled={isEvaluating}
-      />
+      <div>
+        <Field
+          label="Name *"
+          value={experimentName}
+          onChange={setExperimentName}
+          placeholder="e.g., test_run_1"
+          disabled={isEvaluating}
+          error={nameError}
+        />
+      </div>
 
       <ConfigSelector
         selectedConfigId={selectedConfigId}
@@ -116,6 +129,70 @@ export default function RunEvaluationForm({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      <div>
+        <label className="inline-flex items-center text-xs font-medium mb-1.5 text-text-secondary">
+          Run Mode
+          <InfoTooltip
+            text={
+              <>
+                <strong>Batch</strong> — the standard mode. Runs every item in
+                the dataset and produces full metrics.
+                <br />
+                <br />
+                <strong>Fast</strong> — short-loop mode for quick iteration.
+                Only works on small datasets (≤10 unique rows / ≤50 items) and
+                text-evaluation configs.
+              </>
+            }
+          />
+        </label>
+        <div
+          role="radiogroup"
+          aria-label="Run mode"
+          className="inline-flex rounded-full p-1 bg-accent-primary/10 ml-4"
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={runMode === "batch"}
+            data-selected={runMode === "batch"}
+            onClick={() => setRunMode("batch")}
+            disabled={isEvaluating}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Batch
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={runMode === "fast"}
+            data-selected={runMode === "fast"}
+            onClick={() => setRunMode("fast")}
+            disabled={isEvaluating}
+            title={
+              selectedDataset && !fastEligible
+                ? "This dataset is too large for Fast mode — pick a smaller one"
+                : undefined
+            }
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] disabled:cursor-not-allowed disabled:text-text-secondary/40 disabled:hover:text-text-secondary/40"
+          >
+            Fast
+          </button>
+        </div>
+        {selectedDataset && !fastEligible && (
+          <p className="text-xs mt-1.5 text-status-error-text">
+            Fast mode isn&apos;t available for this dataset — pick a smaller one
+            or stay on Batch.
+          </p>
+        )}
+      </div>
+
+      {submitError && (
+        <div className="rounded-lg px-3 py-2 bg-status-error-bg border border-status-error-border">
+          <p className="text-sm text-status-error-text">{submitError}</p>
         </div>
       )}
 

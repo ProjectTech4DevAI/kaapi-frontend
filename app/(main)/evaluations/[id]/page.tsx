@@ -31,6 +31,7 @@ import {
   CategoryMetricsTable,
   DetailedResultsTable,
   MetricsOverview,
+  RunModeBadge,
 } from "@/app/components/evaluations";
 import { Button, Modal, Loader, ConfigModal } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
@@ -289,6 +290,7 @@ export default function EvaluationReport() {
                 <h1 className="text-base font-semibold truncate min-w-0 text-text-primary tracking-[-0.01em]">
                   {job.run_name}
                 </h1>
+                <RunModeBadge runMode={job.run_mode} />
                 <span className="flex items-center gap-1 text-xs shrink-0 text-text-secondary">
                   <DatabaseIcon className="shrink-0" />
                   <span className="truncate max-w-[200px]">

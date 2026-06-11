@@ -57,3 +57,10 @@ export function buildDefaultValues(
   }
   return values;
 }
+
+export function formatValidatorName(type: string): string {
+  return type
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}

@@ -27,11 +27,41 @@ export const parseCsvRow = (line: string): string[] => {
 };
 
 /**
- * Parse a CSV file into headers + rows. First non-empty line is treated as the header row.
- **/
+ * Split CSV text into records, preserving newlines inside quoted fields.
+ */
+export const splitCsvRecords = (text: string): string[] => {
+  const records: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQuotes && text[i + 1] === '"') {
+        current += '""';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+        current += ch;
+      }
+    } else if (!inQuotes && (ch === "\n" || ch === "\r")) {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      if (current.trim().length > 0) records.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim().length > 0) records.push(current);
+  return records;
+};
+
+/**
+ * Parse a CSV file into headers + rows. First non-empty record is treated as
+ * the header row. Multi-line quoted cells are preserved as a single field.
+ */
 export const parseCsv = (text: string): ParsedCsv => {
-  const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
-  const headers = lines.length > 0 ? parseCsvRow(lines[0]) : [];
-  const rows = lines.slice(1).map(parseCsvRow);
+  const records = splitCsvRecords(text);
+  const headers = records.length > 0 ? parseCsvRow(records[0]) : [];
+  const rows = records.slice(1).map(parseCsvRow);
   return { headers, rows };
 };

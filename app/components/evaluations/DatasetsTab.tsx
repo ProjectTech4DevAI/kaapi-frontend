@@ -8,7 +8,7 @@ import { DatabaseIcon, PlusIcon } from "@/app/components/icons";
 import { Button, Modal } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import { DatasetListSkeleton } from "@/app/components";
-import { parseCsvRow } from "@/app/lib/utils/csv";
+import { parseCsv } from "@/app/lib/utils/csv";
 import DatasetCard from "./DatasetCard";
 import CreateDatasetForm from "./CreateDatasetForm";
 import ViewDatasetModal from "./ViewDatasetModal";
@@ -102,9 +102,7 @@ export default function DatasetsTab({
         return;
       }
 
-      const lines = csvText.split("\n").filter((l: string) => l.trim());
-      const headers = lines.length > 0 ? parseCsvRow(lines[0]) : [];
-      const rows = lines.slice(1).map(parseCsvRow);
+      const { headers, rows } = parseCsv(csvText);
 
       setViewModalData({
         name: datasetName,

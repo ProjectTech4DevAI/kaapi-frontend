@@ -40,6 +40,7 @@ import {
   ChevronLeftIcon,
   DatabaseIcon,
   GroupIcon,
+  DownloadIcon,
 } from "@/app/components/icons";
 
 export default function EvaluationReport() {
@@ -336,6 +337,7 @@ export default function EvaluationReport() {
                 onClick={handleExportCSV}
                 disabled={!hasScore || isFormatSwitching || isResyncing}
               >
+                <DownloadIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Export CSV</span>
                 <span className="sm:hidden">Export</span>
               </Button>

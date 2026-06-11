@@ -1,6 +1,6 @@
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { formatDistanceToNow } from "date-fns";
-import { clearConfigCache } from "@/app/lib/store/configStore";
+import { clearConfigCache } from "@/app/lib/store/config";
 import {
   ConfigPublic,
   ConfigVersionPublic,
@@ -258,3 +258,26 @@ export const formatCostUSD = (cost: number): string => {
   }
   return `$${cost.toFixed(2)}`;
 };
+
+export function parseCsvRow(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (line[i] === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += line[i];
+    }
+  }
+  result.push(current.trim());
+  return result;
+}

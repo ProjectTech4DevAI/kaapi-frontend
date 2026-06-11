@@ -22,10 +22,14 @@ export default function GroupedResultsTable({
   }
 
   const maxAnswers = Math.max(...traces.map((t) => t.llm_answers.length));
+  const hasAnyCategory = traces.some(
+    (t) => (t.category ?? "").trim().length > 0,
+  );
 
   // Fixed column widths (in pixels) for predictable layout
   const COLUMN_WIDTHS = {
     qId: 60,
+    category: 130,
     question: 200,
     groundTruth: 200,
     answer: 250,
@@ -34,7 +38,10 @@ export default function GroupedResultsTable({
   // Calculate minimum table width based on number of answers
   // This ensures horizontal scroll activates at the right point
   const fixedColumnsWidth =
-    COLUMN_WIDTHS.qId + COLUMN_WIDTHS.question + COLUMN_WIDTHS.groundTruth;
+    COLUMN_WIDTHS.qId +
+    (hasAnyCategory ? COLUMN_WIDTHS.category : 0) +
+    COLUMN_WIDTHS.question +
+    COLUMN_WIDTHS.groundTruth;
   const tableMinWidth = fixedColumnsWidth + maxAnswers * COLUMN_WIDTHS.answer;
 
   return (
@@ -55,6 +62,17 @@ export default function GroupedResultsTable({
               >
                 Q.ID
               </th>
+              {hasAnyCategory && (
+                <th
+                  className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
+                  style={{
+                    width: `${COLUMN_WIDTHS.category}px`,
+                    minWidth: `${COLUMN_WIDTHS.category}px`,
+                  }}
+                >
+                  Category
+                </th>
+              )}
               <th
                 className="px-4 py-3 text-left text-xs font-semibold uppercase text-bg-primary"
                 style={{
@@ -99,6 +117,18 @@ export default function GroupedResultsTable({
                     {group.question_id}
                   </td>
 
+                  {hasAnyCategory && (
+                    <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle/50">
+                      {group.category ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent-primary/10 text-accent-primary">
+                          {group.category}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-text-secondary">—</span>
+                      )}
+                    </td>
+                  )}
+
                   <td className="px-4 pt-3 pb-1 align-top bg-accent-subtle/50">
                     <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
                       {group.question}
@@ -134,6 +164,9 @@ export default function GroupedResultsTable({
                   className="border-b border-border"
                 >
                   <td className="px-4 pt-1 pb-3" />
+                  {hasAnyCategory && (
+                    <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
+                  )}
                   <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
                   <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
 

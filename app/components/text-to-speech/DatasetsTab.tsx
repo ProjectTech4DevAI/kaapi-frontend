@@ -14,7 +14,7 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { DatabaseIcon } from "@/app/components/icons";
 import { DatasetListSkeleton } from "@/app/components";
-import { parseCsvRow } from "@/app/lib/utils/csv";
+import { parseCsv } from "@/app/lib/utils/csv";
 import TTSDatasetCard from "./TTSDatasetCard";
 import CreateTTSDatasetForm from "./CreateTTSDatasetForm";
 import TTSViewDatasetModal from "./TTSViewDatasetModal";
@@ -40,30 +40,6 @@ export interface DatasetsTabProps {
   isLoadingDatasets: boolean;
   toast: ReturnType<typeof useToast>;
 }
-
-const splitCSVRecords = (text: string): string[] => {
-  const records: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes;
-      current += ch;
-    } else if (
-      (ch === "\n" || (ch === "\r" && text[i + 1] === "\n")) &&
-      !inQuotes
-    ) {
-      if (current.trim()) records.push(current);
-      current = "";
-      if (ch === "\r") i++;
-    } else {
-      current += ch;
-    }
-  }
-  if (current.trim()) records.push(current);
-  return records;
-};
 
 export default function DatasetsTab({
   leftPanelWidth,
@@ -105,9 +81,7 @@ export default function DatasetsTab({
         return;
       }
 
-      const lines = splitCSVRecords(csvText);
-      const headers = lines.length > 0 ? parseCsvRow(lines[0]) : [];
-      const rows = lines.slice(1).map(parseCsvRow);
+      const { headers, rows } = parseCsv(csvText);
 
       setViewModalData({ name: datasetName, headers, rows });
     } catch (err: unknown) {

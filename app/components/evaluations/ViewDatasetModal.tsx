@@ -2,6 +2,7 @@
 
 import { Button, Modal } from "@/app/components/ui";
 import { ViewDatasetModalData } from "@/app/lib/types/dataset";
+import { CloseIcon, DownloadIcon } from "@/app/components/icons";
 
 interface ViewDatasetModalProps {
   data: ViewDatasetModalData;
@@ -42,17 +43,32 @@ export default function ViewDatasetModal({
     <Modal
       open
       onClose={onClose}
-      title={data.name}
+      showClose={false}
       maxWidth="max-w-[1000px]"
       maxHeight="max-h-[80vh]"
     >
-      <div className="sticky top-0 bg-bg-primary border-b border-border px-6 py-3 flex items-center justify-between gap-4 z-10">
-        <p className="text-xs text-text-secondary">
-          {data.rows.length} rows · {data.headers.length} columns
-        </p>
-        <Button size="sm" onClick={handleDownload}>
-          Download CSV
-        </Button>
+      <div className="sticky top-0 bg-bg-primary border-b border-border px-6 py-4 flex items-start justify-between gap-4 z-10">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-text-primary truncate">
+            {data.name}
+          </h2>
+          <p className="text-xs text-text-secondary mt-1">
+            {data.rows.length} rows · {data.headers.length} columns
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="p-1 rounded-md text-text-secondary transition-colors hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
+          >
+            <CloseIcon className="w-5 h-5" />
+          </button>
+          <Button size="sm" onClick={handleDownload}>
+            <DownloadIcon className="w-4 h-4" /> Download CSV
+          </Button>
+        </div>
       </div>
 
       <table className="w-full text-sm">

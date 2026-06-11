@@ -1,10 +1,10 @@
-import {
-  SavedValidatorConfig,
-  formatValidatorName,
-} from "@/app/lib/types/guardrails";
+import { SavedValidatorConfig } from "@/app/lib/types/guardrails";
 import { GuardrailsShieldCheckIcon } from "@/app/components/icons";
 import { Button } from "@/app/components/ui";
-import { VALIDATOR_META_BY_TYPE } from "@/app/lib/utils/guardrails";
+import {
+  formatValidatorName,
+  VALIDATOR_META_BY_TYPE,
+} from "@/app/lib/utils/guardrails";
 import SavedConfigsListSkeleton from "./SavedConfigsListSkeleton";
 
 interface SavedConfigsListProps {

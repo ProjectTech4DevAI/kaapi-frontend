@@ -51,13 +51,6 @@ export interface SavedValidatorConfig {
   [key: string]: unknown;
 }
 
-export function formatValidatorName(type: string): string {
-  return type
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
 export interface BanList {
   id: string;
   name: string;

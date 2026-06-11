@@ -19,23 +19,10 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-
-interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[] | null;
-  error?: string | null;
-  metadata?: { has_more?: boolean } | null;
-}
-
-export interface UsePaginatedListResult<T> {
-  items: T[];
-  isLoading: boolean;
-  isLoadingMore: boolean;
-  hasMore: boolean;
-  error: string | null;
-  loadMore: () => void;
-  refetch: () => void;
-}
+import {
+  PaginatedResponse,
+  UsePaginatedListResult,
+} from "@/app/lib/types/pagination";
 
 export function usePaginatedList<T>(options: {
   endpoint: string;

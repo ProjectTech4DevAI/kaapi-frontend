@@ -42,6 +42,7 @@ export function normalizeToIndividualScores(
     if ("llm_answer" in trace) {
       return {
         trace_id: trace.trace_id,
+        category: trace.category,
         input: { question: trace.question },
         output: { answer: trace.llm_answer },
         metadata: { ground_truth: trace.ground_truth_answer },

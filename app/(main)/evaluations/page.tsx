@@ -247,28 +247,23 @@ function SimplifiedEvalContent() {
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
-      const msg = (
-        error instanceof Error ? error.message : String(error)
-      ).toLowerCase();
-      if (
-        msg.includes("run_name_already_exists") ||
-        msg.includes("already exists")
-      ) {
-        setNameError("A run with this name already exists");
-      } else if (msg.includes("config_type_unsupported")) {
-        setSubmitError(
-          "Fast mode only supports text-evaluation configs. Pick a text config or switch to Batch.",
-        );
-      } else if (msg.includes("dataset_too_large_for_fast")) {
-        setSubmitError(
-          "This dataset is too large for Fast mode (limit is ~10 unique rows / 50 items). Pick a smaller dataset or switch to Batch.",
-        );
-      } else {
-        setSubmitError(
-          error instanceof Error
-            ? error.message
-            : "Failed to create evaluation",
-        );
+      const code = error instanceof Error ? error.message : String(error);
+      switch (code) {
+        case "run_name_already_exists":
+          setNameError("A run with this name already exists");
+          break;
+        case "config_type_unsupported":
+          setSubmitError(
+            "Fast mode only supports text-evaluation configs. Pick a text config or switch to Batch.",
+          );
+          break;
+        case "dataset_too_large_for_fast":
+          setSubmitError(
+            "This dataset is too large for Fast mode (limit is ~10 unique rows / 50 items). Pick a smaller dataset or switch to Batch.",
+          );
+          break;
+        default:
+          setSubmitError(code || "Failed to create evaluation");
       }
       setIsEvaluating(false);
       return false;

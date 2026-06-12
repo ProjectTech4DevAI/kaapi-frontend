@@ -1,6 +1,7 @@
 ---
 description: Review a PR (or current branch's diff against main) against kaapi-frontend conventions and personal review checklist.
 argument-hint: [PR number | "branch"]
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(git diff:*), Bash(git log:*), Read, Grep, Glob
 ---
 
 You are reviewing a pull request (or the current branch's diff against `main`) in this Next.js 16 (App Router) + React 19 + TypeScript (strict) + Tailwind CSS 4 frontend, with a BFF layer in `app/api/*` that proxies to the FastAPI backend.

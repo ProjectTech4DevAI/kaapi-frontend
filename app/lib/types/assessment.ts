@@ -132,7 +132,7 @@ export interface ConfigParamDefinition {
 }
 
 export interface AssessmentModelConfig {
-  provider: "openai" | "google";
+  provider: "openai" | "google" | "anthropic";
   model_name: string;
   config: Record<string, ConfigParamDefinition>;
 }

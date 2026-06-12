@@ -31,8 +31,15 @@ import {
   CategoryMetricsTable,
   DetailedResultsTable,
   MetricsOverview,
+  RunModeBadge,
 } from "@/app/components/evaluations";
-import { Button, Modal, Loader, ConfigModal } from "@/app/components/ui";
+import {
+  Button,
+  ConfigModal,
+  Loader,
+  Modal,
+  RadioGroup,
+} from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import { ResultsTableSkeleton } from "@/app/components";
 import {
@@ -258,9 +265,6 @@ export default function EvaluationReport() {
     job.status.toLowerCase() !== "completed" &&
     job.status.toLowerCase() !== "failed";
 
-  const segmentedClass =
-    "inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] data-[selected=true]:hover:bg-accent-hover";
-
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
@@ -289,6 +293,7 @@ export default function EvaluationReport() {
                 <h1 className="text-base font-semibold truncate min-w-0 text-text-primary tracking-[-0.01em]">
                   {job.run_name}
                 </h1>
+                <RunModeBadge runMode={job.run_mode} />
                 <span className="flex items-center gap-1 text-xs shrink-0 text-text-secondary">
                   <DatabaseIcon className="shrink-0" />
                   <span className="truncate max-w-[200px]">
@@ -299,30 +304,38 @@ export default function EvaluationReport() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 relative z-10">
-              <div className="inline-flex rounded-full p-1 bg-accent-primary/10">
-                <button
-                  type="button"
-                  onClick={() => setExportFormat("row")}
-                  disabled={isFormatSwitching || isResyncing}
-                  data-selected={exportFormat === "row"}
-                  className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
-                  <span className="hidden sm:inline">Individual Rows</span>
-                  <span className="sm:hidden">Rows</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExportFormat("grouped")}
-                  disabled={isFormatSwitching || isResyncing}
-                  data-selected={exportFormat === "grouped"}
-                  className={`${segmentedClass} disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  <GroupIcon className="pointer-events-none" />
-                  <span className="hidden sm:inline">Group by Questions</span>
-                  <span className="sm:hidden">Grouped</span>
-                </button>
-              </div>
+              <RadioGroup<"row" | "grouped">
+                ariaLabel="Export format"
+                value={exportFormat}
+                onChange={setExportFormat}
+                disabled={isFormatSwitching || isResyncing}
+                options={[
+                  {
+                    value: "row",
+                    label: (
+                      <>
+                        <MenuIcon className="w-3.5 h-3.5 pointer-events-none" />
+                        <span className="hidden sm:inline">
+                          Individual Rows
+                        </span>
+                        <span className="sm:hidden">Rows</span>
+                      </>
+                    ),
+                  },
+                  {
+                    value: "grouped",
+                    label: (
+                      <>
+                        <GroupIcon className="pointer-events-none" />
+                        <span className="hidden sm:inline">
+                          Group by Questions
+                        </span>
+                        <span className="sm:hidden">Grouped</span>
+                      </>
+                    ),
+                  },
+                ]}
+              />
               <Button
                 variant="outline"
                 size="sm"

@@ -11,5 +11,6 @@ export { default as EvaluationsTab } from "./EvaluationsTab";
 export { default as GroupedResultsTable } from "./GroupedResultsTable";
 export { default as MetricsOverview } from "./MetricsOverview";
 export { default as RunEvaluationForm } from "./RunEvaluationForm";
+export { default as RunModeBadge } from "./RunModeBadge";
 export { default as ScoreDisplay } from "./ScoreDisplay";
 export { default as ViewDatasetModal } from "./ViewDatasetModal";

@@ -1,7 +1,13 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/dataset";
-import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
+import {
+  Button,
+  Field,
+  InfoTooltip,
+  RadioGroup,
+  Select,
+} from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
@@ -149,39 +155,24 @@ export default function RunEvaluationForm({
             }
           />
         </label>
-        <div
-          role="radiogroup"
-          aria-label="Run mode"
-          className="inline-flex rounded-full p-1 bg-accent-primary/10 ml-4"
-        >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={runMode === "batch"}
-            data-selected={runMode === "batch"}
-            onClick={() => setRunMode("batch")}
-            disabled={isEvaluating}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Batch
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={runMode === "fast"}
-            data-selected={runMode === "fast"}
-            onClick={() => setRunMode("fast")}
-            disabled={isEvaluating}
-            title={
-              selectedDataset && !fastEligible
-                ? "This dataset is too large for Fast mode — pick a smaller one"
-                : undefined
-            }
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer text-accent-primary/70 hover:text-accent-primary data-[selected=true]:bg-accent-primary data-[selected=true]:text-white data-[selected=true]:shadow-[0_1px_2px_rgba(0,0,0,0.12)] disabled:cursor-not-allowed disabled:text-text-secondary/40 disabled:hover:text-text-secondary/40"
-          >
-            Fast
-          </button>
-        </div>
+        <RadioGroup<RunMode>
+          ariaLabel="Run mode"
+          className="ml-4"
+          value={runMode}
+          onChange={setRunMode}
+          disabled={isEvaluating}
+          options={[
+            { value: "batch", label: "Batch" },
+            {
+              value: "fast",
+              label: "Fast",
+              title:
+                selectedDataset && !fastEligible
+                  ? "This dataset is too large for Fast mode — pick a smaller one"
+                  : undefined,
+            },
+          ]}
+        />
         {selectedDataset && !fastEligible && (
           <p className="text-xs mt-1.5 text-status-error-text">
             Fast mode isn&apos;t available for this dataset — pick a smaller one

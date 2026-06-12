@@ -19,8 +19,6 @@ export interface RadioGroupProps<T extends string = string> {
 }
 
 /**
- * Generic over the value type so consumers get type-safe `onChange` callbacks:
- *
  * ```tsx
  * <RadioGroup<"batch" | "fast">
  *   value={runMode}

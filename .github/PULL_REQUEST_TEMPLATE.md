@@ -1,4 +1,6 @@
-## Issue: PLEASE_TYPE_ISSUE_NUMBER
+## Issue
+
+Closes #PLEASE_TYPE_ISSUE_NUMBER
 
 ## Type
 

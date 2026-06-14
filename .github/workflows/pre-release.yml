@@ -3,7 +3,7 @@ name: Pre-release Tag
 on:
   pull_request:
     types: [closed]
-    branches: [main]
+    branches: [feat/semantic-release]
 
 jobs:
   pre-release:

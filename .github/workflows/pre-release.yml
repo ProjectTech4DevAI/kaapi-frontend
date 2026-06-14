@@ -1,15 +1,14 @@
 name: Pre-release Tag
 
 on:
-  # pull_request:
   push:
-    # types: [closed]
     branches: [feat/semantic-release]
 
 jobs:
   pre-release:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    name: Pre-Release
     permissions:
       contents: write
       issues: write

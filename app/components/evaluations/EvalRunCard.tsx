@@ -7,7 +7,7 @@ import { getScoreObject } from "@/app/lib/utils/evaluation";
 import { getStatusColor } from "@/app/components/utils";
 import { timeAgo, formatCostUSD } from "@/app/lib/utils";
 import { Button, ConfigModal, InfoTooltip } from "@/app/components/ui";
-import { ScoreDisplay } from "@/app/components/evaluations";
+import { RunModeBadge, ScoreDisplay } from "@/app/components/evaluations";
 import { CostIcon, DatabaseIcon } from "@/app/components/icons/evaluations";
 
 export interface EvalRunCardProps {
@@ -33,8 +33,11 @@ export default function EvalRunCard({
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold truncate text-text-primary">
-              {job.run_name}
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm font-semibold truncate text-text-primary">
+                {job.run_name}
+              </span>
+              <RunModeBadge runMode={job.run_mode} />
             </div>
             {job.inserted_at && (
               <div className="text-xs mt-0.5 text-text-secondary">

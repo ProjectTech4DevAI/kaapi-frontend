@@ -19,7 +19,7 @@ import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import { Loader, TabNavigation } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import { DatasetsTab, EvaluationsTab } from "@/app/components/evaluations";
-import { Tab } from "@/app/lib/types/evaluation";
+import { RunMode, Tab } from "@/app/lib/types/evaluation";
 
 const leftPanelWidth = 450;
 
@@ -62,6 +62,9 @@ function SimplifiedEvalContent() {
     },
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [runMode, setRunMode] = useState<RunMode>("batch");
+  const [nameError, setNameError] = useState<string>("");
+  const [submitError, setSubmitError] = useState<string>("");
 
   useEffect(() => {
     setMounted(true);
@@ -198,6 +201,9 @@ function SimplifiedEvalContent() {
   };
 
   const handleRunEvaluation = async () => {
+    setNameError("");
+    setSubmitError("");
+
     if (!isAuthenticated) {
       toast.error("Please log in to run evaluations.");
       return;
@@ -217,12 +223,15 @@ function SimplifiedEvalContent() {
 
     setIsEvaluating(true);
     try {
-      const payload = {
+      // `run_mode` is only sent when "fast" — omitting it means the backend
+      // defaults to batch, which is the safe behaviour for older clients too.
+      const payload: Record<string, unknown> = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
         config_id: selectedConfigId,
         config_version: selectedConfigVersion,
       };
+      if (runMode === "fast") payload.run_mode = "fast";
 
       await apiFetch("/api/evaluations", apiKey, {
         method: "POST",
@@ -234,12 +243,28 @@ function SimplifiedEvalContent() {
       setSelectedDatasetId("");
       setSelectedConfigId("");
       setSelectedConfigVersion(0);
+      setRunMode("batch");
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
-      toast.error(
-        `Failed to run evaluation: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      const code = error instanceof Error ? error.message : String(error);
+      switch (code) {
+        case "run_name_already_exists":
+          setNameError("A run with this name already exists");
+          break;
+        case "config_type_unsupported":
+          setSubmitError(
+            "Fast mode only supports text-evaluation configs. Pick a text config or switch to Batch.",
+          );
+          break;
+        case "dataset_too_large_for_fast":
+          setSubmitError(
+            "This dataset is too large for Fast mode (limit is ~10 unique rows / 50 items). Pick a smaller dataset or switch to Batch.",
+          );
+          break;
+        default:
+          setSubmitError(code || "Failed to create evaluation");
+      }
       setIsEvaluating(false);
       return false;
     }
@@ -317,10 +342,17 @@ function SimplifiedEvalContent() {
                 setSelectedConfigVersion(configVersion);
               }}
               experimentName={experimentName}
-              setExperimentName={setExperimentName}
+              setExperimentName={(name) => {
+                setNameError("");
+                setExperimentName(name);
+              }}
               isEvaluating={isEvaluating}
               handleRunEvaluation={handleRunEvaluation}
               setActiveTab={setActiveTab}
+              runMode={runMode}
+              setRunMode={setRunMode}
+              nameError={nameError}
+              submitError={submitError}
             />
           )}
         </div>

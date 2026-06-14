@@ -1,8 +1,8 @@
 {
   "branches": [
     {
-      "name": "main",
-      "prerelease": "main"
+      "name": "feat/semantic-release",
+      "prerelease": "beta"
     }
   ],
   "plugins": [

@@ -6,14 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This repo layers two complementary things; keep them separate and use both.
 
-1. **`superpowers` plugin — the _methodology_ (generic, repo-agnostic).** How work gets done: brainstorming, writing/executing plans, TDD, git worktrees, subagent-driven development, requesting/receiving code review, finishing a branch. It's wired into `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`). First time, trust the repo folder and accept the install prompt, or run:
+1. **`superpowers` plugin — the _methodology_ (generic, repo-agnostic).** How work gets done: brainstorming, writing/executing plans, TDD, git worktrees, subagent-driven development, requesting/receiving code review, finishing a branch. It's wired into `.claude/settings.json` (`enabledPlugins`) from the auto-registered `claude-plugins-official` marketplace. First time, trust the repo folder and accept the install prompt, or run:
 
    ```bash
-   /plugin marketplace add obra/superpowers-marketplace
-   /plugin install superpowers@superpowers-marketplace
+   /plugin install superpowers@claude-plugins-official
    ```
 
-   Skills are namespaced (e.g. `/superpowers:brainstorming`). Reach for these for _process_.
+   Then restart Claude Code (its SessionStart hook only wires up on a fresh session). Skills are namespaced (e.g. `/superpowers:brainstorming`). Reach for these for _process_.
 
 2. **`.claude/rules/*` — the kaapi-frontend _conventions_ (project-specific).** What the code must look like in **this** repo: the BFF/`apiClient` proxy pattern, Tailwind design tokens with no `cn()`, hand-authored icons in `app/components/icons/`, the 500-LOC gate, App Router role gating, types/constants placement. These are **path-scoped** — each `rules/*.md` lists `paths:` and auto-loads only when you touch matching files. Superpowers does **not** know any of this; the rules are the source of truth for kaapi style. Don't duplicate them into `superpowers`.
 

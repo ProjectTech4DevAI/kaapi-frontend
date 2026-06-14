@@ -10,7 +10,7 @@ import {
   AnalyticsModality,
 } from "@/app/lib/types/analytics";
 
-export const APP_NAME = "Kaapi Konsole Staging";
+export const APP_NAME = "Kaapi Konsole Staging V1";
 
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",

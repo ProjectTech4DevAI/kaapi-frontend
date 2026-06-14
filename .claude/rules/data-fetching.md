@@ -72,7 +72,7 @@ Reference: `app/api/configs/route.ts`, `app/lib/apiClient.ts`, `app/lib/guardrai
 
 ## Client-side fetching
 
-- Use `apiFetch<T>(url, apiKey, options)` / `clientFetch` from `app/lib/apiClient.ts`. It handles 401 token refresh, dispatches `AUTH_EXPIRED_EVENT` on refresh failure (AuthContext logs out), and throws with a message from `error` / `message` / `detail`. Raw `fetch("/api/...")` in a component bypasses this and is a bug.
+- Use `apiFetch<T>(url, apiKey, options)` from `app/lib/apiClient.ts` for browser calls. It handles 401 token refresh, dispatches `AUTH_EXPIRED_EVENT` on refresh failure (AuthContext logs out), and throws with a message from `error` / `message` / `detail` (via the internal `extractErrorMessage`). Raw `fetch("/api/...")` in a component bypasses this and is a bug.
 - Overload signatures express empty-body handling: a variant returns `Promise<T | null>` with `{ acceptEmpty: true }`.
 - File uploads with progress: `uploadWithProgress<T>(url, apiKey, body, onProgress)` returns `{ promise, abort }`.
 - **Error extraction**: follow `extractErrorMessage(body, fallback)` → reads `body.error || body.message || body.detail`. Don't reinvent the parser.
@@ -91,4 +91,4 @@ export async function fetchAllConfigs(apiKey: string, pageSize?: number): Promis
 
 ## SWR
 
-SWR (2.3.6) is available and used **selectively** where its caching/revalidation helps (cached, revalidated reads — lists, dashboards). Default to native fetch + the fetchers/hooks above; one-shot mutations stay on `clientFetch`.
+SWR (2.3.6) is available and used **selectively** where its caching/revalidation helps (cached, revalidated reads — lists, dashboards). Default to native fetch + the fetchers/hooks above; one-shot mutations stay on `apiFetch`.

@@ -1,22 +1,20 @@
 ---
 name: new-feature
-description: Implement a feature, fix, or refactor in kaapi-frontend following the authoring contract (7-step procedure). Use for any non-trivial coding task in this repo — new pages, components, hooks, API proxies, or utils.
-argument-hint: [description of the feature or change]
+description: Implement a feature, fix, or refactor in kaapi-frontend following the repo's authoring contract (reuse-first, in-style, within-limits). Use for any non-trivial coding task in this repo — new pages, components, hooks, API proxies, or utils.
+argument-hint: "[description of the feature or change]"
 ---
 
-Implement the requested change by running the 7-step authoring contract. The goal is code indistinguishable in style and structure from the existing codebase — not just working code.
+Implement the requested change so the result is **indistinguishable in style and structure from the existing codebase** — not just working code.
 
 Task: $ARGUMENTS
 
-## Procedure
+> **Methodology is handled by `superpowers`.** For branching/worktrees, breaking the work into a plan, TDD, and finishing the branch, use the `superpowers` skills (`using-git-worktrees`, `brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `finishing-a-development-branch`). This skill is _only_ the kaapi-frontend authoring contract: what to reuse, where code goes, and how it must look. Apply both together.
 
-### 0. Branch
-
-If on `main`, create a feature branch first: `feat/<kebab-scope>` (e.g. `feat/evals-category`, `feat/collection-document-preview`); `fix/<kebab-scope>` for pure bugfixes.
+## The kaapi authoring contract
 
 ### 1. Orient
 
-Read `CLAUDE.md`, then the relevant `.claude/rules/*.md` file(s) for every area the task touches (components, hooks, api-and-data-fetching, styling, types-and-constants, utils, code-quality). Rules auto-load when you edit matching paths, but read them up front when planning.
+Read `CLAUDE.md`, then the relevant `.claude/rules/*.md` for every area the task touches (`components`, `hooks`, `data-fetching`, `styling`, `utils`, `code-quality`). Rules auto-load when you edit matching paths, but read them up front when planning.
 
 ### 2. Reuse-first scan (before writing anything)
 
@@ -56,8 +54,4 @@ JSDoc on non-trivial files/exported functions; sparse inline comments (~5–10%)
 
 ### 7. Verify
 
-```bash
-npm run lint && npm run build
-```
-
-Both must pass before declaring done. Fix every error and any warning the change introduced.
+Run `npm run lint && npm run build`. Both must pass before declaring done — fix every error and any warning the change introduced.

@@ -73,7 +73,7 @@ const variantStyles: Record<ButtonVariant, { base: string; disabled: string }> =
 
 ## Reuse before creating
 
-Check `app/components/` (`Button`, `Modal`, `Field`, `MultiSelect`, `Toast`, `Loader`, `PageHeader`, `InfoTooltip`, `CodeBlock`, `ErrorModal`, `GatePopover`, ...) and `app/components/icons/` first. Prefer composing existing primitives. New icons are hand-authored React components in `app/components/icons/` (domain subfolders, exported from its `index.tsx`) — never inline an SVG in feature code.
+Check `app/components/ui/` for primitives (`Button`, `Modal`, `Field`, `MultiSelect`, `Select`, `RadioGroup`, `Toast`, `Loader`, `InfoTooltip`, `CodeBlock`, `ErrorModal`, `Tag`, `TabNavigation`, ...), `app/components/` for higher-level shared pieces (`PageHeader`, `Sidebar`, `GatePopover`, `ConfigCard`, and the `*Skeleton` loaders), and `app/components/icons/` first. Prefer composing existing primitives. New icons are hand-authored React components in `app/components/icons/` (domain subfolders, exported from its `index.tsx`) — never inline an SVG in feature code.
 
 ## Splitting
 

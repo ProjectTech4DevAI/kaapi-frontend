@@ -23,9 +23,12 @@ app/lib/utils/
 │   ├── mergeChartData.ts
 │   └── normalizeSeries.ts
 ├── evaluation.ts                 # single-file domain util
+├── evaluationExport.ts
 ├── guardrails.ts
 ├── csv.ts
 ├── selectOptions.ts
+├── collectionEnrichment.ts
+├── documentPreview.ts
 └── knowledgeBaseCache.ts
 ```
 

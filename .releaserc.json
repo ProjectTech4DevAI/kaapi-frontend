@@ -2,7 +2,7 @@
   "branches": [
     {
       "name": "feat/semantic-release",
-      "prerelease": "feat/semantic-release"
+      "prerelease": "beta"
     }
   ],
   "plugins": [

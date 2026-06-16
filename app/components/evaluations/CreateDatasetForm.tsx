@@ -168,12 +168,15 @@ export default function CreateDatasetForm({
         />
 
         {uploadedFile ? (
-          <div className="rounded-lg p-3 bg-bg-secondary">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+          <div className="rounded-lg p-3 bg-bg-secondary overflow-hidden">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 <CheckLineIcon className="w-4 h-4 shrink-0 text-status-success" />
-                <div>
-                  <p className="text-sm font-medium text-text-primary">
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-sm font-medium text-text-primary truncate"
+                    title={uploadedFile.name}
+                  >
                     {uploadedFile.name}
                   </p>
                   <p className="text-xs text-text-secondary">
@@ -186,7 +189,7 @@ export default function CreateDatasetForm({
                   onRemoveFile();
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="p-1 rounded text-text-secondary cursor-pointer"
+                className="p-1 rounded text-text-secondary cursor-pointer shrink-0"
                 aria-label="Remove file"
               >
                 <CloseIcon className="w-4 h-4" />

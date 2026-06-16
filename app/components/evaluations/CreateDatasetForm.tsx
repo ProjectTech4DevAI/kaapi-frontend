@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
 import {
   CheckLineIcon,
@@ -40,19 +40,6 @@ export default function CreateDatasetForm({
 }: CreateDatasetFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [showDuplicationInfo, setShowDuplicationInfo] = useState(false);
-
-  useEffect(() => {
-    if (!showDuplicationInfo) return;
-    const handleClick = () => setShowDuplicationInfo(false);
-    const handleScroll = () => setShowDuplicationInfo(false);
-    document.addEventListener("click", handleClick);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      document.removeEventListener("click", handleClick);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [showDuplicationInfo]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();

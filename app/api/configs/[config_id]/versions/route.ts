@@ -33,14 +33,15 @@ export async function POST(
 
   try {
     const body = await request.json();
-    const { status, data } = await apiClient(
-      request,
+    const { searchParams } = new URL(request.url);
+    const endpoint = withQueryParams(
       `/api/v1/configs/${config_id}/versions`,
-      {
-        method: "POST",
-        body: JSON.stringify(body),
-      },
+      searchParams,
     );
+    const { status, data } = await apiClient(request, endpoint, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
 
     return NextResponse.json(data, { status });
   } catch (_error) {

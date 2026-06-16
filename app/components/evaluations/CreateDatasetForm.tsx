@@ -7,6 +7,7 @@ import {
   CloseIcon,
   CloudUploadIcon,
 } from "@/app/components/icons";
+import { MAX_NAME_LENGTH } from "@/app/lib/constants";
 
 interface CreateDatasetFormProps {
   datasetName: string;
@@ -91,6 +92,7 @@ export default function CreateDatasetForm({
         value={datasetName}
         onChange={setDatasetName}
         placeholder="e.g., QnA Dataset v1"
+        maxLength={MAX_NAME_LENGTH}
       />
 
       <Field

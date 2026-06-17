@@ -340,19 +340,12 @@ export default function PromptAndConfigStep({
     }
     setIsSaving(true);
     try {
-      const existingConfig =
-        configCards.find(
-          (c) =>
-            c.name.trim().toLowerCase() === configName.trim().toLowerCase(),
-        ) ?? null;
       const saved = await saveAssessmentConfig({
         apiKey,
         configName: configName.trim(),
         commitMessage: commitMessage.trim(),
         configBlob: draft,
-        existingConfig: existingConfig
-          ? { id: existingConfig.id, name: existingConfig.name }
-          : null,
+        existingConfig: null,
       });
       addSelection({
         config_id: saved.config_id,
@@ -479,7 +472,7 @@ export default function PromptAndConfigStep({
               disabled={!canProceed}
               className="!rounded-lg !px-6"
             >
-              Next: Review
+              Next: Post Processing
             </Button>
           </div>
         </div>

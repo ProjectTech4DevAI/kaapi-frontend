@@ -67,9 +67,10 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_EVENT_NAME: push
-          GITHUB_REF: refs/heads/${{ github.event.pull_request.base.ref }}
-        run: npx semantic-release
+        run: |
+          unset GITHUB_ACTIONS
+          unset GITHUB_EVENT_NAME
+          npx semantic-release --branches ${{ github.event.pull_request.base.ref }}
 
       - name: Rewrite notes (cumulative, grouped, since last stable)
         if: success()

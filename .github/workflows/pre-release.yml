@@ -55,22 +55,12 @@ jobs:
             @semantic-release/release-notes-generator \
             @semantic-release/github
 
-      - name: Create conventional commit
-        env:
-          COMMIT_TYPE: ${{ steps.pr-type.outputs.type }}
-        run: |
-          git config user.email "ci@github.com"
-          git config user.name "GitHub CI"
-          ORIGINAL_MSG=$(git log -1 --pretty=%s)
-          git commit --allow-empty -m "${COMMIT_TYPE}: ${ORIGINAL_MSG}"
-
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          unset GITHUB_ACTIONS
-          unset GITHUB_EVENT_NAME
-          npx semantic-release --branches ${{ github.event.pull_request.base.ref }}
+          GITHUB_EVENT_NAME: push
+          GITHUB_REF: refs/heads/${{ github.event.pull_request.base.ref }}
+        run: npx semantic-release
 
       - name: Rewrite notes (cumulative, grouped, since last stable)
         if: success()

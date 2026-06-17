@@ -58,13 +58,11 @@ jobs:
       - name: Create conventional commit
         env:
           COMMIT_TYPE: ${{ steps.pr-type.outputs.type }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           git config user.email "ci@github.com"
           git config user.name "GitHub CI"
           ORIGINAL_MSG=$(git log -1 --pretty=%s)
           git commit --allow-empty -m "${COMMIT_TYPE}: ${ORIGINAL_MSG}"
-          git push origin "HEAD:${BASE_REF}"
 
       - name: Run semantic-release
         env:
@@ -138,11 +136,11 @@ jobs:
             }
 
             const cats = [
-              { title: '🚀 Features', types: ['feat'] },
-              { title: '🐛 Fixes', types: ['fix'] },
-              { title: '🧹 Chores', types: ['chore'] },
-              { title: '📚 Documentation', types: ['docs'] },
-              { title: '♻️ Refactors', types: ['refactor'] },
+              { title: 'Features', types: ['feat'] },
+              { title: 'Fixes', types: ['fix'] },
+              { title: 'Chores', types: ['chore'] },
+              { title: 'Documentation', types: ['docs'] },
+              { title: 'Refactors', types: ['refactor'] },
               { title: 'Other Changes', types: ['*'] },
             ].map(c => ({ ...c, items: [] }));
 

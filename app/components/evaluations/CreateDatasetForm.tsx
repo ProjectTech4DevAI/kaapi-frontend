@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Button, Field, Select } from "@/app/components/ui";
+import { useRef, useState } from "react";
+import { Button, Field, InfoTooltip, Select } from "@/app/components/ui";
 import {
   CheckLineIcon,
   CloseIcon,
   CloudUploadIcon,
 } from "@/app/components/icons";
+import { MAX_NAME_LENGTH } from "@/app/lib/constants";
 
 interface CreateDatasetFormProps {
   datasetName: string;
@@ -39,23 +40,6 @@ export default function CreateDatasetForm({
 }: CreateDatasetFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [showDuplicationInfo, setShowDuplicationInfo] = useState(false);
-  const [duplicationInfoPos, setDuplicationInfoPos] = useState({
-    top: 0,
-    left: 0,
-  });
-
-  useEffect(() => {
-    if (!showDuplicationInfo) return;
-    const handleClick = () => setShowDuplicationInfo(false);
-    const handleScroll = () => setShowDuplicationInfo(false);
-    document.addEventListener("click", handleClick);
-    window.addEventListener("scroll", handleScroll, true);
-    return () => {
-      document.removeEventListener("click", handleClick);
-      window.removeEventListener("scroll", handleScroll, true);
-    };
-  }, [showDuplicationInfo]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -91,6 +75,7 @@ export default function CreateDatasetForm({
         value={datasetName}
         onChange={setDatasetName}
         placeholder="e.g., QnA Dataset v1"
+        maxLength={MAX_NAME_LENGTH}
       />
 
       <Field
@@ -102,44 +87,19 @@ export default function CreateDatasetForm({
 
       <div>
         <label className="text-xs font-medium mb-1.5 text-text-secondary">
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center">
             Duplication Factor
-            <span
-              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full text-[9px] font-normal cursor-pointer shrink-0 bg-bg-primary border border-border text-text-secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                const rect = e.currentTarget.getBoundingClientRect();
-                setDuplicationInfoPos({
-                  top: rect.bottom + 4,
-                  left: rect.left,
-                });
-                setShowDuplicationInfo(!showDuplicationInfo);
-              }}
-            >
-              i
-            </span>
-            {showDuplicationInfo && (
-              <div
-                className="fixed z-50 rounded-lg shadow-lg border text-xs p-3 bg-bg-primary border-border w-[280px]"
-                style={{
-                  top: duplicationInfoPos.top,
-                  left: duplicationInfoPos.left,
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="font-semibold mb-1 text-text-primary">
-                  Duplication Factor
-                </div>
-                <p className="text-text-secondary leading-relaxed">
+            <InfoTooltip
+              text={
+                <>
                   Controls how many times each question is sent to the AI to
                   generate an answer. For example, setting this to 3 means the
                   AI answers each question 3 separate times — helpful for
                   checking if the AI gives consistent and reliable responses
                   each time.
-                </p>
-              </div>
-            )}
+                </>
+              }
+            />
           </span>
         </label>
         <Select
@@ -166,12 +126,15 @@ export default function CreateDatasetForm({
         />
 
         {uploadedFile ? (
-          <div className="rounded-lg p-3 bg-bg-secondary">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+          <div className="rounded-lg p-3 bg-bg-secondary overflow-hidden">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
                 <CheckLineIcon className="w-4 h-4 shrink-0 text-status-success" />
-                <div>
-                  <p className="text-sm font-medium text-text-primary">
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-sm font-medium text-text-primary truncate"
+                    title={uploadedFile.name}
+                  >
                     {uploadedFile.name}
                   </p>
                   <p className="text-xs text-text-secondary">
@@ -184,7 +147,7 @@ export default function CreateDatasetForm({
                   onRemoveFile();
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
-                className="p-1 rounded text-text-secondary cursor-pointer"
+                className="p-1 rounded text-text-secondary cursor-pointer shrink-0"
                 aria-label="Remove file"
               >
                 <CloseIcon className="w-4 h-4" />

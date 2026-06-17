@@ -12,6 +12,7 @@ import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
 import { RunMode, Tab } from "@/app/lib/types/evaluation";
+import { MAX_NAME_LENGTH } from "@/app/lib/constants";
 
 interface RunEvaluationFormProps {
   storedDatasets: Dataset[];
@@ -73,6 +74,7 @@ export default function RunEvaluationForm({
           placeholder="e.g., test_run_1"
           disabled={isEvaluating}
           error={nameError}
+          maxLength={MAX_NAME_LENGTH}
         />
       </div>
 
@@ -117,11 +119,11 @@ export default function RunEvaluationForm({
       </div>
 
       {selectedDataset && (
-        <div className="border rounded-lg p-3 border-status-success bg-green-600/2">
+        <div className="border rounded-lg p-3 border-status-success bg-green-600/2 overflow-hidden">
           <div className="flex items-start gap-2">
             <CheckCircleIcon className="w-5 h-5 shrink-0 mt-0.5 text-status-success" />
-            <div className="flex-1">
-              <div className="text-sm font-medium text-text-primary">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-text-primary wrap-anywhere">
                 {selectedDataset.dataset_name}
               </div>
               {selectedDataset.description && (

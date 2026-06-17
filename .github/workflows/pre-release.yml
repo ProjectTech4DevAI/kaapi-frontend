@@ -138,11 +138,11 @@ jobs:
             }
 
             const cats = [
-              { title: '🚀 Features', types: ['feat'] },
-              { title: '🐛 Fixes', types: ['fix'] },
-              { title: '🧹 Chores', types: ['chore'] },
-              { title: '📚 Documentation', types: ['docs'] },
-              { title: '♻️ Refactors', types: ['refactor'] },
+              { title: 'Features', types: ['feat'] },
+              { title: 'Fixes', types: ['fix'] },
+              { title: 'Chores', types: ['chore'] },
+              { title: 'Documentation', types: ['docs'] },
+              { title: 'Refactors', types: ['refactor'] },
               { title: 'Other Changes', types: ['*'] },
             ].map(c => ({ ...c, items: [] }));
 

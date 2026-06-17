@@ -58,11 +58,13 @@ jobs:
       - name: Create conventional commit
         env:
           COMMIT_TYPE: ${{ steps.pr-type.outputs.type }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           git config user.email "ci@github.com"
           git config user.name "GitHub CI"
           ORIGINAL_MSG=$(git log -1 --pretty=%s)
           git commit --allow-empty -m "${COMMIT_TYPE}: ${ORIGINAL_MSG}"
+          git push origin "HEAD:${BASE_REF}"
 
       - name: Run semantic-release
         env:

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button, Field, Modal } from "@/app/components/ui";
+import { Button, Checkbox, Field, Modal } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import {
   EditProjectModalProps,
@@ -95,20 +95,12 @@ export default function EditProjectModal({
           placeholder="Enter project description (optional)"
         />
 
-        <div>
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-sm text-text-primary">Active</span>
-          </label>
-          <p className="text-xs text-text-secondary mt-1 ml-6.5">
-            Inactive projects won&apos;t be available for use.
-          </p>
-        </div>
+        <Checkbox
+          checked={isActive}
+          onChange={setIsActive}
+          label="Active"
+          description="Inactive projects won't be available for use."
+        />
 
         <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
           <Button variant="outline" size="md" onClick={handleClose}>

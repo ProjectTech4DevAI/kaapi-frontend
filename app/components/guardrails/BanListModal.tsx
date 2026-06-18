@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { Button, Field, Modal } from "@/app/components/ui";
+import { Button, Checkbox, Field, Modal } from "@/app/components/ui";
 
 interface BanListModalProps {
   onClose: () => void;
@@ -132,17 +132,11 @@ export default function BanListModal({
             placeholder="e.g. healthcare, finance"
           />
 
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-sm text-text-primary">
-              Make this ban list public
-            </span>
-          </label>
+          <Checkbox
+            checked={isPublic}
+            onChange={setIsPublic}
+            label="Make this ban list public"
+          />
         </div>
       </div>
 

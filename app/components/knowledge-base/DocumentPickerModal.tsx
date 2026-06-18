@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Button, Modal } from "@/app/components/ui";
+import { Button, Checkbox, Modal } from "@/app/components/ui";
 import { CheckLineIcon, SearchIcon } from "@/app/components/icons";
 import { Document } from "@/app/lib/types/document";
 
@@ -70,11 +70,10 @@ export default function DocumentPickerModal({
                         : "border-border hover:bg-neutral-50"
                     }`}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={isSelected}
                       onChange={() => onToggleDocument(doc.id)}
-                      className="mr-3 w-4 h-4 cursor-pointer accent-accent-primary"
+                      inputClassName="mr-3 cursor-pointer"
                     />
                     <div className="flex-1 min-w-0">
                       <p

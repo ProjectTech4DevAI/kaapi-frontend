@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
+  DeleteOrganizationModal,
+  OnboardingCredentials,
   OnboardingForm,
   OnboardingSuccess,
   OrganizationList,
   ProjectList,
   StepIndicator,
   UserList,
-  OnboardingCredentials,
 } from "@/app/components/settings/onboarding";
+import { useToast } from "@/app/hooks/useToast";
 import {
   Organization,
   Project,
@@ -24,6 +26,8 @@ import { apiFetch } from "@/app/lib/apiClient";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import { TabNavigation } from "@/app/components/ui";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const PROJECT_TABS = [
   { id: "users", label: "Users" },
@@ -71,6 +75,34 @@ export default function OnboardingPage() {
     null,
   );
   const [activeProjectTab, setActiveProjectTab] = useState("users");
+  const [orgToDelete, setOrgToDelete] = useState<Organization | null>(null);
+  const [isDeletingOrg, setIsDeletingOrg] = useState(false);
+  const [orgSearchInput, setOrgSearchInput] = useState("");
+  const [debouncedOrgSearch, setDebouncedOrgSearch] = useState("");
+  const [projectSearchInput, setProjectSearchInput] = useState("");
+  const [debouncedProjectSearch, setDebouncedProjectSearch] = useState("");
+  const toast = useToast();
+
+  // Debounce the search inputs so we don't fire a request per keystroke.
+  useEffect(() => {
+    const t = setTimeout(
+      () => setDebouncedOrgSearch(orgSearchInput.trim()),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(t);
+  }, [orgSearchInput]);
+  useEffect(() => {
+    const t = setTimeout(
+      () => setDebouncedProjectSearch(projectSearchInput.trim()),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(t);
+  }, [projectSearchInput]);
+
+  const orgExtraParams = useMemo(
+    () => (debouncedOrgSearch ? { search: debouncedOrgSearch } : undefined),
+    [debouncedOrgSearch],
+  );
 
   const {
     items: organizations,
@@ -82,6 +114,7 @@ export default function OnboardingPage() {
   } = usePaginatedList<Organization>({
     endpoint: "/api/organization",
     limit: DEFAULT_PAGE_LIMIT,
+    extraParams: orgExtraParams,
   });
 
   const scrollRef = useInfiniteScroll({
@@ -90,34 +123,34 @@ export default function OnboardingPage() {
     isLoading: isLoadingOrgs || isLoadingMore,
   });
 
+  // Decide between "list" and "form" view ONCE on initial load. Without this
+  // gate the effect would re-run during search refetches: an empty search
+  // result would briefly look like "no orgs at all" and bounce the user to
+  // the create-org form instead of just showing the empty search state.
+  const initialOrgViewDecidedRef = useRef(false);
   useEffect(() => {
-    if (isLoadingOrgs) {
-      setView("loading");
-      return;
-    }
-    if (view === "loading") {
-      setView(organizations.length > 0 ? "list" : "form");
-    }
+    if (initialOrgViewDecidedRef.current) return;
+    if (isLoadingOrgs) return;
+    initialOrgViewDecidedRef.current = true;
+    setView(organizations.length > 0 ? "list" : "form");
   }, [isLoadingOrgs, organizations.length]);
 
-  const fetchProjects = useCallback(
-    async (org: Organization) => {
-      setSelectedOrg(org);
-      setView("projects");
+  const loadProjects = useCallback(
+    async (orgId: number, search: string) => {
       setIsLoadingProjects(true);
-      setProjects([]);
-
       try {
+        const qs = search ? `?search=${encodeURIComponent(search)}` : "";
         const result = await apiFetch<ProjectListResponse>(
-          `/api/organization/${org.id}/projects`,
+          `/api/organization/${orgId}/projects${qs}`,
           activeKey?.key ?? "",
         );
-
         if (result.success && result.data) {
           setProjects(result.data);
+        } else {
+          setProjects([]);
         }
       } catch {
-        // keep empty list
+        setProjects([]);
       } finally {
         setIsLoadingProjects(false);
       }
@@ -125,11 +158,33 @@ export default function OnboardingPage() {
     [activeKey],
   );
 
+  const fetchProjects = useCallback(
+    async (org: Organization) => {
+      setSelectedOrg(org);
+      setView("projects");
+      setProjectSearchInput("");
+      setDebouncedProjectSearch("");
+      setProjects([]);
+      await loadProjects(org.id, "");
+    },
+    [loadProjects],
+  );
+
+  // Refetch projects whenever the debounced search changes while we're on
+  // the projects view (initial fetch is handled by `fetchProjects`).
+  useEffect(() => {
+    if (view !== "projects" || !selectedOrg) return;
+    void loadProjects(selectedOrg.id, debouncedProjectSearch);
+  }, [debouncedProjectSearch, view, selectedOrg, loadProjects]);
+
   const refreshProjects = useCallback(async () => {
     if (!selectedOrg) return;
     try {
+      const qs = debouncedProjectSearch
+        ? `?search=${encodeURIComponent(debouncedProjectSearch)}`
+        : "";
       const result = await apiFetch<ProjectListResponse>(
-        `/api/organization/${selectedOrg.id}/projects`,
+        `/api/organization/${selectedOrg.id}/projects${qs}`,
         activeKey?.key ?? "",
       );
       if (result.success && result.data) {
@@ -138,7 +193,7 @@ export default function OnboardingPage() {
     } catch {
       // keep current list
     }
-  }, [selectedOrg, activeKey]);
+  }, [selectedOrg, activeKey, debouncedProjectSearch]);
 
   const handleSuccess = (data: OnboardResponseData) => {
     setOnboardData(data);
@@ -165,12 +220,42 @@ export default function OnboardingPage() {
     setSelectedOrg(null);
     setSelectedProject(null);
     setProjects([]);
+    setProjectSearchInput("");
+    setDebouncedProjectSearch("");
     setView("list");
   };
 
   const handleBackToProjects = () => {
     setSelectedProject(null);
     setView("projects");
+  };
+
+  const handleConfirmDeleteOrg = async (hardDelete: boolean) => {
+    if (!orgToDelete) return;
+    setIsDeletingOrg(true);
+    try {
+      await apiFetch(
+        `/api/organization/${orgToDelete.id}`,
+        activeKey?.key ?? "",
+        {
+          method: "DELETE",
+          body: JSON.stringify({ hard_delete: hardDelete }),
+        },
+      );
+      toast.success(
+        hardDelete
+          ? `"${orgToDelete.name}" permanently deleted`
+          : `"${orgToDelete.name}" deactivated`,
+      );
+      setOrgToDelete(null);
+      refetchOrganizations();
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Failed to delete organization",
+      );
+    } finally {
+      setIsDeletingOrg(false);
+    }
   };
 
   return (
@@ -191,9 +276,13 @@ export default function OnboardingPage() {
               {view === "list" && (
                 <OrganizationList
                   organizations={organizations}
+                  isLoading={isLoadingOrgs}
                   isLoadingMore={isLoadingMore}
                   onNewOrg={() => setView("form")}
                   onSelectOrg={fetchProjects}
+                  onDeleteOrg={setOrgToDelete}
+                  search={orgSearchInput}
+                  onSearchChange={setOrgSearchInput}
                 />
               )}
 
@@ -205,6 +294,8 @@ export default function OnboardingPage() {
                   onBack={handleBackToOrgs}
                   onSelectProject={handleSelectProject}
                   onProjectAdded={refreshProjects}
+                  search={projectSearchInput}
+                  onSearchChange={setProjectSearchInput}
                 />
               )}
 
@@ -313,6 +404,17 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
+
+      {orgToDelete && (
+        <DeleteOrganizationModal
+          organization={orgToDelete}
+          isDeleting={isDeletingOrg}
+          onCancel={() => {
+            if (!isDeletingOrg) setOrgToDelete(null);
+          }}
+          onConfirm={handleConfirmDeleteOrg}
+        />
+      )}
     </div>
   );
 }

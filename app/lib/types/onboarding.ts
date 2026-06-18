@@ -73,9 +73,18 @@ export interface UserProjectDeleteResponse {
 
 export interface OrganizationListProps {
   organizations: Organization[];
+  /** True while the search refetch is in flight (covers initial + subsequent
+   *  loads). Used to suppress the empty-state flicker during searches. */
+  isLoading: boolean;
   isLoadingMore: boolean;
   onNewOrg: () => void;
   onSelectOrg: (org: Organization) => void;
+  /** Fired when the superuser hits the trash icon on a row. */
+  onDeleteOrg?: (org: Organization) => void;
+  /** Current search input value (controlled by the parent so the debounced
+   *  query can drive the API call). */
+  search: string;
+  onSearchChange: (value: string) => void;
 }
 
 export interface ProjectListProps {
@@ -85,6 +94,8 @@ export interface ProjectListProps {
   onBack: () => void;
   onSelectProject: (project: Project) => void;
   onProjectAdded: () => void;
+  search: string;
+  onSearchChange: (value: string) => void;
 }
 
 export interface UserListProps {

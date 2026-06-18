@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Validator } from "@/app/lib/types/guardrails";
 import {
   Button,
+  Checkbox,
   Field,
   InfoTooltip,
-  Select,
-  MultiSelect,
   Loader,
+  MultiSelect,
+  Select,
 } from "@/app/components/ui";
 import { CloseIcon } from "@/app/components/icons";
 import {
@@ -323,15 +324,11 @@ export default function ValidatorConfigPanel({
             />
           </div>
 
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isEnabled}
-              onChange={(e) => setIsEnabled(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-sm text-text-primary">Enabled</span>
-          </label>
+          <Checkbox
+            checked={isEnabled}
+            onChange={setIsEnabled}
+            label="Enabled"
+          />
         </fieldset>
 
         {!readOnly && (

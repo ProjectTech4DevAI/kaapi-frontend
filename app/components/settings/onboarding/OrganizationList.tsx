@@ -1,9 +1,18 @@
-import { OrganizationListProps } from "@/app/lib/types/onboarding";
+import {
+  ActiveStatus,
+  OrganizationListProps,
+} from "@/app/lib/types/onboarding";
 import { formatRelativeTime } from "@/app/lib/utils";
-import { Button, Loader } from "@/app/components/ui";
+import { Button, Loader, TabNavigation } from "@/app/components/ui";
+
+const STATUS_TABS = [
+  { id: "active", label: "Active" },
+  { id: "inactive", label: "Inactive" },
+];
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   ChevronRightIcon,
+  EditIcon,
   SearchIcon,
   TrashIcon,
 } from "@/app/components/icons";
@@ -34,15 +43,17 @@ export default function OrganizationList({
   onNewOrg,
   onSelectOrg,
   onDeleteOrg,
+  onEditOrg,
   search,
   onSearchChange,
+  activeStatus,
+  onActiveStatusChange,
 }: OrganizationListProps) {
   const { currentUser } = useAuth();
   const canDelete = currentUser?.is_superuser && !!onDeleteOrg;
+  const canEdit = currentUser?.is_superuser && !!onEditOrg;
   return (
     <div>
-      {/* Sticky title + count + search. Negative margins extend the bg to the
-          scrollable container's edges so list rows don't peek above. */}
       <div className="sticky top-0 z-10 bg-bg-primary -mx-8 -mt-5 px-8 pt-5 pb-4">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -60,7 +71,7 @@ export default function OrganizationList({
             </Button>
           )}
         </div>
-        <div className="relative">
+        <div className="relative mb-3">
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
           <input
             type="text"
@@ -68,6 +79,13 @@ export default function OrganizationList({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search organizations..."
             className="w-full pl-10 pr-4 py-2.5 rounded-full bg-bg-secondary text-text-primary text-sm placeholder:text-neutral focus:outline-none focus:ring-1 focus:ring-accent-primary focus:bg-bg-primary transition-colors"
+          />
+        </div>
+        <div className="-mx-4">
+          <TabNavigation
+            tabs={STATUS_TABS}
+            activeTab={activeStatus}
+            onTabChange={(id) => onActiveStatusChange(id as ActiveStatus)}
           />
         </div>
       </div>
@@ -78,8 +96,10 @@ export default function OrganizationList({
         ) : organizations.length === 0 ? (
           <div className="text-center py-12 text-text-secondary text-sm">
             {search.trim()
-              ? `No organizations match "${search.trim()}"`
-              : "No organizations yet"}
+              ? `No ${activeStatus} organizations match "${search.trim()}"`
+              : activeStatus === "inactive"
+                ? "No inactive organizations"
+                : "No organizations yet"}
           </div>
         ) : (
           organizations.map((org) => (
@@ -100,6 +120,17 @@ export default function OrganizationList({
                 </p>
               </button>
               <div className="flex items-center gap-1 shrink-0">
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEditOrg!(org)}
+                    className="p-1.5 rounded-md text-text-secondary hover:bg-neutral-100 hover:text-text-primary transition-colors cursor-pointer"
+                    aria-label={`Edit ${org.name}`}
+                    title="Edit organization"
+                  >
+                    <EditIcon className="w-4 h-4" />
+                  </button>
+                )}
                 {canDelete && (
                   <button
                     type="button"

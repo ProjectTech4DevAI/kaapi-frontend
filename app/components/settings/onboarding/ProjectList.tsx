@@ -1,15 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Project, ProjectListProps } from "@/app/lib/types/onboarding";
+import {
+  ActiveStatus,
+  Project,
+  ProjectListProps,
+} from "@/app/lib/types/onboarding";
 import { formatRelativeTime } from "@/app/lib/utils";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
   EditIcon,
   SearchIcon,
+  TrashIcon,
 } from "@/app/components/icons";
-import { Button } from "@/app/components/ui";
+import { Button, TabNavigation } from "@/app/components/ui";
+
+const STATUS_TABS = [
+  { id: "active", label: "Active" },
+  { id: "inactive", label: "Inactive" },
+];
 import { useAuth } from "@/app/lib/context/AuthContext";
 import AddProjectModal from "./AddProjectModal";
 import EditProjectModal from "./EditProjectModal";
@@ -45,6 +55,9 @@ export default function ProjectList({
   onProjectAdded,
   search,
   onSearchChange,
+  activeStatus,
+  onActiveStatusChange,
+  onDeleteProject,
 }: ProjectListProps) {
   const { activeKey, currentUser } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -52,9 +65,6 @@ export default function ProjectList({
 
   return (
     <div>
-      {/* Sticky header: back button + title + count + add button + search.
-          Negative margins extend the bg to the scroll container's edges so
-          list rows don't peek above. */}
       <div className="sticky top-0 z-10 bg-bg-primary -mx-8 -mt-5 px-8 pt-5 pb-4">
         <button
           onClick={onBack}
@@ -81,7 +91,7 @@ export default function ProjectList({
           )}
         </div>
 
-        <div className="relative">
+        <div className="relative mb-3">
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none" />
           <input
             type="text"
@@ -89,6 +99,13 @@ export default function ProjectList({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search projects..."
             className="w-full pl-10 pr-4 py-2.5 rounded-full bg-bg-secondary text-text-primary text-sm placeholder:text-neutral focus:outline-none focus:ring-1 focus:ring-accent-primary focus:bg-bg-primary transition-colors"
+          />
+        </div>
+        <div className="-mx-4">
+          <TabNavigation
+            tabs={STATUS_TABS}
+            activeTab={activeStatus}
+            onTabChange={(id) => onActiveStatusChange(id as ActiveStatus)}
           />
         </div>
       </div>
@@ -100,8 +117,10 @@ export default function ProjectList({
       ) : projects.length === 0 ? (
         <div className="text-center py-12 text-text-secondary text-sm">
           {search.trim()
-            ? `No projects match "${search.trim()}"`
-            : "No projects found for this organization."}
+            ? `No ${activeStatus} projects match "${search.trim()}"`
+            : activeStatus === "inactive"
+              ? "No inactive projects in this organization."
+              : "No projects found for this organization."}
         </div>
       ) : (
         <div className="space-y-2">
@@ -147,6 +166,19 @@ export default function ProjectList({
                     aria-label="Edit project"
                   >
                     <EditIcon className="w-4 h-4" />
+                  </button>
+                )}
+                {currentUser?.is_superuser && onDeleteProject && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteProject(project);
+                    }}
+                    className="p-1.5 rounded-md border border-status-error-border text-status-error-text bg-status-error-bg/40 hover:bg-status-error-bg hover:border-status-error-text transition-colors cursor-pointer"
+                    title="Delete project"
+                    aria-label={`Delete ${project.name}`}
+                  >
+                    <TrashIcon className="w-4 h-4" />
                   </button>
                 )}
                 <button

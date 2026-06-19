@@ -9,3 +9,5 @@ export { default as AddUserModal } from "./AddUserModal";
 export { default as AddProjectModal } from "./AddProjectModal";
 export { default as EditProjectModal } from "./EditProjectModal";
 export { default as DeleteOrganizationModal } from "./DeleteOrganizationModal";
+export { default as DeleteProjectModal } from "./DeleteProjectModal";
+export { default as EditOrganizationModal } from "./EditOrganizationModal";

@@ -71,20 +71,20 @@ export interface UserProjectDeleteResponse {
   metadata?: Record<string, unknown>;
 }
 
+export type ActiveStatus = "active" | "inactive";
+
 export interface OrganizationListProps {
   organizations: Organization[];
-  /** True while the search refetch is in flight (covers initial + subsequent
-   *  loads). Used to suppress the empty-state flicker during searches. */
   isLoading: boolean;
   isLoadingMore: boolean;
   onNewOrg: () => void;
   onSelectOrg: (org: Organization) => void;
-  /** Fired when the superuser hits the trash icon on a row. */
   onDeleteOrg?: (org: Organization) => void;
-  /** Current search input value (controlled by the parent so the debounced
-   *  query can drive the API call). */
+  onEditOrg?: (org: Organization) => void;
   search: string;
   onSearchChange: (value: string) => void;
+  activeStatus: ActiveStatus;
+  onActiveStatusChange: (status: ActiveStatus) => void;
 }
 
 export interface ProjectListProps {
@@ -96,6 +96,9 @@ export interface ProjectListProps {
   onProjectAdded: () => void;
   search: string;
   onSearchChange: (value: string) => void;
+  activeStatus: ActiveStatus;
+  onActiveStatusChange: (status: ActiveStatus) => void;
+  onDeleteProject?: (project: Project) => void;
 }
 
 export interface UserListProps {
@@ -119,6 +122,22 @@ export interface EditProjectModalProps {
   project: Project;
   apiKey: string;
   onProjectUpdated: () => void;
+}
+
+export interface EditOrganizationModalProps {
+  open: boolean;
+  onClose: () => void;
+  organization: Organization;
+  apiKey: string;
+  onOrganizationUpdated: () => void;
+}
+
+export interface OrganizationResponse {
+  success: boolean;
+  data?: Organization;
+  error?: string;
+  errors?: { field: string; message: string }[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AddUserModalProps {

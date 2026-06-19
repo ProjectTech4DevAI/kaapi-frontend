@@ -266,42 +266,42 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   },
   // Google (Gemini)
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-2.0-flash-lite",
     config: GEMINI_TEMPERATURE_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-2.0-flash",
     config: GEMINI_TEMPERATURE_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-2.5-flash-lite",
     config: GEMINI_TEMPERATURE_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-2.5-flash",
     config: GEMINI_TEMPERATURE_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-2.5-pro",
     config: GEMINI_TEMPERATURE_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-3.1-flash-lite",
     config: GEMINI_THINKING_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-3.1-pro-preview",
     config: GEMINI_THINKING_NO_MINIMAL_CONFIG,
   },
   {
-    provider: "google",
+    provider: "google-aistudio",
     model_name: "gemini-3-flash-preview",
     config: GEMINI_THINKING_CONFIG,
   },
@@ -319,7 +319,7 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
 
 export const PROVIDER_OPTIONS = [
   { value: "openai", label: "OpenAI" },
-  { value: "google", label: "Google (Gemini)" },
+  { value: "google-aistudio", label: "Google (Gemini)" },
   { value: "anthropic", label: "Anthropic (Claude)" },
 ] as const;
 

@@ -41,6 +41,9 @@ export default function UserPrompt({
           <span className="text-base font-semibold text-text-primary">
             User prompt
           </span>
+          <span className="rounded-full bg-bg-secondary px-2 py-0.5 text-[10px] font-medium text-text-secondary">
+            Optional
+          </span>
         </Button>
         <InfoTooltip
           text={

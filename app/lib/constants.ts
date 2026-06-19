@@ -1,7 +1,3 @@
-/**
- * Constants for Management
- */
-
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/ui";
 import {
@@ -10,7 +6,7 @@ import {
   AnalyticsModality,
 } from "@/app/lib/types/analytics";
 
-export const APP_NAME = "Kaapi Konsole Staging V1";
+export const APP_NAME = "Kaapi Konsole";
 
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",

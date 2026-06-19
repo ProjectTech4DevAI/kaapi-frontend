@@ -6,6 +6,7 @@ import type {
   ModelOption,
   ValueSetter,
 } from "@/app/lib/types/assessment";
+import type { CompletionConfig } from "@/app/lib/types/configs";
 import ConfigParamControl from "./ConfigParamControl";
 
 export interface ConfigCreatorProps {
@@ -19,7 +20,7 @@ export interface ConfigCreatorProps {
   isSaving: boolean;
   setConfigName: ValueSetter<string>;
   setCommitMessage: ValueSetter<string>;
-  onProviderChange: ValueSetter<"openai">;
+  onProviderChange: ValueSetter<CompletionConfig["provider"]>;
   onModelChange: ValueSetter<string>;
   onParamChange: (key: string, value: string | number) => void;
   onSave: () => void | Promise<void>;
@@ -56,7 +57,9 @@ export default function ConfigCreator({
           </label>
           <Select
             value={currentProvider}
-            onChange={(e) => onProviderChange(e.target.value as "openai")}
+            onChange={(e) =>
+              onProviderChange(e.target.value as CompletionConfig["provider"])
+            }
             className={selectClass}
             options={[...PROVIDER_OPTIONS]}
           />

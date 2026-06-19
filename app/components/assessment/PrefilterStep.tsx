@@ -85,9 +85,11 @@ export default function PrefilterStep({
   );
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 
+  const trHasColumns = trColumns.length > 0 || trAttachmentColumns.length > 0;
+
   const handleNext = () => {
     const config: PrefilterConfig = {};
-    if (trEnabled && trColumns.length > 0 && trPrompt.trim()) {
+    if (trEnabled && trHasColumns && trPrompt.trim()) {
       config.topic_relevance = {
         columns: trColumns,
         prompt: trPrompt.trim(),
@@ -103,7 +105,7 @@ export default function PrefilterStep({
     onNext();
   };
 
-  const trValid = !trEnabled || (trColumns.length > 0 && !!trPrompt.trim());
+  const trValid = !trEnabled || (trHasColumns && !!trPrompt.trim());
   const dupValid = !dupEnabled || dupColumns.length > 0;
   const canProceed = trValid && dupValid;
 
@@ -142,16 +144,18 @@ export default function PrefilterStep({
               <div>
                 <label className="mb-2 block text-xs font-medium text-text-secondary">
                   Columns to evaluate
-                  <span className="ml-1 text-status-error-text">*</span>
+                  {attachmentColumns.length === 0 && (
+                    <span className="ml-1 text-status-error-text">*</span>
+                  )}
                 </label>
                 <ColumnChips
                   columns={columns}
                   selected={trColumns}
                   onChange={setTrColumns}
                 />
-                {trColumns.length === 0 && (
+                {trColumns.length === 0 && trAttachmentColumns.length === 0 && (
                   <p className="mt-1.5 text-xs text-status-warning">
-                    Select at least one column.
+                    Select at least one text or document column.
                   </p>
                 )}
                 {trColumns.length > 0 && (

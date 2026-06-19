@@ -168,12 +168,11 @@ function PageContent() {
       showToastError("Dataset is required");
       return;
     }
-    if (columnMapping.textColumns.length === 0) {
-      showToastError("Map at least one text column");
-      return;
-    }
-    if (!promptTemplate.trim()) {
-      showToastError("Prompt is required");
+    if (
+      columnMapping.textColumns.length === 0 &&
+      columnMapping.attachments.length === 0
+    ) {
+      showToastError("Map at least one text or attachment column");
       return;
     }
     if (!outputSchema.some((field) => field.name.trim())) {
@@ -271,17 +270,16 @@ function PageContent() {
   };
 
   const hasDataset = !!datasetId && columns.length > 0;
-  const hasMapperSelection = columnMapping.textColumns.length > 0;
-  const hasPromptTemplate = promptTemplate.trim().length > 0;
+  const hasMapperSelection =
+    columnMapping.textColumns.length > 0 ||
+    columnMapping.attachments.length > 0;
   const hasConfiguredResponseFormat = outputSchema.some((field) =>
     field.name.trim(),
   );
-  const canReachReview =
-    hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
+  const canReachReview = configs.length > 0 && hasConfiguredResponseFormat;
   const canSubmitAssessment =
     !!datasetId &&
     hasMapperSelection &&
-    hasPromptTemplate &&
     hasConfiguredResponseFormat &&
     configs.length > 0 &&
     experimentName.trim().length > 0 &&
@@ -289,16 +287,14 @@ function PageContent() {
   const submitBlockerMessage = !datasetId
     ? "Select a dataset to submit"
     : !hasMapperSelection
-      ? "Map at least one text column to submit"
-      : !hasPromptTemplate
-        ? "Write a prompt to submit"
-        : !hasConfiguredResponseFormat
-          ? "Set response format to submit"
-          : configs.length === 0
-            ? "Select at least one configuration to submit"
-            : !experimentName.trim()
-              ? "Enter an experiment name to submit"
-              : "";
+      ? "Map at least one text or attachment column to submit"
+      : !hasConfiguredResponseFormat
+        ? "Set response format to submit"
+        : configs.length === 0
+          ? "Select at least one configuration to submit"
+          : !experimentName.trim()
+            ? "Enter an experiment name to submit"
+            : "";
   const effectiveCompletedConfigSteps = useMemo(() => {
     const merged = new Set(completedConfigSteps);
     if (hasMapperSelection) merged.add(1);

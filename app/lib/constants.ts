@@ -1,7 +1,3 @@
-/**
- * Constants for Management
- */
-
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/ui";
 import {

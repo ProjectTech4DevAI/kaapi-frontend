@@ -6,7 +6,7 @@ import { DATASET_LEFT_PANEL_CLASSES } from "@/app/lib/assessment/constants";
 import type { ChangeEvent, DragEvent, RefObject } from "react";
 import type { ValueSetter } from "@/app/lib/types/assessment";
 
-interface DatasetsCreatePanelProps {
+interface CreatePanelProps {
   datasetName: string;
   datasetDescription: string;
   uploadedFile: File | null;
@@ -40,7 +40,7 @@ export default function CreatePanel({
   onRemoveFile,
   onResetForm,
   onCreateDataset,
-}: DatasetsCreatePanelProps) {
+}: CreatePanelProps) {
   return (
     <div
       className={`${DATASET_LEFT_PANEL_CLASSES} flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-bg-primary`}

@@ -54,8 +54,11 @@ export default function ProjectList({
   activeStatus,
   onActiveStatusChange,
   onDeleteProject,
+  onActivateProject,
+  activatingProjectId = null,
 }: ProjectListProps) {
   const { activeKey, currentUser } = useAuth();
+  const canActivate = currentUser?.is_superuser && !!onActivateProject;
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
@@ -142,15 +145,22 @@ export default function ProjectList({
                 </p>
               </button>
               <div className="flex items-center gap-2 shrink-0">
-                <span
-                  className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium border ${
-                    project.is_active
-                      ? "bg-status-success-bg text-status-success-text border-status-success-border"
-                      : "bg-bg-secondary text-text-secondary border-border"
-                  }`}
-                >
-                  {project.is_active ? "Active" : "Inactive"}
-                </span>
+                {canActivate && !project.is_active && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onActivateProject!(project);
+                    }}
+                    disabled={activatingProjectId === project.id}
+                    className="px-2.5 py-1 rounded-md border border-status-success-border text-status-success-text bg-status-success-bg/40 hover:bg-status-success-bg hover:border-status-success-text text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    title="Activate project"
+                    aria-label={`Activate ${project.name}`}
+                  >
+                    {activatingProjectId === project.id
+                      ? "Activating…"
+                      : "Activate"}
+                  </button>
+                )}
                 {currentUser?.is_superuser && (
                   <button
                     onClick={(e) => {

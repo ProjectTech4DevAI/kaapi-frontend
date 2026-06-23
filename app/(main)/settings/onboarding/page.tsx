@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
+import {
+  useDebouncedValue,
+  useInfiniteScroll,
+  useOnboardingActivation,
+  usePaginatedList,
+} from "@/app/hooks";
 import {
   DeleteOrganizationModal,
   DeleteProjectModal,
@@ -13,6 +18,7 @@ import {
   OnboardingForm,
   OnboardingSuccess,
   OrganizationList,
+  OrganizationListSkeleton,
   ProjectList,
   StepIndicator,
   UserList,
@@ -39,34 +45,6 @@ const PROJECT_TABS = [
 
 type View = "loading" | "list" | "projects" | "users" | "form" | "success";
 
-function OrganizationListSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="h-5 w-36 bg-neutral-200 rounded mb-2" />
-          <div className="h-3 w-24 bg-neutral-100 rounded" />
-        </div>
-        <div className="h-9 w-40 bg-neutral-200 rounded-full" />
-      </div>
-      <div className="space-y-2.5">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between gap-3 p-4 rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="h-4 w-40 max-w-full bg-neutral-200 rounded mb-2" />
-              <div className="h-3 w-28 bg-neutral-100 rounded" />
-            </div>
-            <div className="h-4 w-4 shrink-0 bg-neutral-100 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function OnboardingPage() {
   const { activeKey } = useAuth();
   const [view, setView] = useState<View>("loading");
@@ -84,29 +62,20 @@ export default function OnboardingPage() {
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isDeletingProject, setIsDeletingProject] = useState(false);
   const [orgSearchInput, setOrgSearchInput] = useState("");
-  const [debouncedOrgSearch, setDebouncedOrgSearch] = useState("");
   const [projectSearchInput, setProjectSearchInput] = useState("");
-  const [debouncedProjectSearch, setDebouncedProjectSearch] = useState("");
   const [orgActiveStatus, setOrgActiveStatus] =
     useState<ActiveStatus>("active");
   const [projectActiveStatus, setProjectActiveStatus] =
     useState<ActiveStatus>("active");
   const toast = useToast();
-
-  useEffect(() => {
-    const t = setTimeout(
-      () => setDebouncedOrgSearch(orgSearchInput.trim()),
-      SEARCH_DEBOUNCE_MS,
-    );
-    return () => clearTimeout(t);
-  }, [orgSearchInput]);
-  useEffect(() => {
-    const t = setTimeout(
-      () => setDebouncedProjectSearch(projectSearchInput.trim()),
-      SEARCH_DEBOUNCE_MS,
-    );
-    return () => clearTimeout(t);
-  }, [projectSearchInput]);
+  const debouncedOrgSearch = useDebouncedValue(
+    orgSearchInput.trim(),
+    SEARCH_DEBOUNCE_MS,
+  );
+  const debouncedProjectSearch = useDebouncedValue(
+    projectSearchInput.trim(),
+    SEARCH_DEBOUNCE_MS,
+  );
 
   const orgExtraParams = useMemo(() => {
     const params: Record<string, string> = {
@@ -179,7 +148,6 @@ export default function OnboardingPage() {
       setSelectedOrg(org);
       setView("projects");
       setProjectSearchInput("");
-      setDebouncedProjectSearch("");
       setProjectActiveStatus("active");
       setProjects([]);
       await loadProjects(org.id, "", "active");
@@ -247,7 +215,6 @@ export default function OnboardingPage() {
     setSelectedProject(null);
     setProjects([]);
     setProjectSearchInput("");
-    setDebouncedProjectSearch("");
     setView("list");
   };
 
@@ -310,6 +277,17 @@ export default function OnboardingPage() {
     }
   };
 
+  const {
+    activatingOrgId,
+    activatingProjectId,
+    activateOrg: handleActivateOrg,
+    activateProject: handleActivateProject,
+  } = useOnboardingActivation({
+    apiKey: activeKey?.key ?? "",
+    onOrgActivated: refetchOrganizations,
+    onProjectActivated: refreshProjects,
+  });
+
   return (
     <div className="w-full h-screen flex flex-col bg-bg-primary">
       <div className="flex flex-1 overflow-hidden">
@@ -334,6 +312,8 @@ export default function OnboardingPage() {
                   onSelectOrg={fetchProjects}
                   onDeleteOrg={setOrgToDelete}
                   onEditOrg={setOrgToEdit}
+                  onActivateOrg={handleActivateOrg}
+                  activatingOrgId={activatingOrgId}
                   search={orgSearchInput}
                   onSearchChange={setOrgSearchInput}
                   activeStatus={orgActiveStatus}
@@ -354,6 +334,8 @@ export default function OnboardingPage() {
                   activeStatus={projectActiveStatus}
                   onActiveStatusChange={setProjectActiveStatus}
                   onDeleteProject={setProjectToDelete}
+                  onActivateProject={handleActivateProject}
+                  activatingProjectId={activatingProjectId}
                 />
               )}
 

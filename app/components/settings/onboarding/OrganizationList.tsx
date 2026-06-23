@@ -40,14 +40,17 @@ export default function OrganizationList({
   onSelectOrg,
   onDeleteOrg,
   onEditOrg,
+  onActivateOrg,
   search,
   onSearchChange,
   activeStatus,
   onActiveStatusChange,
+  activatingOrgId = null,
 }: OrganizationListProps) {
   const { currentUser } = useAuth();
   const canDelete = currentUser?.is_superuser && !!onDeleteOrg;
   const canEdit = currentUser?.is_superuser && !!onEditOrg;
+  const canActivate = currentUser?.is_superuser && !!onActivateOrg;
   return (
     <div>
       <div className="sticky top-0 z-10 bg-bg-primary -mx-8 -mt-5 px-8 pt-5 pb-4">
@@ -116,6 +119,18 @@ export default function OrganizationList({
                 </p>
               </button>
               <div className="flex items-center gap-1 shrink-0">
+                {canActivate && !org.is_active && (
+                  <button
+                    type="button"
+                    onClick={() => onActivateOrg!(org)}
+                    disabled={activatingOrgId === org.id}
+                    className="px-2.5 py-1 rounded-md border border-status-success-border text-status-success-text bg-status-success-bg/40 hover:bg-status-success-bg hover:border-status-success-text text-xs font-medium transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    aria-label={`Activate ${org.name}`}
+                    title="Activate organization"
+                  >
+                    {activatingOrgId === org.id ? "Activating…" : "Activate"}
+                  </button>
+                )}
                 {canEdit && (
                   <button
                     type="button"

@@ -81,10 +81,12 @@ export interface OrganizationListProps {
   onSelectOrg: (org: Organization) => void;
   onDeleteOrg?: (org: Organization) => void;
   onEditOrg?: (org: Organization) => void;
+  onActivateOrg?: (org: Organization) => void;
   search: string;
   onSearchChange: (value: string) => void;
   activeStatus: ActiveStatus;
   onActiveStatusChange: (status: ActiveStatus) => void;
+  activatingOrgId?: number | null;
 }
 
 export interface ProjectListProps {
@@ -99,6 +101,8 @@ export interface ProjectListProps {
   activeStatus: ActiveStatus;
   onActiveStatusChange: (status: ActiveStatus) => void;
   onDeleteProject?: (project: Project) => void;
+  onActivateProject?: (project: Project) => void;
+  activatingProjectId?: number | null;
 }
 
 export interface UserListProps {

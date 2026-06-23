@@ -18,21 +18,21 @@ export default function EditProjectModal({
 }: EditProjectModalProps) {
   const toast = useToast();
   const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description);
+  const [description, setDescription] = useState(project.description ?? "");
   const [isActive, setIsActive] = useState(project.is_active);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [nameError, setNameError] = useState("");
 
   useEffect(() => {
     setName(project.name);
-    setDescription(project.description);
+    setDescription(project.description ?? "");
     setIsActive(project.is_active);
     setNameError("");
   }, [project]);
 
   const handleClose = () => {
     setName(project.name);
-    setDescription(project.description);
+    setDescription(project.description ?? "");
     setIsActive(project.is_active);
     setNameError("");
     onClose();

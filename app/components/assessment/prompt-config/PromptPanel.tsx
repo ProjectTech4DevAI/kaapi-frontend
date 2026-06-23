@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/app/components/ui";
-import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
-
-interface PromptPanelProps {
-  textColumns: string[];
-  sampleRow: SampleRow;
-  systemInstruction: string;
-  setSystemInstruction: ValueSetter<string>;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-}
+import type { PromptPanelProps } from "@/app/lib/types/assessment";
 import UserPrompt from "./UserPrompt";
 import SystemPrompt from "./SystemPrompt";
 

@@ -27,6 +27,22 @@ export interface AssessmentFormState {
   postProcessingConfig: PostProcessingConfig | null;
 }
 
+export interface PromptPanelProps {
+  textColumns: string[];
+  sampleRow: SampleRow;
+  systemInstruction: string;
+  setSystemInstruction: ValueSetter<string>;
+  promptTemplate: string;
+  setPromptTemplate: ValueSetter<string>;
+}
+
+export interface ResponseSchemaProps {
+  schema: SchemaProperty[];
+  setSchema: ValueSetter<SchemaProperty[]>;
+  summary: string;
+  hasFields: boolean;
+}
+
 export interface ConfigPanelProps {
   canSubmitAssessment: boolean;
   columns: string[];

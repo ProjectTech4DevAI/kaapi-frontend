@@ -112,8 +112,8 @@ function VersionPanel({
                       void onToggleVersionSelection(config, version.version)
                     }
                     disabled={Boolean(loading)}
-                    className={`!rounded-full !px-3 !py-1.5 !text-[11px] ${
-                      selected ? "!bg-bg-secondary" : ""
+                    className={`rounded-full! px-3! py-1.5! text-[11px]! ${
+                      selected ? "bg-bg-secondary!" : ""
                     }`}
                   >
                     {loading ? "..." : selected ? "Added" : "Use"}
@@ -128,7 +128,7 @@ function VersionPanel({
                 size="sm"
                 fullWidth
                 onClick={() => onLoadVersions(config.id, versions.nextSkip)}
-                className="!py-1.5 !text-xs !text-accent-primary"
+                className="py-1.5! text-xs! text-accent-primary!"
               >
                 Load more
               </Button>
@@ -222,9 +222,9 @@ export default function SavedConfigCard({
           size="sm"
           onClick={() => void onToggleVersionSelection(config, latestVersion)}
           disabled={versionsNotYetLoaded || Boolean(defaultLoading)}
-          className={`!min-w-[126px] !rounded-full !px-3.5 !py-2 !text-[12px] ${
+          className={`min-w-[126px]! rounded-full! px-3.5! py-2! text-[12px]! ${
             defaultLoading ? "cursor-progress" : ""
-          } ${defaultSelected ? "!bg-bg-secondary" : ""}`}
+          } ${defaultSelected ? "bg-bg-secondary!" : ""}`}
         >
           {defaultLoading
             ? "Working..."
@@ -242,10 +242,10 @@ export default function SavedConfigCard({
             aria-label={
               expanded ? "Hide saved versions" : "View saved versions"
             }
-            className={`!min-w-[146px] !rounded-full !px-3.5 !py-2 !text-[12px] ${
+            className={`min-w-[146px]! rounded-full! px-3.5! py-2! text-[12px]! ${
               expanded
-                ? "!border-accent-primary !bg-bg-secondary"
-                : "!bg-bg-primary"
+                ? "border-accent-primary! bg-bg-secondary!"
+                : "bg-bg-primary!"
             }`}
           >
             <span className="font-semibold">

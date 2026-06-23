@@ -1,4 +1,3 @@
-// BFF proxy — PATCH /api/v1/assessment/runs/:id/post-processing
 import { NextRequest } from "next/server";
 import { proxyErrorResponse, proxyJsonResponse } from "@/app/api/_routeProxy";
 import type { RouteContext } from "@/app/lib/types/assessment";

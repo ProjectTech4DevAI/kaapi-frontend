@@ -1,10 +1,6 @@
 import { apiClient } from "@/app/lib/apiClient";
 import { NextResponse } from "next/server";
-
-type DatasetDetailsPayload = Record<string, unknown> & {
-  data?: { signed_url?: string } | null;
-  signed_url?: string;
-};
+import type { DatasetDetailsPayload } from "@/app/lib/types/dataset";
 
 export async function GET(
   request: Request,

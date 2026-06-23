@@ -1,4 +1,3 @@
-// BFF proxy — GET /api/v1/assessment/assessments/:id/results (JSON or file download)
 import { NextRequest } from "next/server";
 import {
   proxyDownloadOrJsonResponse,

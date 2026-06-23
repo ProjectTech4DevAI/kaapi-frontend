@@ -4,10 +4,12 @@ import { Button } from "@/app/components/ui";
 import { ChevronLeftIcon } from "@/app/components/icons";
 import { usePromptAndConfigStep } from "@/app/hooks/usePromptAndConfigStep";
 import type { PromptAndConfigStepProps } from "@/app/lib/types/assessment";
-import AssessmentConfiguration from "./prompt-config/AssessmentConfiguration";
-import SetupProgress from "./prompt-config/SetupProgress";
-import PromptPanel from "./prompt-config/PromptPanel";
-import ResponseSchema from "./prompt-config/ResponseSchema";
+import {
+  AssessmentConfiguration,
+  PromptPanel,
+  ResponseSchema,
+  SetupProgress,
+} from "./prompt-config";
 
 export default function PromptAndConfigStep(props: PromptAndConfigStepProps) {
   const {

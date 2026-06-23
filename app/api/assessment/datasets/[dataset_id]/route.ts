@@ -1,4 +1,3 @@
-// BFF proxy — GET (optional preview via limit_rows) + DELETE /api/v1/assessment/datasets/:id
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 import { proxyErrorResponse, withQueryParams } from "@/app/api/_routeProxy";

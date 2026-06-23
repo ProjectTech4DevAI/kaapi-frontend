@@ -1,4 +1,3 @@
-// BFF proxy — GET /api/v1/assessment/runs/:id
 import { NextRequest } from "next/server";
 import { proxyErrorResponse, proxyJsonResponse } from "@/app/api/_routeProxy";
 

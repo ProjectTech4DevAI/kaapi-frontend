@@ -1,4 +1,3 @@
-// BFF proxy — GET + POST /api/v1/assessment/runs
 import { NextRequest } from "next/server";
 import {
   proxyErrorResponse,

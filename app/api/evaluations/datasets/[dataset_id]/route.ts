@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
-
-type DatasetDetailsPayload = Record<string, unknown> & {
-  data?: { signed_url?: string } | null;
-  signed_url?: string;
-};
+import type { DatasetDetailsPayload } from "@/app/lib/types/dataset";
 
 /**
  * GET /api/evaluations/datasets/:dataset_id

@@ -1,5 +1,9 @@
 // Assessment types: model configurations, versions, and config-selection UI.
-import type { ConfigPublic, ConfigVersionItems } from "@/app/lib/types/configs";
+import type {
+  CompletionConfig,
+  ConfigPublic,
+  ConfigVersionItems,
+} from "@/app/lib/types/configs";
 import type { LabeledValue, ValueSetter } from "./core";
 
 export interface ConfigRef {
@@ -25,7 +29,7 @@ export interface ConfigParamDefinition {
 }
 
 export interface AssessmentModelConfig {
-  provider: "openai" | "google";
+  provider: "openai" | "google" | "google-aistudio" | "anthropic";
   model_name: string;
   config: Record<string, ConfigParamDefinition>;
 }
@@ -80,7 +84,7 @@ export interface ConfigCreatorProps {
   isSaving: boolean;
   setConfigName: ValueSetter<string>;
   setCommitMessage: ValueSetter<string>;
-  onProviderChange: ValueSetter<"openai">;
+  onProviderChange: ValueSetter<CompletionConfig["provider"]>;
   onModelChange: ValueSetter<string>;
   onParamChange: (key: string, value: string | number) => void;
   onSave: () => void | Promise<void>;

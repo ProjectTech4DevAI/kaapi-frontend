@@ -241,8 +241,7 @@ export function isBlankCell(cell: string | undefined): boolean {
 
 interface AssessmentSubmitChecks {
   datasetId: string | null;
-  textColumnCount: number;
-  promptTemplate: string;
+  hasMapperSelection: boolean;
   hasResponseFormat: boolean;
   configCount: number;
   experimentName: string;
@@ -252,8 +251,8 @@ export function getAssessmentSubmitError(
   checks: AssessmentSubmitChecks,
 ): string | null {
   if (!checks.datasetId) return "Dataset is required";
-  if (checks.textColumnCount === 0) return "Map at least one text column";
-  if (!checks.promptTemplate.trim()) return "Prompt is required";
+  if (!checks.hasMapperSelection)
+    return "Map at least one text or attachment column";
   if (!checks.hasResponseFormat) return "Response format is required";
   if (checks.configCount === 0) return "Select at least one configuration";
   if (!checks.experimentName.trim()) return "Experiment name is required";
@@ -263,7 +262,6 @@ export function getAssessmentSubmitError(
 interface AssessmentSubmitBlockerChecks {
   datasetId: string | null;
   hasMapperSelection: boolean;
-  hasPromptTemplate: boolean;
   hasResponseFormat: boolean;
   configCount: number;
   experimentName: string;
@@ -274,8 +272,7 @@ export function getAssessmentSubmitBlocker(
 ): string {
   if (!checks.datasetId) return "Select a dataset to submit";
   if (!checks.hasMapperSelection)
-    return "Map at least one text column to submit";
-  if (!checks.hasPromptTemplate) return "Write a prompt to submit";
+    return "Map at least one text or attachment column to submit";
   if (!checks.hasResponseFormat) return "Set response format to submit";
   if (checks.configCount === 0)
     return "Select at least one configuration to submit";

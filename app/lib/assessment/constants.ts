@@ -136,9 +136,11 @@ export const ASSESSMENT_ROLE_OPTIONS = Object.values(
 export const REVIEW_SECTIONS = {
   dataset: 1,
   columns: 2,
-  input: 3,
-  configs: 4,
-  schema: 5,
+  prefilter: 3,
+  input: 4,
+  configs: 5,
+  schema: 6,
+  postProcessing: 7,
 } as const;
 
 export const INITIAL_REVIEW_OPEN_SECTIONS = new Set<number>(

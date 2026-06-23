@@ -27,6 +27,8 @@ import ConfigsReview from "./review/ConfigsReview";
 import DatasetReview from "./review/DatasetReview";
 import ExperimentReview from "./review/ExperimentReview";
 import InputReview from "./review/InputReview";
+import PostProcessingReview from "./review/PostProcessingReview";
+import PrefilterReview from "./review/PrefilterReview";
 import SchemaReview from "./review/SchemaReview";
 import SubmitReview from "./review/SubmitReview";
 
@@ -48,6 +50,8 @@ export default function ReviewStep({
     promptTemplate,
     outputSchema,
     configs,
+    prefilterConfig,
+    postProcessingConfig,
   } = formState;
   const [openSections, setOpenSections] = useState<Set<number>>(
     () => new Set(INITIAL_REVIEW_OPEN_SECTIONS),
@@ -102,6 +106,13 @@ export default function ReviewStep({
           onEdit={() => onEditStep(1)}
         />
 
+        <PrefilterReview
+          prefilterConfig={prefilterConfig}
+          isOpen={openSections.has(REVIEW_SECTIONS.prefilter)}
+          onToggle={() => toggleSection(REVIEW_SECTIONS.prefilter)}
+          onEdit={() => onEditStep(2)}
+        />
+
         <InputReview
           systemInstruction={systemInstruction}
           promptTemplate={promptTemplate}
@@ -121,6 +132,13 @@ export default function ReviewStep({
           isOpen={openSections.has(REVIEW_SECTIONS.schema)}
           onToggle={() => toggleSection(REVIEW_SECTIONS.schema)}
           onEdit={() => onEditStep(3)}
+        />
+
+        <PostProcessingReview
+          postProcessingConfig={postProcessingConfig}
+          isOpen={openSections.has(REVIEW_SECTIONS.postProcessing)}
+          onToggle={() => toggleSection(REVIEW_SECTIONS.postProcessing)}
+          onEdit={() => onEditStep(4)}
         />
       </div>
 

@@ -221,8 +221,9 @@ export async function saveAssessmentConfig(params: {
       commit_message:
         params.commitMessage.trim() || "Updated assessment configuration",
     };
+    const query = new URLSearchParams({ tag: ASSESSMENT_TAG });
     const data = await apiFetch<ConfigVersionResponse>(
-      `/api/configs/${existingConfig.id}/versions`,
+      `/api/configs/${existingConfig.id}/versions?${query.toString()}`,
       apiKey,
       { method: "POST", body: JSON.stringify(versionCreate) },
     );

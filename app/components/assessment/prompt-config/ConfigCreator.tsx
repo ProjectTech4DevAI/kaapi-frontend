@@ -1,6 +1,7 @@
 import { Button, Field, Select } from "@/app/components/ui";
 import { PROVIDER_OPTIONS } from "@/app/lib/data/assessmentModels";
 import type { ConfigCreatorProps } from "@/app/lib/types/assessment";
+import type { CompletionConfig } from "@/app/lib/types/configs";
 import ConfigParamControl from "./ConfigParamControl";
 
 const inputClass = "!rounded-xl !bg-bg-primary !px-4 !py-3";
@@ -34,7 +35,9 @@ export default function ConfigCreator({
           </label>
           <Select
             value={currentProvider}
-            onChange={(e) => onProviderChange(e.target.value as "openai")}
+            onChange={(e) =>
+              onProviderChange(e.target.value as CompletionConfig["provider"])
+            }
             className={selectClass}
             options={[...PROVIDER_OPTIONS]}
           />

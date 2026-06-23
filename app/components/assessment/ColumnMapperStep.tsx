@@ -136,7 +136,9 @@ export default function ColumnMapperStep({
   const mappedCount = columnConfigs.filter(
     (config) => config.role !== "unmapped",
   ).length;
-  const hasText = columnConfigs.some((config) => config.role === "text");
+  const hasMappedColumn = columnConfigs.some(
+    (config) => config.role === "text" || config.role === "attachment",
+  );
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
@@ -382,17 +384,17 @@ export default function ColumnMapperStep({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <span
               className={`text-xs ${
-                hasText ? "text-text-secondary" : "text-status-warning"
+                hasMappedColumn ? "text-text-secondary" : "text-status-warning"
               }`}
             >
-              {hasText
+              {hasMappedColumn
                 ? "Ready to continue."
-                : "Select at least one Text column."}
+                : "Map at least one Text or Attachment column."}
             </span>
             <Button
               type="button"
               onClick={handleNext}
-              disabled={!hasText}
+              disabled={!hasMappedColumn}
               className="!rounded-lg"
             >
               Next: Eliminatory

@@ -119,8 +119,9 @@ export function useAssessmentWorkflow(): UseAssessmentWorkflowResult {
   const handleSubmit = useCallback(async () => {
     const validationError = getAssessmentSubmitError({
       datasetId,
-      textColumnCount: columnMapping.textColumns.length,
-      promptTemplate,
+      hasMapperSelection:
+        columnMapping.textColumns.length > 0 ||
+        columnMapping.attachments.length > 0,
       hasResponseFormat: outputSchema.some((field) => field.name.trim()),
       configCount: configs.length,
       experimentName,
@@ -212,17 +213,16 @@ export function useAssessmentWorkflow(): UseAssessmentWorkflowResult {
   };
 
   const hasDataset = !!datasetId && columns.length > 0;
-  const hasMapperSelection = columnMapping.textColumns.length > 0;
-  const hasPromptTemplate = promptTemplate.trim().length > 0;
+  const hasMapperSelection =
+    columnMapping.textColumns.length > 0 ||
+    columnMapping.attachments.length > 0;
   const hasConfiguredResponseFormat = outputSchema.some((field) =>
     field.name.trim(),
   );
-  const canReachReview =
-    hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
+  const canReachReview = configs.length > 0 && hasConfiguredResponseFormat;
   const canSubmitAssessment =
     !!datasetId &&
     hasMapperSelection &&
-    hasPromptTemplate &&
     hasConfiguredResponseFormat &&
     configs.length > 0 &&
     experimentName.trim().length > 0 &&
@@ -230,7 +230,6 @@ export function useAssessmentWorkflow(): UseAssessmentWorkflowResult {
   const submitBlockerMessage = getAssessmentSubmitBlocker({
     datasetId,
     hasMapperSelection,
-    hasPromptTemplate,
     hasResponseFormat: hasConfiguredResponseFormat,
     configCount: configs.length,
     experimentName,

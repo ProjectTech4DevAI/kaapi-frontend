@@ -30,7 +30,11 @@ import {
   type ValueSetter,
   type VersionListState,
 } from "@/app/lib/types/assessment";
-import type { ConfigBlob, ConfigPublic } from "@/app/lib/types/configs";
+import type {
+  CompletionConfig,
+  ConfigBlob,
+  ConfigPublic,
+} from "@/app/lib/types/configs";
 import useLatestConfigModels from "@/app/hooks/useLatestConfigModels";
 
 type UsePromptAndConfigStepParams = Pick<
@@ -75,7 +79,7 @@ export interface UsePromptAndConfigStepResult {
   isSaving: boolean;
   setConfigName: ValueSetter<string>;
   setCommitMessage: ValueSetter<string>;
-  handleProviderChange: (provider: "openai") => void;
+  handleProviderChange: (provider: CompletionConfig["provider"]) => void;
   handleModelChange: (modelName: string) => void;
   updateDraftParam: (key: string, value: string | number) => void;
   handleCreateAndAdd: () => Promise<void>;
@@ -134,13 +138,10 @@ export function usePromptAndConfigStep({
     [promptTemplate, textColumns],
   );
   const namedSchemaFields = outputSchema.filter((field) => field.name.trim());
-  const hasPromptTemplate = promptTemplate.trim().length > 0;
   const hasConfiguredResponseFormat = namedSchemaFields.length > 0;
-  const canProceed =
-    hasPromptTemplate && configs.length > 0 && hasConfiguredResponseFormat;
-  const nextBlockerMessage = !hasPromptTemplate
-    ? "Write a prompt to continue"
-    : configs.length === 0
+  const canProceed = configs.length > 0 && hasConfiguredResponseFormat;
+  const nextBlockerMessage =
+    configs.length === 0
       ? "Select at least one configuration to continue"
       : !hasConfiguredResponseFormat
         ? "Set response format to continue"
@@ -340,7 +341,7 @@ export function usePromptAndConfigStep({
     }));
   };
 
-  const handleProviderChange = (provider: "openai") => {
+  const handleProviderChange = (provider: CompletionConfig["provider"]) => {
     const defaultModel = getDefaultModelForProvider(provider);
     setDraft((prev) => ({
       ...prev,

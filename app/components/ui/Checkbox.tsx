@@ -1,44 +1,13 @@
 "use client";
 
-import { InputHTMLAttributes, ReactNode } from "react";
-
-type CheckboxAccent = "primary" | "success" | "error";
-
-interface CheckboxProps extends Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "type" | "checked"
-> {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  /** Optional label rendered to the right of the box. Omit to render just the input (e.g. inside list rows whose parent handles the click). */
-  label?: ReactNode;
-  /** Optional secondary text below the label. */
-  description?: ReactNode;
-  /** Accent colour for the checked state. Defaults to `primary`. */
-  accent?: CheckboxAccent;
-  disabled?: boolean;
-  /** Extra classes on the outer `<label>` wrapper. */
-  className?: string;
-  /** Extra classes on the `<input>` itself. */
-  inputClassName?: string;
-}
+import { CheckboxAccent, CheckboxProps } from "@/app/lib/types/ui";
 
 const ACCENT_CLASS: Record<CheckboxAccent, string> = {
-  // Browser default uses the page's accent (blue) so no override needed.
   primary: "",
   success: "accent-status-success",
   error: "accent-status-error-text",
 };
 
-/**
- * Single shared checkbox. Replaces the duplicated `<label><input type="checkbox" .../>label</label>`
- * pattern used in onboarding, credential, guardrail, and KB forms.
- *
- * Usage:
- *   <Checkbox checked={isActive} onChange={setIsActive} label="Active" />
- *   <Checkbox checked={hard} onChange={setHard} accent="error" label="Permanently delete" />
- *   <Checkbox checked={picked} onChange={onPick} inputClassName="mr-3" />  // bare input
- */
 export default function Checkbox({
   checked,
   onChange,

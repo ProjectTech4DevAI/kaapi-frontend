@@ -15,14 +15,10 @@ import {
   TrashIcon,
 } from "@/app/components/icons";
 import { Button, TabNavigation } from "@/app/components/ui";
-
-const STATUS_TABS = [
-  { id: "active", label: "Active" },
-  { id: "inactive", label: "Inactive" },
-];
 import { useAuth } from "@/app/lib/context/AuthContext";
 import AddProjectModal from "./AddProjectModal";
 import EditProjectModal from "./EditProjectModal";
+import { STATUS_TABS } from "@/app/lib/constants";
 
 function ProjectListSkeleton() {
   return (

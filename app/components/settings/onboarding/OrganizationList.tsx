@@ -4,11 +4,6 @@ import {
 } from "@/app/lib/types/onboarding";
 import { formatRelativeTime } from "@/app/lib/utils";
 import { Button, Loader, TabNavigation } from "@/app/components/ui";
-
-const STATUS_TABS = [
-  { id: "active", label: "Active" },
-  { id: "inactive", label: "Inactive" },
-];
 import { useAuth } from "@/app/lib/context/AuthContext";
 import {
   ChevronRightIcon,
@@ -16,6 +11,7 @@ import {
   SearchIcon,
   TrashIcon,
 } from "@/app/components/icons";
+import { STATUS_TABS } from "@/app/lib/constants";
 
 function OrganizationRowsSkeleton() {
   return (

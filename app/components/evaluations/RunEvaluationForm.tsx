@@ -1,11 +1,18 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/dataset";
-import { Button, Field, Select } from "@/app/components/ui";
+import {
+  Button,
+  Field,
+  InfoTooltip,
+  RadioGroup,
+  Select,
+} from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { Tab } from "@/app/lib/types/evaluation";
+import { RunMode, Tab } from "@/app/lib/types/evaluation";
+import { MAX_NAME_LENGTH } from "@/app/lib/constants";
 
 interface RunEvaluationFormProps {
   storedDatasets: Dataset[];
@@ -21,6 +28,10 @@ interface RunEvaluationFormProps {
   canRun: boolean;
   onRun: () => void;
   setActiveTab: (tab: Tab) => void;
+  runMode: RunMode;
+  setRunMode: (mode: RunMode) => void;
+  nameError?: string;
+  submitError?: string;
 }
 
 export default function RunEvaluationForm({
@@ -37,7 +48,13 @@ export default function RunEvaluationForm({
   canRun,
   onRun,
   setActiveTab,
+  runMode,
+  setRunMode,
+  nameError,
+  submitError,
 }: RunEvaluationFormProps) {
+  const fastEligible = selectedDataset?.eligible_for_fast !== false;
+
   return (
     <div className="flex-1 overflow-auto p-4 space-y-4">
       <div>
@@ -49,13 +66,17 @@ export default function RunEvaluationForm({
         </p>
       </div>
 
-      <Field
-        label="Name *"
-        value={experimentName}
-        onChange={setExperimentName}
-        placeholder="e.g., test_run_1"
-        disabled={isEvaluating}
-      />
+      <div>
+        <Field
+          label="Name *"
+          value={experimentName}
+          onChange={setExperimentName}
+          placeholder="e.g., test_run_1"
+          disabled={isEvaluating}
+          error={nameError}
+          maxLength={MAX_NAME_LENGTH}
+        />
+      </div>
 
       <ConfigSelector
         selectedConfigId={selectedConfigId}
@@ -98,11 +119,11 @@ export default function RunEvaluationForm({
       </div>
 
       {selectedDataset && (
-        <div className="border rounded-lg p-3 border-status-success bg-green-600/2">
+        <div className="border rounded-lg p-3 border-status-success bg-green-600/2 overflow-hidden">
           <div className="flex items-start gap-2">
             <CheckCircleIcon className="w-5 h-5 shrink-0 mt-0.5 text-status-success" />
-            <div className="flex-1">
-              <div className="text-sm font-medium text-text-primary">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-text-primary wrap-anywhere">
                 {selectedDataset.dataset_name}
               </div>
               {selectedDataset.description && (
@@ -116,6 +137,55 @@ export default function RunEvaluationForm({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      <div>
+        <label className="inline-flex items-center text-xs font-medium mb-1.5 text-text-secondary">
+          Run Mode
+          <InfoTooltip
+            text={
+              <>
+                <strong>Batch</strong> — the standard mode. Runs every item in
+                the dataset and produces full metrics.
+                <br />
+                <br />
+                <strong>Fast</strong> — short-loop mode for quick iteration.
+                Only works on small datasets (≤10 unique rows / ≤50 items) and
+                text-evaluation configs.
+              </>
+            }
+          />
+        </label>
+        <RadioGroup<RunMode>
+          ariaLabel="Run mode"
+          className="ml-4"
+          value={runMode}
+          onChange={setRunMode}
+          disabled={isEvaluating}
+          options={[
+            { value: "batch", label: "Batch" },
+            {
+              value: "fast",
+              label: "Fast",
+              title:
+                selectedDataset && !fastEligible
+                  ? "This dataset is too large for Fast mode — pick a smaller one"
+                  : undefined,
+            },
+          ]}
+        />
+        {selectedDataset && !fastEligible && (
+          <p className="text-xs mt-1.5 text-status-error-text">
+            Fast mode isn&apos;t available for this dataset — pick a smaller one
+            or stay on Batch.
+          </p>
+        )}
+      </div>
+
+      {submitError && (
+        <div className="rounded-lg px-3 py-2 bg-status-error-bg border border-status-error-border">
+          <p className="text-sm text-status-error-text">{submitError}</p>
         </div>
       )}
 

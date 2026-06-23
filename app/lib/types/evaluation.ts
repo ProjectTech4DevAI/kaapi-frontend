@@ -123,9 +123,12 @@ export interface EvalCost {
   total_cost_usd: number;
 }
 
+export type RunMode = "batch" | "fast";
+
 export interface EvalJob {
   id: number;
   run_name: string;
+  run_mode?: RunMode;
   dataset_name: string;
   dataset_id: number;
   batch_job_id: number;

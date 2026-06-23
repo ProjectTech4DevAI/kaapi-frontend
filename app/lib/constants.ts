@@ -1,7 +1,3 @@
-/**
- * Constants for Management
- */
-
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/ui";
 import { ASSESSMENT_FEATURE_FLAG } from "@/app/lib/assessment/constants";
@@ -41,6 +37,8 @@ export const CACHE_KEY = STORAGE_KEYS.CONFIGS_CACHE;
 export const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
 
 export const DEFAULT_PAGE_LIMIT = 10;
+
+export const MAX_NAME_LENGTH = 64;
 
 export const ACCEPTED_DOCUMENT_TYPES =
   ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.bmp,.webp";

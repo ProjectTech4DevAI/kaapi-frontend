@@ -7,6 +7,7 @@ export interface Dataset {
   duplication_factor: number;
   langfuse_dataset_id: string;
   object_store_url: string;
+  eligible_for_fast?: boolean;
 }
 
 export interface ViewDatasetModalData {

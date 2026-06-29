@@ -11,6 +11,7 @@ export interface SavedConfig {
   provider: string;
   type: "text" | "stt" | "tts";
   temperature: number;
+  effort?: Effort;
   vectorStoreIds: string;
   tools?: Tool[];
   commit_message?: string | null;

@@ -151,11 +151,15 @@ export default function ConfigEditorPane({
   };
 
   const handleModelChange = (model: string) => {
+    const { effort: _effort, ...rest } = params;
+    const nextParams = isGpt5Model(model)
+      ? { ...rest, model, effort: params.effort ?? DEFAULT_EFFORT }
+      : { ...rest, model };
     onConfigChange({
       ...configBlob,
       completion: {
         ...configBlob.completion,
-        params: { ...params, model },
+        params: nextParams,
       },
     });
   };
@@ -341,16 +345,18 @@ export default function ConfigEditorPane({
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-semibold mb-2 text-text-primary">
-              Effort
-            </label>
-            <Select
-              value={params.effort ?? DEFAULT_EFFORT}
-              onChange={(e) => handleEffortChange(e.target.value)}
-              options={EFFORT_OPTIONS}
-            />
-          </div>
+          {isGpt5 && (
+            <div>
+              <label className="block text-xs font-semibold mb-2 text-text-primary">
+                Effort
+              </label>
+              <Select
+                value={params.effort ?? DEFAULT_EFFORT}
+                onChange={(e) => handleEffortChange(e.target.value)}
+                options={EFFORT_OPTIONS}
+              />
+            </div>
+          )}
 
           <ToolsSection
             tools={tools}

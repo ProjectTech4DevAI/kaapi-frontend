@@ -154,7 +154,6 @@ export const DEFAULT_CONFIG: ConfigBlob = {
       model: "gpt-4o-mini",
       instructions: "",
       temperature: 0.7,
-      effort: "medium",
       tools: [],
     },
   },

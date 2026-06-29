@@ -267,6 +267,9 @@ export default function ConfigCard({
                     value={latestVersion.temperature.toFixed(2)}
                   />
                 )}
+                {latestVersion.effort && (
+                  <MetaPill label="Effort" value={latestVersion.effort} />
+                )}
               </div>
 
               {latestVersion.tools && latestVersion.tools.length > 0 && (

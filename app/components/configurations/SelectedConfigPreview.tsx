@@ -42,6 +42,8 @@ export default function SelectedConfigPreview({
           />
         )}
 
+        {config.effort && <PreviewField label="Effort" value={config.effort} />}
+
         {config.tools && config.tools.length > 0 && (
           <>
             <div className="col-span-2">

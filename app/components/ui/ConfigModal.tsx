@@ -33,6 +33,7 @@ interface ConfigVersionInfo {
   model?: string;
   instructions?: string;
   temperature?: number;
+  effort?: string;
   tools?: Tool[];
   provider?: string;
   type?: "text" | "stt" | "tts";
@@ -121,6 +122,7 @@ export default function ConfigModal({
             model: params.model,
             instructions: params.instructions,
             temperature: params.temperature,
+            effort: params.effort,
             tools: params.tools,
             provider: blob?.completion?.provider,
             type: blob?.completion?.type || "text",
@@ -201,6 +203,12 @@ export default function ConfigModal({
                       ? assistantConfig.temperature
                       : job.config?.temperature}
                 </Tag>
+              </ConfigField>
+            )}
+
+            {configVersionInfo?.effort && (
+              <ConfigField label="Effort">
+                <Tag>{configVersionInfo.effort}</Tag>
               </ConfigField>
             )}
 

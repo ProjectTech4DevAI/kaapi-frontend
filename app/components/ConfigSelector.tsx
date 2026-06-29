@@ -248,7 +248,7 @@ export default function ConfigSelector({
     return (
       <div className="text-xs mt-0.5 font-mono text-text-secondary">
         {full
-          ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""} • ${formatRelativeTime(item.inserted_at)}`
+          ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""}${full.effort ? ` • Effort:${full.effort}` : ""} • ${formatRelativeTime(item.inserted_at)}`
           : formatRelativeTime(item.inserted_at)}
       </div>
     );

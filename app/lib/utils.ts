@@ -127,6 +127,7 @@ export const flattenConfigVersion = (
     temperature: isGpt5Model(params.model)
       ? params.temperature
       : (params.temperature ?? 0.7),
+    effort: isGpt5Model(params.model) ? params.effort : undefined,
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,

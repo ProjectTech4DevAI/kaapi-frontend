@@ -9,7 +9,7 @@ import {
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import { isGpt5Model } from "@/app/lib/models";
-import { STORAGE_KEYS } from "@/app/lib/constants";
+import { EFFORT_OPTIONS, STORAGE_KEYS } from "@/app/lib/constants";
 import { TraceScore } from "@/app/lib/types/evaluation";
 
 export function timeAgo(dateStr: string): string {
@@ -258,4 +258,9 @@ export const formatCostUSD = (cost: number): string => {
     return `$${cost.toFixed(4)}`;
   }
   return `$${cost.toFixed(2)}`;
+};
+
+export const getEffortLabel = (value?: string): string => {
+  if (!value) return "";
+  return EFFORT_OPTIONS.find((o) => o.value === value)?.label ?? value;
 };

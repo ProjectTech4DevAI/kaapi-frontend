@@ -18,16 +18,14 @@ import {
   GearIcon,
   CheckIcon,
 } from "@/app/components/icons";
-import { formatRelativeTime } from "@/app/lib/utils";
+import { formatRelativeTime, getEffortLabel } from "@/app/lib/utils";
 
 interface ConfigSelectorProps {
   selectedConfigId: string;
   selectedVersion: number;
   onConfigSelect: (configId: string, version: number) => void;
   disabled?: boolean;
-  /** Compact mode: no outer card, smaller heading — for use inside panels */
   compact?: boolean;
-  // Context to preserve when navigating to Prompt Editor
   datasetId?: string;
   experimentName?: string;
 }
@@ -248,7 +246,7 @@ export default function ConfigSelector({
     return (
       <div className="text-xs mt-0.5 font-mono text-text-secondary">
         {full
-          ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""}${full.effort ? ` • Effort:${full.effort}` : ""} • ${formatRelativeTime(item.inserted_at)}`
+          ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""}${full.effort ? ` • Effort:${getEffortLabel(full.effort)}` : ""} • ${formatRelativeTime(item.inserted_at)}`
           : formatRelativeTime(item.inserted_at)}
       </div>
     );

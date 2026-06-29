@@ -8,7 +8,7 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { SavedConfig, ConfigPublic } from "@/app/lib/types/configs";
-import { formatRelativeTime } from "@/app/lib/utils";
+import { formatRelativeTime, getEffortLabel } from "@/app/lib/utils";
 import {
   CheckIcon,
   CopyIcon,
@@ -268,7 +268,10 @@ export default function ConfigCard({
                   />
                 )}
                 {latestVersion.effort && (
-                  <MetaPill label="Effort" value={latestVersion.effort} />
+                  <MetaPill
+                    label="Effort"
+                    value={getEffortLabel(latestVersion.effort)}
+                  />
                 )}
               </div>
 

@@ -17,27 +17,16 @@ import {
   Tool,
   ConfigVersionPublic,
   CompletionParams,
+  ConfigVersionInfo,
 } from "@/app/lib/types/configs";
 import Loader from "@/app/components/ui/Loader";
+import { getEffortLabel } from "@/app/lib/utils";
 
 interface ConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: EvalJob;
   assistantConfig?: AssistantConfig | null;
-}
-
-interface ConfigVersionInfo {
-  name: string;
-  version: number;
-  model?: string;
-  instructions?: string;
-  temperature?: number;
-  effort?: string;
-  tools?: Tool[];
-  provider?: string;
-  type?: "text" | "stt" | "tts";
-  knowledge_base_ids?: string[];
 }
 
 const ConfigField = ({
@@ -208,7 +197,7 @@ export default function ConfigModal({
 
             {configVersionInfo?.effort && (
               <ConfigField label="Effort">
-                <Tag>{configVersionInfo.effort}</Tag>
+                <Tag>{getEffortLabel(configVersionInfo.effort)}</Tag>
               </ConfigField>
             )}
 

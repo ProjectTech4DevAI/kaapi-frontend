@@ -136,6 +136,19 @@ export interface ConfigVersionItems {
   updated_at: string;
 }
 
+export interface ConfigVersionInfo {
+  name: string;
+  version: number;
+  model?: string;
+  instructions?: string;
+  temperature?: number;
+  effort?: string;
+  tools?: Tool[];
+  provider?: string;
+  type?: "text" | "stt" | "tts";
+  knowledge_base_ids?: string[];
+}
+
 export interface APIResponse<T> {
   success: boolean;
   data: T | null;

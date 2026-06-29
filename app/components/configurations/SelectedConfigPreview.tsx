@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "@/app/components/icons";
 import { SavedConfig } from "@/app/lib/types/configs";
+import { getEffortLabel } from "@/app/lib/utils";
 
 interface SelectedConfigPreviewProps {
   config: SavedConfig;
@@ -42,7 +43,9 @@ export default function SelectedConfigPreview({
           />
         )}
 
-        {config.effort && <PreviewField label="Effort" value={config.effort} />}
+        {config.effort && (
+          <PreviewField label="Effort" value={getEffortLabel(config.effort)} />
+        )}
 
         {config.tools && config.tools.length > 0 && (
           <>

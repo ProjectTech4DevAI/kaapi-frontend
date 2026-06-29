@@ -10,6 +10,7 @@ import {
   ConfigPublic,
 } from "@/app/lib/types/configs";
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
+import { DEFAULT_EFFORT } from "@/app/lib/constants";
 
 interface UseConfigPersistenceArgs {
   allConfigMeta: ConfigPublic[];
@@ -94,6 +95,10 @@ export function useConfigPersistence({
             instructions: currentContent,
             ...(!gpt5 && {
               temperature: currentConfigBlob.completion.params.temperature,
+            }),
+            ...(gpt5 && {
+              effort:
+                currentConfigBlob.completion.params.effort ?? DEFAULT_EFFORT,
             }),
             ...(allKnowledgeBaseIds.length > 0 && {
               knowledge_base_ids: allKnowledgeBaseIds,

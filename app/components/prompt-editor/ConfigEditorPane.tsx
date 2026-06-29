@@ -13,13 +13,18 @@ import {
   getModelsForType,
   isGpt5Model,
 } from "@/app/lib/models";
-import { PROVIDER_TYPES, PROVIDES_OPTIONS } from "@/app/lib/constants";
+import {
+  DEFAULT_EFFORT,
+  EFFORT_OPTIONS,
+  PROVIDER_TYPES,
+  PROVIDES_OPTIONS,
+} from "@/app/lib/constants";
 import GuardrailsSection from "./GuardrailsSection";
 import SaveConfigModal from "./SaveConfigModal";
 import LoadConfigDropdown from "./LoadConfigDropdown";
 import ConfigNameSection from "./ConfigNameSection";
 import ToolsSection from "./ToolsSection";
-import { Button } from "@/app/components/ui";
+import { Button, Select } from "@/app/components/ui";
 const inputClass =
   "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
 
@@ -161,6 +166,19 @@ export default function ConfigEditorPane({
       completion: {
         ...configBlob.completion,
         params: { ...params, temperature },
+      },
+    });
+  };
+
+  const handleEffortChange = (effort: string) => {
+    onConfigChange({
+      ...configBlob,
+      completion: {
+        ...configBlob.completion,
+        params: {
+          ...params,
+          effort: effort as CompletionConfig["params"]["effort"],
+        },
       },
     });
   };
@@ -322,6 +340,17 @@ export default function ConfigEditorPane({
               </div>
             </div>
           )}
+
+          <div>
+            <label className="block text-xs font-semibold mb-2 text-text-primary">
+              Effort
+            </label>
+            <Select
+              value={params.effort ?? DEFAULT_EFFORT}
+              onChange={(e) => handleEffortChange(e.target.value)}
+              options={EFFORT_OPTIONS}
+            />
+          </div>
 
           <ToolsSection
             tools={tools}

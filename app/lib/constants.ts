@@ -136,6 +136,16 @@ export const MODEL_OPTIONS = {
   google: [{ value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" }],
 };
 
+export const EFFORT_OPTIONS: { value: string; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "xhigh", label: "Extra high" },
+];
+
+export const DEFAULT_EFFORT = "medium";
+
 export const DEFAULT_CONFIG: ConfigBlob = {
   completion: {
     provider: "openai",
@@ -144,6 +154,7 @@ export const DEFAULT_CONFIG: ConfigBlob = {
       model: "gpt-4o-mini",
       instructions: "",
       temperature: 0.7,
+      effort: "medium",
       tools: [],
     },
   },

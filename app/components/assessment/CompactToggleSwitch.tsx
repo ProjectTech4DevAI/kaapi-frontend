@@ -1,6 +1,6 @@
 "use client";
 
-import { ToggleOffIcon, ToggleOnIcon } from "@/app/components/icons/assessment";
+import { ToggleOffIcon, ToggleOnIcon } from "@/app/components/ui";
 
 interface CompactToggleSwitchProps {
   checked: boolean;

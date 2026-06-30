@@ -22,12 +22,9 @@ import {
 } from "@/app/lib/utils/assessmentFetcher";
 import {
   type ConfigMode,
-  type ConfigParamDefinition,
   type ConfigSelection,
-  type LatestConfigModel,
-  type ModelOption,
   type PromptAndConfigStepProps,
-  type ValueSetter,
+  type UsePromptAndConfigStepResult,
   type VersionListState,
 } from "@/app/lib/types/assessment";
 import type {
@@ -41,49 +38,6 @@ type UsePromptAndConfigStepParams = Pick<
   PromptAndConfigStepProps,
   "textColumns" | "promptTemplate" | "configs" | "setConfigs" | "outputSchema"
 >;
-
-export interface UsePromptAndConfigStepResult {
-  promptStatus: string;
-  responseSummary: string;
-  hasConfiguredResponseFormat: boolean;
-  canProceed: boolean;
-  nextBlockerMessage: string;
-  configMode: ConfigMode;
-  setConfigMode: ValueSetter<ConfigMode>;
-  removeSelection: (configId: string, version: number) => void;
-  filteredConfigCards: ConfigPublic[];
-  searchQuery: string;
-  setSearchQuery: ValueSetter<string>;
-  isLoadingConfigs: boolean;
-  hasMoreConfigs: boolean;
-  nextConfigSkip: number;
-  expandedConfigId: string | null;
-  versionStateByConfig: Record<string, VersionListState>;
-  latestModelByConfig: Record<string, LatestConfigModel>;
-  loadingSelectionKeys: Record<string, boolean>;
-  isSelected: (configId: string, version: number) => boolean;
-  loadConfigs: (skip: number, replace: boolean) => Promise<void>;
-  loadVersions: (configId: string, skip: number) => Promise<void>;
-  toggleConfigExpansion: (configId: string) => void;
-  toggleVersionSelection: (
-    config: ConfigPublic,
-    version: number,
-  ) => Promise<void>;
-  currentProvider: string;
-  currentModel: string;
-  providerModels: ModelOption[];
-  currentParamDefs: Record<string, ConfigParamDefinition>;
-  draftParams: Record<string, string | number | undefined>;
-  configName: string;
-  commitMessage: string;
-  isSaving: boolean;
-  setConfigName: ValueSetter<string>;
-  setCommitMessage: ValueSetter<string>;
-  handleProviderChange: (provider: CompletionConfig["provider"]) => void;
-  handleModelChange: (modelName: string) => void;
-  updateDraftParam: (key: string, value: string | number) => void;
-  handleCreateAndAdd: () => Promise<void>;
-}
 
 export function usePromptAndConfigStep({
   textColumns,

@@ -10,8 +10,7 @@ export interface SavedConfig {
   modelName: string;
   provider: string;
   type: "text" | "stt" | "tts";
-  temperature: number;
-  effort?: Effort;
+  modelParams?: Record<string, unknown>;
   vectorStoreIds: string;
   tools?: Tool[];
   commit_message?: string | null;
@@ -54,13 +53,9 @@ export interface Tool {
   max_num_results: number;
 }
 
-export type Effort = "none" | "low" | "medium" | "high" | "xhigh";
-
 export interface CompletionParams {
   model: string;
   instructions: string;
-  temperature?: number;
-  effort?: Effort;
   tools?: Tool[];
   knowledge_base_ids?: string[];
   max_num_results?: number;
@@ -141,8 +136,7 @@ export interface ConfigVersionInfo {
   version: number;
   model?: string;
   instructions?: string;
-  temperature?: number;
-  effort?: string;
+  modelParams?: Record<string, unknown>;
   tools?: Tool[];
   provider?: string;
   type?: "text" | "stt" | "tts";

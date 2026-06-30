@@ -1,24 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
-import { ConfigBlob, Tool } from "@/app/lib/types/promptEditor";
+import { ConfigEditorPaneProps, Tool } from "@/app/lib/types/promptEditor";
+import { CompletionConfig, CompletionParams } from "@/app/lib/types/configs";
+import { ConfigType, MODEL_OPTIONS, getModelsForType } from "@/app/lib/models";
+import { PROVIDER_TYPES } from "@/app/lib/constants";
 import {
-  ConfigPublic,
-  SavedConfig,
-  ConfigVersionItems,
-  CompletionConfig,
-} from "@/app/lib/types/configs";
-import {
-  ConfigType,
-  MODEL_OPTIONS,
-  getModelsForType,
-  isGpt5Model,
-} from "@/app/lib/models";
-import {
-  DEFAULT_EFFORT,
-  EFFORT_OPTIONS,
-  PROVIDER_TYPES,
-  PROVIDES_OPTIONS,
-} from "@/app/lib/constants";
+  getAllProviders,
+  getModelSchema,
+  getParamLabel,
+  getProviderLabel,
+  reconcileParamsForModel,
+} from "@/app/lib/modelSchema";
+import { useModelSchemas } from "@/app/hooks/useModelSchemas";
 import GuardrailsSection from "./GuardrailsSection";
 import SaveConfigModal from "./SaveConfigModal";
 import LoadConfigDropdown from "./LoadConfigDropdown";
@@ -27,30 +20,6 @@ import ToolsSection from "./ToolsSection";
 import { Button, Select } from "@/app/components/ui";
 const inputClass =
   "w-full px-3 py-2 rounded-md text-sm focus:outline-none border border-border bg-bg-primary text-text-primary";
-
-interface ConfigEditorPaneProps {
-  configBlob: ConfigBlob;
-  onConfigChange: (blob: ConfigBlob) => void;
-  configName: string;
-  onConfigNameChange: (name: string) => void;
-  savedConfigs: SavedConfig[];
-  selectedConfigId: string;
-  boundConfigId?: string;
-  onRenameConfig?: (configId: string, newName: string) => Promise<boolean>;
-  onLoadConfig: (config: SavedConfig | null) => void;
-  commitMessage: string;
-  onCommitMessageChange: (message: string) => void;
-  onSave: () => void;
-  isSaving?: boolean;
-  allConfigMeta?: ConfigPublic[];
-  versionItemsMap?: Record<string, ConfigVersionItems[]>;
-  loadVersionsForConfig?: (config_id: string) => Promise<void>;
-  loadSingleVersion?: (
-    config_id: string,
-    version: number,
-  ) => Promise<SavedConfig | null>;
-  apiKey?: string;
-}
 
 export default function ConfigEditorPane({
   configBlob,
@@ -103,10 +72,21 @@ export default function ConfigEditorPane({
     wasSavingRef.current = isSaving;
   }, [isSaving, commitMessage]);
 
+  const { isLoaded: schemasLoaded } = useModelSchemas();
+
   const provider = configBlob.completion.provider;
   const params = configBlob.completion.params;
-  const isGpt5 = isGpt5Model(params.model);
   const tools = (params.tools || []) as Tool[];
+  const modelSchema = getModelSchema(provider, params.model);
+  const schemaParamEntries = modelSchema
+    ? Object.entries(modelSchema.config)
+    : [];
+  const acceptsTools =
+    !modelSchema || "max_output_tokens" in modelSchema.config;
+  const providerOptions = (schemasLoaded ? getAllProviders() : []).map((p) => ({
+    value: p,
+    label: getProviderLabel(p),
+  }));
 
   const selectedConfig = savedConfigs.find((c) => c.id === selectedConfigId);
   const isBoundToSavedConfig = !!boundConfigId;
@@ -116,119 +96,59 @@ export default function ConfigEditorPane({
 
   const currentType = (configBlob.completion.type || "text") as ConfigType;
 
-  const handleProviderChange = (newProvider: string) => {
-    const candidates = getModelsForType(newProvider, currentType);
-    const fallback = MODEL_OPTIONS[newProvider]?.[0]?.value ?? "";
-    const nextModel = candidates[0]?.value ?? fallback;
+  const handleConfigChange = (patch: {
+    params?: Partial<CompletionParams>;
+    completion?: Partial<CompletionConfig>;
+  }) => {
     onConfigChange({
       ...configBlob,
       completion: {
         ...configBlob.completion,
-        provider: newProvider as CompletionConfig["provider"],
-        params: { ...params, model: nextModel },
+        ...patch.completion,
+        params: { ...params, ...patch.params },
       },
+    });
+  };
+
+  const handleProviderChange = (newProvider: string) => {
+    const candidates = getModelsForType(newProvider, currentType);
+    const fallback = MODEL_OPTIONS[newProvider]?.[0]?.value ?? "";
+    const nextModel = candidates[0]?.value ?? fallback;
+    handleConfigChange({
+      completion: { provider: newProvider as CompletionConfig["provider"] },
+      params: { model: nextModel },
     });
   };
 
   const handleTypeChange = (newType: ConfigType) => {
     const provider = configBlob.completion.provider;
     const candidates = getModelsForType(provider, newType);
-    const currentModel = params.model;
-    const stillValid = candidates.some((m) => m.value === currentModel);
+    const stillValid = candidates.some((m) => m.value === params.model);
     const nextModel = stillValid
-      ? currentModel
+      ? params.model
       : (candidates[0]?.value ??
         MODEL_OPTIONS[provider]?.[0]?.value ??
-        currentModel);
-    onConfigChange({
-      ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        type: newType,
-        params: { ...params, model: nextModel },
-      },
+        params.model);
+    handleConfigChange({
+      completion: { type: newType },
+      params: { model: nextModel },
     });
   };
 
   const handleModelChange = (model: string) => {
-    const { effort: _effort, ...rest } = params;
-    const nextParams = isGpt5Model(model)
-      ? { ...rest, model, effort: params.effort ?? DEFAULT_EFFORT }
-      : { ...rest, model };
+    const nextSchema = getModelSchema(provider, model);
+    const nextSchemaParams = nextSchema
+      ? reconcileParamsForModel(provider, model, params)
+      : {};
+    const oldSchemaKeys = modelSchema ? Object.keys(modelSchema.config) : [];
+    const carryover = { ...params };
+    delete carryover.model;
+    oldSchemaKeys.forEach((k) => delete carryover[k]);
     onConfigChange({
       ...configBlob,
       completion: {
         ...configBlob.completion,
-        params: nextParams,
-      },
-    });
-  };
-
-  const handleTemperatureChange = (temperature: number) => {
-    onConfigChange({
-      ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        params: { ...params, temperature },
-      },
-    });
-  };
-
-  const handleEffortChange = (effort: string) => {
-    onConfigChange({
-      ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        params: {
-          ...params,
-          effort: effort as CompletionConfig["params"]["effort"],
-        },
-      },
-    });
-  };
-
-  const handleAddTool = () => {
-    const newTools = [
-      ...tools,
-      {
-        type: "file_search" as const,
-        knowledge_base_ids: [""],
-        max_num_results: 20,
-      },
-    ];
-    onConfigChange({
-      ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        params: { ...params, tools: newTools },
-      },
-    });
-  };
-
-  const handleRemoveTool = (index: number) => {
-    const newTools = tools.filter((_, i) => i !== index);
-    onConfigChange({
-      ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        params: { ...params, tools: newTools },
-      },
-    });
-  };
-
-  const handleUpdateTool = <K extends keyof Tool>(
-    index: number,
-    field: K,
-    value: Tool[K],
-  ) => {
-    const newTools = tools.map((t, i) =>
-      i === index ? { ...t, [field]: value } : t,
-    );
-    onConfigChange({
-      ...configBlob,
-      completion: {
-        ...configBlob.completion,
-        params: { ...params, tools: newTools },
+        params: { ...carryover, model, ...nextSchemaParams },
       },
     });
   };
@@ -273,7 +193,7 @@ export default function ConfigEditorPane({
               onChange={(e) => handleProviderChange(e.target.value)}
               className={inputClass}
             >
-              {PROVIDES_OPTIONS.map((option) => (
+              {providerOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -322,48 +242,135 @@ export default function ConfigEditorPane({
             </select>
           </div>
 
-          {!isGpt5 && (
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Temperature: {(params.temperature ?? 0.7).toFixed(2)}
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.01"
-                value={params.temperature ?? 0.7}
-                onChange={(e) =>
-                  handleTemperatureChange(parseFloat(e.target.value))
-                }
-                className="w-full accent-accent-primary"
-              />
-              <div className="flex justify-between text-xs mt-1 text-text-secondary">
-                <span>0</span>
-                <span>2</span>
-              </div>
-            </div>
-          )}
-
-          {isGpt5 && (
-            <div>
-              <label className="block text-xs font-semibold mb-2 text-text-primary">
-                Effort
-              </label>
-              <Select
-                value={params.effort ?? DEFAULT_EFFORT}
-                onChange={(e) => handleEffortChange(e.target.value)}
-                options={EFFORT_OPTIONS}
-              />
-            </div>
-          )}
+          {schemaParamEntries.map(([key, spec]) => {
+            const value = params[key] ?? spec.default;
+            const setValue = (v: unknown) =>
+              handleConfigChange({ params: { [key]: v } });
+            const labelText = getParamLabel(key);
+            if (spec.type === "enum" && spec.options) {
+              return (
+                <div key={key}>
+                  <label className="block text-xs font-semibold mb-2 text-text-primary">
+                    {labelText}
+                  </label>
+                  <Select
+                    value={String(value)}
+                    onChange={(e) => setValue(e.target.value)}
+                    options={spec.options.map((opt) => ({
+                      value: opt,
+                      label: opt,
+                    }))}
+                  />
+                  {spec.description && (
+                    <p className="text-xs mt-1.5 text-text-secondary">
+                      {spec.description}
+                    </p>
+                  )}
+                </div>
+              );
+            }
+            if (spec.type === "float" || spec.type === "int") {
+              const numeric = Number(value);
+              const min = spec.min ?? 0;
+              const max = spec.max ?? 1;
+              const step = spec.type === "int" ? 1 : 0.01;
+              return (
+                <div key={key}>
+                  <label className="block text-xs font-semibold mb-2 text-text-primary">
+                    {labelText}:{" "}
+                    {spec.type === "int"
+                      ? Math.round(numeric)
+                      : numeric.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={numeric}
+                    onChange={(e) =>
+                      setValue(
+                        spec.type === "int"
+                          ? parseInt(e.target.value, 10)
+                          : parseFloat(e.target.value),
+                      )
+                    }
+                    className="w-full accent-accent-primary"
+                  />
+                  <div className="flex justify-between text-xs mt-1 text-text-secondary">
+                    <span>{min}</span>
+                    <span>{max}</span>
+                  </div>
+                </div>
+              );
+            }
+            if (spec.type === "string") {
+              return (
+                <div key={key}>
+                  <label className="block text-xs font-semibold mb-2 text-text-primary">
+                    {labelText}
+                  </label>
+                  <input
+                    type="text"
+                    value={String(value ?? "")}
+                    onChange={(e) => setValue(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              );
+            }
+            if (spec.type === "boolean") {
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <input
+                    id={`param-${key}`}
+                    type="checkbox"
+                    checked={!!value}
+                    onChange={(e) => setValue(e.target.checked)}
+                  />
+                  <label
+                    htmlFor={`param-${key}`}
+                    className="text-xs font-semibold text-text-primary"
+                  >
+                    {labelText}
+                  </label>
+                </div>
+              );
+            }
+            return null;
+          })}
 
           <ToolsSection
             tools={tools}
-            isGpt5={isGpt5}
-            onAddTool={handleAddTool}
-            onRemoveTool={handleRemoveTool}
-            onUpdateTool={handleUpdateTool}
+            showMaxResults={acceptsTools}
+            onAddTool={() =>
+              handleConfigChange({
+                params: {
+                  tools: [
+                    ...tools,
+                    {
+                      type: "file_search",
+                      knowledge_base_ids: [""],
+                      max_num_results: 20,
+                    },
+                  ],
+                },
+              })
+            }
+            onRemoveTool={(index) =>
+              handleConfigChange({
+                params: { tools: tools.filter((_, i) => i !== index) },
+              })
+            }
+            onUpdateTool={(index, field, value) =>
+              handleConfigChange({
+                params: {
+                  tools: tools.map((t, i) =>
+                    i === index ? { ...t, [field]: value } : t,
+                  ),
+                },
+              })
+            }
           />
 
           <GuardrailsSection

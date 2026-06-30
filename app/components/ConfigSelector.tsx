@@ -18,7 +18,8 @@ import {
   GearIcon,
   CheckIcon,
 } from "@/app/components/icons";
-import { formatRelativeTime, getEffortLabel } from "@/app/lib/utils";
+import { formatModelParamValue, formatRelativeTime } from "@/app/lib/utils";
+import { getParamLabel } from "@/app/lib/modelSchema";
 
 interface ConfigSelectorProps {
   selectedConfigId: string;
@@ -243,10 +244,18 @@ export default function ConfigSelector({
     const full = configs.find(
       (c) => c.config_id === item.config_id && c.version === item.version,
     );
+    const paramsSnippet = full?.modelParams
+      ? Object.entries(full.modelParams)
+          .map(
+            ([key, value]) =>
+              `${getParamLabel(key)}:${formatModelParamValue(key, value)}`,
+          )
+          .join(" • ")
+      : "";
     return (
       <div className="text-xs mt-0.5 font-mono text-text-secondary">
         {full
-          ? `${full.provider}/${full.modelName} ${full.temperature !== undefined ? `• T:${full.temperature.toFixed(2)}` : ""}${full.effort ? ` • Effort:${getEffortLabel(full.effort)}` : ""} • ${formatRelativeTime(item.inserted_at)}`
+          ? `${full.provider}/${full.modelName}${paramsSnippet ? ` • ${paramsSnippet}` : ""} • ${formatRelativeTime(item.inserted_at)}`
           : formatRelativeTime(item.inserted_at)}
       </div>
     );

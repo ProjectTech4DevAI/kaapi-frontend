@@ -3,14 +3,13 @@ import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/utils";
-import { isGpt5Model } from "@/app/lib/models";
 import {
   ConfigCreate,
   ConfigVersionCreate,
   ConfigPublic,
 } from "@/app/lib/types/configs";
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
-import { DEFAULT_EFFORT } from "@/app/lib/constants";
+import { getModelSchema, reconcileParamsForModel } from "@/app/lib/modelSchema";
 
 interface UseConfigPersistenceArgs {
   allConfigMeta: ConfigPublic[];
@@ -83,26 +82,30 @@ export function useConfigPersistence({
         }
       });
 
+      const completionProvider = currentConfigBlob.completion.provider;
       const model = currentConfigBlob.completion.params.model;
-      const gpt5 = isGpt5Model(model);
+      const schema = getModelSchema(completionProvider, model);
+      const modelParams = schema
+        ? reconcileParamsForModel(
+            completionProvider,
+            model,
+            currentConfigBlob.completion.params,
+          )
+        : {};
+
+      const acceptsTools = !schema || "max_output_tokens" in schema.config;
 
       const configBlob: ConfigBlob = {
         completion: {
-          provider: currentConfigBlob.completion.provider,
+          provider: completionProvider,
           type: currentConfigBlob.completion.type || "text",
           params: {
             model,
             instructions: currentContent,
-            ...(!gpt5 && {
-              temperature: currentConfigBlob.completion.params.temperature,
-            }),
-            ...(gpt5 && {
-              effort:
-                currentConfigBlob.completion.params.effort ?? DEFAULT_EFFORT,
-            }),
+            ...modelParams,
             ...(allKnowledgeBaseIds.length > 0 && {
               knowledge_base_ids: allKnowledgeBaseIds,
-              ...(!gpt5 && { max_num_results: maxNumResults }),
+              ...(acceptsTools && { max_num_results: maxNumResults }),
             }),
           },
         },

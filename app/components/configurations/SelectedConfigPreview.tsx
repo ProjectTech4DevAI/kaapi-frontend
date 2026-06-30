@@ -3,7 +3,8 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "@/app/components/icons";
 import { SavedConfig } from "@/app/lib/types/configs";
-import { getEffortLabel } from "@/app/lib/utils";
+import { formatModelParamValue } from "@/app/lib/utils";
+import { getParamLabel } from "@/app/lib/modelSchema";
 
 interface SelectedConfigPreviewProps {
   config: SavedConfig;
@@ -36,16 +37,14 @@ export default function SelectedConfigPreview({
           value={`${config.provider}/${config.modelName}`}
         />
 
-        {config.temperature !== undefined && (
-          <PreviewField
-            label="Temperature"
-            value={config.temperature.toFixed(2)}
-          />
-        )}
-
-        {config.effort && (
-          <PreviewField label="Effort" value={getEffortLabel(config.effort)} />
-        )}
+        {config.modelParams &&
+          Object.entries(config.modelParams).map(([key, value]) => (
+            <PreviewField
+              key={key}
+              label={getParamLabel(key)}
+              value={formatModelParamValue(key, value)}
+            />
+          ))}
 
         {config.tools && config.tools.length > 0 && (
           <>

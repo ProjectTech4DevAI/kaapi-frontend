@@ -2,10 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/app/components/ui";
+import { Button, Loader } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
 import { DownloadIcon } from "@/app/components/icons/assessment";
-import LoadingSpinner from "@/app/components/assessment/LoadingSpinner";
 import { DOWNLOAD_MENU_WIDTH } from "@/app/lib/assessment/constants";
 import type { ExportFormat } from "@/app/lib/types/assessment";
 
@@ -65,7 +64,7 @@ export default function DownloadDropdown({
         aria-expanded={open}
       >
         {loading ? (
-          <LoadingSpinner className="h-3.5 w-3.5" />
+          <Loader size="sm" />
         ) : (
           <DownloadIcon className="h-3.5 w-3.5" />
         )}

@@ -1,35 +1,24 @@
 "use client";
 
 // Fetches, polls, and manages assessment run list state including filtering and retry.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import {
-  getConfigDetailErrorMessage,
-  handleForbiddenError,
-  isAbortError,
-} from "@/app/lib/utils/assessment";
+import { handleForbiddenError } from "@/app/lib/utils/assessment";
 import {
   filterAssessments,
   getAsyncErrorMessage,
   getResultsCounts,
   normalizeAssessmentRun,
 } from "@/app/lib/assessment/results";
-import {
-  ASSESSMENT_TAG,
-  RESULTS_POLL_INTERVAL_MS,
-} from "@/app/lib/assessment/constants";
-import type {
-  ConfigResponse,
-  ConfigVersionResponse,
-} from "@/app/lib/types/configs";
+import { RESULTS_POLL_INTERVAL_MS } from "@/app/lib/assessment/constants";
+import useConfigRunDetails from "@/app/hooks/useConfigRunDetails";
+import useAssessmentDownload from "@/app/hooks/useAssessmentDownload";
 import type {
   AssessmentChildRun,
   AssessmentChildRunListResponse,
   AssessmentListResponse,
   AssessmentRun,
-  ConfigRunDetail,
-  ExportFormat,
   PostProcessingConfig,
   StatusFilter,
 } from "@/app/lib/types/assessment";
@@ -70,15 +59,6 @@ export default function useAssessmentResults({
   const [childRunsByAssessment, setChildRunsByAssessment] = useState<
     Record<number, AssessmentChildRun[]>
   >({});
-  const [configDetailsByKey, setConfigDetailsByKey] = useState<
-    Record<string, ConfigRunDetail>
-  >({});
-  const [configLoadingKeys, setConfigLoadingKeys] = useState<
-    Record<string, boolean>
-  >({});
-  const [configErrorKeys, setConfigErrorKeys] = useState<
-    Record<string, string>
-  >({});
   const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [rerunningId, setRerunningId] = useState<number | null>(null);
@@ -87,17 +67,16 @@ export default function useAssessmentResults({
     number | null
   >(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const configDetailControllersRef = useRef<Record<string, AbortController>>(
-    {},
-  );
-  const configDetailFetchedRef = useRef<Record<string, boolean>>({});
 
-  const buildAuthHeaders = useCallback(() => {
-    const headers = new Headers();
-    if (apiKey) headers.set("X-API-KEY", apiKey);
-    return headers;
-  }, [apiKey]);
+  const {
+    configDetailsByKey,
+    configLoadingKeys,
+    configErrorKeys,
+    loadConfigDetail,
+  } = useConfigRunDetails({ apiKey, isAuthenticated });
+
+  const { downloadingId, handleAssessmentDownload, handleRunDownload } =
+    useAssessmentDownload({ apiKey, isAuthenticated, onForbidden, toast });
 
   const loadAssessments = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -135,93 +114,6 @@ export default function useAssessmentResults({
     [apiKey, isAuthenticated, onForbidden],
   );
 
-  const loadConfigDetail = useCallback(
-    async (configId: string, version: number) => {
-      if (!isAuthenticated) return;
-
-      const key = `${configId}:${version}`;
-      if (configDetailFetchedRef.current[key]) return;
-      configDetailFetchedRef.current[key] = true;
-
-      setConfigLoadingKeys((prev) => ({ ...prev, [key]: true }));
-      setConfigErrorKeys((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-
-      configDetailControllersRef.current[key]?.abort();
-      const controller = new AbortController();
-      configDetailControllersRef.current[key] = controller;
-
-      try {
-        const query = new URLSearchParams({ tag: ASSESSMENT_TAG });
-        const [configResponse, versionResponse] = await Promise.all([
-          apiFetch<ConfigResponse>(
-            `/api/configs/${configId}?${query.toString()}`,
-            apiKey,
-            { signal: controller.signal },
-          ),
-          apiFetch<ConfigVersionResponse>(
-            `/api/configs/${configId}/versions/${version}?${query.toString()}`,
-            apiKey,
-            { signal: controller.signal },
-          ),
-        ]);
-
-        if (
-          !configResponse.success ||
-          !configResponse.data ||
-          !versionResponse.success ||
-          !versionResponse.data
-        ) {
-          throw new Error(
-            configResponse.error ||
-              versionResponse.error ||
-              "Configuration details unavailable",
-          );
-        }
-
-        const detail: ConfigRunDetail = {
-          configId,
-          version,
-          name: configResponse.data.name,
-          description: configResponse.data.description,
-          commitMessage: versionResponse.data.commit_message,
-          provider:
-            versionResponse.data.config_blob?.completion?.provider || null,
-          model:
-            versionResponse.data.config_blob?.completion?.params?.model || null,
-        };
-
-        setConfigDetailsByKey((prev) => ({ ...prev, [key]: detail }));
-      } catch (error) {
-        if (isAbortError(error)) return;
-        setConfigErrorKeys((prev) => ({
-          ...prev,
-          [key]: getConfigDetailErrorMessage(error),
-        }));
-      } finally {
-        if (configDetailControllersRef.current[key] === controller) {
-          delete configDetailControllersRef.current[key];
-        }
-        setConfigLoadingKeys((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-      }
-    },
-    [apiKey, isAuthenticated],
-  );
-
-  useEffect(() => {
-    const controllers = configDetailControllersRef.current;
-    return () => {
-      Object.values(controllers).forEach((controller) => controller.abort());
-    };
-  }, []);
-
   useEffect(() => {
     loadAssessments();
   }, [loadAssessments]);
@@ -247,70 +139,6 @@ export default function useAssessmentResults({
       }
     });
   }, [childRunsByAssessment, expandedId, loadConfigDetail]);
-
-  const triggerDownload = useCallback(
-    async (url: string, format: ExportFormat, key: string) => {
-      if (!isAuthenticated) return;
-      setDownloadingId(key);
-      try {
-        const response = await fetch(`${url}?export_format=${format}`, {
-          headers: buildAuthHeaders(),
-          credentials: "include",
-        });
-        if (response.status === 403) {
-          onForbidden?.();
-          return;
-        }
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          throw new Error(
-            err.error ||
-              err.message ||
-              err.detail ||
-              `Export failed (${response.status})`,
-          );
-        }
-        const blob = await response.blob();
-        const disposition = response.headers.get("content-disposition") || "";
-        const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
-        const filename = filenameMatch?.[1] || `export.${format}`;
-
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(a.href);
-        toast.success("Download started");
-      } catch (error) {
-        toast.error(getAsyncErrorMessage("Export failed", error));
-      } finally {
-        setDownloadingId(null);
-      }
-    },
-    [buildAuthHeaders, isAuthenticated, onForbidden, toast],
-  );
-
-  const handleAssessmentDownload = useCallback(
-    (assessmentId: number, format: ExportFormat) =>
-      triggerDownload(
-        `/api/assessment/assessments/${assessmentId}/results`,
-        format,
-        `assessment-${assessmentId}`,
-      ),
-    [triggerDownload],
-  );
-
-  const handleRunDownload = useCallback(
-    (runId: number, format: ExportFormat) =>
-      triggerDownload(
-        `/api/assessment/runs/${runId}/results`,
-        format,
-        `run-${runId}`,
-      ),
-    [triggerDownload],
-  );
 
   const handleRerun = useCallback(
     async (run: AssessmentChildRun) => {

@@ -64,7 +64,6 @@ function PromptEditorContent() {
     useState<string>("");
   const [currentConfigVersion, setCurrentConfigVersion] = useState<number>(0);
   const [provider, setProvider] = useState<string>("openai");
-  const [temperature, setTemperature] = useState<number>(0.7);
   const [tools, setTools] = useState<Tool[]>([]);
   const [expandedConfigs, setExpandedConfigs] = useState<Set<string>>(
     new Set(),
@@ -100,7 +99,7 @@ function PromptEditorContent() {
           params: {
             model: config.modelName,
             instructions: config.instructions,
-            temperature: config.temperature,
+            ...(config.modelParams ?? {}),
             tools: config.tools || [],
           },
         },
@@ -112,7 +111,6 @@ function PromptEditorContent() {
         }),
       });
       setProvider(config.provider);
-      setTemperature(config.temperature);
       setSelectedConfigId(config.id);
       setCurrentConfigName(config.name);
       setCurrentConfigParentId(config.config_id);
@@ -132,7 +130,6 @@ function PromptEditorContent() {
     setCurrentContent("");
     setCurrentConfigBlob(DEFAULT_CONFIG);
     setProvider("openai");
-    setTemperature(0.7);
     setSelectedConfigId("");
     setCurrentConfigName("");
     setCurrentConfigParentId("");
@@ -221,7 +218,7 @@ function PromptEditorContent() {
         params: {
           model: selectedConfig.modelName,
           instructions: selectedConfig.instructions,
-          temperature: selectedConfig.temperature,
+          ...(selectedConfig.modelParams ?? {}),
           tools: selectedConfig.tools || [],
         },
       },
@@ -232,7 +229,6 @@ function PromptEditorContent() {
     currentContent,
     currentConfigBlob,
     provider,
-    temperature,
     tools,
     savedConfigs,
   ]);

@@ -65,7 +65,10 @@ export function toJsonSchema(properties: SchemaProperty[]): object | null {
     if (p.type === "object")
       def = toJsonSchema(p.children) || { type: "object" };
     else if (p.type === "enum")
-      def = { type: "string", enum: p.enumValues.filter((v) => v.trim()) };
+      def = {
+        type: "string",
+        enum: p.enumValues.map(String).filter((v) => v.trim()),
+      };
     else def = { type: p.type };
     if (p.isArray) def = { type: "array", items: def };
     props[p.name] = def;
@@ -104,7 +107,7 @@ export function fromJsonSchema(
       children = fromJsonSchema(actualDef as Record<string, unknown>);
     } else if (Array.isArray(actualDef.enum)) {
       type = "enum";
-      enumValues = actualDef.enum as string[];
+      enumValues = (actualDef.enum as unknown[]).map(String);
     } else {
       type = (actualDef.type as SchemaPropertyType) || "string";
     }

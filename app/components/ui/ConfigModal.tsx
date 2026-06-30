@@ -17,26 +17,17 @@ import {
   Tool,
   ConfigVersionPublic,
   CompletionParams,
+  ConfigVersionInfo,
 } from "@/app/lib/types/configs";
 import Loader from "@/app/components/ui/Loader";
+import { formatModelParamValue, pickModelParams } from "@/app/lib/utils";
+import { getParamLabel } from "@/app/lib/modelSchema";
 
 interface ConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: EvalJob;
   assistantConfig?: AssistantConfig | null;
-}
-
-interface ConfigVersionInfo {
-  name: string;
-  version: number;
-  model?: string;
-  instructions?: string;
-  temperature?: number;
-  tools?: Tool[];
-  provider?: string;
-  type?: "text" | "stt" | "tts";
-  knowledge_base_ids?: string[];
 }
 
 const ConfigField = ({
@@ -120,7 +111,9 @@ export default function ConfigModal({
             version: job.config_version!,
             model: params.model,
             instructions: params.instructions,
-            temperature: params.temperature,
+            modelParams: blob?.completion?.provider
+              ? pickModelParams(blob.completion.provider, params)
+              : undefined,
             tools: params.tools,
             provider: blob?.completion?.provider,
             type: blob?.completion?.type || "text",
@@ -190,19 +183,26 @@ export default function ConfigModal({
               </Tag>
             </ConfigField>
 
-            {(configVersionInfo?.temperature !== undefined ||
-              assistantConfig?.temperature !== undefined ||
-              job.config?.temperature !== undefined) && (
-              <ConfigField label="Temperature">
-                <Tag>
-                  {configVersionInfo?.temperature !== undefined
-                    ? configVersionInfo.temperature
-                    : assistantConfig?.temperature !== undefined
+            {configVersionInfo?.modelParams &&
+              Object.entries(configVersionInfo.modelParams).map(
+                ([key, value]) => (
+                  <ConfigField key={key} label={getParamLabel(key)}>
+                    <Tag>{formatModelParamValue(key, value)}</Tag>
+                  </ConfigField>
+                ),
+              )}
+
+            {!configVersionInfo &&
+              (assistantConfig?.temperature !== undefined ||
+                job.config?.temperature !== undefined) && (
+                <ConfigField label="Temperature">
+                  <Tag>
+                    {assistantConfig?.temperature !== undefined
                       ? assistantConfig.temperature
                       : job.config?.temperature}
-                </Tag>
-              </ConfigField>
-            )}
+                  </Tag>
+                </ConfigField>
+              )}
 
             {configVersionInfo?.knowledge_base_ids &&
               configVersionInfo.knowledge_base_ids.length > 0 && (

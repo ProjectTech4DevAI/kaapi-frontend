@@ -7,13 +7,8 @@ import {
   setModelSchemaCache,
   subscribeModelSchemaCache,
 } from "@/app/lib/store/modelSchemaStore";
-import { RawModelEntry, flattenGroupedModels } from "@/app/lib/modelSchema";
-
-interface ModelsApiResponse {
-  success: boolean;
-  data?: Record<string, RawModelEntry[]> | null;
-  error?: string | null;
-}
+import { flattenGroupedModels } from "@/app/lib/modelSchema";
+import { ModelsApiResponse } from "@/app/lib/types/models";
 
 let inflight: Promise<void> | null = null;
 

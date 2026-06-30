@@ -41,3 +41,9 @@ export interface ModelSchemaCacheState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface ModelsApiResponse {
+  success: boolean;
+  data?: Record<string, RawModelEntry[]> | null;
+  error?: string | null;
+}

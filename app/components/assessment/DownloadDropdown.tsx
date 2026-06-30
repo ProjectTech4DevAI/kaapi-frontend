@@ -3,8 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button, Loader } from "@/app/components/ui";
-import { ChevronDownIcon } from "@/app/components/icons";
-import { DownloadIcon } from "@/app/components/icons/assessment";
+import { ChevronDownIcon, DownloadIcon } from "@/app/components/icons";
 import { DOWNLOAD_MENU_WIDTH } from "@/app/lib/assessment/constants";
 import type { ExportFormat } from "@/app/lib/types/assessment";
 

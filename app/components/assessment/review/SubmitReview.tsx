@@ -1,8 +1,7 @@
 "use client";
 
 import { Button } from "@/app/components/ui";
-import { ChevronLeftIcon } from "@/app/components/icons";
-import { PlayIcon } from "@/app/components/icons/assessment";
+import { ChevronLeftIcon, PlayIcon } from "@/app/components/icons";
 
 interface SubmitReviewProps {
   isSubmitting: boolean;

@@ -7,7 +7,7 @@ import { Tool } from "@/app/lib/types/promptEditor";
 
 interface ToolsSectionProps {
   tools: Tool[];
-  isGpt5: boolean;
+  showMaxResults: boolean;
   onAddTool: () => void;
   onRemoveTool: (index: number) => void;
   onUpdateTool: <K extends keyof Tool>(
@@ -19,7 +19,7 @@ interface ToolsSectionProps {
 
 export default function ToolsSection({
   tools,
-  isGpt5,
+  showMaxResults,
   onAddTool,
   onRemoveTool,
   onUpdateTool,
@@ -62,7 +62,7 @@ export default function ToolsSection({
             />
           </div>
 
-          {!isGpt5 && (
+          {showMaxResults && (
             <div>
               <div className="flex items-center gap-1 mb-1">
                 <label className="text-xs font-medium text-text-secondary">

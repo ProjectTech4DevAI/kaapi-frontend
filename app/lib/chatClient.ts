@@ -224,8 +224,12 @@ export function configToBlob(config: SavedConfig): ConfigBlob {
     instructions: config.instructions ?? "",
   };
 
-  if (config.temperature !== undefined && config.temperature !== null) {
-    params.temperature = config.temperature;
+  if (config.modelParams) {
+    for (const [key, value] of Object.entries(config.modelParams)) {
+      if (value !== undefined && value !== null) {
+        params[key] = value;
+      }
+    }
   }
 
   const tools: Tool[] = config.tools ?? [];

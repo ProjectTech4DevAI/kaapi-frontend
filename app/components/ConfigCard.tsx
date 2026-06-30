@@ -8,7 +8,8 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { SavedConfig, ConfigPublic } from "@/app/lib/types/configs";
-import { formatRelativeTime } from "@/app/lib/utils";
+import { formatModelParamValue, formatRelativeTime } from "@/app/lib/utils";
+import { getParamLabel } from "@/app/lib/modelSchema";
 import {
   CheckIcon,
   CopyIcon,
@@ -261,12 +262,16 @@ export default function ConfigCard({
                   }
                 />
                 <MetaPill label="Model" value={latestVersion.modelName} />
-                {latestVersion.temperature != null && (
-                  <MetaPill
-                    label="Temp"
-                    value={latestVersion.temperature.toFixed(2)}
-                  />
-                )}
+                {latestVersion.modelParams &&
+                  Object.entries(latestVersion.modelParams).map(
+                    ([key, value]) => (
+                      <MetaPill
+                        key={key}
+                        label={getParamLabel(key)}
+                        value={formatModelParamValue(key, value)}
+                      />
+                    ),
+                  )}
               </div>
 
               {latestVersion.tools && latestVersion.tools.length > 0 && (

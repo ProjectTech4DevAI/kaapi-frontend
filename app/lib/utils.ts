@@ -8,7 +8,12 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
-import { isGpt5Model } from "@/app/lib/models";
+import {
+  SUPPORTED_PARAMS,
+  getModelSchema,
+  getParamValueLabel,
+  reconcileParamsForModel,
+} from "@/app/lib/modelSchema";
 import { STORAGE_KEYS } from "@/app/lib/constants";
 import { TraceScore } from "@/app/lib/types/evaluation";
 
@@ -33,8 +38,6 @@ export const formatRelativeTime = (timestamp: string | number): string => {
 
   let date: number;
   if (typeof timestamp === "string") {
-    // If timestamp doesn't include timezone info, assume it's UTC
-    // and append 'Z' to ensure it's interpreted as UTC
     const utcTimestamp =
       timestamp.endsWith("Z") ||
       timestamp.includes("+") ||
@@ -58,7 +61,6 @@ export const formatRelativeTime = (timestamp: string | number): string => {
   return new Date(date).toLocaleDateString();
 };
 
-/** Clear all app-related localStorage */
 export function clearAllStorage() {
   Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
 }
@@ -67,7 +69,6 @@ export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
 
-/** Reads the first stored API key from localStorage. */
 export const getApiKey = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
@@ -124,9 +125,7 @@ export const flattenConfigVersion = (
     modelName: params.model || "",
     provider: blob.completion.provider,
     type: blob.completion.type || "text",
-    temperature: isGpt5Model(params.model)
-      ? params.temperature
-      : (params.temperature ?? 0.7),
+    modelParams: pickModelParams(blob.completion.provider, params),
     vectorStoreIds: tools[0]?.knowledge_base_ids?.[0] || "",
     tools,
     commit_message: version.commit_message,
@@ -281,3 +280,37 @@ export function parseCsvRow(line: string): string[] {
   result.push(current.trim());
   return result;
 }
+
+const RESERVED_PARAM_KEYS = new Set([
+  "model",
+  "instructions",
+  "tools",
+  "knowledge_base_ids",
+  "max_num_results",
+]);
+
+export const pickModelParams = (
+  provider: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  params: Record<string, any>,
+): Record<string, unknown> | undefined => {
+  if (getModelSchema(provider, params.model)) {
+    return reconcileParamsForModel(provider, params.model, params);
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (RESERVED_PARAM_KEYS.has(key)) continue;
+    if (!SUPPORTED_PARAMS.has(key)) continue;
+    if (value === undefined || value === null) continue;
+    out[key] = value;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+};
+
+export const formatModelParamValue = (key: string, value: unknown): string => {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  }
+  return getParamValueLabel(key, value);
+};

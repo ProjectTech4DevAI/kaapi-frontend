@@ -69,6 +69,23 @@ const ANTHROPIC_MODEL_CONFIG = {
   },
 } as const satisfies Record<string, ConfigParamDefinition>;
 
+const ANTHROPIC_OPUS_CONFIG = {
+  effort: {
+    type: "enum",
+    default: "high",
+    options: ["low", "medium", "high", "xhigh", "max"],
+    description:
+      "Reasoning effort. Higher = deeper thinking and more tokens. xhigh suits coding/agentic work.",
+  },
+  thinking: {
+    type: "enum",
+    default: "adaptive",
+    options: ["adaptive", "disabled"],
+    description:
+      "Adaptive thinking lets Claude decide depth. Sampling params (temperature/top_p) are not supported on Opus 4.8.",
+  },
+} as const satisfies Record<string, ConfigParamDefinition>;
+
 export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   // OpenAI
   { provider: "openai", model_name: "gpt-4o-mini", config: GPT4_STYLE_CONFIG },
@@ -314,6 +331,11 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
     provider: "anthropic",
     model_name: "claude-sonnet-4-6",
     config: ANTHROPIC_MODEL_CONFIG,
+  },
+  {
+    provider: "anthropic",
+    model_name: "claude-opus-4-8",
+    config: ANTHROPIC_OPUS_CONFIG,
   },
 ];
 

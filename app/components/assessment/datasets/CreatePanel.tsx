@@ -119,7 +119,7 @@ export default function CreatePanel({
               onDragLeave={onDragLeave}
               onDrop={onDrop}
             >
-              <span className="mx-auto mb-2 block text-border">
+              <span className="mx-auto mb-2 text-border flex justify-center">
                 <CloudUploadIcon className="h-8 w-8" />
               </span>
               <p className="mb-1 text-sm font-medium text-text-primary">
@@ -133,19 +133,13 @@ export default function CreatePanel({
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onResetForm}
-            className="!rounded-lg"
-          >
+          <Button type="button" variant="ghost" onClick={onResetForm}>
             Cancel
           </Button>
           <Button
             type="button"
             onClick={onCreateDataset}
             disabled={!uploadedFile || !datasetName.trim() || isUploading}
-            className="!rounded-lg"
           >
             {isUploading ? (
               <>

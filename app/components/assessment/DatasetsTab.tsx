@@ -99,7 +99,7 @@ export default function DatasetsTab(props: DatasetsTabProps) {
         >
           <div className="px-6 py-5">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-status-error-bg">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
                 <span className="text-status-error">
                   <WarningIcon className="w-5 h-5" />
                 </span>

@@ -30,7 +30,6 @@ export default function ResponseSchema({
               event.preventDefault();
               setSchemaModalOpen(true);
             }}
-            className="!min-w-[64px] !rounded-lg !px-3 !py-1.5 !text-xs !font-semibold"
           >
             {hasFields ? "Edit" : "Set"}
           </Button>

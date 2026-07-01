@@ -4,9 +4,8 @@ import type { ConfigCreatorProps } from "@/app/lib/types/assessment";
 import type { CompletionConfig } from "@/app/lib/types/configs";
 import ConfigParamControl from "./ConfigParamControl";
 
-const inputClass = "!rounded-xl !bg-bg-primary !px-4 !py-3";
 const selectClass =
-  "w-full rounded-xl border border-border bg-bg-primary px-4 py-3 text-sm text-text-primary outline-none focus:ring-1";
+  "w-full rounded-full border border-border bg-bg-primary px-2 py-2 text-sm text-text-primary outline-none focus:ring-1";
 
 export default function ConfigCreator({
   currentProvider,
@@ -94,14 +93,12 @@ export default function ConfigCreator({
           value={configName}
           onChange={setConfigName}
           placeholder="Helpful grader"
-          className={inputClass}
         />
         <Field
           label="Save note"
           value={commitMessage}
           onChange={setCommitMessage}
           placeholder="Optional"
-          className={inputClass}
         />
       </div>
 
@@ -110,7 +107,6 @@ export default function ConfigCreator({
         fullWidth
         onClick={() => void onSave()}
         disabled={saveDisabled}
-        className="!rounded-xl !py-3 !font-semibold"
       >
         {isSaving ? "Saving..." : "Save behavior"}
       </Button>

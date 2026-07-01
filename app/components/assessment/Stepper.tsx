@@ -45,22 +45,22 @@ export default function Stepper({
               size="sm"
               onClick={() => isClickable && onStepClick(step.id)}
               disabled={!isClickable}
-              className={`!rounded-full !px-3 !py-1.5 !text-left !text-xs ${
+              className={`rounded-full! px-3! py-1.5! text-left! text-xs! ${
                 isActive
-                  ? "!border-accent-primary !bg-accent-primary !text-white"
+                  ? "border-accent-primary! bg-accent-primary! text-white!"
                   : isCompleted
-                    ? "!bg-bg-secondary !text-text-primary"
-                    : "!bg-transparent !text-text-secondary"
+                    ? "bg-bg-secondary! text-text-primary!"
+                    : "bg-transparent! text-text-secondary!"
               } ${isClickable ? "opacity-100" : "cursor-default opacity-50"}`}
             >
               {isCompleted && !isActive ? (
                 <CheckIcon className="w-3.5 h-3.5" />
               ) : (
-                <span className="w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                <span className="flex items-center justify-center text-[10px] font-bold">
                   {step.id}
                 </span>
               )}
-              <span className="max-w-[9rem] leading-4">{step.label}</span>
+              <span className="max-w-36 leading-4">{step.label}</span>
             </Button>
           </div>
         );

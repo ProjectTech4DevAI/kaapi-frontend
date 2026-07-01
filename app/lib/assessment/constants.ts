@@ -92,9 +92,9 @@ export const SUMMARY_BADGE_CLASSES: Record<ResultTone, string> = {
 
 export const ASSESSMENT_CONFIG_STEPS: Step[] = [
   { id: 1, label: "Mapper" },
-  { id: 2, label: "Eliminatory (optional)" },
+  { id: 2, label: "Eliminatory (opt.)" },
   { id: 3, label: "Evaluation" },
-  { id: 4, label: "Post Processing (optional)" },
+  { id: 4, label: "Post Processing (opt.)" },
   { id: 5, label: "Review" },
 ];
 

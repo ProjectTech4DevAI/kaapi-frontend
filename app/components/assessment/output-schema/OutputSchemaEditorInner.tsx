@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/app/components/ui";
+import { Button, RadioGroup } from "@/app/components/ui";
 import type { SchemaProperty } from "@/app/lib/types/assessment";
 import JsonEditor from "../JsonEditor";
 import {
@@ -150,34 +150,15 @@ export default function OutputSchemaEditorInner({
 
   return (
     <div className="space-y-5">
-      <div className="flex w-fit items-center gap-1 rounded-lg bg-bg-secondary p-1">
-        <Button
-          type="button"
-          variant={editorMode === "visual" ? "outline" : "ghost"}
-          size="sm"
-          onClick={() => (editorMode === "code" ? switchToVisual() : undefined)}
-          className={`!rounded-md !px-4 !py-1.5 ${
-            editorMode === "visual"
-              ? "!bg-bg-primary text-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-              : "!bg-transparent text-text-secondary"
-          }`}
-        >
-          Visual Editor
-        </Button>
-        <Button
-          type="button"
-          variant={editorMode === "code" ? "outline" : "ghost"}
-          size="sm"
-          onClick={() => (editorMode !== "code" ? switchToCode() : undefined)}
-          className={`!rounded-md !px-4 !py-1.5 ${
-            editorMode === "code"
-              ? "!bg-bg-primary text-text-primary shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
-              : "!bg-transparent text-text-secondary"
-          }`}
-        >
-          JSON
-        </Button>
-      </div>
+      <RadioGroup<"visual" | "code">
+        value={editorMode}
+        onChange={(v) => (v === "visual" ? switchToVisual() : switchToCode())}
+        ariaLabel="Schema editor mode"
+        options={[
+          { value: "visual", label: "Visual Editor" },
+          { value: "code", label: "JSON" },
+        ]}
+      />
 
       {editorMode === "visual" && (
         <div className="space-y-3">
@@ -204,7 +185,6 @@ export default function OutputSchemaEditorInner({
           <Button
             type="button"
             onClick={() => setSchema([...schema, createProperty()])}
-            className="!rounded-lg !font-bold"
           >
             + Add field
           </Button>

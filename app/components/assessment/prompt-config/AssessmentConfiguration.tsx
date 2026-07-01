@@ -1,7 +1,8 @@
 "use client";
 
-import { Button } from "@/app/components/ui";
+import { RadioGroup } from "@/app/components/ui";
 import type { AssessmentConfigurationProps } from "@/app/lib/types/assessment";
+import type { ConfigMode } from "@/app/lib/types/assessment/config";
 import ConfigCreator from "./ConfigCreator";
 import SavedConfigs from "./SavedConfigs";
 import SelectedConfigs from "./SelectedConfigs";
@@ -63,25 +64,16 @@ export default function AssessmentConfiguration({
       )}
 
       <div className="border-t border-border px-4 py-4">
-        <div className="mb-4 inline-flex items-center gap-1 rounded-xl border border-border bg-bg-secondary p-1">
-          <Button
-            type="button"
-            variant={configMode === "existing" ? "primary" : "ghost"}
-            size="sm"
-            onClick={() => setConfigMode("existing")}
-            className="!rounded-lg !px-3 !py-1.5 !text-xs"
-          >
-            Saved
-          </Button>
-          <Button
-            type="button"
-            variant={configMode === "create" ? "primary" : "ghost"}
-            size="sm"
-            onClick={() => setConfigMode("create")}
-            className="!rounded-lg !px-3 !py-1.5 !text-xs"
-          >
-            New
-          </Button>
+        <div className="mb-4">
+          <RadioGroup<ConfigMode>
+            value={configMode}
+            onChange={setConfigMode}
+            ariaLabel="Config source"
+            options={[
+              { value: "existing", label: "Saved" },
+              { value: "create", label: "New" },
+            ]}
+          />
         </div>
 
         {configMode === "existing" && (

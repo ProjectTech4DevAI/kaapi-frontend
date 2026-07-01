@@ -30,16 +30,11 @@ export default function OutputSchemaStep({
 
       <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex items-center justify-between border-t border-border bg-bg-secondary px-6 py-2">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="!rounded-lg"
-          >
+          <Button type="button" variant="outline" onClick={onBack}>
             <ChevronLeftIcon className="w-3.5 h-3.5" />
             Back
           </Button>
-          <Button type="button" onClick={onNext} className="!rounded-lg">
+          <Button type="button" onClick={onNext}>
             Next: Review
           </Button>
         </div>

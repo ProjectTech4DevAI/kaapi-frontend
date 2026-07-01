@@ -75,7 +75,6 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
               onClick={loadAssessments}
               disabled={isLoading}
               aria-label="Refresh assessments"
-              className="!p-1.5 !rounded !rounded-md"
             >
               <RefreshIcon
                 className={`w-4 h-4 -scale-x-100 ${isLoading ? "animate-spin" : ""}`}

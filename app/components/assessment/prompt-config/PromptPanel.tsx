@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/app/components/ui";
+import { RadioGroup } from "@/app/components/ui";
 import type { PromptPanelProps } from "@/app/lib/types/assessment";
+
+type PromptViewMode = "edit" | "preview";
 import UserPrompt from "./UserPrompt";
 import SystemPrompt from "./SystemPrompt";
 
@@ -14,31 +16,21 @@ export default function PromptPanel({
   promptTemplate,
   setPromptTemplate,
 }: PromptPanelProps) {
-  const [previewMode, setPreviewMode] = useState(false);
+  const [viewMode, setViewMode] = useState<PromptViewMode>("edit");
+  const previewMode = viewMode === "preview";
 
   return (
     <section className="min-w-0 space-y-4">
       <div className="flex justify-end">
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-bg-secondary p-1">
-          <Button
-            type="button"
-            variant={!previewMode ? "primary" : "ghost"}
-            size="sm"
-            onClick={() => setPreviewMode(false)}
-            className="!rounded-lg !px-3 !py-1.5 !text-xs"
-          >
-            Edit
-          </Button>
-          <Button
-            type="button"
-            variant={previewMode ? "primary" : "ghost"}
-            size="sm"
-            onClick={() => setPreviewMode(true)}
-            className="!rounded-lg !px-3 !py-1.5 !text-xs"
-          >
-            Preview
-          </Button>
-        </div>
+        <RadioGroup<PromptViewMode>
+          value={viewMode}
+          onChange={setViewMode}
+          ariaLabel="Prompt view mode"
+          options={[
+            { value: "edit", label: "Edit" },
+            { value: "preview", label: "Preview" },
+          ]}
+        />
       </div>
 
       <SystemPrompt

@@ -193,7 +193,7 @@ export default function ColumnMapperStep({
                           <span
                             className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${roleVisuals.dotClass}`}
                           />
-                          <span className="min-w-0 break-words font-mono text-sm font-semibold text-text-primary">
+                          <span className="min-w-0 wrap-break-word font-mono text-sm font-semibold text-text-primary">
                             {column}
                           </span>
                         </div>
@@ -220,12 +220,12 @@ export default function ColumnMapperStep({
                                   ? "Ground Truth mapping is coming soon"
                                   : undefined
                               }
-                              className={`!rounded-full !px-4 !py-2 ${
+                              className={`${
                                 isGroundTruth
-                                  ? "!cursor-not-allowed !bg-transparent !text-text-secondary hover:!bg-transparent hover:!text-text-secondary"
+                                  ? "cursor-not-allowed! bg-transparent! hover:bg-transparent! text-text-secondary!"
                                   : isActive
                                     ? roleVisuals.activeButtonClass
-                                    : "!bg-bg-primary !text-text-secondary hover:!bg-bg-secondary"
+                                    : "bg-bg-primary! hover:bg-bg-secondary!"
                               }`}
                             >
                               <span>{option.label}</span>
@@ -372,12 +372,7 @@ export default function ColumnMapperStep({
 
       <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex flex-col gap-3 border-t border-border bg-bg-secondary px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="!rounded-lg"
-          >
+          <Button type="button" variant="outline" onClick={onBack}>
             Back
           </Button>
 
@@ -395,7 +390,6 @@ export default function ColumnMapperStep({
               type="button"
               onClick={handleNext}
               disabled={!hasMappedColumn}
-              className="!rounded-lg"
             >
               Next: Eliminatory
             </Button>

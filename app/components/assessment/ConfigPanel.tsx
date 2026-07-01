@@ -1,6 +1,5 @@
 "use client";
 
-// Multi-step wizard (Mapper → Eliminatory → Evaluation → Post Processing → Review)
 import { Button } from "@/app/components/ui";
 import { DatabaseIcon } from "@/app/components/icons";
 import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";
@@ -55,11 +54,7 @@ export default function ConfigPanel({
           <p className="mb-4 text-xs text-text-secondary">
             Select a dataset first from the Datasets tab
           </p>
-          <Button
-            type="button"
-            onClick={setActiveTabToDatasets}
-            className="!rounded-md"
-          >
+          <Button type="button" onClick={setActiveTabToDatasets}>
             Go to Datasets
           </Button>
         </div>

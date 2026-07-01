@@ -40,7 +40,7 @@ export default function DatasetList({
             <h3 className="text-base font-semibold text-text-primary">
               Datasets
             </h3>
-            <p className="mt-2 rounded-md border border-accent-secondary bg-accent-secondary/15 px-3 py-2 text-xs font-medium text-text-primary">
+            <p className="mt-2 rounded-full border border-accent-secondary bg-accent-secondary/15 px-3 py-2 text-xs font-medium text-text-primary">
               Use an existing dataset from the list, or create a new dataset
               from the form on the right.
             </p>
@@ -120,7 +120,7 @@ export default function DatasetList({
                             );
                           }}
                           disabled={viewingId === dataset.dataset_id}
-                          className={`!rounded-lg !px-3 !py-1.5 !text-xs ${
+                          className={` ${
                             viewingId === dataset.dataset_id ? "opacity-50" : ""
                           }`}
                         >
@@ -137,7 +137,6 @@ export default function DatasetList({
                             onRequestDelete(dataset.dataset_id);
                           }}
                           aria-label={`Delete ${dataset.dataset_name}`}
-                          className="!rounded-lg !px-3 !py-1.5 !text-xs !text-status-error"
                         >
                           Delete
                         </Button>
@@ -151,19 +150,14 @@ export default function DatasetList({
         )}
       </div>
 
-      <div className="sticky bottom-0 z-10 flex flex-shrink-0 items-center justify-between border-t border-border bg-bg-primary px-6 py-3">
+      <div className="sticky bottom-0 z-10 flex shrink-0 items-center justify-between border-t border-border bg-bg-primary px-6 py-3">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
           <span className="text-xs text-text-secondary">
             {canProceed
               ? "Dataset selected. Continue to AI configuration."
               : "Select a dataset to continue."}
           </span>
-          <Button
-            type="button"
-            onClick={onNext}
-            disabled={!canProceed}
-            className="!rounded-lg"
-          >
+          <Button type="button" onClick={onNext} disabled={!canProceed}>
             Next: AI Configuration
           </Button>
         </div>

@@ -167,7 +167,6 @@ export default function PromptAndConfigStep(props: PromptAndConfigStepProps) {
               size="lg"
               onClick={onNext}
               disabled={!canProceed}
-              className="!rounded-lg !px-6"
             >
               Next: Review
             </Button>

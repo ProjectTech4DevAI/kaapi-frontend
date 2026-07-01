@@ -288,12 +288,7 @@ export default function PrefilterStep({
 
       <div className="mt-auto sticky bottom-0 z-10 -mx-6 flex flex-col gap-3 border-t border-border bg-bg-secondary px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="!rounded-lg"
-          >
+          <Button type="button" variant="outline" onClick={onBack}>
             Back
           </Button>
 
@@ -305,12 +300,7 @@ export default function PrefilterStep({
                   ? "Ready to continue."
                   : "Complete required fields above."}
             </span>
-            <Button
-              type="button"
-              onClick={handleNext}
-              disabled={!canProceed}
-              className="!rounded-lg"
-            >
+            <Button type="button" onClick={handleNext} disabled={!canProceed}>
               Next: Evaluation
             </Button>
           </div>

@@ -145,7 +145,6 @@ export default function SavedConfigs({
               fullWidth
               onClick={() => void handleViewMore()}
               disabled={isLoadingMore}
-              className="rounded-xl! py-2! text-xs!"
             >
               {isLoadingMore ? "Loading..." : "View more"}
             </Button>

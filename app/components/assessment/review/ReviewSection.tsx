@@ -69,7 +69,6 @@ export default function ReviewSection({
                 event.stopPropagation();
                 onEdit();
               }}
-              className="!rounded-md !px-2.5 !py-1 !text-xs"
             >
               Edit
             </Button>

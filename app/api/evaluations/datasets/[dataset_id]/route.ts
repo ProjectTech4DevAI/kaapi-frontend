@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
+import type { DatasetDetailsPayload } from "@/app/lib/types/dataset";
 
 /**
  * GET /api/evaluations/datasets/:dataset_id
@@ -15,7 +16,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams.toString();
     const queryString = searchParams ? `?${searchParams}` : "";
 
-    const { status, data } = await apiClient(
+    const { status, data } = await apiClient<DatasetDetailsPayload>(
       request,
       `/api/v1/evaluations/datasets/${dataset_id}${queryString}`,
     );
@@ -43,7 +44,7 @@ export async function GET(
       }
       const csvText = await csvResponse.text();
       return NextResponse.json(
-        { ...data, csv_content: csvText },
+        { ...(data ?? {}), csv_content: csvText },
         { status: 200 },
       );
     }

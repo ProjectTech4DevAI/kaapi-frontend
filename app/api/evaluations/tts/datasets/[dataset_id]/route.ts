@@ -1,5 +1,6 @@
 import { apiClient } from "@/app/lib/apiClient";
 import { NextResponse } from "next/server";
+import type { DatasetDetailsPayload } from "@/app/lib/types/dataset";
 
 export async function GET(
   request: Request,
@@ -18,7 +19,7 @@ export async function GET(
       ? `?${backendParams.toString()}`
       : "";
 
-    const { data, status } = await apiClient(
+    const { data, status } = await apiClient<DatasetDetailsPayload>(
       request,
       `/api/v1/evaluations/tts/datasets/${dataset_id}${queryString}`,
     );
@@ -42,7 +43,7 @@ export async function GET(
       }
       const csvText = await csvResponse.text();
       return NextResponse.json(
-        { ...data, csv_content: csvText },
+        { ...(data ?? {}), csv_content: csvText },
         { status: 200 },
       );
     }

@@ -16,8 +16,6 @@ import { useToast } from "@/app/hooks/useToast";
 import { apiFetch } from "@/app/lib/apiClient";
 import { APIKey } from "@/app/lib/types/credentials";
 
-export const STORAGE_KEY = "kaapi_api_keys";
-
 export default function KaapiKeystore() {
   const { sidebarCollapsed } = useApp();
   const { apiKeys, addKey, removeKey: removeApiKey } = useAuth();

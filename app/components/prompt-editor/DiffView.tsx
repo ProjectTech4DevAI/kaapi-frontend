@@ -6,7 +6,8 @@ import type { SelectOption } from "@/app/lib/types/ui";
 import { VersionPill } from "@/app/components";
 import { ArrowLeftIcon, ChevronRightIcon } from "@/app/components/icons";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
-import { formatRelativeTime } from "@/app/lib/utils";
+import { formatModelParamValue, formatRelativeTime } from "@/app/lib/utils";
+import { getParamLabel } from "@/app/lib/modelSchema";
 
 interface DiffViewProps {
   selectedCommit: SavedConfig;
@@ -289,12 +290,16 @@ export default function DiffView({
                   value={selectedCommit.provider}
                 />
                 <ReadOnlyField label="Model" value={selectedCommit.modelName} />
-                {selectedCommit.temperature != null && (
-                  <ReadOnlyField
-                    label="Temperature"
-                    value={String(selectedCommit.temperature)}
-                  />
-                )}
+                {selectedCommit.modelParams &&
+                  Object.entries(selectedCommit.modelParams).map(
+                    ([key, value]) => (
+                      <ReadOnlyField
+                        key={key}
+                        label={getParamLabel(key)}
+                        value={formatModelParamValue(key, value)}
+                      />
+                    ),
+                  )}
                 {selectedCommit.tools && selectedCommit.tools.length > 0 && (
                   <div>
                     <div className="text-xs font-semibold mb-1.5 text-text-secondary">

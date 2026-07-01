@@ -1,5 +1,6 @@
 import { VersionPill } from "@/app/components";
 import { SavedConfig } from "@/app/lib/types/configs";
+import { getParamLabel } from "@/app/lib/modelSchema";
 
 interface ConfigDiffPaneProps {
   selectedCommit: SavedConfig;
@@ -37,14 +38,22 @@ export default function ConfigDiffPane({
     });
   }
 
-  if (compareWith.temperature !== selectedCommit.temperature) {
-    configDiffs.push({
-      field: "Temperature",
-      oldValue: compareWith.temperature,
-      newValue: selectedCommit.temperature,
-      changed: true,
-    });
-  }
+  const oldParams = compareWith.modelParams ?? {};
+  const newParams = selectedCommit.modelParams ?? {};
+  const allParamKeys = new Set([
+    ...Object.keys(oldParams),
+    ...Object.keys(newParams),
+  ]);
+  allParamKeys.forEach((key) => {
+    if (oldParams[key] !== newParams[key]) {
+      configDiffs.push({
+        field: getParamLabel(key),
+        oldValue: oldParams[key],
+        newValue: newParams[key],
+        changed: true,
+      });
+    }
+  });
 
   const oldTools = compareWith.tools || [];
   const newTools = selectedCommit.tools || [];

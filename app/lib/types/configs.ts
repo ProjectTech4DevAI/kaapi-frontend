@@ -10,7 +10,7 @@ export interface SavedConfig {
   modelName: string;
   provider: string;
   type: "text" | "stt" | "tts";
-  temperature: number;
+  modelParams?: Record<string, unknown>;
   vectorStoreIds: string;
   tools?: Tool[];
   commit_message?: string | null;
@@ -25,20 +25,16 @@ export interface ConfigGroup {
   versions: SavedConfig[]; // fully-loaded entries (have config_blob)
   latestVersion: SavedConfig;
   totalVersions: number;
-  /** True once all historical versions have been fetched (lazy-loaded on demand) */
   versionsFullyLoaded: boolean;
-  /** Lightweight version list (no config_blob). Populated after initial load; used for history display. */
   versionItems: ConfigVersionItems[];
 }
 
 export interface ConfigCache {
   configs: SavedConfig[];
-  // Map of config_id -> { updated_at, version_count }
   configMeta: Record<string, { updated_at: string; version_count: number }>;
   cachedAt: number;
   versionCounts: Record<string, number>;
   totalConfigCount?: number;
-  /** True when only a subset of configs have had their version details fetched */
   partialFetch?: boolean;
   allConfigMeta?: ConfigPublic[];
 }
@@ -51,7 +47,6 @@ export interface FetchResult {
   partialFetch: boolean;
 }
 
-// Config Blob Structure
 export interface Tool {
   type: "file_search";
   knowledge_base_ids: string[];
@@ -61,10 +56,7 @@ export interface Tool {
 export interface CompletionParams {
   model: string;
   instructions: string;
-  temperature?: number;
-  // tools array for UI, but backend expects flattened fields
   tools?: Tool[];
-  // Backend expects these as direct fields (flattened from tools array)
   knowledge_base_ids?: string[];
   max_num_results?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -90,7 +82,6 @@ export interface ConfigBlob {
   output_guardrails?: GuardrailRef[];
 }
 
-// Request Types
 export interface ConfigCreate {
   name: string;
   description?: string | null;
@@ -138,6 +129,18 @@ export interface ConfigVersionItems {
   commit_message: string | null;
   inserted_at: string;
   updated_at: string;
+}
+
+export interface ConfigVersionInfo {
+  name: string;
+  version: number;
+  model?: string;
+  instructions?: string;
+  modelParams?: Record<string, unknown>;
+  tools?: Tool[];
+  provider?: string;
+  type?: "text" | "stt" | "tts";
+  knowledge_base_ids?: string[];
 }
 
 export interface APIResponse<T> {

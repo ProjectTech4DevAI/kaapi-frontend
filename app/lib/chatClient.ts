@@ -243,7 +243,7 @@ export function configToBlob(config: SavedConfig): ConfigBlob {
 
   const blob: ConfigBlob = {
     completion: {
-      provider: config.provider as "openai",
+      provider: config.provider,
       type: config.type ?? "text",
       params,
     },

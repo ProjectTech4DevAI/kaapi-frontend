@@ -9,7 +9,6 @@ import {
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import {
-  SUPPORTED_PARAMS,
   getModelSchema,
   getParamValueLabel,
   reconcileParamsForModel,
@@ -277,7 +276,6 @@ export const pickModelParams = (
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(params)) {
     if (RESERVED_PARAM_KEYS.has(key)) continue;
-    if (!SUPPORTED_PARAMS.has(key)) continue;
     if (value === undefined || value === null) continue;
     out[key] = value;
   }

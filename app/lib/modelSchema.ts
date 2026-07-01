@@ -7,7 +7,6 @@ import { getModelSchemaCache } from "@/app/lib/store/modelSchemaStore";
 import type {
   ModelCompletionType,
   ModelSchema,
-  ParamSchema,
   RawModelEntry,
 } from "@/app/lib/types/models";
 
@@ -19,27 +18,18 @@ export type {
   RawModelEntry,
 } from "@/app/lib/types/models";
 
-export const SUPPORTED_PROVIDERS = ["openai", "google"] as const;
-
-export const SUPPORTED_PARAMS = new Set(["effort", "temperature"]);
-
 export function flattenGroupedModels(
   grouped: Record<string, RawModelEntry[]>,
 ): ModelSchema[] {
   const out: ModelSchema[] = [];
-  for (const [providerKey, entries] of Object.entries(grouped)) {
-    if (!SUPPORTED_PROVIDERS.includes(providerKey as never)) continue;
+  for (const entries of Object.values(grouped)) {
     for (const entry of entries) {
       if (entry.is_active === false) continue;
-      const config: Record<string, ParamSchema> = {};
-      for (const [key, spec] of Object.entries(entry.config ?? {})) {
-        if (SUPPORTED_PARAMS.has(key)) config[key] = spec;
-      }
       out.push({
         provider: entry.provider,
         model: entry.model_name,
         completion_type: entry.completion_type,
-        config,
+        config: entry.config ?? {},
         is_active: entry.is_active,
       });
     }
@@ -47,19 +37,17 @@ export function flattenGroupedModels(
   return out;
 }
 
-export const PROVIDER_LABELS: Record<string, string> = {
-  openai: "OpenAI",
-  google: "Google",
-};
-
-export function getProviderLabel(provider: string): string {
-  return PROVIDER_LABELS[provider] ?? provider;
+function toTitleCase(value: string): string {
+  return value
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
-export const PARAM_LABELS: Record<string, string> = {
-  effort: "Effort",
-  temperature: "Temperature",
-};
+export function getProviderLabel(provider: string): string {
+  return toTitleCase(provider);
+}
 
 export const PARAM_VALUE_LABELS: Record<string, Record<string, string>> = {
   effort: {
@@ -106,8 +94,20 @@ export function getModelsForProviderAndType(
   );
 }
 
+export function getCompletionTypesForProvider(
+  provider: string,
+): ModelCompletionType[] {
+  return Array.from(
+    new Set(
+      schemas()
+        .filter((m) => m.provider === provider)
+        .flatMap((m) => m.completion_type),
+    ),
+  );
+}
+
 export function getParamLabel(key: string): string {
-  return PARAM_LABELS[key] ?? key;
+  return toTitleCase(key);
 }
 
 export function getParamValueLabel(key: string, value: unknown): string {

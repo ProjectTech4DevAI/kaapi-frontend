@@ -1,3 +1,8 @@
+export type DatasetDetailsPayload = Record<string, unknown> & {
+  data?: { signed_url?: string } | null;
+  signed_url?: string;
+};
+
 export interface Dataset {
   dataset_id: number;
   dataset_name: string;

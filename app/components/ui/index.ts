@@ -6,6 +6,7 @@ export { default as MultiSelect } from "./MultiSelect";
 export { default as Modal } from "./Modal";
 export { default as RadioGroup } from "./RadioGroup";
 export { default as Loader, LoaderBox } from "./Loader";
+export { ToggleOnIcon, ToggleOffIcon } from "./ToggleThumbIcons";
 export { default as InfoTooltip } from "./InfoTooltip";
 export { default as Tag } from "./Tag";
 export { default as TabNavigation } from "./TabNavigation";

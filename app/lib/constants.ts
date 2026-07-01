@@ -1,5 +1,6 @@
 import { ConfigBlob } from "@/app/lib/types/promptEditor";
 import { ToastType } from "@/app/components/ui";
+import { ASSESSMENT_FEATURE_FLAG } from "@/app/lib/assessment/constants";
 import {
   AnalyticsGroupBy,
   AnalyticsMetric,
@@ -7,6 +8,12 @@ import {
 } from "@/app/lib/types/analytics";
 
 export const APP_NAME = "Kaapi Konsole";
+
+export const FeatureFlag = {
+  ASSESSMENT: ASSESSMENT_FEATURE_FLAG,
+} as const;
+
+export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
 
 export const STORAGE_KEYS = {
   API_KEYS: "kaapi_api_keys",
@@ -16,6 +23,11 @@ export const STORAGE_KEYS = {
   DOCUMENT_SIZES: "document_file_sizes",
   SIDEBAR_MENUS: "sidebar-expanded-menus",
   CHAT_STATE: "kaapi_chat_state",
+} as const;
+
+export const COOKIE_KEYS = {
+  ROLE: "kaapi_role",
+  FEATURES: "kaapi_features",
 } as const;
 
 /** localStorage key for the config cache */
@@ -47,6 +59,8 @@ export const CACHE_INVALIDATED_EVENT = "kaapi:config-cache-invalidated";
 
 /** Dispatched when the user's session is no longer valid (expired or revoked). */
 export const AUTH_EXPIRED_EVENT = "kaapi:auth-expired";
+/** Dispatched when client-side feature flags are updated. */
+export const FEATURES_UPDATED_EVENT = "kaapi:features-updated";
 
 export const PROVIDES_OPTIONS = [
   { value: "openai", label: "OpenAI" },

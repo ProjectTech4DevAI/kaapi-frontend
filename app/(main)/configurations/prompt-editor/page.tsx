@@ -21,7 +21,7 @@ import { useAuth } from "@/app/lib/context/AuthContext";
 import { useConfigs } from "@/app/hooks";
 import { useConfigPersistence } from "@/app/hooks/useConfigPersistence";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
-import { configState } from "@/app/lib/store/configStore";
+import { configState } from "@/app/lib/store/config";
 import { DEFAULT_CONFIG } from "@/app/lib/constants";
 
 function PromptEditorContent() {

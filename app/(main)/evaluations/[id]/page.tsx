@@ -49,7 +49,6 @@ import {
   DatabaseIcon,
   GroupIcon,
   DownloadIcon,
-  SpinnerIcon,
 } from "@/app/components/icons";
 
 export default function EvaluationReport() {
@@ -408,7 +407,7 @@ export default function EvaluationReport() {
                     : undefined
                 }
               >
-                {isImprovingPrompt && <SpinnerIcon />}
+                {isImprovingPrompt && <Loader size="sm" />}
                 <span className="hidden sm:inline">
                   {isImprovingPrompt ? "Iterating..." : "Iterate on Prompt"}
                 </span>

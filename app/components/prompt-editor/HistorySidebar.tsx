@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useCallback, useState } from "react";
 import { Button, Loader } from "@/app/components/ui";
-import { VersionPill } from "@/app/components";
+import { CommitMessage, VersionPill } from "@/app/components";
 import { ArrowLeftIcon } from "@/app/components/icons";
 import {
   ConfigPublic,
@@ -53,8 +53,8 @@ function VersionRow({
       </div>
 
       {item.commit_message && (
-        <div className="text-xs mb-1 text-text-primary">
-          {item.commit_message}
+        <div className="mb-2">
+          <CommitMessage message={item.commit_message} compact />
         </div>
       )}
 
@@ -93,7 +93,6 @@ function VersionRow({
   );
 }
 
-// Single-config version history (when a config is loaded in the editor)
 interface SingleConfigHistoryProps {
   configId: string;
   configName: string;

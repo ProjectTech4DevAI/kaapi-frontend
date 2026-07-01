@@ -64,7 +64,6 @@ export default function ConfigEditorPane({
       .catch(() => {});
   }, [apiKey]);
 
-  // Close the save modal when a save just completed successfully.
   useEffect(() => {
     if (wasSavingRef.current && !isSaving && commitMessage === "") {
       setShowSaveModal(false);

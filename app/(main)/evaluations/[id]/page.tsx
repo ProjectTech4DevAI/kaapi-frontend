@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/app/lib/apiClient";
+import { invalidateConfigCache } from "@/app/lib/utils";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import type {
@@ -48,6 +49,7 @@ import {
   DatabaseIcon,
   GroupIcon,
   DownloadIcon,
+  SpinnerIcon,
 } from "@/app/components/icons";
 
 export default function EvaluationReport() {
@@ -70,6 +72,7 @@ export default function EvaluationReport() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<"row" | "grouped">("row");
   const [isResyncing, setIsResyncing] = useState(false);
+  const [isImprovingPrompt, setIsImprovingPrompt] = useState(false);
   const [showNoTracesModal, setShowNoTracesModal] = useState(false);
 
   const fetchJobDetails = useCallback(async () => {
@@ -177,6 +180,51 @@ export default function EvaluationReport() {
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to export CSV");
+    }
+  };
+
+  const handleIteratePrompt = async () => {
+    if (!isAuthenticated || !jobId) return;
+    setIsImprovingPrompt(true);
+    try {
+      const data = await apiFetch<{
+        success: boolean;
+        error?: string;
+        data?: {
+          config_id?: string;
+          id?: string;
+          version?: number;
+        } | null;
+      }>(`/api/evaluations/${jobId}/improve-prompt`, apiKey, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+
+      if (!data.success) {
+        toast.error(data.error || "Failed to iterate on prompt");
+        return;
+      }
+
+      invalidateConfigCache();
+      toast.success("Prompt iteration created");
+
+      const newConfigId = data.data?.config_id ?? data.data?.id;
+      const newVersion = data.data?.version;
+      if (newConfigId) {
+        const versionParam =
+          typeof newVersion === "number" ? `&version=${newVersion}` : "";
+        router.push(
+          `/configurations/prompt-editor?config=${encodeURIComponent(
+            newConfigId,
+          )}${versionParam}&from=evaluations`,
+        );
+      }
+    } catch (err: unknown) {
+      toast.error(
+        `Failed to iterate on prompt: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    } finally {
+      setIsImprovingPrompt(false);
     }
   };
 
@@ -343,6 +391,30 @@ export default function EvaluationReport() {
               >
                 <span className="hidden sm:inline">View Config</span>
                 <span className="sm:hidden">Config</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleIteratePrompt}
+                disabled={
+                  job.status.toLowerCase() !== "completed" ||
+                  isImprovingPrompt ||
+                  isFormatSwitching ||
+                  isResyncing
+                }
+                title={
+                  job.status.toLowerCase() !== "completed"
+                    ? "Only available for completed evaluations"
+                    : undefined
+                }
+              >
+                {isImprovingPrompt && <SpinnerIcon />}
+                <span className="hidden sm:inline">
+                  {isImprovingPrompt ? "Iterating..." : "Iterate on Prompt"}
+                </span>
+                <span className="sm:hidden">
+                  {isImprovingPrompt ? "..." : "Iterate"}
+                </span>
               </Button>
               <Button
                 variant="primary"

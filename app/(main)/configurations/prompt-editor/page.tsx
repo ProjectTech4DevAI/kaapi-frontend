@@ -23,6 +23,7 @@ import { useConfigPersistence } from "@/app/hooks/useConfigPersistence";
 import { SavedConfig, ConfigVersionItems } from "@/app/lib/types/configs";
 import { configState } from "@/app/lib/store/configStore";
 import { DEFAULT_CONFIG } from "@/app/lib/constants";
+import { apiFetch } from "@/app/lib/apiClient";
 
 function PromptEditorContent() {
   const searchParams = useSearchParams();
@@ -124,6 +125,29 @@ function PromptEditorContent() {
       if (selectInHistory) setSelectedVersion(config);
     },
     [],
+  );
+
+  const refreshVersionsForConfig = React.useCallback(
+    async (configId: string) => {
+      if (!configId) return;
+      try {
+        const apiKey = activeKey?.key ?? "";
+        const res = await apiFetch<{
+          success: boolean;
+          data: ConfigVersionItems[];
+        }>(`/api/configs/${configId}/versions`, apiKey);
+        if (res.success && res.data) {
+          configState.versionItemsCache[configId] = res.data;
+          setStableVersionItemsMap((prev) => ({
+            ...prev,
+            [configId]: res.data,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to refresh version list:", err);
+      }
+    },
+    [activeKey],
   );
 
   const resetEditor = React.useCallback(() => {
@@ -247,7 +271,11 @@ function PromptEditorContent() {
     if (ok) {
       setHasUnsavedChanges(false);
       setCommitMessage("");
-      if (wasNewConfig) resetEditor();
+      if (wasNewConfig) {
+        resetEditor();
+      } else if (currentConfigParentId) {
+        await refreshVersionsForConfig(currentConfigParentId);
+      }
     }
   };
 

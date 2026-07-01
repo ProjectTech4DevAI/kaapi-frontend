@@ -194,7 +194,7 @@ export default function DetailedResultsTable({
                       >
                         <div className="flex items-center justify-center gap-2">
                           <div
-                            className={`inline-block px-2 py-1 rounded text-xs font-medium border-border ${bg === "transparent" ? "border" : ""}`}
+                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium border-border ${bg === "transparent" ? "border" : ""}`}
                             style={{
                               color,
                               backgroundColor: bg,

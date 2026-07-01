@@ -18,11 +18,18 @@ export type {
   RawModelEntry,
 } from "@/app/lib/types/models";
 
+export const SUPPORTED_PROVIDERS = [
+  "openai",
+  "google",
+  "google-aistudio",
+] as const;
+
 export function flattenGroupedModels(
   grouped: Record<string, RawModelEntry[]>,
 ): ModelSchema[] {
   const out: ModelSchema[] = [];
-  for (const entries of Object.values(grouped)) {
+  for (const [providerKey, entries] of Object.entries(grouped)) {
+    if (!SUPPORTED_PROVIDERS.includes(providerKey as never)) continue;
     for (const entry of entries) {
       if (entry.is_active === false) continue;
       out.push({
@@ -37,17 +44,23 @@ export function flattenGroupedModels(
   return out;
 }
 
-function toTitleCase(value: string): string {
-  return value
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
+export const PROVIDER_LABELS: Record<string, string> = {
+  openai: "OpenAI",
+  google: "Google",
+  "google-aistudio": "Google AI Studio",
+};
 
 export function getProviderLabel(provider: string): string {
-  return toTitleCase(provider);
+  return PROVIDER_LABELS[provider] ?? provider;
 }
+
+export const PARAM_LABELS: Record<string, string> = {
+  effort: "Effort",
+  temperature: "Temperature",
+  summary: "Summary",
+  voice: "Voice",
+  thinking_level: "Thinking Level",
+};
 
 export const PARAM_VALUE_LABELS: Record<string, Record<string, string>> = {
   effort: {
@@ -107,7 +120,7 @@ export function getCompletionTypesForProvider(
 }
 
 export function getParamLabel(key: string): string {
-  return toTitleCase(key);
+  return PARAM_LABELS[key] ?? key;
 }
 
 export function getParamValueLabel(key: string, value: unknown): string {

@@ -7,6 +7,7 @@ import { getModelSchemaCache } from "@/app/lib/store/modelSchemaStore";
 import type {
   ModelCompletionType,
   ModelSchema,
+  ParamSchema,
   RawModelEntry,
 } from "@/app/lib/types/models";
 
@@ -24,6 +25,14 @@ export const SUPPORTED_PROVIDERS = [
   "google-aistudio",
 ] as const;
 
+export const SUPPORTED_PARAMS = new Set([
+  "effort",
+  "temperature",
+  "summary",
+  "voice",
+  "thinking_level",
+]);
+
 export function flattenGroupedModels(
   grouped: Record<string, RawModelEntry[]>,
 ): ModelSchema[] {
@@ -32,11 +41,15 @@ export function flattenGroupedModels(
     if (!SUPPORTED_PROVIDERS.includes(providerKey as never)) continue;
     for (const entry of entries) {
       if (entry.is_active === false) continue;
+      const config: Record<string, ParamSchema> = {};
+      for (const [key, spec] of Object.entries(entry.config ?? {})) {
+        if (SUPPORTED_PARAMS.has(key)) config[key] = spec;
+      }
       out.push({
         provider: entry.provider,
         model: entry.model_name,
         completion_type: entry.completion_type,
-        config: entry.config ?? {},
+        config,
         is_active: entry.is_active,
       });
     }

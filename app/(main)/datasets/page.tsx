@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
+import { Dataset } from "@/app/lib/types/dataset";
 import { apiFetch } from "@/app/lib/apiClient";
 import Sidebar from "@/app/components/Sidebar";
 import { PageHeader } from "@/app/components";
@@ -15,7 +16,6 @@ import { useToast } from "@/app/hooks/useToast";
 import DatasetListing from "@/app/components/datasets/DatasetListing";
 import UploadDatasetModal from "@/app/components/datasets/UploadDatasetModal";
 import DeleteDatasetModal from "@/app/components/datasets/DeleteDatasetModal";
-import { Dataset } from "@/app/lib/types/dataset";
 
 export const DATASETS_STORAGE_KEY = "kaapi_datasets";
 

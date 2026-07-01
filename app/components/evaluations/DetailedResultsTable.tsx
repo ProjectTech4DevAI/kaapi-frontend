@@ -16,6 +16,7 @@ import {
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
 import { GroupedResultsTable } from "@/app/components/evaluations";
+import { MarkdownContent } from "@/app/components/chat";
 
 interface DetailedResultsTableProps {
   job: EvalJob;
@@ -175,7 +176,10 @@ export default function DetailedResultsTable({
 
                   <td className="px-4 py-3 align-top bg-bg-primary">
                     <div className="text-sm overflow-auto text-text-primary leading-normal max-h-[150px] wrap-break-word">
-                      {answer}
+                      <MarkdownContent
+                        text={answer}
+                        className={"text-sm leading-relaxed"}
+                      />
                     </div>
                   </td>
 

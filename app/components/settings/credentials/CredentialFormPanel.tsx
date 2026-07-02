@@ -2,7 +2,7 @@
 
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
-import { Button, Field, Loader } from "@/app/components/ui";
+import { Button, Checkbox, Field, Loader } from "@/app/components/ui";
 interface CredentialFormPanelProps {
   provider: ProviderDef;
   existingCredential: Credential | null;
@@ -55,15 +55,13 @@ export default function CredentialFormPanel({
         </p>
 
         <div className="space-y-4">
-          <label className="flex items-center gap-2.5 cursor-pointer select-none w-fit">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => onActiveChange(e.target.checked)}
-              className="w-4 h-4 rounded accent-status-success"
-            />
-            <span className="text-sm text-text-primary">Active</span>
-          </label>
+          <Checkbox
+            checked={isActive}
+            onChange={onActiveChange}
+            accent="success"
+            label="Active"
+            className="select-none"
+          />
 
           {provider.fields.map((field) => (
             <Field

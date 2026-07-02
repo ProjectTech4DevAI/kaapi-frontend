@@ -71,11 +71,22 @@ export interface UserProjectDeleteResponse {
   metadata?: Record<string, unknown>;
 }
 
+export type ActiveStatus = "active" | "inactive";
+
 export interface OrganizationListProps {
   organizations: Organization[];
+  isLoading: boolean;
   isLoadingMore: boolean;
   onNewOrg: () => void;
   onSelectOrg: (org: Organization) => void;
+  onDeleteOrg?: (org: Organization) => void;
+  onEditOrg?: (org: Organization) => void;
+  onActivateOrg?: (org: Organization) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  activeStatus: ActiveStatus;
+  onActiveStatusChange: (status: ActiveStatus) => void;
+  activatingOrgId?: number | null;
 }
 
 export interface ProjectListProps {
@@ -85,6 +96,13 @@ export interface ProjectListProps {
   onBack: () => void;
   onSelectProject: (project: Project) => void;
   onProjectAdded: () => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  activeStatus: ActiveStatus;
+  onActiveStatusChange: (status: ActiveStatus) => void;
+  onDeleteProject?: (project: Project) => void;
+  onActivateProject?: (project: Project) => void;
+  activatingProjectId?: number | null;
 }
 
 export interface UserListProps {
@@ -108,6 +126,22 @@ export interface EditProjectModalProps {
   project: Project;
   apiKey: string;
   onProjectUpdated: () => void;
+}
+
+export interface EditOrganizationModalProps {
+  open: boolean;
+  onClose: () => void;
+  organization: Organization;
+  apiKey: string;
+  onOrganizationUpdated: () => void;
+}
+
+export interface OrganizationResponse {
+  success: boolean;
+  data?: Organization;
+  error?: string;
+  errors?: { field: string; message: string }[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface AddUserModalProps {

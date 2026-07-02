@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { ConfigEditorPaneProps, Tool } from "@/app/lib/types/promptEditor";
-import { CompletionConfig, CompletionParams } from "@/app/lib/types/configs";
+import {
+  CompletionConfig,
+  CompletionParams,
+  ProviderType,
+} from "@/app/lib/types/configs";
 import { ConfigType, getModelsForType } from "@/app/lib/models";
 import { PROVIDER_TYPES } from "@/app/lib/constants";
 import {
@@ -132,7 +136,7 @@ export default function ConfigEditorPane({
       ...configBlob,
       completion: {
         ...configBlob.completion,
-        provider: nextProvider,
+        provider: nextProvider as ProviderType,
         type: nextType,
         params: { ...carryover, model: nextModel, ...nextSchemaParams },
       },

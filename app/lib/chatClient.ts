@@ -10,6 +10,7 @@ import { apiFetch } from "@/app/lib/apiClient";
 import {
   CompletionParams,
   ConfigBlob,
+  ProviderType,
   SavedConfig,
   Tool,
 } from "@/app/lib/types/configs";
@@ -243,7 +244,7 @@ export function configToBlob(config: SavedConfig): ConfigBlob {
 
   const blob: ConfigBlob = {
     completion: {
-      provider: config.provider,
+      provider: config.provider as ProviderType,
       type: config.type ?? "text",
       params,
     },

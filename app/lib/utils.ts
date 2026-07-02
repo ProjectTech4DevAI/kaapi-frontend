@@ -1,6 +1,6 @@
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { formatDistanceToNow } from "date-fns";
-import { clearConfigCache } from "@/app/lib/store/configStore";
+import { clearConfigCache } from "@/app/lib/store/config";
 import {
   ConfigPublic,
   ConfigVersionPublic,
@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
 import {
+  SUPPORTED_PARAMS,
   getModelSchema,
   getParamValueLabel,
   reconcileParamsForModel,
@@ -257,6 +258,29 @@ export const formatCostUSD = (cost: number): string => {
   return `$${cost.toFixed(2)}`;
 };
 
+export function parseCsvRow(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (line[i] === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += line[i];
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
 const RESERVED_PARAM_KEYS = new Set([
   "model",
   "instructions",
@@ -276,6 +300,7 @@ export const pickModelParams = (
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(params)) {
     if (RESERVED_PARAM_KEYS.has(key)) continue;
+    if (!SUPPORTED_PARAMS.has(key)) continue;
     if (value === undefined || value === null) continue;
     out[key] = value;
   }

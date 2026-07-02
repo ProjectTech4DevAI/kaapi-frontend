@@ -24,7 +24,7 @@ import {
   configState,
   pendingVersionLoads,
   pendingSingleVersionLoads,
-} from "@/app/lib/store/configStore";
+} from "@/app/lib/store/config";
 import { flattenConfigVersion } from "@/app/lib/utils";
 import {
   SearchIcon,

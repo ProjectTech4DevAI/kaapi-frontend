@@ -1,0 +1,64 @@
+name: Deploy Kaapi Dev to EC2
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: AWS_ENV
+
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy via SSM
+        id: ssm
+        env:
+          BUILD_DIRECTORY: ${{ secrets.DEV_BUILD_DIRECTORY }}
+          APP_NAME: ${{ secrets.DEV_PM2_APP_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          INSTANCE_ID: ${{ secrets.EC2_STAGING_INSTANCE_ID }}
+          ROOT_USER: ${{ secrets.USER }}
+        run: |
+          REMOTE_CMD="export HOME=/home/$ROOT_USER && export NVM_DIR="/home/$ROOT_USER/.nvm" && [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh" && git config --global --add safe.directory ${BUILD_DIRECTORY} && set -e && cd ${BUILD_DIRECTORY} && git pull origin dev && npm ci && npm run build && sudo -iu ${ROOT_USER} pm2 restart ${APP_NAME}"
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands="[\"$REMOTE_CMD\"]" \
+            --region "$AWS_REGION" \
+            --query 'Command.CommandId' \
+            --output text)
+          echo "cmd_id=$CMD_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for SSM command to finish
+        env:
+          INSTANCE_ID: ${{ secrets.EC2_STAGING_INSTANCE_ID }}
+          CMD_ID: ${{ steps.ssm.outputs.cmd_id }}
+        run: |
+          WAIT_EXIT=0
+          aws ssm wait command-executed \
+            --command-id "$CMD_ID" \
+            --instance-id "$INSTANCE_ID" || WAIT_EXIT=$?
+
+          aws ssm get-command-invocation \
+            --command-id "$CMD_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query '{Status:Status,Stdout:StandardOutputContent,Stderr:StandardErrorContent}' \
+            --output json
+
+          exit $WAIT_EXIT

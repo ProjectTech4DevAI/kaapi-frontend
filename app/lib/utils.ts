@@ -69,18 +69,14 @@ export const invalidateConfigCache = (): void => {
   clearConfigCache();
 };
 
-export const getApiKey = (): string | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEYS.API_KEYS);
-    if (stored) {
-      const keys = JSON.parse(stored);
-      return keys.length > 0 ? keys[0].key : null;
-    }
-  } catch (e) {
-    console.error("Failed to get API key:", e);
-  }
-  return null;
+export const readClientCookie = (name: string): string | undefined => {
+  if (typeof document === "undefined") return undefined;
+  const prefix = `${name}=`;
+  const entry = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix));
+  return entry ? decodeURIComponent(entry.slice(prefix.length)) : undefined;
 };
 
 /**

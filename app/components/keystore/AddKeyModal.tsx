@@ -1,7 +1,6 @@
 "use client";
 
 import { Button, Field, Modal, Select } from "@/app/components/ui";
-import { InfoIcon } from "@/app/components/icons";
 
 const PROVIDERS = [{ value: "Kaapi", label: "Kaapi" }];
 
@@ -72,15 +71,6 @@ export default function AddKeyModal({
             onChange={onValueChange}
             placeholder="Paste your API key here"
           />
-        </div>
-
-        <div className="mt-5 rounded-md p-3 bg-accent-primary/5 border border-accent-primary/20">
-          <div className="flex gap-2">
-            <InfoIcon className="w-4 h-4 shrink-0 mt-0.5 text-accent-primary" />
-            <p className="text-xs text-text-secondary">
-              API keys are stored in your browser&apos;s local storage.
-            </p>
-          </div>
         </div>
       </div>
 

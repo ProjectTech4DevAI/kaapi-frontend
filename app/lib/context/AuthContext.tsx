@@ -17,11 +17,12 @@ import {
 import { apiFetch } from "@/app/lib/apiClient";
 import {
   AUTH_EXPIRED_EVENT,
+  COOKIE_KEYS,
   FEATURES_UPDATED_EVENT,
   STORAGE_KEYS,
 } from "@/app/lib/constants";
 import { useChatStore } from "@/app/lib/store/chat";
-import { clearAllStorage } from "@/app/lib/utils";
+import { clearAllStorage, readClientCookie } from "@/app/lib/utils";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,11 +33,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
 
-  // Initialize from localStorage after hydration
   useEffect(() => {
     try {
-      const storedKeys = localStorage.getItem(STORAGE_KEYS.API_KEYS);
-      if (storedKeys) setApiKeys(JSON.parse(storedKeys));
+      const rawMeta = readClientCookie(COOKIE_KEYS.API_KEY_META);
+      if (rawMeta) setApiKeys([JSON.parse(rawMeta) as APIKey]);
 
       const storedSession = localStorage.getItem(STORAGE_KEYS.SESSION);
       if (storedSession) {
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Always fetch the latest user profile on hydration.
   useEffect(() => {
     if (!isHydrated) return;
-    const hasApiKey = !!apiKeys[0]?.key;
+    const hasApiKey = apiKeys.length > 0;
     const hasSession = !!session;
     if (!hasApiKey && !hasSession) return;
 
@@ -93,25 +93,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [apiKeys, session, isHydrated]);
 
-  const persist = useCallback((keys: APIKey[]) => {
-    setApiKeys(keys);
-    if (keys.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.API_KEYS, JSON.stringify(keys));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.API_KEYS);
-    }
+  const addKey = useCallback(
+    async (input: { key: string; label: string; provider?: string }) => {
+      const res = await fetch("/api/apikeys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(input),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        data?: APIKey;
+        error?: string;
+      };
+      if (!res.ok || !body.data) {
+        throw new Error(body.error || "Failed to add API key");
+      }
+      setApiKeys([body.data]);
+      window.dispatchEvent(new Event("kaapi-auth-changed"));
+    },
+    [],
+  );
+
+  const removeKey = useCallback(async () => {
+    await fetch("/api/apikeys", { method: "DELETE", credentials: "include" });
+    setApiKeys([]);
     window.dispatchEvent(new Event("kaapi-auth-changed"));
   }, []);
-
-  const addKey = useCallback(
-    (key: APIKey) => persist([...apiKeys, key]),
-    [apiKeys, persist],
-  );
-  const removeKey = useCallback(
-    (id: string) => persist(apiKeys.filter((k) => k.id !== id)),
-    [apiKeys, persist],
-  );
-  const setKeys = useCallback((keys: APIKey[]) => persist(keys), [persist]);
 
   const loginWithToken = useCallback(
     (accessToken: string, user?: User, googleProfile?: GoogleProfile) => {
@@ -143,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useChatStore.getState().reset();
     setApiKeys([]);
     window.dispatchEvent(new Event("kaapi-auth-changed"));
-    window.location.replace("/evaluations");
+    window.location.replace("/chat");
   }, []);
 
   // logout when both access + refresh tokens are expired
@@ -206,7 +213,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasFeature,
         addKey,
         removeKey,
-        setKeys,
         loginWithToken,
         logout,
       }}

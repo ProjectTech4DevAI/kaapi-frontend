@@ -88,7 +88,7 @@ export default function KeysCard({
 
 function InlineNotice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md p-3 bg-status-warning-bg border border-status-warning-border">
+    <div className="rounded-full p-3 bg-status-warning-bg border border-status-warning-border">
       <div className="flex gap-2">
         <InfoIcon className="w-4 h-4 shrink-0 mt-0.5 text-status-warning-text" />
         <p className="text-xs text-status-warning-text">{children}</p>

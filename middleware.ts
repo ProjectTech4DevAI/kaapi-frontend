@@ -46,10 +46,9 @@ export function middleware(request: NextRequest) {
   );
   const isAuthenticated = role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
-  const hasApiKey = !!request.cookies.get(COOKIE_KEYS.API_KEY)?.value;
 
   if (GUEST_ONLY_ROUTES.has(pathname)) {
-    if (hasApiKey) {
+    if (isAuthenticated) {
       return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
     }
     return NextResponse.next();

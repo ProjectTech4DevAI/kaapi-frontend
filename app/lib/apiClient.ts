@@ -63,17 +63,43 @@ export async function apiClient<
   } as ApiClientResponse<TData, TResponseType>;
 }
 
-/** Parse an error body into a readable message string. */
+function stringifyValidationDetail(value: unknown): string {
+  if (!Array.isArray(value)) {
+    return typeof value === "string" ? value : "";
+  }
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") {
+        const rec = item as Record<string, unknown>;
+        const field = Array.isArray(rec.loc)
+          ? rec.loc.filter((p) => p !== "body").join(".")
+          : (rec.field as string) || "";
+        const msg = (rec.msg as string) || (rec.message as string) || "";
+        return field ? `${field}: ${msg}` : msg;
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("; ");
+}
+
 function extractErrorMessage(
   body: Record<string, unknown>,
   fallback: string,
 ): string {
+  const detail =
+    stringifyValidationDetail(body.errors) ||
+    (typeof body.detail === "string"
+      ? ""
+      : stringifyValidationDetail(body.detail));
   const msg =
     (body.error as string) ||
     (body.message as string) ||
-    (body.detail as string) ||
+    (typeof body.detail === "string" ? (body.detail as string) : "") ||
     "";
-  return msg || fallback;
+  const combined = [msg, detail].filter(Boolean).join(" — ");
+  return combined || fallback;
 }
 
 /** Dispatch the auth-expired event (client-side only). */

@@ -1,5 +1,11 @@
 import type { AssessmentTag } from "@/app/lib/types/assessment";
 
+export type ProviderType =
+  | "openai"
+  | "google"
+  | "google-aistudio"
+  | "anthropic";
+
 export interface SavedConfig {
   id: string;
   config_id: string;
@@ -66,7 +72,7 @@ export interface CompletionParams {
 }
 
 export interface CompletionConfig {
-  provider: "openai" | "google" | "google-aistudio" | "anthropic";
+  provider: ProviderType;
   type?: "text" | "stt" | "tts";
   params: CompletionParams;
 }

@@ -3,6 +3,7 @@ import type {
   CompletionConfig,
   ConfigPublic,
   ConfigVersionItems,
+  ProviderType,
 } from "@/app/lib/types/configs";
 import type { LabeledValue, ValueSetter } from "./core";
 
@@ -29,7 +30,7 @@ export interface ConfigParamDefinition {
 }
 
 export interface AssessmentModelConfig {
-  provider: "openai" | "google" | "google-aistudio" | "anthropic";
+  provider: ProviderType;
   model_name: string;
   config: Record<string, ConfigParamDefinition>;
 }

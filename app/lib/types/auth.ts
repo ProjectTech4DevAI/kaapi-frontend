@@ -1,4 +1,5 @@
 import { APIKey } from "./credentials";
+import type { FeatureFlagKey } from "@/app/lib/constants";
 
 export interface User {
   id: number;
@@ -7,6 +8,11 @@ export interface User {
   is_active: boolean;
   is_superuser: boolean;
   features?: string[];
+}
+
+export interface UserLike {
+  is_superuser?: boolean;
+  features?: FeatureFlagKey[];
 }
 
 export interface GoogleProfile {
@@ -71,9 +77,12 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   features: string[];
   hasFeature: (flag: string) => boolean;
-  addKey: (key: APIKey) => void;
-  removeKey: (id: string) => void;
-  setKeys: (keys: APIKey[]) => void;
+  addKey: (input: {
+    key: string;
+    label: string;
+    provider?: string;
+  }) => Promise<void>;
+  removeKey: (id?: string) => Promise<void>;
   loginWithToken: (
     accessToken: string,
     user?: User,

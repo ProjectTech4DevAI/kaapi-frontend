@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { apiClient } from "@/app/lib/apiClient";
+import { apiClient, getRequestApiKey } from "@/app/lib/apiClient";
 
 export async function GET(request: Request) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const apiKey = request.headers.get("X-API-KEY");
+    const apiKey = getRequestApiKey(request);
     if (!apiKey) {
       return NextResponse.json(
         {

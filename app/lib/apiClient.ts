@@ -1,7 +1,25 @@
 import { NextRequest } from "next/server";
-import { AUTH_EXPIRED_EVENT } from "@/app/lib/constants";
+import { AUTH_EXPIRED_EVENT, COOKIE_KEYS } from "@/app/lib/constants";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+
+function readCookieHeader(cookieHeader: string, name: string): string {
+  for (const part of cookieHeader.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+    if (part.slice(0, eq).trim() === name) {
+      return decodeURIComponent(part.slice(eq + 1).trim());
+    }
+  }
+  return "";
+}
+
+export function getRequestApiKey(request: NextRequest | Request): string {
+  const header = request.headers.get("X-API-KEY");
+  if (header) return header;
+  const cookieHeader = request.headers.get("Cookie") || "";
+  return readCookieHeader(cookieHeader, COOKIE_KEYS.API_KEY);
+}
 export type UploadPhase = "uploading" | "processing" | "done";
 type ApiClientOptions<TResponseType extends "json" | "raw" = "json"> =
   RequestInit & { responseType?: TResponseType };
@@ -30,7 +48,7 @@ export async function apiClient<
   options: ApiClientOptions<TResponseType> = {} as ApiClientOptions<TResponseType>,
 ): Promise<ApiClientResponse<TData, TResponseType>> {
   const { responseType = "json", ...requestOptions } = options;
-  const apiKey = request.headers.get("X-API-KEY") || "";
+  const apiKey = getRequestApiKey(request);
   const cookie = request.headers.get("Cookie") || "";
   const headers = new Headers(requestOptions.headers);
   if (
@@ -244,7 +262,7 @@ export async function apiFetch<T>(
     if (!(fetchOptions.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
-    headers.set("X-API-KEY", apiKey);
+    if (apiKey) headers.set("X-API-KEY", apiKey);
     return headers;
   };
 

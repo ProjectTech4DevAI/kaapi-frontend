@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { guardrailsFetch } from "@/app/lib/guardrailsClient";
 import { ConfigEditorPaneProps, Tool } from "@/app/lib/types/promptEditor";
-import { CompletionConfig, CompletionParams } from "@/app/lib/types/configs";
-import { ConfigType, MODEL_OPTIONS, getModelsForType } from "@/app/lib/models";
+import {
+  CompletionConfig,
+  CompletionParams,
+  ProviderType,
+} from "@/app/lib/types/configs";
+import { ConfigType, getModelsForType } from "@/app/lib/models";
 import { PROVIDER_TYPES } from "@/app/lib/constants";
 import {
   getAllProviders,
+  getCompletionTypesForProvider,
   getModelSchema,
   getParamLabel,
   getProviderLabel,
@@ -87,6 +92,10 @@ export default function ConfigEditorPane({
     value: p,
     label: getProviderLabel(p),
   }));
+  const availableTypes = getCompletionTypesForProvider(provider);
+  const typeOptions = PROVIDER_TYPES.filter((t) =>
+    availableTypes.includes(t.value as ConfigType),
+  );
 
   const selectedConfig = savedConfigs.find((c) => c.id === selectedConfigId);
   const isBoundToSavedConfig = !!boundConfigId;
@@ -110,35 +119,14 @@ export default function ConfigEditorPane({
     });
   };
 
-  const handleProviderChange = (newProvider: string) => {
-    const candidates = getModelsForType(newProvider, currentType);
-    const fallback = MODEL_OPTIONS[newProvider]?.[0]?.value ?? "";
-    const nextModel = candidates[0]?.value ?? fallback;
-    handleConfigChange({
-      completion: { provider: newProvider as CompletionConfig["provider"] },
-      params: { model: nextModel },
-    });
-  };
-
-  const handleTypeChange = (newType: ConfigType) => {
-    const provider = configBlob.completion.provider;
-    const candidates = getModelsForType(provider, newType);
-    const stillValid = candidates.some((m) => m.value === params.model);
-    const nextModel = stillValid
-      ? params.model
-      : (candidates[0]?.value ??
-        MODEL_OPTIONS[provider]?.[0]?.value ??
-        params.model);
-    handleConfigChange({
-      completion: { type: newType },
-      params: { model: nextModel },
-    });
-  };
-
-  const handleModelChange = (model: string) => {
-    const nextSchema = getModelSchema(provider, model);
+  const applyProviderTypeModel = (
+    nextProvider: string,
+    nextType: ConfigType,
+    nextModel: string,
+  ) => {
+    const nextSchema = getModelSchema(nextProvider, nextModel);
     const nextSchemaParams = nextSchema
-      ? reconcileParamsForModel(provider, model, params)
+      ? reconcileParamsForModel(nextProvider, nextModel, params)
       : {};
     const oldSchemaKeys = modelSchema ? Object.keys(modelSchema.config) : [];
     const carryover = { ...params };
@@ -148,9 +136,31 @@ export default function ConfigEditorPane({
       ...configBlob,
       completion: {
         ...configBlob.completion,
-        params: { ...carryover, model, ...nextSchemaParams },
+        provider: nextProvider as ProviderType,
+        type: nextType,
+        params: { ...carryover, model: nextModel, ...nextSchemaParams },
       },
     });
+  };
+
+  const handleProviderChange = (newProvider: string) => {
+    const types = getCompletionTypesForProvider(newProvider);
+    const nextType = types.includes(currentType)
+      ? currentType
+      : (types[0] ?? currentType);
+    const nextModel = getModelsForType(newProvider, nextType)[0]?.value ?? "";
+    applyProviderTypeModel(newProvider, nextType, nextModel);
+  };
+
+  const handleTypeChange = (newType: ConfigType) => {
+    const candidates = getModelsForType(provider, newType);
+    const stillValid = candidates.some((m) => m.value === params.model);
+    const nextModel = stillValid ? params.model : (candidates[0]?.value ?? "");
+    applyProviderTypeModel(provider, newType, nextModel);
+  };
+
+  const handleModelChange = (model: string) => {
+    applyProviderTypeModel(provider, currentType, model);
   };
 
   const saveDisabled = !configName.trim() || isSaving;
@@ -212,14 +222,14 @@ export default function ConfigEditorPane({
               }
               className={inputClass}
             >
-              {PROVIDER_TYPES.map((option) => (
+              {typeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
             <p className="text-xs mt-1.5 text-text-secondary">
-              {PROVIDER_TYPES.find(
+              {typeOptions.find(
                 (t) => t.value === (configBlob.completion.type || "text"),
               )?.description ?? ""}
             </p>

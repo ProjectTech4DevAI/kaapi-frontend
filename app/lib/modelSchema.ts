@@ -19,9 +19,19 @@ export type {
   RawModelEntry,
 } from "@/app/lib/types/models";
 
-export const SUPPORTED_PROVIDERS = ["openai", "google"] as const;
+export const SUPPORTED_PROVIDERS = [
+  "openai",
+  "google",
+  "google-aistudio",
+] as const;
 
-export const SUPPORTED_PARAMS = new Set(["effort", "temperature"]);
+export const SUPPORTED_PARAMS = new Set([
+  "effort",
+  "temperature",
+  "summary",
+  "voice",
+  "thinking_level",
+]);
 
 export function flattenGroupedModels(
   grouped: Record<string, RawModelEntry[]>,
@@ -50,6 +60,7 @@ export function flattenGroupedModels(
 export const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI",
   google: "Google",
+  "google-aistudio": "Google AI Studio",
 };
 
 export function getProviderLabel(provider: string): string {
@@ -59,6 +70,9 @@ export function getProviderLabel(provider: string): string {
 export const PARAM_LABELS: Record<string, string> = {
   effort: "Effort",
   temperature: "Temperature",
+  summary: "Summary",
+  voice: "Voice",
+  thinking_level: "Thinking Level",
 };
 
 export const PARAM_VALUE_LABELS: Record<string, Record<string, string>> = {
@@ -103,6 +117,18 @@ export function getModelsForProviderAndType(
 ): ModelSchema[] {
   return schemas().filter(
     (m) => m.provider === provider && m.completion_type.includes(type),
+  );
+}
+
+export function getCompletionTypesForProvider(
+  provider: string,
+): ModelCompletionType[] {
+  return Array.from(
+    new Set(
+      schemas()
+        .filter((m) => m.provider === provider)
+        .flatMap((m) => m.completion_type),
+    ),
   );
 }
 

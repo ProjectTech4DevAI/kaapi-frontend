@@ -94,14 +94,17 @@ export function useConfigPersistence({
         : {};
 
       const acceptsTools = !schema || "max_output_tokens" in schema.config;
+      const completionType = currentConfigBlob.completion.type || "text";
 
       const configBlob: ConfigBlob = {
         completion: {
           provider: completionProvider,
-          type: currentConfigBlob.completion.type || "text",
+          type: completionType,
           params: {
             model,
-            instructions: currentContent,
+            // TTS params forbid `instructions` on the backend; only send it
+            // for types that accept it (text, stt).
+            ...(completionType !== "tts" && { instructions: currentContent }),
             ...modelParams,
             ...(allKnowledgeBaseIds.length > 0 && {
               knowledge_base_ids: allKnowledgeBaseIds,
@@ -177,7 +180,11 @@ export function useConfigPersistence({
       return true;
     } catch (e) {
       console.error("Failed to save config:", e);
-      toast.error("Failed to save configuration. Please try again.");
+      toast.error(
+        e instanceof Error && e.message
+          ? `Failed to save configuration: ${e.message}`
+          : "Failed to save configuration. Please try again.",
+      );
       return false;
     } finally {
       setIsSaving(false);

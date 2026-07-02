@@ -63,7 +63,6 @@ export async function apiClient<
   } as ApiClientResponse<TData, TResponseType>;
 }
 
-/** Parse an error body into a readable message string. */
 function stringifyValidationDetail(value: unknown): string {
   if (!Array.isArray(value)) {
     return typeof value === "string" ? value : "";
@@ -91,7 +90,9 @@ function extractErrorMessage(
 ): string {
   const detail =
     stringifyValidationDetail(body.errors) ||
-    stringifyValidationDetail(body.detail);
+    (typeof body.detail === "string"
+      ? ""
+      : stringifyValidationDetail(body.detail));
   const msg =
     (body.error as string) ||
     (body.message as string) ||

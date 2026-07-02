@@ -197,3 +197,8 @@ export const TOAST_CONFIG: Record<
     progressBg: "#3498db",
   },
 };
+
+export const STATUS_TABS = [
+  { id: "active", label: "Active" },
+  { id: "inactive", label: "Inactive" },
+];

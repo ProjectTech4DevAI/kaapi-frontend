@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader, Field, Button } from "@/app/components/ui";
+import { Button, Checkbox, Field, Loader } from "@/app/components/ui";
 import { Credential, ProviderDef } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
 
@@ -44,15 +44,13 @@ export default function CredentialForm({
         <Loader size="sm" message="Loading credentials…" />
       ) : (
         <div className="space-y-5">
-          <label className="flex items-center gap-2.5 cursor-pointer select-none w-fit">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(e) => onActiveChange(e.target.checked)}
-              className="w-4 h-4 rounded accent-status-success"
-            />
-            <span className="text-sm text-text-primary">Active?</span>
-          </label>
+          <Checkbox
+            checked={isActive}
+            onChange={onActiveChange}
+            accent="success"
+            label="Active?"
+            className="select-none"
+          />
 
           {provider.fields.map((field) => (
             <Field

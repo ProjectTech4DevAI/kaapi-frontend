@@ -7,10 +7,10 @@ export async function GET(
 ) {
   try {
     const { orgId } = await params;
-    const { status, data } = await apiClient(
-      request,
-      `/api/v1/projects/organization/${orgId}`,
-    );
+    const { searchParams } = new URL(request.url);
+    const qs = searchParams.toString();
+    const endpoint = `/api/v1/projects/organization/${orgId}${qs ? `?${qs}` : ""}`;
+    const { status, data } = await apiClient(request, endpoint);
     return NextResponse.json(data, { status });
   } catch {
     return NextResponse.json(

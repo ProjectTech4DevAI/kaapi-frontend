@@ -1,20 +1,31 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SettingsSidebar from "@/app/components/settings/SettingsSidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useAuth } from "@/app/lib/context/AuthContext";
-import { usePaginatedList, useInfiniteScroll } from "@/app/hooks";
 import {
+  useDebouncedValue,
+  useInfiniteScroll,
+  useOnboardingActivation,
+  usePaginatedList,
+} from "@/app/hooks";
+import {
+  DeleteOrganizationModal,
+  DeleteProjectModal,
+  EditOrganizationModal,
+  OnboardingCredentials,
   OnboardingForm,
   OnboardingSuccess,
   OrganizationList,
+  OrganizationListSkeleton,
   ProjectList,
   StepIndicator,
   UserList,
-  OnboardingCredentials,
 } from "@/app/components/settings/onboarding";
+import { useToast } from "@/app/hooks/useToast";
 import {
+  ActiveStatus,
   Organization,
   Project,
   ProjectListResponse,
@@ -25,40 +36,14 @@ import { ArrowLeftIcon } from "@/app/components/icons";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
 import { TabNavigation } from "@/app/components/ui";
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 const PROJECT_TABS = [
   { id: "users", label: "Users" },
   { id: "credentials", label: "Credentials" },
 ];
 
 type View = "loading" | "list" | "projects" | "users" | "form" | "success";
-
-function OrganizationListSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <div className="h-5 w-36 bg-neutral-200 rounded mb-2" />
-          <div className="h-3 w-24 bg-neutral-100 rounded" />
-        </div>
-        <div className="h-9 w-40 bg-neutral-200 rounded-full" />
-      </div>
-      <div className="space-y-2.5">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between gap-3 p-4 rounded-lg bg-bg-primary shadow-[0_2px_6px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="h-4 w-40 max-w-full bg-neutral-200 rounded mb-2" />
-              <div className="h-3 w-28 bg-neutral-100 rounded" />
-            </div>
-            <div className="h-4 w-4 shrink-0 bg-neutral-100 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function OnboardingPage() {
   const { activeKey } = useAuth();
@@ -71,6 +56,34 @@ export default function OnboardingPage() {
     null,
   );
   const [activeProjectTab, setActiveProjectTab] = useState("users");
+  const [orgToDelete, setOrgToDelete] = useState<Organization | null>(null);
+  const [isDeletingOrg, setIsDeletingOrg] = useState(false);
+  const [orgToEdit, setOrgToEdit] = useState<Organization | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
+  const [orgSearchInput, setOrgSearchInput] = useState("");
+  const [projectSearchInput, setProjectSearchInput] = useState("");
+  const [orgActiveStatus, setOrgActiveStatus] =
+    useState<ActiveStatus>("active");
+  const [projectActiveStatus, setProjectActiveStatus] =
+    useState<ActiveStatus>("active");
+  const toast = useToast();
+  const debouncedOrgSearch = useDebouncedValue(
+    orgSearchInput.trim(),
+    SEARCH_DEBOUNCE_MS,
+  );
+  const debouncedProjectSearch = useDebouncedValue(
+    projectSearchInput.trim(),
+    SEARCH_DEBOUNCE_MS,
+  );
+
+  const orgExtraParams = useMemo(() => {
+    const params: Record<string, string> = {
+      is_active: orgActiveStatus === "active" ? "true" : "false",
+    };
+    if (debouncedOrgSearch) params.search = debouncedOrgSearch;
+    return params;
+  }, [debouncedOrgSearch, orgActiveStatus]);
 
   const {
     items: organizations,
@@ -82,6 +95,7 @@ export default function OnboardingPage() {
   } = usePaginatedList<Organization>({
     endpoint: "/api/organization",
     limit: DEFAULT_PAGE_LIMIT,
+    extraParams: orgExtraParams,
   });
 
   const scrollRef = useInfiniteScroll({
@@ -90,34 +104,38 @@ export default function OnboardingPage() {
     isLoading: isLoadingOrgs || isLoadingMore,
   });
 
+  const initialOrgViewDecidedRef = useRef(false);
   useEffect(() => {
-    if (isLoadingOrgs) {
-      setView("loading");
-      return;
-    }
-    if (view === "loading") {
-      setView(organizations.length > 0 ? "list" : "form");
-    }
+    if (initialOrgViewDecidedRef.current) return;
+    if (isLoadingOrgs) return;
+    initialOrgViewDecidedRef.current = true;
+    setView(organizations.length > 0 ? "list" : "form");
   }, [isLoadingOrgs, organizations.length]);
 
-  const fetchProjects = useCallback(
-    async (org: Organization) => {
-      setSelectedOrg(org);
-      setView("projects");
-      setIsLoadingProjects(true);
-      setProjects([]);
+  const buildProjectsQuery = (search: string, status: ActiveStatus) => {
+    const params = new URLSearchParams({
+      is_active: status === "active" ? "true" : "false",
+    });
+    if (search) params.set("search", search);
+    return params.toString();
+  };
 
+  const loadProjects = useCallback(
+    async (orgId: number, search: string, status: ActiveStatus) => {
+      setIsLoadingProjects(true);
       try {
+        const qs = buildProjectsQuery(search, status);
         const result = await apiFetch<ProjectListResponse>(
-          `/api/organization/${org.id}/projects`,
+          `/api/organization/${orgId}/projects?${qs}`,
           activeKey?.key ?? "",
         );
-
         if (result.success && result.data) {
           setProjects(result.data);
+        } else {
+          setProjects([]);
         }
       } catch {
-        // keep empty list
+        setProjects([]);
       } finally {
         setIsLoadingProjects(false);
       }
@@ -125,11 +143,42 @@ export default function OnboardingPage() {
     [activeKey],
   );
 
+  const fetchProjects = useCallback(
+    async (org: Organization) => {
+      setSelectedOrg(org);
+      setView("projects");
+      setProjectSearchInput("");
+      setProjectActiveStatus("active");
+      setProjects([]);
+      await loadProjects(org.id, "", "active");
+    },
+    [loadProjects],
+  );
+
+  useEffect(() => {
+    if (view !== "projects" || !selectedOrg) return;
+    void loadProjects(
+      selectedOrg.id,
+      debouncedProjectSearch,
+      projectActiveStatus,
+    );
+  }, [
+    debouncedProjectSearch,
+    projectActiveStatus,
+    view,
+    selectedOrg,
+    loadProjects,
+  ]);
+
   const refreshProjects = useCallback(async () => {
     if (!selectedOrg) return;
     try {
+      const qs = buildProjectsQuery(
+        debouncedProjectSearch,
+        projectActiveStatus,
+      );
       const result = await apiFetch<ProjectListResponse>(
-        `/api/organization/${selectedOrg.id}/projects`,
+        `/api/organization/${selectedOrg.id}/projects?${qs}`,
         activeKey?.key ?? "",
       );
       if (result.success && result.data) {
@@ -138,7 +187,7 @@ export default function OnboardingPage() {
     } catch {
       // keep current list
     }
-  }, [selectedOrg, activeKey]);
+  }, [selectedOrg, activeKey, debouncedProjectSearch, projectActiveStatus]);
 
   const handleSuccess = (data: OnboardResponseData) => {
     setOnboardData(data);
@@ -165,6 +214,7 @@ export default function OnboardingPage() {
     setSelectedOrg(null);
     setSelectedProject(null);
     setProjects([]);
+    setProjectSearchInput("");
     setView("list");
   };
 
@@ -172,6 +222,71 @@ export default function OnboardingPage() {
     setSelectedProject(null);
     setView("projects");
   };
+
+  const handleConfirmDeleteOrg = async (hardDelete: boolean) => {
+    if (!orgToDelete) return;
+    setIsDeletingOrg(true);
+    try {
+      await apiFetch(
+        `/api/organization/${orgToDelete.id}`,
+        activeKey?.key ?? "",
+        {
+          method: "DELETE",
+          body: JSON.stringify({ hard_delete: hardDelete }),
+        },
+      );
+      toast.success(
+        hardDelete
+          ? `"${orgToDelete.name}" permanently deleted`
+          : `"${orgToDelete.name}" deactivated`,
+      );
+      setOrgToDelete(null);
+      refetchOrganizations();
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Failed to delete organization",
+      );
+    } finally {
+      setIsDeletingOrg(false);
+    }
+  };
+
+  const handleConfirmDeleteProject = async (hardDelete: boolean) => {
+    if (!projectToDelete) return;
+    setIsDeletingProject(true);
+    try {
+      await apiFetch(
+        `/api/project/${projectToDelete.id}`,
+        activeKey?.key ?? "",
+        {
+          method: "DELETE",
+          body: JSON.stringify({ hard_delete: hardDelete }),
+        },
+      );
+      toast.success(
+        hardDelete
+          ? `"${projectToDelete.name}" permanently deleted`
+          : `"${projectToDelete.name}" deactivated`,
+      );
+      setProjectToDelete(null);
+      await refreshProjects();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete project");
+    } finally {
+      setIsDeletingProject(false);
+    }
+  };
+
+  const {
+    activatingOrgId,
+    activatingProjectId,
+    activateOrg: handleActivateOrg,
+    activateProject: handleActivateProject,
+  } = useOnboardingActivation({
+    apiKey: activeKey?.key ?? "",
+    onOrgActivated: refetchOrganizations,
+    onProjectActivated: refreshProjects,
+  });
 
   return (
     <div className="w-full h-screen flex flex-col bg-bg-primary">
@@ -191,9 +306,18 @@ export default function OnboardingPage() {
               {view === "list" && (
                 <OrganizationList
                   organizations={organizations}
+                  isLoading={isLoadingOrgs}
                   isLoadingMore={isLoadingMore}
                   onNewOrg={() => setView("form")}
                   onSelectOrg={fetchProjects}
+                  onDeleteOrg={setOrgToDelete}
+                  onEditOrg={setOrgToEdit}
+                  onActivateOrg={handleActivateOrg}
+                  activatingOrgId={activatingOrgId}
+                  search={orgSearchInput}
+                  onSearchChange={setOrgSearchInput}
+                  activeStatus={orgActiveStatus}
+                  onActiveStatusChange={setOrgActiveStatus}
                 />
               )}
 
@@ -205,6 +329,13 @@ export default function OnboardingPage() {
                   onBack={handleBackToOrgs}
                   onSelectProject={handleSelectProject}
                   onProjectAdded={refreshProjects}
+                  search={projectSearchInput}
+                  onSearchChange={setProjectSearchInput}
+                  activeStatus={projectActiveStatus}
+                  onActiveStatusChange={setProjectActiveStatus}
+                  onDeleteProject={setProjectToDelete}
+                  onActivateProject={handleActivateProject}
+                  activatingProjectId={activatingProjectId}
                 />
               )}
 
@@ -313,6 +444,38 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
+
+      {orgToDelete && (
+        <DeleteOrganizationModal
+          organization={orgToDelete}
+          isDeleting={isDeletingOrg}
+          onCancel={() => {
+            if (!isDeletingOrg) setOrgToDelete(null);
+          }}
+          onConfirm={handleConfirmDeleteOrg}
+        />
+      )}
+
+      {projectToDelete && (
+        <DeleteProjectModal
+          project={projectToDelete}
+          isDeleting={isDeletingProject}
+          onCancel={() => {
+            if (!isDeletingProject) setProjectToDelete(null);
+          }}
+          onConfirm={handleConfirmDeleteProject}
+        />
+      )}
+
+      {orgToEdit && (
+        <EditOrganizationModal
+          open
+          organization={orgToEdit}
+          apiKey={activeKey?.key ?? ""}
+          onClose={() => setOrgToEdit(null)}
+          onOrganizationUpdated={refetchOrganizations}
+        />
+      )}
     </div>
   );
 }

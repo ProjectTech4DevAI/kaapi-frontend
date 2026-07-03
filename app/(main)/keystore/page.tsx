@@ -22,13 +22,11 @@ export default function KaapiKeystore() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [newKeyValue, setNewKeyValue] = useState("");
-  const [newKeyProvider, setNewKeyProvider] = useState("Kaapi");
   const [isValidating, setIsValidating] = useState(false);
 
   const resetForm = () => {
     setNewKeyLabel("");
     setNewKeyValue("");
-    setNewKeyProvider("Kaapi");
   };
 
   const handleAddKey = async () => {
@@ -38,13 +36,8 @@ export default function KaapiKeystore() {
     }
 
     setIsValidating(true);
-    const newKey = {
-      key: newKeyValue.trim(),
-      label: newKeyLabel.trim(),
-      provider: newKeyProvider,
-    };
     try {
-      await addKey(newKey);
+      await addKey({ key: newKeyValue.trim(), label: newKeyLabel.trim() });
       resetForm();
       setIsModalOpen(false);
       toast.success("API key added successfully");
@@ -96,11 +89,9 @@ export default function KaapiKeystore() {
         open={isModalOpen}
         newKeyLabel={newKeyLabel}
         newKeyValue={newKeyValue}
-        newKeyProvider={newKeyProvider}
         isValidating={isValidating}
         onLabelChange={setNewKeyLabel}
         onValueChange={setNewKeyValue}
-        onProviderChange={setNewKeyProvider}
         onAddKey={handleAddKey}
         onClose={closeAddModal}
       />

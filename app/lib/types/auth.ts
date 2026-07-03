@@ -77,11 +77,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   features: string[];
   hasFeature: (flag: string) => boolean;
-  addKey: (input: {
-    key: string;
-    label: string;
-    provider?: string;
-  }) => Promise<void>;
+  addKey: (input: { key: string; label: string }) => Promise<void>;
   removeKey: (id?: string) => Promise<void>;
   loginWithToken: (
     accessToken: string,

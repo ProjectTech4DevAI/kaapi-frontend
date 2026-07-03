@@ -93,26 +93,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [apiKeys, session, isHydrated]);
 
-  const addKey = useCallback(
-    async (input: { key: string; label: string; provider?: string }) => {
-      const res = await fetch("/api/apikeys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(input),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        data?: APIKey;
-        error?: string;
-      };
-      if (!res.ok || !body.data) {
-        throw new Error(body.error || "Failed to add API key");
-      }
-      setApiKeys([body.data]);
-      window.dispatchEvent(new Event("kaapi-auth-changed"));
-    },
-    [],
-  );
+  const addKey = useCallback(async (input: { key: string; label: string }) => {
+    const res = await fetch("/api/apikeys", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      data?: APIKey;
+      error?: string;
+    };
+    if (!res.ok || !body.data) {
+      throw new Error(body.error || "Failed to add API key");
+    }
+    setApiKeys([body.data]);
+    window.dispatchEvent(new Event("kaapi-auth-changed"));
+  }, []);
 
   const removeKey = useCallback(async () => {
     await fetch("/api/apikeys", { method: "DELETE", credentials: "include" });

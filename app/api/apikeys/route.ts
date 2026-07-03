@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
 
   const key = body.key?.trim();
   const label = body.label?.trim();
-  const provider = body.provider?.trim() || "Kaapi";
 
   if (!key || !label) {
     return NextResponse.json(
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
   const meta: ApiKeyMeta = {
     id: crypto.randomUUID(),
     label,
-    provider,
     masked: maskKey(key),
     createdAt: new Date().toISOString(),
   };

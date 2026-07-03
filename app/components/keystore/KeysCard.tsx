@@ -3,6 +3,7 @@
 import { Button } from "@/app/components/ui";
 import { TrashIcon, KeyIcon, InfoIcon, PlusIcon } from "@/app/components/icons";
 import { APIKey } from "@/app/lib/types/credentials";
+import { APP_NAME } from "@/app/lib/constants";
 
 interface KeysCardProps {
   apiKeys: APIKey[];
@@ -43,8 +44,7 @@ export default function KeysCard({
         <div className="space-y-4">
           <InlineNotice>
             Only one API key can be stored at a time. Delete this key to add a
-            different one. For your security, the raw key is kept in an HttpOnly
-            cookie and cannot be viewed again after it is added.
+            different one.
           </InlineNotice>
 
           {apiKeys.map((apiKey) => (
@@ -53,7 +53,7 @@ export default function KeysCard({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
-                      {apiKey.provider}
+                      {APP_NAME}
                     </span>
                     <h3 className="text-sm font-semibold text-text-primary truncate">
                       {apiKey.label}

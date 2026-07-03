@@ -106,7 +106,6 @@ export const PROVIDERS: ProviderDef[] = [
 export interface APIKey {
   id: string;
   label: string;
-  provider: string;
   masked?: string;
   createdAt?: string;
   key?: string;
@@ -115,7 +114,6 @@ export interface APIKey {
 export interface ApiKeyMeta {
   id: string;
   label: string;
-  provider: string;
   masked: string;
   createdAt: string;
 }
@@ -123,5 +121,4 @@ export interface ApiKeyMeta {
 export interface AddApiKeyRequest {
   key?: string;
   label?: string;
-  provider?: string;
 }

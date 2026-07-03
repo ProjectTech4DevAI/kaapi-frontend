@@ -38,20 +38,30 @@ function parseFeatures(raw: string | undefined): Set<string> {
   return new Set();
 }
 
+function noStore(response: NextResponse): NextResponse {
+  response.headers.set("Cache-Control", "no-store, must-revalidate");
+  return response;
+}
+
+function redirectHome(request: NextRequest): NextResponse {
+  return noStore(NextResponse.redirect(new URL(HOME_ROUTE, request.url)));
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const role = request.cookies.get(COOKIE_KEYS.ROLE)?.value;
   const features = parseFeatures(
     request.cookies.get(COOKIE_KEYS.FEATURES)?.value,
   );
-  const isAuthenticated = role === "superuser" || role === "user";
+  const hasApiKey = !!request.cookies.get(COOKIE_KEYS.API_KEY)?.value;
+  const isAuthenticated = hasApiKey || role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
 
   if (GUEST_ONLY_ROUTES.has(pathname)) {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
+      return redirectHome(request);
     }
-    return NextResponse.next();
+    return noStore(NextResponse.next());
   }
 
   if (PUBLIC_ROUTES.has(pathname)) {
@@ -60,23 +70,23 @@ export function middleware(request: NextRequest) {
 
   if (PATHNAME_STARTS_WITH.some((prefix) => pathname.startsWith(prefix))) {
     if (!isAuthenticated || !isSuperuser) {
-      return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
+      return redirectHome(request);
     }
-    return NextResponse.next();
+    return noStore(NextResponse.next());
   }
 
   if (!isAuthenticated) {
-    return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
+    return redirectHome(request);
   }
 
   const gated = FEATURE_GATED_PREFIXES.find(
     ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
   if (gated && !features.has(gated.flag)) {
-    return NextResponse.redirect(new URL(HOME_ROUTE, request.url));
+    return redirectHome(request);
   }
 
-  return NextResponse.next();
+  return noStore(NextResponse.next());
 }
 
 export const config = {

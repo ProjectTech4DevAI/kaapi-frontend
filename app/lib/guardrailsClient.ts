@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getRequestApiKey } from "@/app/lib/apiClient";
 
 const GUARDRAILS_URL = process.env.GUARDRAILS_URL || "http://localhost:8001";
 
@@ -22,7 +23,7 @@ export async function guardrailsClient(
   if (token) {
     headers.set("Authorization", `Bearer ${token}`);
   } else {
-    const apiKey = request.headers.get("X-API-KEY") || "";
+    const apiKey = getRequestApiKey(request);
     const cookie = request.headers.get("Cookie") || "";
     if (apiKey) headers.set("X-API-KEY", apiKey);
     if (cookie) headers.set("Cookie", cookie);

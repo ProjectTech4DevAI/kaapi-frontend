@@ -13,8 +13,6 @@ import AddKeyModal from "@/app/components/keystore/AddKeyModal";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useToast } from "@/app/hooks/useToast";
-import { apiFetch } from "@/app/lib/apiClient";
-import { APIKey } from "@/app/lib/types/credentials";
 
 export default function KaapiKeystore() {
   const { sidebarCollapsed } = useApp();
@@ -24,15 +22,11 @@ export default function KaapiKeystore() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyLabel, setNewKeyLabel] = useState("");
   const [newKeyValue, setNewKeyValue] = useState("");
-  const [newKeyProvider, setNewKeyProvider] = useState("Kaapi");
-  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
-  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
 
   const resetForm = () => {
     setNewKeyLabel("");
     setNewKeyValue("");
-    setNewKeyProvider("Kaapi");
   };
 
   const handleAddKey = async () => {
@@ -41,61 +35,26 @@ export default function KaapiKeystore() {
       return;
     }
 
-    const trimmedKey = newKeyValue.trim();
     setIsValidating(true);
-
     try {
-      await apiFetch("/api/apikeys/verify", trimmedKey);
+      await addKey({ key: newKeyValue.trim(), label: newKeyLabel.trim() });
+      resetForm();
+      setIsModalOpen(false);
+      toast.success("API key added successfully");
     } catch (err) {
-      console.error("API key validation failed:", err);
-      toast.error("Invalid API key. Please check the key and try again.");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Invalid API key. Please check the key and try again.",
+      );
+    } finally {
       setIsValidating(false);
-      return;
     }
-
-    const newKey: APIKey = {
-      id: Date.now().toString(),
-      label: newKeyLabel.trim(),
-      key: trimmedKey,
-      provider: newKeyProvider,
-      createdAt: new Date().toISOString(),
-    };
-
-    addKey(newKey);
-    resetForm();
-    setIsModalOpen(false);
-    setIsValidating(false);
-    toast.success("API key added successfully");
   };
 
-  const handleDeleteKey = (id: string) => {
-    removeApiKey(id);
-    setVisibleKeys((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+  const handleDeleteKey = async (id: string) => {
+    await removeApiKey(id);
     toast.success("API key removed");
-  };
-
-  const toggleKeyVisibility = (id: string) => {
-    setVisibleKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const copyToClipboard = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedKeyId(id);
-      toast.success("API key copied to clipboard");
-      setTimeout(() => setCopiedKeyId(null), 1500);
-    } catch {
-      toast.error("Failed to copy API key");
-    }
   };
 
   const closeAddModal = () => {
@@ -118,10 +77,6 @@ export default function KaapiKeystore() {
             <div className="max-w-3xl mx-auto">
               <KeysCard
                 apiKeys={apiKeys}
-                visibleKeys={visibleKeys}
-                copiedKeyId={copiedKeyId}
-                onToggleVisibility={toggleKeyVisibility}
-                onCopy={copyToClipboard}
                 onDelete={handleDeleteKey}
                 onAddNew={() => setIsModalOpen(true)}
               />
@@ -134,11 +89,9 @@ export default function KaapiKeystore() {
         open={isModalOpen}
         newKeyLabel={newKeyLabel}
         newKeyValue={newKeyValue}
-        newKeyProvider={newKeyProvider}
         isValidating={isValidating}
         onLabelChange={setNewKeyLabel}
         onValueChange={setNewKeyValue}
-        onProviderChange={setNewKeyProvider}
         onAddKey={handleAddKey}
         onClose={closeAddModal}
       />

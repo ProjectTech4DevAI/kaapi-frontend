@@ -118,7 +118,7 @@ function MyComponent() {
   const {
     isAuthenticated, isHydrated,
     session, currentUser, googleProfile,
-    apiKeys, activeKey, addKey, removeKey, setKeys,
+    apiKeys, activeKey, addKey, removeKey,
     loginWithToken, logout,
   } = useAuth();
 }

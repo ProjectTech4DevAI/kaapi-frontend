@@ -16,7 +16,6 @@ export const FeatureFlag = {
 export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
 
 export const STORAGE_KEYS = {
-  API_KEYS: "kaapi_api_keys",
   SESSION: "kaapi_session",
   CONFIGS_CACHE: "kaapi_configs_cache",
   COLLECTION_CACHE: "collection_job_cache",
@@ -28,7 +27,11 @@ export const STORAGE_KEYS = {
 export const COOKIE_KEYS = {
   ROLE: "kaapi_role",
   FEATURES: "kaapi_features",
+  API_KEY: "kaapi_api_key",
+  API_KEY_META: "kaapi_api_key_meta",
 } as const;
+
+export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
 /** localStorage key for the config cache */
 export const CACHE_KEY = STORAGE_KEYS.CONFIGS_CACHE;

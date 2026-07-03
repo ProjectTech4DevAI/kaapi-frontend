@@ -1,34 +1,18 @@
 "use client";
 
 import { Button } from "@/app/components/ui";
-import {
-  EyeIcon,
-  EyeOffIcon,
-  CopyIcon,
-  TrashIcon,
-  KeyIcon,
-  InfoIcon,
-  PlusIcon,
-  CheckLineIcon,
-} from "@/app/components/icons";
+import { TrashIcon, KeyIcon, InfoIcon, PlusIcon } from "@/app/components/icons";
 import { APIKey } from "@/app/lib/types/credentials";
+import { APP_NAME } from "@/app/lib/constants";
 
 interface KeysCardProps {
   apiKeys: APIKey[];
-  visibleKeys: Set<string>;
-  copiedKeyId: string | null;
-  onToggleVisibility: (id: string) => void;
-  onCopy: (text: string, id: string) => void;
   onDelete: (id: string) => void;
   onAddNew: () => void;
 }
 
 export default function KeysCard({
   apiKeys,
-  visibleKeys,
-  copiedKeyId,
-  onToggleVisibility,
-  onCopy,
   onDelete,
   onAddNew,
 }: KeysCardProps) {
@@ -69,36 +53,22 @@ export default function KeysCard({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
-                      {apiKey.provider}
+                      {APP_NAME}
                     </span>
                     <h3 className="text-sm font-semibold text-text-primary truncate">
                       {apiKey.label}
                     </h3>
                   </div>
                   <code className="block text-xs px-3 py-1.5 rounded-md font-mono break-all bg-bg-primary border border-border text-text-primary">
-                    {visibleKeys.has(apiKey.id) ? apiKey.key : "•".repeat(32)}
+                    {apiKey.masked ?? "•".repeat(32)}
                   </code>
-                  <p className="text-xs mt-2 text-text-secondary">
-                    Added {new Date(apiKey.createdAt).toLocaleDateString()}
-                  </p>
+                  {apiKey.createdAt && (
+                    <p className="text-xs mt-2 text-text-secondary">
+                      Added {new Date(apiKey.createdAt).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <IconButton
-                    onClick={() => onToggleVisibility(apiKey.id)}
-                    title={visibleKeys.has(apiKey.id) ? "Hide" : "Show"}
-                  >
-                    {visibleKeys.has(apiKey.id) ? <EyeOffIcon /> : <EyeIcon />}
-                  </IconButton>
-                  <IconButton
-                    onClick={() => onCopy(apiKey.key, apiKey.id)}
-                    title={copiedKeyId === apiKey.id ? "Copied" : "Copy"}
-                  >
-                    {copiedKeyId === apiKey.id ? (
-                      <CheckLineIcon className="w-4 h-4 text-status-success" />
-                    ) : (
-                      <CopyIcon className="w-4 h-4" />
-                    )}
-                  </IconButton>
                   <IconButton
                     onClick={() => onDelete(apiKey.id)}
                     tone="danger"
@@ -118,7 +88,7 @@ export default function KeysCard({
 
 function InlineNotice({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-md p-3 bg-status-warning-bg border border-status-warning-border">
+    <div className="rounded-full p-3 bg-status-warning-bg border border-status-warning-border">
       <div className="flex gap-2">
         <InfoIcon className="w-4 h-4 shrink-0 mt-0.5 text-status-warning-text" />
         <p className="text-xs text-status-warning-text">{children}</p>

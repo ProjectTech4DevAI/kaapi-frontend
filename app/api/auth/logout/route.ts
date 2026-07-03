@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
-import { clearFeaturesCookie, clearRoleCookie } from "@/app/lib/authCookie";
+import {
+  clearApiKeyCookies,
+  clearFeaturesCookie,
+  clearRoleCookie,
+} from "@/app/lib/authCookie";
 
 export async function POST(request: NextRequest) {
   const { status, data, headers } = await apiClient(
@@ -18,6 +22,7 @@ export async function POST(request: NextRequest) {
 
   clearRoleCookie(res);
   clearFeaturesCookie(res);
+  clearApiKeyCookies(res);
 
   return res;
 }

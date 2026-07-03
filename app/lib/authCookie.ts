@@ -1,9 +1,38 @@
 import type { NextResponse } from "next/server";
-import { COOKIE_KEYS, type FeatureFlagKey } from "@/app/lib/constants";
+import { AUTH_COOKIE_MAX_AGE, COOKIE_KEYS } from "@/app/lib/constants";
+import type { ApiKeyMeta } from "@/app/lib/types/credentials";
+import type { UserLike } from "@/app/lib/types/auth";
 
-interface UserLike {
-  is_superuser?: boolean;
-  features?: FeatureFlagKey[];
+export function setApiKeyCookies(
+  response: NextResponse,
+  key: string,
+  meta: ApiKeyMeta,
+): void {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const attrs = `Path=/; Max-Age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
+
+  response.headers.append(
+    "Set-Cookie",
+    `${COOKIE_KEYS.API_KEY}=${encodeURIComponent(key)}; ${attrs}; HttpOnly`,
+  );
+  response.headers.append(
+    "Set-Cookie",
+    `${COOKIE_KEYS.API_KEY_META}=${encodeURIComponent(JSON.stringify(meta))}; ${attrs}`,
+  );
+}
+
+export function clearApiKeyCookies(response: NextResponse): void {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const attrs = `Path=/; Max-Age=0; SameSite=Lax${secure}`;
+
+  response.headers.append(
+    "Set-Cookie",
+    `${COOKIE_KEYS.API_KEY}=; ${attrs}; HttpOnly`,
+  );
+  response.headers.append(
+    "Set-Cookie",
+    `${COOKIE_KEYS.API_KEY_META}=; ${attrs}`,
+  );
 }
 
 /** Set the role cookie by appending a raw Set-Cookie header (won't overwrite existing cookies). */
@@ -18,7 +47,7 @@ export function setRoleCookieFromBody(
 
   const value = user.is_superuser ? "superuser" : "user";
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  const cookie = `${COOKIE_KEYS.ROLE}=${value}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+  const cookie = `${COOKIE_KEYS.ROLE}=${value}; Path=/; Max-Age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
 
   response.headers.append("Set-Cookie", cookie);
 }
@@ -42,7 +71,7 @@ export function setFeaturesCookieFromBody(
   const features = user.features.filter((f) => typeof f === "string");
   const value = encodeURIComponent(JSON.stringify(features));
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  const cookie = `${COOKIE_KEYS.FEATURES}=${value}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+  const cookie = `${COOKIE_KEYS.FEATURES}=${value}; Path=/; Max-Age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
 
   response.headers.append("Set-Cookie", cookie);
 }

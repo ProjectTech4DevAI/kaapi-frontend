@@ -43,8 +43,8 @@ export default function KeysCard({
         <div className="space-y-4">
           <InlineNotice>
             Only one API key can be stored at a time. Delete this key to add a
-            different one. For your security, the key is stored server-side and
-            cannot be viewed again after it is added.
+            different one. For your security, the raw key is kept in an HttpOnly
+            cookie and cannot be viewed again after it is added.
           </InlineNotice>
 
           {apiKeys.map((apiKey) => (

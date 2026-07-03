@@ -47,7 +47,7 @@ export function setRoleCookieFromBody(
 
   const value = user.is_superuser ? "superuser" : "user";
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  const cookie = `${COOKIE_KEYS.ROLE}=${value}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+  const cookie = `${COOKIE_KEYS.ROLE}=${value}; Path=/; Max-Age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
 
   response.headers.append("Set-Cookie", cookie);
 }
@@ -71,7 +71,7 @@ export function setFeaturesCookieFromBody(
   const features = user.features.filter((f) => typeof f === "string");
   const value = encodeURIComponent(JSON.stringify(features));
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  const cookie = `${COOKIE_KEYS.FEATURES}=${value}; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
+  const cookie = `${COOKIE_KEYS.FEATURES}=${value}; Path=/; Max-Age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax${secure}`;
 
   response.headers.append("Set-Cookie", cookie);
 }

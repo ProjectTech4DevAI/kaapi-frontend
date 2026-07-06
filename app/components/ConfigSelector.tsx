@@ -5,7 +5,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useConfigs } from "@/app/hooks";
 import { Button, Loader } from "@/app/components/ui";
@@ -57,6 +58,50 @@ export default function ConfigSelector({
     new Set(),
   );
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const triggerRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownRect, setDropdownRect] = useState<{
+    left: number;
+    width: number;
+    /** Positioning: either `top` (opens below) or `bottom` (opens above). */
+    top?: number;
+    bottom?: number;
+    maxHeight: number;
+  } | null>(null);
+
+  // Portal the dropdown to <body> to escape ancestor `overflow-hidden` /
+  // `overflow-auto` clipping. Recompute position on open, resize, and scroll.
+  // Auto-flip: opens above the trigger when below-space is insufficient.
+  useLayoutEffect(() => {
+    if (!isDropdownOpen) return;
+    const update = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const GAP = 4;
+      const MARGIN = 8;
+      const IDEAL_HEIGHT = 256; // matches Tailwind max-h-64
+      const spaceBelow = window.innerHeight - rect.bottom - GAP - MARGIN;
+      const spaceAbove = rect.top - GAP - MARGIN;
+      const flipUp = spaceBelow < IDEAL_HEIGHT && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(
+        120,
+        Math.min(IDEAL_HEIGHT, flipUp ? spaceAbove : spaceBelow),
+      );
+      setDropdownRect({
+        left: rect.left,
+        width: rect.width,
+        top: flipUp ? undefined : rect.bottom + GAP,
+        bottom: flipUp ? window.innerHeight - rect.top + GAP : undefined,
+        maxHeight,
+      });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [isDropdownOpen]);
 
   useEffect(() => {
     if (!expandedConfigId) return;
@@ -301,7 +346,10 @@ export default function ConfigSelector({
         noConfigsAvailable
       ) : (
         <>
-          <div className={`relative ${isDropdownOpen ? "z-50" : ""}`}>
+          <div
+            ref={triggerRef}
+            className={`relative ${isDropdownOpen ? "z-50" : ""}`}
+          >
             {isDropdownOpen ? (
               <input
                 type="text"
@@ -330,105 +378,119 @@ export default function ConfigSelector({
               </div>
             )}
 
-            {isDropdownOpen && (
-              <div className="absolute z-50 w-full mt-1 rounded-md shadow-lg max-h-64 overflow-auto bg-bg-primary border border-border">
-                {filteredDisplayGroups.length === 0 ? (
-                  <div className="px-4 py-6 text-center text-sm text-text-secondary">
-                    {searchQuery
-                      ? `No configurations match "${searchQuery}"`
-                      : "No configurations available"}
-                  </div>
-                ) : (
-                  filteredDisplayGroups.map((meta) => {
-                    const isExpanded = expandedConfigId === meta.id;
-                    const isLoadingGroup = loadingVersionsFor.has(meta.id);
-                    const versionItems = versionItemsMap[meta.id] ?? [];
-                    return (
-                      <div key={meta.id}>
-                        <button
-                          className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors bg-bg-secondary text-text-secondary hover:bg-neutral-100"
-                          onClick={() => handleToggleGroup(meta.id)}
-                        >
-                          <span className="text-xs font-medium">
-                            {meta.name}
-                            {versionItems.length > 0 && (
-                              <span className="ml-1 font-normal">
-                                ({versionItems.length} version
-                                {versionItems.length !== 1 ? "s" : ""})
-                              </span>
-                            )}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            {isLoadingGroup && (
-                              <div className="w-3 h-3 rounded-full animate-spin border-2 border-border border-t-accent-primary border-b-accent-primary [animation-duration:0.9s]" />
-                            )}
-                            {isExpanded ? (
-                              <ChevronUpIcon className="w-3.5 h-3.5" />
-                            ) : (
-                              <ChevronDownIcon className="w-3.5 h-3.5" />
-                            )}
-                          </span>
-                        </button>
+            {isDropdownOpen &&
+              dropdownRect &&
+              typeof window !== "undefined" &&
+              createPortal(
+                <div
+                  style={{
+                    position: "fixed",
+                    top: dropdownRect.top,
+                    bottom: dropdownRect.bottom,
+                    left: dropdownRect.left,
+                    width: dropdownRect.width,
+                    maxHeight: dropdownRect.maxHeight,
+                  }}
+                  className="z-60 rounded-md shadow-lg overflow-y-auto overscroll-contain bg-bg-primary border border-border"
+                >
+                  {filteredDisplayGroups.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-sm text-text-secondary">
+                      {searchQuery
+                        ? `No configurations match "${searchQuery}"`
+                        : "No configurations available"}
+                    </div>
+                  ) : (
+                    filteredDisplayGroups.map((meta) => {
+                      const isExpanded = expandedConfigId === meta.id;
+                      const isLoadingGroup = loadingVersionsFor.has(meta.id);
+                      const versionItems = versionItemsMap[meta.id] ?? [];
+                      return (
+                        <div key={meta.id}>
+                          <button
+                            className="w-full px-3 py-2 text-left flex items-center justify-between sticky top-0 transition-colors bg-bg-secondary text-text-secondary hover:bg-neutral-100"
+                            onClick={() => handleToggleGroup(meta.id)}
+                          >
+                            <span className="text-xs font-medium">
+                              {meta.name}
+                              {versionItems.length > 0 && (
+                                <span className="ml-1 font-normal">
+                                  ({versionItems.length} version
+                                  {versionItems.length !== 1 ? "s" : ""})
+                                </span>
+                              )}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              {isLoadingGroup && (
+                                <div className="w-3 h-3 rounded-full animate-spin border-2 border-border border-t-accent-primary border-b-accent-primary [animation-duration:0.9s]" />
+                              )}
+                              {isExpanded ? (
+                                <ChevronUpIcon className="w-3.5 h-3.5" />
+                              ) : (
+                                <ChevronDownIcon className="w-3.5 h-3.5" />
+                              )}
+                            </span>
+                          </button>
 
-                        {isExpanded &&
-                          !isLoadingGroup &&
-                          versionItems.map((item) => {
-                            const isSelected =
-                              selectedConfigId === item.config_id &&
-                              selectedVersion === item.version;
-                            return (
-                              <button
-                                key={item.id}
-                                onClick={() =>
-                                  handleSelectVersionItem(
-                                    item.config_id,
-                                    item.version,
-                                  )
-                                }
-                                className={`w-full px-4 py-2.5 text-left flex items-center justify-between transition-colors ${
-                                  isSelected
-                                    ? "bg-bg-secondary"
-                                    : "bg-bg-primary hover:bg-bg-secondary"
-                                }`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <VersionPill
-                                      version={item.version}
-                                      size="sm"
-                                    />
-                                    <span className="text-sm truncate text-text-primary">
-                                      {item.commit_message || "No message"}
-                                    </span>
+                          {isExpanded &&
+                            !isLoadingGroup &&
+                            versionItems.map((item) => {
+                              const isSelected =
+                                selectedConfigId === item.config_id &&
+                                selectedVersion === item.version;
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() =>
+                                    handleSelectVersionItem(
+                                      item.config_id,
+                                      item.version,
+                                    )
+                                  }
+                                  className={`w-full px-4 py-2.5 text-left flex items-center justify-between transition-colors ${
+                                    isSelected
+                                      ? "bg-bg-secondary"
+                                      : "bg-bg-primary hover:bg-bg-secondary"
+                                  }`}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <VersionPill
+                                        version={item.version}
+                                        size="sm"
+                                      />
+                                      <span className="text-sm truncate text-text-primary">
+                                        {item.commit_message || "No message"}
+                                      </span>
+                                    </div>
+                                    {renderModelMetaLine(item)}
                                   </div>
-                                  {renderModelMetaLine(item)}
-                                </div>
-                                {isSelected && (
-                                  <CheckIcon className="w-4 h-4 shrink-0 text-status-success" />
-                                )}
-                              </button>
-                            );
-                          })}
+                                  {isSelected && (
+                                    <CheckIcon className="w-4 h-4 shrink-0 text-status-success" />
+                                  )}
+                                </button>
+                              );
+                            })}
 
-                        {isExpanded && isLoadingGroup && (
-                          <div className="py-3">
-                            <Loader size="sm" message="Loading versions…" />
-                          </div>
-                        )}
-
-                        {isExpanded &&
-                          !isLoadingGroup &&
-                          versionItems.length === 0 && (
-                            <div className="px-4 py-3 text-xs text-text-secondary">
-                              No versions available
+                          {isExpanded && isLoadingGroup && (
+                            <div className="py-3">
+                              <Loader size="sm" message="Loading versions…" />
                             </div>
                           )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
+
+                          {isExpanded &&
+                            !isLoadingGroup &&
+                            versionItems.length === 0 && (
+                              <div className="px-4 py-3 text-xs text-text-secondary">
+                                No versions available
+                              </div>
+                            )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>,
+                document.body,
+              )}
           </div>
 
           {isLoadingPreview && !selectedConfig && (

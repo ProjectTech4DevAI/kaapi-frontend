@@ -9,6 +9,7 @@ import {
   RunMode,
   Tab,
 } from "@/app/lib/types/evaluation";
+import type { JudgeConfigDraft } from "@/app/lib/types/judgeConfig";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { Modal } from "@/app/components/ui";
 import EvalRunsList from "./EvalRunsList";
@@ -32,6 +33,9 @@ export interface EvaluationsTabProps {
   setRunMode: (mode: RunMode) => void;
   nameError?: string;
   submitError?: string;
+  judgeConfigDraft: JudgeConfigDraft;
+  setJudgeConfigDraft: (draft: JudgeConfigDraft) => void;
+  judgeConfigError?: string;
 }
 
 export default function EvaluationsTab({
@@ -52,6 +56,9 @@ export default function EvaluationsTab({
   setRunMode,
   nameError,
   submitError,
+  judgeConfigDraft,
+  setJudgeConfigDraft,
+  judgeConfigError,
 }: EvaluationsTabProps) {
   const [evalJobs, setEvalJobs] = useState<EvalJob[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -162,6 +169,9 @@ export default function EvaluationsTab({
     setRunMode,
     nameError,
     submitError,
+    judgeConfigDraft,
+    setJudgeConfigDraft,
+    judgeConfigError,
   };
 
   return (

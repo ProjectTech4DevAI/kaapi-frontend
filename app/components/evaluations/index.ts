@@ -9,6 +9,7 @@ export { default as EvalRunCard } from "./EvalRunCard";
 export { default as EvalRunsList } from "./EvalRunsList";
 export { default as EvaluationsTab } from "./EvaluationsTab";
 export { default as GroupedResultsTable } from "./GroupedResultsTable";
+export { default as JudgeConfigPanel } from "./JudgeConfigPanel";
 export { default as MetricsOverview } from "./MetricsOverview";
 export { default as RunEvaluationForm } from "./RunEvaluationForm";
 export { default as RunModeBadge } from "./RunModeBadge";

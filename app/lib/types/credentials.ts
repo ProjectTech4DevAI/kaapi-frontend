@@ -74,6 +74,20 @@ export const PROVIDERS: ProviderDef[] = [
     ],
   },
   {
+    id: "anthropic",
+    name: "Anthropic",
+    description: "Connect your Anthropic account to use Claude models",
+    credentialKey: "anthropic",
+    fields: [
+      {
+        key: "api_key",
+        label: "API Key",
+        placeholder: "sk-ant-xxxxx",
+        type: "password",
+      },
+    ],
+  },
+  {
     id: "elevenlabs",
     name: "ElevenLabs",
     description: "High-quality text-to-speech synthesis via ElevenLabs",

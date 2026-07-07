@@ -205,3 +205,10 @@ export const STATUS_TABS = [
   { id: "active", label: "Active" },
   { id: "inactive", label: "Inactive" },
 ];
+
+export const JUDGE_MODEL_OPTIONS = [
+  { value: "gpt-4o-mini", label: "gpt-4o-mini (default)" },
+  { value: "gpt-4o", label: "gpt-4o" },
+  { value: "gpt-4.1", label: "gpt-4.1" },
+  { value: "gpt-4.1-mini", label: "gpt-4.1-mini" },
+];

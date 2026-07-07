@@ -11,8 +11,10 @@ import {
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
+import JudgeConfigPanel from "./JudgeConfigPanel";
 import { RunMode, Tab } from "@/app/lib/types/evaluation";
 import { MAX_NAME_LENGTH } from "@/app/lib/constants";
+import type { JudgeConfigDraft } from "@/app/lib/types/judgeConfig";
 
 interface RunEvaluationFormProps {
   storedDatasets: Dataset[];
@@ -32,6 +34,9 @@ interface RunEvaluationFormProps {
   setRunMode: (mode: RunMode) => void;
   nameError?: string;
   submitError?: string;
+  judgeConfigDraft: JudgeConfigDraft;
+  setJudgeConfigDraft: (draft: JudgeConfigDraft) => void;
+  judgeConfigError?: string;
 }
 
 export default function RunEvaluationForm({
@@ -52,6 +57,9 @@ export default function RunEvaluationForm({
   setRunMode,
   nameError,
   submitError,
+  judgeConfigDraft,
+  setJudgeConfigDraft,
+  judgeConfigError,
 }: RunEvaluationFormProps) {
   const fastEligible = selectedDataset?.eligible_for_fast !== false;
 
@@ -182,6 +190,15 @@ export default function RunEvaluationForm({
           </p>
         )}
       </div>
+
+      {runMode === "fast" && (
+        <JudgeConfigPanel
+          draft={judgeConfigDraft}
+          onChange={setJudgeConfigDraft}
+          disabled={isEvaluating}
+          error={judgeConfigError}
+        />
+      )}
 
       {submitError && (
         <div className="rounded-lg px-3 py-2 bg-status-error-bg border border-status-error-border">

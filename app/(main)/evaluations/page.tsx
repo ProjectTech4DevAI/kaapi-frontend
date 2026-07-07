@@ -20,6 +20,11 @@ import { Loader, TabNavigation } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import { DatasetsTab, EvaluationsTab } from "@/app/components/evaluations";
 import { RunMode, Tab } from "@/app/lib/types/evaluation";
+import {
+  DEFAULT_JUDGE_DRAFT,
+  JudgeConfigDraft,
+} from "@/app/lib/types/judgeConfig";
+import { buildJudgeConfigPayload } from "@/app/lib/utils/judgeConfig";
 
 const leftPanelWidth = 450;
 
@@ -65,6 +70,9 @@ function SimplifiedEvalContent() {
   const [runMode, setRunMode] = useState<RunMode>("batch");
   const [nameError, setNameError] = useState<string>("");
   const [submitError, setSubmitError] = useState<string>("");
+  const [judgeConfigDraft, setJudgeConfigDraft] =
+    useState<JudgeConfigDraft>(DEFAULT_JUDGE_DRAFT);
+  const [judgeConfigError, setJudgeConfigError] = useState<string>("");
 
   useEffect(() => {
     setMounted(true);
@@ -203,6 +211,7 @@ function SimplifiedEvalContent() {
   const handleRunEvaluation = async () => {
     setNameError("");
     setSubmitError("");
+    setJudgeConfigError("");
 
     if (!isAuthenticated) {
       toast.error("Please log in to run evaluations.");
@@ -231,7 +240,11 @@ function SimplifiedEvalContent() {
         config_id: selectedConfigId,
         config_version: selectedConfigVersion,
       };
-      if (runMode === "fast") payload.run_mode = "fast";
+      if (runMode === "fast") {
+        payload.run_mode = "fast";
+        const judgePayload = buildJudgeConfigPayload(judgeConfigDraft);
+        if (judgePayload) payload.judge_config = judgePayload;
+      }
 
       await apiFetch("/api/evaluations", apiKey, {
         method: "POST",
@@ -244,10 +257,24 @@ function SimplifiedEvalContent() {
       setSelectedConfigId("");
       setSelectedConfigVersion(0);
       setRunMode("batch");
+      setJudgeConfigDraft(DEFAULT_JUDGE_DRAFT);
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
       const code = error instanceof Error ? error.message : String(error);
+      if (
+        code.includes("Provide either 'id' with 'version'") ||
+        code.toLowerCase().includes("judge_config")
+      ) {
+        setJudgeConfigError(code);
+        setIsEvaluating(false);
+        return false;
+      }
+      if (code.includes("No config found for the given id and version")) {
+        setJudgeConfigError("Judge config not found for the selected version");
+        setIsEvaluating(false);
+        return false;
+      }
       switch (code) {
         case "run_name_already_exists":
           setNameError("A run with this name already exists");
@@ -353,6 +380,9 @@ function SimplifiedEvalContent() {
               setRunMode={setRunMode}
               nameError={nameError}
               submitError={submitError}
+              judgeConfigDraft={judgeConfigDraft}
+              setJudgeConfigDraft={setJudgeConfigDraft}
+              judgeConfigError={judgeConfigError}
             />
           )}
         </div>

@@ -230,8 +230,8 @@ function SimplifiedEvalContent() {
         experiment_name: experimentName.trim(),
         config_id: selectedConfigId,
         config_version: selectedConfigVersion,
+        run_mode: runMode === "fast" ? "fast" : "batch",
       };
-      if (runMode === "fast") payload.run_mode = "fast";
 
       await apiFetch("/api/evaluations", apiKey, {
         method: "POST",

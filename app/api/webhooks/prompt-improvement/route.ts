@@ -3,10 +3,24 @@ import {
   getJobSnapshot,
   saveJobSnapshot,
 } from "@/app/lib/store/promptImprovementStore";
+import { readWebhookSecret } from "@/app/lib/webhookSecret";
 import type { PromptImprovementJobPublic } from "@/app/lib/types/promptImprovement";
+
+function isAuthorized(request: NextRequest): boolean {
+  const secretResult = readWebhookSecret();
+  if (!secretResult.ok || !secretResult.secret) return false;
+  const provided = request.nextUrl.searchParams.get("secret_value");
+  return provided === secretResult.secret;
+}
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isAuthorized(request)) {
+      return NextResponse.json(
+        { success: false, error: "unauthorized" },
+        { status: 401 },
+      );
+    }
     const body = (await request.json()) as {
       success?: boolean;
       data?: PromptImprovementJobPublic;

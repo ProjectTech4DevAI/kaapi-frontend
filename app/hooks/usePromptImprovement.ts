@@ -205,8 +205,6 @@ export function usePromptImprovement({
         setIsImprovingPrompt(false);
         return;
       }
-
-      toast.success("Prompt iteration queued");
       watchJob(data.data.job_id, settleIteration);
     } catch (err: unknown) {
       const code = err instanceof Error ? err.message : String(err);

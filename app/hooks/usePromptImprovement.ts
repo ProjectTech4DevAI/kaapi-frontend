@@ -6,23 +6,12 @@ import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/utils";
 import { useToast } from "@/app/hooks/useToast";
 import type {
+  IterateSettle,
+  JobSnapshotLike,
   LLMJobImmediatePublic,
-  PromptImprovementConfigVersion,
   UsePromptImprovementArgs,
   UsePromptImprovementResult,
 } from "@/app/lib/types/promptImprovement";
-
-type IterateSettle = (
-  result:
-    | { status: "SUCCESS"; version: PromptImprovementConfigVersion }
-    | { status: "FAILED"; message: string | null },
-) => void;
-
-interface JobSnapshotLike {
-  status: string;
-  config_version: PromptImprovementConfigVersion | null;
-  error_message: string | null;
-}
 
 /** Map a sync validation code (from the initial 202 request) to a user-facing message. */
 function iteratePromptSyncError(code: string): string {

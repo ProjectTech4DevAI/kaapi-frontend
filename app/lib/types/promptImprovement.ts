@@ -41,3 +41,15 @@ export interface UsePromptImprovementResult {
   isImprovingPrompt: boolean;
   handleIteratePrompt: () => Promise<void>;
 }
+
+export type IterateSettle = (
+  result:
+    | { status: "SUCCESS"; version: PromptImprovementConfigVersion }
+    | { status: "FAILED"; message: string | null },
+) => void;
+
+export interface JobSnapshotLike {
+  status: string;
+  config_version: PromptImprovementConfigVersion | null;
+  error_message: string | null;
+}

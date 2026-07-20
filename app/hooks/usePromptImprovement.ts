@@ -108,7 +108,7 @@ export function usePromptImprovement({
         }
       };
       tick();
-      pollRef.current = setInterval(tick, 3000);
+      pollRef.current = setInterval(tick, 2000);
     },
     [stopWatch],
   );

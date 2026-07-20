@@ -55,8 +55,7 @@ function readSnapshot(snap: JobSnapshotLike, settle: IterateSettle): boolean {
 /**
  * Owns the async prompt-improvement flow for an evaluation: fires the initial
  * POST, keeps a live channel open (SSE first, poll fallback), settles on
- * SUCCESS/FAILED, and navigates to the new config version. Cleans up any
- * open interval / EventSource on unmount.
+ * SUCCESS/FAILED, and navigates to the new config version.
  */
 export function usePromptImprovement({
   jobId,

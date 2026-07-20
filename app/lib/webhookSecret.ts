@@ -1,9 +1,3 @@
-/**
- * Shared validation for `PROMPT_IMPROVEMENT_WEBHOOK_SECRET`. Enforces a hex
- * secret of at least 32 chars (16 bytes) so misconfigured deploys with
- * placeholder / weak values fail closed.
- */
-
 const HEX_SECRET_REGEX = /^[a-f0-9]{32,}$/i;
 
 const PLACEHOLDER_VALUES = new Set([

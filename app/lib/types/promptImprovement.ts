@@ -53,3 +53,10 @@ export interface JobSnapshotLike {
   config_version: PromptImprovementConfigVersion | null;
   error_message: string | null;
 }
+
+export type SnapshotListener = (snapshot: PromptImprovementJobSnapshot) => void;
+
+export interface PromptImprovementStoreShape {
+  jobs: Map<string, PromptImprovementJobSnapshot>;
+  listeners: Map<string, Set<SnapshotListener>>;
+}

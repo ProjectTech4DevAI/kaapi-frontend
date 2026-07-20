@@ -3,28 +3,18 @@
  * pushes results to `/api/webhooks/prompt-improvement`; this store keeps the
  * latest snapshot per job_id so the browser can poll a Kaapi-frontend BFF
  * endpoint instead of receiving webhooks directly.
- *
- * CAVEAT: in-memory only. Multiple serverless instances won't share state and
- * a cold start drops history. For production either back this with Redis / a
- * shared store or add SSE broadcast. Guarded by module-level singleton so a
- * single Node process retains state between requests.
  */
 
 import type {
   PromptImprovementJobPublic,
   PromptImprovementJobSnapshot,
+  PromptImprovementStoreShape,
+  SnapshotListener,
 } from "@/app/lib/types/promptImprovement";
 
 const globalKey = Symbol.for("kaapi.promptImprovementStore");
 
-type SnapshotListener = (snapshot: PromptImprovementJobSnapshot) => void;
-
-interface Store {
-  jobs: Map<string, PromptImprovementJobSnapshot>;
-  listeners: Map<string, Set<SnapshotListener>>;
-}
-
-type WithStore = { [globalKey]?: Store };
+type WithStore = { [globalKey]?: PromptImprovementStoreShape };
 const g = globalThis as unknown as WithStore;
 
 if (!g[globalKey]) {

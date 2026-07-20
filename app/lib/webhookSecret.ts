@@ -9,14 +9,12 @@ const PLACEHOLDER_VALUES = new Set([
   "todo",
 ]);
 
-export interface WebhookSecretResult {
-  ok: boolean;
-  secret?: string;
-  reason?:
-    | "prompt_improvement_webhook_secret_missing"
-    | "prompt_improvement_webhook_secret_placeholder"
-    | "prompt_improvement_webhook_secret_invalid_format";
-}
+import type { WebhookSecretResult } from "@/app/lib/types/webhookSecret";
+
+export type {
+  WebhookSecretFailureReason,
+  WebhookSecretResult,
+} from "@/app/lib/types/webhookSecret";
 
 /**
  * Read + validate the secret. Returns a discriminated result so callers can

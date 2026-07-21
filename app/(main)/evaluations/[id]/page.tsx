@@ -388,7 +388,7 @@ export default function EvaluationReport() {
           </div>
 
           <div className="flex-1 overflow-auto p-6 bg-bg-secondary">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="mx-auto space-y-6">
               {hasScore && isNewFormat ? (
                 <>
                   <MetricsOverview

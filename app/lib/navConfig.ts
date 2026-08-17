@@ -59,9 +59,14 @@ export const NAV_ITEMS: NavItemConfig[] = [
   },
   {
     name: "Assessment",
-    route: "/assessment",
     icon: "assessment",
     featureFlag: FeatureFlag.ASSESSMENT,
+    submenu: [
+      { name: "Datasets", route: "/assessment" },
+      { name: "Config", route: "/assessment/config" },
+      { name: "Experiment", route: "/assessment/experiment" },
+      { name: "Runs", route: "/assessment/runs" },
+    ],
     gateDescription: "Log in to run assessments.",
   },
   {

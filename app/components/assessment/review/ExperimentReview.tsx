@@ -22,7 +22,7 @@ export default function ExperimentReview({
         className="!rounded-md !bg-neutral-50 !px-3 !py-2"
       />
       <p className="mt-1.5 text-[11px] text-neutral-500">
-        A descriptive name to identify this evaluation run.
+        A descriptive name to identify this assessment run.
       </p>
     </div>
   );

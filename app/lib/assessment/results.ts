@@ -67,16 +67,18 @@ export function hasViewableResults(run: AssessmentChildRun): boolean {
   return getStageProgress(run).some((s) => s.status === "completed");
 }
 
+// Backend status enums serialize UPPERCASE (e.g. "COMPLETED"); the status sets
+// are lowercase — compare case-insensitively so tones/badges resolve correctly.
 export function isActiveStatus(status: string): boolean {
-  return ACTIVE_ASSESSMENT_STATUSES.has(status);
+  return ACTIVE_ASSESSMENT_STATUSES.has(status.toLowerCase());
 }
 
 export function isFailedStatus(status: string): boolean {
-  return FAILED_ASSESSMENT_STATUSES.has(status);
+  return FAILED_ASSESSMENT_STATUSES.has(status.toLowerCase());
 }
 
 export function isCompletedStatus(status: string): boolean {
-  return COMPLETED_ASSESSMENT_STATUSES.has(status);
+  return COMPLETED_ASSESSMENT_STATUSES.has(status.toLowerCase());
 }
 
 export function canRetryStatus(status: string): boolean {
@@ -127,9 +129,10 @@ export function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
 }
 
 export function getResultTone(status: string): ResultTone {
-  if (isCompletedStatus(status)) return "success";
-  if (status === "failed" || status === "prefilter_failed") return "error";
-  if (isActiveStatus(status) || status === "completed_with_errors") {
+  const s = status.toLowerCase();
+  if (isCompletedStatus(s)) return "success";
+  if (s === "failed" || s === "prefilter_failed") return "error";
+  if (isActiveStatus(s) || s === "completed_with_errors") {
     return "warning";
   }
   return "default";
@@ -162,7 +165,7 @@ export function filterAssessments(
   return assessments.filter((run) => {
     if (statusFilter === "processing") return isActiveStatus(run.status);
     if (statusFilter === "failed") return isFailedStatus(run.status);
-    return run.status === statusFilter;
+    return run.status.toLowerCase() === statusFilter;
   });
 }
 

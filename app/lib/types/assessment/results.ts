@@ -26,6 +26,19 @@ export interface AssessmentRunStat {
   stage_status: string | null;
 }
 
+export interface AssessmentPreFilterCost {
+  topic_relevance?: number | null;
+  duplicate_detection?: number | null;
+  total: number;
+}
+
+export interface AssessmentCost {
+  pre_filter: AssessmentPreFilterCost;
+  assessment: number;
+  total: number;
+  currency: string;
+}
+
 export interface AssessmentRun {
   id: number;
   experiment_name: string;
@@ -37,6 +50,7 @@ export interface AssessmentRun {
   processing_runs: number;
   completed_runs: number;
   failed_runs: number;
+  counts?: ResultsCounts | null;
   run_stats: AssessmentRunStat[];
   error_message: string | null;
   inserted_at: string;
@@ -79,11 +93,14 @@ export interface AssessmentChildRun {
   id: number;
   assessment_id: number | null;
   run_name: string;
+  experiment_name?: string | null;
   dataset_name: string | null;
   dataset_id: number | null;
   config_id: string | null;
   config_version: number | null;
   status: string;
+  input?: Record<string, unknown> | null;
+  cost?: AssessmentCost | null;
   total_items: number;
   error_message: string | null;
   organization_id: number;

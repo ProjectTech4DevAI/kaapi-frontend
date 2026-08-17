@@ -9,6 +9,7 @@ import {
   MAX_CONFIGS,
 } from "@/app/lib/assessment/constants";
 import {
+  buildAssessmentConfigBlob,
   buildDefaultParams,
   buildInitialAssessmentConfigDraft,
   buildInitialAssessmentVersionState,
@@ -22,21 +23,30 @@ import {
 } from "@/app/lib/utils/assessmentFetcher";
 import {
   type ConfigMode,
+  type ConfigSaveMode,
   type ConfigSelection,
   type PromptAndConfigStepProps,
   type UsePromptAndConfigStepResult,
   type VersionListState,
 } from "@/app/lib/types/assessment";
 import type {
+  AssessmentConfigBlob,
   CompletionConfig,
-  ConfigBlob,
   ConfigPublic,
 } from "@/app/lib/types/configs";
 import useLatestConfigModels from "@/app/hooks/useLatestConfigModels";
 
 type UsePromptAndConfigStepParams = Pick<
   PromptAndConfigStepProps,
-  "textColumns" | "promptTemplate" | "configs" | "setConfigs" | "outputSchema"
+  | "textColumns"
+  | "promptTemplate"
+  | "configs"
+  | "setConfigs"
+  | "outputSchema"
+  | "systemInstruction"
+  | "columnMapping"
+  | "prefilterConfig"
+  | "configSeed"
 >;
 
 export function usePromptAndConfigStep({
@@ -45,6 +55,10 @@ export function usePromptAndConfigStep({
   configs,
   setConfigs,
   outputSchema,
+  systemInstruction,
+  columnMapping,
+  prefilterConfig,
+  configSeed,
 }: UsePromptAndConfigStepParams): UsePromptAndConfigStepResult {
   const toast = useToast();
   const { activeKey, isAuthenticated } = useAuth();
@@ -65,18 +79,32 @@ export function usePromptAndConfigStep({
   >({});
   const hasLoadedInitialConfigsRef = useRef(false);
 
-  const [draft, setDraft] = useState<ConfigBlob>(() =>
+  const [draft, setDraft] = useState<AssessmentConfigBlob>(() =>
     buildInitialAssessmentConfigDraft(),
   );
   const [configName, setConfigName] = useState("");
   const [commitMessage, setCommitMessage] = useState("");
+  const [saveMode, setSaveMode] = useState<ConfigSaveMode>("new");
+  const [versionConfigId, setVersionConfigId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const appliedSeedNonce = useRef<number | null>(null);
 
-  const draftParams = draft.completion.params as Record<
+  // Apply a config seed from the Configuration step once per (re)load: hydrate
+  // the provider/model draft and preset the save mode (new vs new-version).
+  useEffect(() => {
+    if (!configSeed || appliedSeedNonce.current === configSeed.nonce) return;
+    appliedSeedNonce.current = configSeed.nonce;
+    if (configSeed.blob) setDraft(configSeed.blob);
+    setSaveMode(configSeed.saveMode);
+    setVersionConfigId(configSeed.configId);
+    setConfigName(configSeed.configName);
+  }, [configSeed]);
+
+  const draftParams = draft.assessment.params as Record<
     string,
     string | number | undefined
   >;
-  const currentProvider = draft.completion.provider ?? "openai";
+  const currentProvider = draft.assessment.provider ?? "openai";
   const providerModels = useMemo(
     () => getModelsByProvider(currentProvider),
     [currentProvider],
@@ -93,6 +121,17 @@ export function usePromptAndConfigStep({
   );
   const namedSchemaFields = outputSchema.filter((field) => field.name.trim());
   const hasConfiguredResponseFormat = namedSchemaFields.length > 0;
+  const configBlob = useMemo(
+    () =>
+      buildAssessmentConfigBlob({
+        draft,
+        systemInstruction,
+        outputSchema,
+        columnMapping,
+        prefilterConfig,
+      }),
+    [draft, systemInstruction, outputSchema, columnMapping, prefilterConfig],
+  );
   const canProceed = configs.length > 0 && hasConfiguredResponseFormat;
   const nextBlockerMessage =
     configs.length === 0
@@ -288,9 +327,9 @@ export function usePromptAndConfigStep({
   const updateDraftParam = (key: string, value: string | number) => {
     setDraft((prev) => ({
       ...prev,
-      completion: {
-        ...prev.completion,
-        params: { ...prev.completion.params, [key]: value },
+      assessment: {
+        ...prev.assessment,
+        params: { ...prev.assessment.params, [key]: value },
       },
     }));
   };
@@ -299,11 +338,12 @@ export function usePromptAndConfigStep({
     const defaultModel = getDefaultModelForProvider(provider);
     setDraft((prev) => ({
       ...prev,
-      completion: {
-        ...prev.completion,
+      assessment: {
+        ...prev.assessment,
         provider,
         params: {
-          instructions: String(prev.completion.params.instructions || ""),
+          instructions: String(prev.assessment.params.instructions || ""),
+          input_schema: prev.assessment.params.input_schema,
           model: defaultModel,
           ...buildDefaultParams(defaultModel),
         },
@@ -314,10 +354,11 @@ export function usePromptAndConfigStep({
   const handleModelChange = (modelName: string) => {
     setDraft((prev) => ({
       ...prev,
-      completion: {
-        ...prev.completion,
+      assessment: {
+        ...prev.assessment,
         params: {
-          instructions: String(prev.completion.params.instructions || ""),
+          instructions: String(prev.assessment.params.instructions || ""),
+          input_schema: prev.assessment.params.input_schema,
           model: modelName,
           ...buildDefaultParams(modelName),
         },
@@ -330,38 +371,55 @@ export function usePromptAndConfigStep({
       toast.error("Please sign in to create configurations");
       return;
     }
-    if (!configName.trim()) {
+    const isVersion = saveMode === "version";
+    const targetConfig = isVersion
+      ? (configCards.find((c) => c.id === versionConfigId) ?? null)
+      : null;
+    if (isVersion) {
+      if (!targetConfig) {
+        toast.error("Select a configuration to version");
+        return;
+      }
+    } else if (!configName.trim()) {
       toast.error("Configuration name is required");
       return;
     }
     setIsSaving(true);
     try {
-      const existingConfig =
-        configCards.find(
-          (c) =>
-            c.name.trim().toLowerCase() === configName.trim().toLowerCase(),
-        ) ?? null;
+      const configBlob = buildAssessmentConfigBlob({
+        draft,
+        systemInstruction,
+        outputSchema,
+        columnMapping,
+        prefilterConfig,
+      });
       const saved = await saveAssessmentConfig({
         apiKey,
-        configName: configName.trim(),
+        configName: isVersion ? targetConfig!.name : configName.trim(),
         commitMessage: commitMessage.trim(),
-        configBlob: draft,
-        existingConfig: existingConfig
-          ? { id: existingConfig.id, name: existingConfig.name }
+        configBlob,
+        existingConfig: isVersion
+          ? { id: targetConfig!.id, name: targetConfig!.name }
           : null,
       });
       addSelection({
         config_id: saved.config_id,
         config_version: saved.config_version,
-        name: configName.trim(),
-        provider: draft.completion.provider,
+        name: saved.name ?? configName.trim(),
+        provider: draft.assessment.provider,
         model: currentModel,
       });
       setDraft(buildInitialAssessmentConfigDraft());
       setConfigName("");
       setCommitMessage("");
+      setVersionConfigId("");
+      setSaveMode("new");
       setConfigMode("existing");
-      toast.success("Configuration saved and added!");
+      toast.success(
+        isVersion
+          ? "New version saved and added!"
+          : "Configuration saved and added!",
+      );
       void loadConfigs(0, true);
     } catch (err) {
       toast.error(
@@ -404,11 +462,16 @@ export function usePromptAndConfigStep({
     configName,
     commitMessage,
     isSaving,
+    saveMode,
+    setSaveMode,
+    versionConfigId,
+    setVersionConfigId,
     setConfigName,
     setCommitMessage,
     handleProviderChange,
     handleModelChange,
     updateDraftParam,
     handleCreateAndAdd,
+    configBlob,
   };
 }

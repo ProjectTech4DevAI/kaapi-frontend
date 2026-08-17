@@ -9,13 +9,10 @@ import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
 import DatasetList from "@/app/components/assessment/datasets/DatasetList";
 
 export default function DatasetsTab(props: DatasetsTabProps) {
-  const { datasetId, onNext } = props;
   const {
     datasets,
     isLoading,
-    isLoadingColumns,
     viewingId,
-    canProceed,
     datasetName,
     datasetDescription,
     uploadedFile,
@@ -35,7 +32,6 @@ export default function DatasetsTab(props: DatasetsTabProps) {
     handleFileSelect,
     resetForm,
     handleCreateDataset,
-    handleDatasetSelect,
     handleViewDataset,
     handleDeleteDataset,
     handleDrop,
@@ -45,15 +41,10 @@ export default function DatasetsTab(props: DatasetsTabProps) {
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <DatasetList
         datasets={datasets}
-        datasetId={datasetId}
         isLoading={isLoading}
-        isLoadingColumns={isLoadingColumns}
         viewingId={viewingId}
-        canProceed={canProceed}
-        onSelectDataset={handleDatasetSelect}
         onViewDataset={handleViewDataset}
         onRequestDelete={setConfirmDeleteId}
-        onNext={onNext}
       />
 
       <CreatePanel

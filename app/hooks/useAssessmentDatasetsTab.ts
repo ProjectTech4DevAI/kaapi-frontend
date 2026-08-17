@@ -10,36 +10,31 @@ import {
   fetchDatasetPreview,
   handleForbiddenError,
   isAllowedDatasetFile,
-  isBlankCell,
 } from "@/app/lib/utils/assessment";
 import { PREVIEW_ROW_LIMIT } from "@/app/lib/assessment/results";
-import {
-  DATASET_SAMPLE_ROW_LIMIT,
-  MAX_DATASET_FILE_BYTES,
-} from "@/app/lib/assessment/constants";
+import { MAX_DATASET_FILE_BYTES } from "@/app/lib/assessment/constants";
 import type {
   CreateDatasetResponse,
   DatasetPreview,
   DatasetResponse,
-  DatasetsTabProps,
   DatasetViewModalData,
+  ValueSetter,
+  WithForbiddenHandler,
 } from "@/app/lib/types/assessment";
 
-type UseAssessmentDatasetsTabParams = Pick<
-  DatasetsTabProps,
-  | "onForbidden"
-  | "datasetId"
-  | "setDatasetId"
-  | "setSelectedDatasetName"
-  | "onColumnsLoaded"
->;
+// Shared by the Datasets tab (library management) and the Experiment tab
+// (dataset selection at run time). Selection only records the dataset id/name;
+// the run's input_binding is derived from the chosen config's input_schema.
+interface UseAssessmentDatasetsTabParams extends WithForbiddenHandler {
+  datasetId: string;
+  setDatasetId: ValueSetter<string>;
+  setSelectedDatasetName: ValueSetter<string>;
+}
 
 export interface UseAssessmentDatasetsTabResult {
   datasets: Dataset[];
   isLoading: boolean;
-  isLoadingColumns: boolean;
   viewingId: number | null;
-  canProceed: boolean;
   datasetName: string;
   datasetDescription: string;
   uploadedFile: File | null;
@@ -59,7 +54,7 @@ export interface UseAssessmentDatasetsTabResult {
   handleFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
   resetForm: () => void;
   handleCreateDataset: () => Promise<void>;
-  handleDatasetSelect: (id: string, name?: string) => Promise<void>;
+  handleDatasetSelect: (id: string, name?: string) => void;
   handleViewDataset: (datasetId: number, name: string) => Promise<void>;
   handleDeleteDataset: (id: number) => Promise<void>;
   handleDrop: (event: React.DragEvent<HTMLDivElement>) => void;
@@ -70,7 +65,6 @@ export function useAssessmentDatasetsTab({
   datasetId,
   setDatasetId,
   setSelectedDatasetName,
-  onColumnsLoaded,
 }: UseAssessmentDatasetsTabParams): UseAssessmentDatasetsTabResult {
   const toast = useToast();
   const { activeKey, isAuthenticated } = useAuth();
@@ -79,7 +73,6 @@ export function useAssessmentDatasetsTab({
 
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingColumns, setIsLoadingColumns] = useState(false);
   const [datasetName, setDatasetName] = useState("");
   const [datasetDescription, setDatasetDescription] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -156,58 +149,20 @@ export function useAssessmentDatasetsTab({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleDatasetSelect = async (id: string, name?: string) => {
+  // Records which dataset a run targets; no column loading — the run's
+  // input_binding comes from the selected config's input_schema.
+  const handleDatasetSelect = (id: string, name?: string) => {
     setDatasetId(id);
     if (!id) {
       setSelectedDatasetName("");
-      onColumnsLoaded([]);
       return;
     }
-
     const resolvedName =
       name ??
       datasets.find((dataset) => dataset.dataset_id.toString() === id)
         ?.dataset_name ??
       "";
     setSelectedDatasetName(resolvedName);
-
-    setIsLoadingColumns(true);
-    try {
-      const cached = previewCache[id];
-      const parsed =
-        cached ??
-        (await fetchDatasetPreview(id, apiKey, DATASET_SAMPLE_ROW_LIMIT));
-      if (!cached) {
-        setPreviewCache((prev) => ({ ...prev, [id]: parsed }));
-      }
-      const keptIdx = parsed.headers
-        .map((_, colIdx) => colIdx)
-        .filter((colIdx) =>
-          parsed.rows.some((row) => !isBlankCell(row[colIdx])),
-        );
-
-      const filteredHeaders = keptIdx.map((idx) => parsed.headers[idx]);
-      const firstRow = parsed.rows[0] || [];
-      const sampleRow = Object.fromEntries(
-        keptIdx.map((idx) => [
-          parsed.headers[idx],
-          String(firstRow[idx] ?? ""),
-        ]),
-      );
-      onColumnsLoaded(filteredHeaders, sampleRow);
-    } catch (error) {
-      if (handleForbiddenError(error, onForbidden)) return;
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch dataset columns.";
-      onColumnsLoaded([]);
-      setDatasetId("");
-      setSelectedDatasetName("");
-      toast.error(message);
-    } finally {
-      setIsLoadingColumns(false);
-    }
   };
 
   const handleCreateDataset = async () => {
@@ -323,7 +278,6 @@ export function useAssessmentDatasetsTab({
     fileInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
   };
 
-  const canProceed = Boolean(datasetId) && !isLoadingColumns;
   const datasetPendingDelete = datasets.find(
     (dataset) => dataset.dataset_id === confirmDeleteId,
   );
@@ -331,9 +285,7 @@ export function useAssessmentDatasetsTab({
   return {
     datasets,
     isLoading,
-    isLoadingColumns,
     viewingId,
-    canProceed,
     datasetName,
     datasetDescription,
     uploadedFile,

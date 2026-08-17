@@ -21,7 +21,7 @@ export interface PagedResult<T> {
   nextSkip: number;
 }
 
-export type AssessmentTabId = "datasets" | "config" | "results";
+export type AssessmentTabId = "datasets" | "config" | "experiment" | "results";
 export interface AssessmentTab {
   id: AssessmentTabId;
   label: string;

@@ -83,7 +83,7 @@ export default function ReviewStep({
             Review & Submit
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Verify your evaluation configuration before submitting.
+            Verify your assessment configuration before submitting.
           </p>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { Button } from "@/app/components/ui";
 import { usePromptPlaceholderEditor } from "@/app/hooks/usePromptPlaceholderEditor";
-import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
 
 interface PromptEditorProps {
   value: string;
@@ -11,7 +11,6 @@ interface PromptEditorProps {
   placeholder: string;
   emptyPreviewText: string;
   textColumns?: string[];
-  sampleRow?: SampleRow;
   enablePlaceholders?: boolean;
 }
 
@@ -22,7 +21,6 @@ export default function PromptEditor({
   placeholder,
   emptyPreviewText,
   textColumns = [],
-  sampleRow = {},
   enablePlaceholders = true,
 }: PromptEditorProps) {
   const {
@@ -37,33 +35,24 @@ export default function PromptEditor({
     handleInput,
     handleKeyDown,
     insertMention,
-    insertPlaceholder,
-    usedColumns,
-    orderedColumns,
     previewText,
   } = usePromptPlaceholderEditor({
     value,
     onChange,
     previewMode,
-    textColumns,
-    sampleRow,
+    // Drop blank/whitespace column names so no empty `{}` placeholder or
+    // duplicate-empty-key mention option is ever produced.
+    textColumns: textColumns.filter((col) => col.trim() !== ""),
     enablePlaceholders,
   });
 
   if (previewMode) {
     return (
       <div className="h-[260px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-border bg-bg-secondary px-4 py-3 text-sm leading-7 text-text-primary">
-        {!value.trim() ? (
-          <span className="text-text-secondary">{emptyPreviewText}</span>
-        ) : enablePlaceholders && Object.keys(sampleRow).length === 0 ? (
-          <span className="text-text-secondary">
-            Sample data not available. Go back to Datasets and choose a row with
-            values.
-          </span>
+        {previewText ? (
+          previewText
         ) : (
-          previewText || (
-            <span className="text-text-secondary">{emptyPreviewText}</span>
-          )
+          <span className="text-text-secondary">{emptyPreviewText}</span>
         )}
       </div>
     );
@@ -72,31 +61,10 @@ export default function PromptEditor({
   return (
     <>
       {enablePlaceholders && (
-        <div className="mb-3">
-          <div className="mb-2 text-xs text-text-secondary">
-            Use `@` or tap a column chip to insert placeholders.
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {orderedColumns.map((col) => {
-              const isUsed = usedColumns.includes(col);
-              return (
-                <Button
-                  key={col}
-                  type="button"
-                  variant={isUsed ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={() => insertPlaceholder(col)}
-                  className={`!rounded-full !px-3 !py-1.5 !font-mono !text-xs ${
-                    isUsed
-                      ? "!border-status-success-border !bg-status-success-bg !text-status-success-text"
-                      : "!bg-bg-primary"
-                  }`}
-                >
-                  {`{${col}}`}
-                </Button>
-              );
-            })}
-          </div>
+        <div className="mb-2 text-xs text-text-secondary">
+          Type <span className="font-mono">@</span> to mention a column and
+          insert it as a <span className="font-mono">{"{column}"}</span>{" "}
+          placeholder.
         </div>
       )}
 

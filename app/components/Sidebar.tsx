@@ -42,6 +42,7 @@ export default function Sidebar({
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     Evaluations: true,
     Configurations: false,
+    Assessment: true,
   });
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);

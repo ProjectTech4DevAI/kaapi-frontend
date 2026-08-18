@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { Button, InfoTooltip } from "@/app/components/ui";
 import { ChevronDownIcon } from "@/app/components/icons";
-import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
 import PromptEditor from "./PromptEditor";
 
 interface UserPromptProps {
   textColumns: string[];
-  sampleRow: SampleRow;
   promptTemplate: string;
   setPromptTemplate: ValueSetter<string>;
   previewMode: boolean;
@@ -16,7 +15,6 @@ interface UserPromptProps {
 
 export default function UserPrompt({
   textColumns,
-  sampleRow,
   promptTemplate,
   setPromptTemplate,
   previewMode,
@@ -62,7 +60,6 @@ export default function UserPrompt({
             onChange={setPromptTemplate}
             previewMode={previewMode}
             textColumns={textColumns}
-            sampleRow={sampleRow}
             enablePlaceholders
             emptyPreviewText="Preview will appear here."
             placeholder={`Describe what the AI should do.\n\nExample:\nEvaluate the student's answer.\nQuestion: {question}\nAnswer: {answer}\nContext: {context}`}

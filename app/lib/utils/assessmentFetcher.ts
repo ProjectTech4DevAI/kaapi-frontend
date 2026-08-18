@@ -8,16 +8,25 @@ import {
   GPT4_STYLE_CONFIG,
 } from "@/app/lib/data/assessmentModels";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
+import { schemaToJsonSchema } from "@/app/lib/utils/assessment";
+import { fromJsonSchema } from "@/app/lib/utils/outputSchema";
 import type {
+  AssessmentDatasetRows,
+  Attachment,
+  ColumnMapping,
   ConfigParamDefinition,
   ConfigSelection,
   ModelOption,
   PagedResult,
+  PrefilterConfig,
+  SchemaProperty,
   VersionListState,
 } from "@/app/lib/types/assessment";
 import type {
-  CompletionParams,
-  ConfigBlob,
+  AssessmentConfigBlob,
+  AssessmentInputSchemaColumn,
+  AssessmentParams,
+  AssessmentPreFilters,
   ConfigCreate,
   ConfigListResponse,
   ConfigPublic,
@@ -27,6 +36,7 @@ import type {
   ConfigVersionPublic,
   ConfigVersionResponse,
   ConfigWithVersionResponse,
+  ProviderType,
   SavedConfig,
 } from "@/app/lib/types/configs";
 
@@ -61,8 +71,10 @@ export function buildDefaultParams(
   );
 }
 
-export function buildInitialAssessmentConfigDraft(): ConfigBlob {
-  return JSON.parse(JSON.stringify(ASSESSMENT_DEFAULT_CONFIG)) as ConfigBlob;
+export function buildInitialAssessmentConfigDraft(): AssessmentConfigBlob {
+  return JSON.parse(
+    JSON.stringify(ASSESSMENT_DEFAULT_CONFIG),
+  ) as AssessmentConfigBlob;
 }
 
 export function buildInitialAssessmentVersionState(): VersionListState {
@@ -97,33 +109,254 @@ function buildPageResult<T>(
   };
 }
 
-function normalizeConfigBlobForApi(configBlob: ConfigBlob): ConfigBlob {
-  const nextParams: Partial<CompletionParams> = {};
-  Object.entries(configBlob.completion.params).forEach(([key, value]) => {
+const PRESERVED_ASSESSMENT_PARAM_KEYS = new Set([
+  "model",
+  "instructions",
+  "input_schema",
+  "json_output_schema",
+]);
+
+// Assessment config_blob provider must be a backend TextProvider
+// (openai | google | anthropic). The model catalog uses "google-aistudio" for
+// Gemini (the credential provider), so narrow it to "google" at the API boundary.
+function toTextProvider(provider: ProviderType): ProviderType {
+  return (provider === "google-aistudio" ? "google" : provider) as ProviderType;
+}
+
+function normalizeConfigBlobForApi(
+  configBlob: AssessmentConfigBlob,
+): AssessmentConfigBlob {
+  const src = configBlob.assessment.params;
+  const nextParams: AssessmentParams = {
+    model: src.model,
+    instructions: src.instructions,
+    input_schema: src.input_schema,
+  };
+  if (src.json_output_schema != null) {
+    nextParams.json_output_schema = src.json_output_schema;
+  }
+  Object.entries(src).forEach(([key, value]) => {
+    if (PRESERVED_ASSESSMENT_PARAM_KEYS.has(key)) return;
     if (value !== undefined && value !== "") {
       nextParams[key] = value;
     }
   });
-  return {
-    completion: {
-      provider: configBlob.completion.provider,
+
+  const normalized: AssessmentConfigBlob = {
+    assessment: {
+      provider: toTextProvider(configBlob.assessment.provider),
       type: "text",
-      params: nextParams as CompletionParams,
+      params: nextParams,
     },
   };
+  if (
+    configBlob.pre_filters &&
+    Object.keys(configBlob.pre_filters).length > 0
+  ) {
+    const preFilters = { ...configBlob.pre_filters };
+    if (preFilters.topic_relevance) {
+      preFilters.topic_relevance = {
+        ...preFilters.topic_relevance,
+        provider: toTextProvider(preFilters.topic_relevance.provider),
+      };
+    }
+    if (preFilters.duplicate_detection) {
+      preFilters.duplicate_detection = {
+        ...preFilters.duplicate_detection,
+        provider: toTextProvider(preFilters.duplicate_detection.provider),
+      };
+    }
+    normalized.pre_filters = preFilters;
+  }
+  return normalized;
+}
+
+export function buildAssessmentInputSchema(
+  columnMapping: ColumnMapping,
+): Record<string, AssessmentInputSchemaColumn> {
+  const strictColumns = new Set(columnMapping.strictColumns ?? []);
+  const schema: Record<string, AssessmentInputSchemaColumn> = {};
+  for (const column of columnMapping.textColumns) {
+    schema[column] = { type: "text", strict: strictColumns.has(column) };
+  }
+  for (const attachment of columnMapping.attachments) {
+    const type = attachment.type === "pdf" ? "pdf" : "image";
+    schema[attachment.column] = {
+      type,
+      format: "url",
+      strict: strictColumns.has(attachment.column),
+    };
+  }
+  return schema;
+}
+
+function buildPreFilters(
+  prefilterConfig: PrefilterConfig | null,
+  provider: ProviderType,
+  model: string,
+): AssessmentPreFilters | undefined {
+  if (!prefilterConfig) return undefined;
+  const preFilters: AssessmentPreFilters = {};
+  if (prefilterConfig.topic_relevance?.prompt?.trim()) {
+    preFilters.topic_relevance = {
+      provider,
+      params: {
+        model,
+        instructions: prefilterConfig.topic_relevance.prompt.trim(),
+      },
+      stop_on_fail: true,
+    };
+  }
+  if (prefilterConfig.duplicate_detection) {
+    preFilters.duplicate_detection = {
+      provider,
+      params: {
+        model,
+        instructions: "Flag rows that duplicate an earlier row.",
+      },
+      stop_on_fail: false,
+    };
+  }
+  return Object.keys(preFilters).length > 0 ? preFilters : undefined;
+}
+
+export function buildAssessmentConfigBlob(params: {
+  draft: AssessmentConfigBlob;
+  systemInstruction: string;
+  outputSchema: SchemaProperty[];
+  columnMapping: ColumnMapping;
+  prefilterConfig: PrefilterConfig | null;
+}): AssessmentConfigBlob {
+  const { draft, systemInstruction, outputSchema, columnMapping } = params;
+  const provider = draft.assessment.provider;
+  const model = String(draft.assessment.params.model || "");
+  const jsonOutputSchema = schemaToJsonSchema(outputSchema);
+
+  const nextParams: AssessmentParams = {
+    ...draft.assessment.params,
+    model,
+    instructions: systemInstruction.trim(),
+    input_schema: buildAssessmentInputSchema(columnMapping),
+  };
+  if (jsonOutputSchema) {
+    nextParams.json_output_schema = jsonOutputSchema;
+  } else {
+    delete nextParams.json_output_schema;
+  }
+
+  const blob: AssessmentConfigBlob = {
+    assessment: { provider, type: "text", params: nextParams },
+  };
+  const preFilters = buildPreFilters(params.prefilterConfig, provider, model);
+  if (preFilters) blob.pre_filters = preFilters;
+  return blob;
+}
+
+export interface AssessmentBuilderState {
+  draft: AssessmentConfigBlob;
+  systemInstruction: string;
+  outputSchema: SchemaProperty[];
+  columnMapping: ColumnMapping;
+  prefilterConfig: PrefilterConfig | null;
+}
+
+// Inverse of buildAssessmentConfigBlob: hydrate the builder from a saved
+// config version's blob so an existing config can be loaded and edited into a
+// new version. Pre-filter column selections are not stored in the blob, so
+// they come back empty (the criteria/prompt is preserved).
+export function assessmentBlobToBuilderState(
+  blob: AssessmentConfigBlob,
+): AssessmentBuilderState {
+  if (!blob?.assessment?.params) {
+    throw new Error(
+      "This configuration is not a valid assessment config (no assessment block).",
+    );
+  }
+  const params = blob.assessment.params as Record<string, unknown>;
+  const inputSchema = (params.input_schema ?? {}) as Record<
+    string,
+    AssessmentInputSchemaColumn
+  >;
+
+  const textColumns: string[] = [];
+  const attachments: Attachment[] = [];
+  const strictColumns: string[] = [];
+  for (const [name, column] of Object.entries(inputSchema)) {
+    if (column.type === "text") {
+      textColumns.push(name);
+    } else {
+      attachments.push({
+        column: name,
+        type: column.type,
+        format: column.format ?? "url",
+      });
+    }
+    if (column.strict) strictColumns.push(name);
+  }
+
+  const jsonOutputSchema = params.json_output_schema as
+    | Record<string, unknown>
+    | undefined;
+
+  let prefilterConfig: PrefilterConfig | null = null;
+  if (blob.pre_filters) {
+    prefilterConfig = {};
+    const tr = blob.pre_filters.topic_relevance;
+    if (tr) {
+      const trParams = (tr.params ?? {}) as Record<string, unknown>;
+      prefilterConfig.topic_relevance = {
+        columns: [],
+        prompt: String(trParams.instructions ?? ""),
+      };
+    }
+    if (blob.pre_filters.duplicate_detection) {
+      prefilterConfig.duplicate_detection = { columns: [] };
+    }
+  }
+
+  return {
+    draft: blob,
+    systemInstruction: String(params.instructions ?? ""),
+    outputSchema: jsonOutputSchema ? fromJsonSchema(jsonOutputSchema) : [],
+    columnMapping: {
+      textColumns,
+      attachments,
+      groundTruthColumns: [],
+      strictColumns,
+    },
+    prefilterConfig,
+  };
+}
+
+export async function fetchAssessmentDatasetRows(
+  datasetId: string,
+  apiKey: string,
+): Promise<AssessmentDatasetRows> {
+  // Endpoint returns APIResponse[AssessmentDatasetRows] — unwrap the envelope
+  // so callers get { headers, rows, total_rows } directly.
+  const res = await apiFetch<{
+    success: boolean;
+    data: AssessmentDatasetRows | null;
+    error?: string;
+  }>(`/api/assessment/datasets/${datasetId}/rows`, apiKey);
+  if (!res.success || !res.data) {
+    throw new Error(res.error || "Failed to fetch dataset rows");
+  }
+  return res.data;
 }
 
 export async function fetchConfigPage(params: {
   apiKey: string;
   skip?: number;
   limit?: number;
+  tag?: string;
 }): Promise<PagedResult<ConfigPublic>> {
   const skip = params.skip ?? 0;
   const limit = params.limit ?? DEFAULT_PAGE_LIMIT;
   const query = new URLSearchParams({
     skip: String(skip),
     limit: String(limit),
-    tag: ASSESSMENT_TAG,
+    tag: params.tag ?? ASSESSMENT_TAG,
   });
   const data = await apiFetch<ConfigListResponse>(
     `/api/configs?${query.toString()}`,
@@ -138,14 +371,14 @@ export async function fetchConfigPage(params: {
 export async function fetchConfigVersionsPage(
   apiKey: string,
   configId: string,
-  params: { skip?: number; limit?: number },
+  params: { skip?: number; limit?: number; tag?: string },
 ): Promise<PagedResult<ConfigVersionItems>> {
   const skip = params.skip ?? 0;
   const limit = params.limit ?? DEFAULT_PAGE_LIMIT;
   const query = new URLSearchParams({
     skip: String(skip),
     limit: String(limit),
-    tag: ASSESSMENT_TAG,
+    tag: params.tag ?? ASSESSMENT_TAG,
   });
   const data = await apiFetch<ConfigVersionListResponse>(
     `/api/configs/${configId}/versions?${query.toString()}`,
@@ -161,8 +394,9 @@ export async function fetchConfigVersionDetail(
   apiKey: string,
   configId: string,
   versionNumber: number,
+  tag: string = ASSESSMENT_TAG,
 ): Promise<ConfigVersionPublic> {
-  const query = new URLSearchParams({ tag: ASSESSMENT_TAG });
+  const query = new URLSearchParams({ tag });
   const data = await apiFetch<ConfigVersionResponse>(
     `/api/configs/${configId}/versions/${versionNumber}?${query.toString()}`,
     apiKey,
@@ -183,13 +417,15 @@ export async function fetchConfigSelection(
     config.id,
     versionNumber,
   );
-  const completion = version.config_blob.completion;
+  const blob = version.config_blob as unknown as AssessmentConfigBlob;
+  const assessment = blob.assessment;
   return {
     config_id: config.id,
     config_version: version.version,
     name: config.name,
-    provider: completion.provider,
-    model: String(completion.params.model || ""),
+    provider: assessment?.provider ?? "",
+    model: String(assessment?.params?.model || ""),
+    input_schema: assessment?.params?.input_schema ?? {},
   };
 }
 
@@ -197,14 +433,10 @@ export async function saveAssessmentConfig(params: {
   apiKey: string;
   configName: string;
   commitMessage: string;
-  configBlob: ConfigBlob;
+  configBlob: AssessmentConfigBlob;
   existingConfig: { id: string; name: string } | null;
 }): Promise<ConfigSelection> {
   const { apiKey, existingConfig } = params;
-
-  if (!apiKey) {
-    throw new Error("No API key selected. Please choose one in the Keystore.");
-  }
 
   const trimmedName = params.configName.trim();
   if (!trimmedName) {
@@ -212,8 +444,8 @@ export async function saveAssessmentConfig(params: {
   }
 
   const normalizedBlob = normalizeConfigBlobForApi(params.configBlob);
-  const provider = normalizedBlob.completion.provider;
-  const model = String(normalizedBlob.completion.params.model || "");
+  const provider = normalizedBlob.assessment.provider;
+  const model = String(normalizedBlob.assessment.params.model || "");
 
   if (existingConfig) {
     const versionCreate: ConfigVersionCreate = {

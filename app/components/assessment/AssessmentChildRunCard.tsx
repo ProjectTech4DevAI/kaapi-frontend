@@ -126,6 +126,21 @@ export default function AssessmentChildRunCard({
               </div>
             )}
 
+            {childRun.cost && (
+              <div className="mt-1.5 text-xs text-text-secondary">
+                Cost:{" "}
+                <span className="font-medium text-text-primary">
+                  ${childRun.cost.total.toFixed(4)}
+                </span>
+                {childRun.cost.pre_filter && (
+                  <span className="ml-1">
+                    · assessment ${childRun.cost.assessment.toFixed(4)} ·
+                    pre-filter ${childRun.cost.pre_filter.total.toFixed(4)}
+                  </span>
+                )}
+              </div>
+            )}
+
             <ChildRunStageProgress stages={stageProgress} />
 
             {configError && (

@@ -239,45 +239,40 @@ export function isBlankCell(cell: string | undefined): boolean {
   return cell == null || String(cell).trim() === "";
 }
 
+// A run pairs a saved config with a dataset. The config already carries its
+// input_schema + output schema, so the run only validates dataset, config
+// selection, that the chosen config defines input fields, and a run name.
 interface AssessmentSubmitChecks {
   datasetId: string | null;
-  hasMapperSelection: boolean;
-  hasResponseFormat: boolean;
+  hasInputSchema: boolean;
   configCount: number;
   experimentName: string;
+  hasPrompt: boolean;
 }
 
 export function getAssessmentSubmitError(
   checks: AssessmentSubmitChecks,
 ): string | null {
   if (!checks.datasetId) return "Dataset is required";
-  if (!checks.hasMapperSelection)
-    return "Map at least one text or attachment column";
-  if (!checks.hasResponseFormat) return "Response format is required";
   if (checks.configCount === 0) return "Select at least one configuration";
+  if (!checks.hasInputSchema)
+    return "Selected configuration has no input fields";
   if (!checks.experimentName.trim()) return "Experiment name is required";
+  if (!checks.hasPrompt) return "Enter a user prompt";
   return null;
 }
 
-interface AssessmentSubmitBlockerChecks {
-  datasetId: string | null;
-  hasMapperSelection: boolean;
-  hasResponseFormat: boolean;
-  configCount: number;
-  experimentName: string;
-}
-
 export function getAssessmentSubmitBlocker(
-  checks: AssessmentSubmitBlockerChecks,
+  checks: AssessmentSubmitChecks,
 ): string {
   if (!checks.datasetId) return "Select a dataset to submit";
-  if (!checks.hasMapperSelection)
-    return "Map at least one text or attachment column to submit";
-  if (!checks.hasResponseFormat) return "Set response format to submit";
   if (checks.configCount === 0)
     return "Select at least one configuration to submit";
+  if (!checks.hasInputSchema)
+    return "Selected configuration has no input fields";
   if (!checks.experimentName.trim())
     return "Enter an experiment name to submit";
+  if (!checks.hasPrompt) return "Enter a user prompt to submit";
   return "";
 }
 

@@ -38,7 +38,7 @@ export default function PrefilterReview({
 
   return (
     <ReviewSection
-      title="Eliminatory"
+      title="Pre-filter"
       isOpen={isOpen}
       onToggle={onToggle}
       onEdit={onEdit}

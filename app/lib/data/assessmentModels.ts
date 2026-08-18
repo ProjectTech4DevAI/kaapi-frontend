@@ -3,7 +3,7 @@ import type {
   ConfigParamDefinition,
   ModelOption,
 } from "@/app/lib/types/assessment";
-import type { ConfigBlob } from "@/app/lib/types/configs";
+import type { AssessmentConfigBlob } from "@/app/lib/types/configs";
 
 export const GPT4_STYLE_CONFIG = {
   top_p: {
@@ -376,13 +376,14 @@ export function buildDefaultParams(
   );
 }
 
-export const ASSESSMENT_DEFAULT_CONFIG: ConfigBlob = {
-  completion: {
+export const ASSESSMENT_DEFAULT_CONFIG: AssessmentConfigBlob = {
+  assessment: {
     provider: "openai",
     type: "text",
     params: {
       model: "gpt-4o-mini",
       instructions: "",
+      input_schema: {},
       ...buildDefaultParams("gpt-4o-mini"),
     },
   },

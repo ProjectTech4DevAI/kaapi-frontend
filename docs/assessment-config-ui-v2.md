@@ -1,6 +1,6 @@
 # Assessment Config UI v2 — Goal & Locked Design
 
-**Status:** Design locked, not yet implemented.
+**Status:** Implemented (frontend only) on this branch — see §10 for deviations.
 **Branch:** `feat/assessment-config-ui-v2` (off `chore/assessment-contract-update`).
 **Scope:** Overhaul of the Config screens in the Assessment feature. The top-level flow (upload dataset → set up config → experiment → run) stays as is; the Dataset step stays simple.
 

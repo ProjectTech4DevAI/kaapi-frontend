@@ -104,6 +104,10 @@ export interface AssessmentParams {
   instructions: string;
   input_schema: Record<string, AssessmentInputSchemaColumn>;
   json_output_schema?: object | null;
+  // Submission template with {column} placeholders (the run's input.query).
+  // Sent for forward compatibility — the backend does not persist it yet, so
+  // it is mirrored to localStorage per saved version (see assessmentTemplate).
+  query_template?: string;
   [key: string]: unknown;
 }
 

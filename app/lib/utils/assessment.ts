@@ -4,15 +4,9 @@ import {
   JSON_TOKEN_CLASSES,
 } from "@/app/lib/assessment/constants";
 import type {
-  ColumnConfig,
-  ColumnMapping,
-  ColumnRole,
   CreateDatasetResponse,
   DatasetPreview,
   DatasetPreviewResponse,
-  ReviewColumn,
-  RoleVisuals,
-  SchemaProperty,
 } from "@/app/lib/types/assessment";
 
 export function isAllowedDatasetFile(fileName: string): boolean {
@@ -107,96 +101,6 @@ export function getConfigDetailErrorMessage(error: unknown): string {
   return message || "Failed to load configuration details";
 }
 
-export function colorMapping(role: ColumnRole): RoleVisuals {
-  switch (role) {
-    case "text":
-      return {
-        panelClass: "border-status-success-border bg-status-success-bg",
-        dotClass: "bg-status-success",
-        activeButtonClass:
-          "!border-status-success-border !bg-status-success-bg !text-status-success-text hover:!bg-status-success-bg !ring-0",
-      };
-    case "attachment":
-      return {
-        panelClass: "border-status-warning-border bg-status-warning-bg",
-        dotClass: "bg-status-warning",
-        activeButtonClass:
-          "!border-status-warning-border !bg-status-warning-bg !text-status-warning-text hover:!bg-status-warning-bg !ring-0",
-      };
-    case "ground_truth":
-      return {
-        panelClass: "border-accent-subtle bg-accent-subtle/20",
-        dotClass: "bg-accent-primary",
-        activeButtonClass:
-          "!border-accent-subtle !bg-accent-subtle/20 !text-accent-primary hover:!bg-accent-subtle/20 !ring-0",
-      };
-    case "unmapped":
-    default:
-      return {
-        panelClass: "border-border bg-bg-primary",
-        dotClass: "bg-border",
-        activeButtonClass:
-          "!border-border !bg-bg-secondary !text-text-primary hover:!bg-bg-secondary !ring-0",
-      };
-  }
-}
-
-export function buildColumnConfigs(
-  columns: string[],
-  columnMapping: ColumnMapping,
-): ColumnConfig[] {
-  return columns.map((column) => {
-    if (columnMapping.textColumns.includes(column)) {
-      return { role: "text" };
-    }
-    const attachment = columnMapping.attachments.find(
-      (item) => item.column === column,
-    );
-    if (!attachment) {
-      return { role: "unmapped" };
-    }
-    const map = attachment.type_value_map ?? {};
-    const valuesFor = (t: string) =>
-      Object.entries(map)
-        .filter(([, v]) => v === t)
-        .map(([k]) => k)
-        .join(", ");
-    return {
-      role: "attachment",
-      attachmentType: attachment.type,
-      attachmentFormat: attachment.format,
-      attachmentTypeColumn: attachment.type_column ?? undefined,
-      attachmentImageValues: valuesFor("image"),
-      attachmentPdfValues: valuesFor("pdf"),
-    };
-  });
-}
-
-export function buildMappedColumns(
-  columnMapping: ColumnMapping,
-): ReviewColumn[] {
-  return [
-    ...columnMapping.textColumns.map((column) => ({
-      key: `text:${column}`,
-      column,
-      role: "text" as const,
-      badgeClass: "bg-status-success-bg text-status-success-text",
-    })),
-    ...columnMapping.attachments.map(({ column }) => ({
-      key: `attachment:${column}`,
-      column,
-      role: "attachment" as const,
-      badgeClass: "bg-status-warning-bg text-status-warning-text",
-    })),
-    ...columnMapping.groundTruthColumns.map((column) => ({
-      key: `ground_truth:${column}`,
-      column,
-      role: "ground truth" as const,
-      badgeClass: "bg-accent-subtle/30 text-accent-primary",
-    })),
-  ];
-}
-
 export function highlightJson(code: string): string {
   if (!code) return "";
 
@@ -274,46 +178,4 @@ export function getAssessmentSubmitBlocker(
     return "Enter an experiment name to submit";
   if (!checks.hasPrompt) return "Enter a user prompt to submit";
   return "";
-}
-
-export function schemaToJsonSchema(
-  properties: SchemaProperty[],
-): object | null {
-  if (properties.length === 0) return null;
-
-  const props: Record<string, object> = {};
-  const required: string[] = [];
-
-  properties.forEach((property) => {
-    if (!property.name.trim()) return;
-
-    let definition: object;
-    if (property.type === "object") {
-      definition = schemaToJsonSchema(property.children) || { type: "object" };
-    } else if (property.type === "enum") {
-      definition = {
-        type: "string",
-        enum: property.enumValues.filter((value) => value.trim()),
-      };
-    } else {
-      definition = { type: property.type };
-    }
-
-    if (property.isArray) {
-      definition = { type: "array", items: definition };
-    }
-
-    props[property.name] = definition;
-    if (property.isRequired) {
-      required.push(property.name);
-    }
-  });
-
-  if (Object.keys(props).length === 0) return null;
-
-  return {
-    type: "object",
-    properties: props,
-    ...(required.length > 0 ? { required } : {}),
-  };
 }

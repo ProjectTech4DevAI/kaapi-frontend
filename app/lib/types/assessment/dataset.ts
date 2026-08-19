@@ -1,8 +1,8 @@
 // Assessment types: datasets, column mapping, output schema, prefilter, review.
 import type { Dataset } from "@/app/lib/types/dataset";
+import type { ProviderType } from "@/app/lib/types/configs";
 import type {
   CreateResponse,
-  LabeledValue,
   ListResponse,
   StepNavigationProps,
   ValueSetter,
@@ -26,9 +26,6 @@ export interface ColumnMapping {
   strictColumns?: string[];
 }
 
-export type ColumnRole = "unmapped" | "text" | "attachment" | "ground_truth";
-export type RoleOption = LabeledValue<ColumnRole>;
-
 export type SchemaPropertyType =
   | "string"
   | "number"
@@ -48,9 +45,18 @@ export interface SchemaProperty {
 }
 
 export interface PrefilterTopicRelevanceConfig {
+  // Legacy field: the new pipeline shares every column with the pre-filter
+  // automatically, so column selection is no longer authored.
   columns: string[];
   attachment_columns?: string[];
   prompt: string;
+  // Pre-filters run their own LLM call; when unset the backend applies its
+  // recommended default model.
+  provider?: ProviderType;
+  model?: string;
+  params?: Record<string, string | number>;
+  // true (default) gates rejected rows out of the assessment stage.
+  stop_on_fail?: boolean;
 }
 
 export interface PrefilterDuplicateDetectionConfig {
@@ -62,39 +68,21 @@ export interface PrefilterConfig {
   duplicate_detection?: PrefilterDuplicateDetectionConfig;
 }
 
-export interface PrefilterStepProps extends StepNavigationProps {
-  columns: string[];
-  attachmentColumns?: string[];
+export interface PrefilterSectionProps extends StepNavigationProps {
   prefilterConfig: PrefilterConfig | null;
   setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
   // Changes when a config is (re)loaded, so local state re-syncs from props.
   syncToken?: number;
 }
 
-export interface ColumnConfig {
-  role: ColumnRole;
-  attachmentType?: "image" | "pdf" | "mixed";
-  attachmentFormat?: string;
-  // For 'mixed': the type-deciding column + comma-separated values per type.
-  attachmentTypeColumn?: string;
-  attachmentImageValues?: string;
-  attachmentPdfValues?: string;
-}
-
-export interface RoleVisuals {
-  panelClass: string;
-  dotClass: string;
-  activeButtonClass: string;
-}
-
-// The Mapper authors the config's input_schema directly as a manual field list;
-// it no longer maps a dataset's columns, so it takes no `columns` and no back nav.
-export interface ColumnMapperStepProps {
-  columnMapping: ColumnMapping;
-  setColumnMapping: ValueSetter<ColumnMapping>;
-  onNext: () => void;
-  // Changes when a config is (re)loaded, so the local field list re-syncs.
-  syncToken?: number;
+// One input field derived from the prompts (Fields card): every field maps to
+// an input_schema column at save time.
+export interface DerivedField {
+  name: string;
+  type: "text" | "image" | "pdf";
+  // Whether the Submission template references it ({token}) / it was attached.
+  referenced: boolean;
+  warning?: string;
 }
 
 export interface AssessmentDatasetState {
@@ -147,13 +135,4 @@ export interface AssessmentDatasetRows {
   headers: string[];
   rows: Record<string, string>[];
   total_rows: number;
-}
-
-export type ReviewColumnRole = "text" | "attachment" | "ground truth";
-
-export interface ReviewColumn {
-  key: string;
-  column: string;
-  role: ReviewColumnRole;
-  badgeClass: string;
 }

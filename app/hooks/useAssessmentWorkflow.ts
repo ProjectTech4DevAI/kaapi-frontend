@@ -13,11 +13,13 @@ import {
 import { removeFeatureFromClient } from "@/app/lib/utils/features";
 import { FeatureFlag } from "@/app/lib/constants";
 import {
+  ASSESSMENT_CONFIG_STEPS,
   ASSESSMENT_TAB_ROUTES,
   PAGE_TABS,
 } from "@/app/lib/assessment/constants";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import { assessmentBlobToBuilderState } from "@/app/lib/utils/assessmentFetcher";
+import { loadStoredSubmissionTemplate } from "@/app/lib/utils/assessmentTemplate";
 import type {
   AssessmentRunConfigRef,
   AssessmentTabId,
@@ -102,23 +104,36 @@ export function useAssessmentWorkflow(
       saveMode: "new",
       configId: "",
       configName: "",
+      configVersion: 0,
       nonce: seedNonce.current,
     });
   }, []);
 
   const loadExistingConfig = useCallback(
-    (blob: AssessmentConfigBlob, configId: string, configName: string) => {
+    (
+      blob: AssessmentConfigBlob,
+      configId: string,
+      configName: string,
+      version: number,
+    ) => {
       const state = assessmentBlobToBuilderState(blob);
       setColumnMapping(state.columnMapping);
       setSystemInstruction(state.systemInstruction);
       setOutputSchema(state.outputSchema);
       setPrefilterConfig(state.prefilterConfig);
+      // Blob param when the backend persists it; otherwise the author's
+      // localStorage mirror for this version.
+      setPromptTemplate(
+        state.submissionTemplate ||
+          loadStoredSubmissionTemplate(configId, version),
+      );
       seedNonce.current += 1;
       setConfigSeed({
         blob: state.draft,
         saveMode: "version",
         configId,
         configName,
+        configVersion: version,
         nonce: seedNonce.current,
       });
     },
@@ -158,7 +173,9 @@ export function useAssessmentWorkflow(
   const handleConfigNext = useCallback(
     (fromStep: number) => {
       markConfigCompleted(fromStep);
-      setConfigStep(fromStep + 1);
+      // Completing the final step (saving the config) stays on it so the user
+      // can keep iterating with new versions.
+      setConfigStep(Math.min(fromStep + 1, ASSESSMENT_CONFIG_STEPS.length));
     },
     [markConfigCompleted],
   );
@@ -254,16 +271,6 @@ export function useAssessmentWorkflow(
     showToastSuccess,
   ]);
 
-  // Config-authoring progress indicators (Mapper builds input fields, Evaluation
-  // sets the response format).
-  const hasMapperSelection =
-    columnMapping.textColumns.length > 0 ||
-    columnMapping.attachments.length > 0;
-  const hasConfiguredResponseFormat = outputSchema.some((field) =>
-    field.name.trim(),
-  );
-  const canReachReview = configs.length > 0 && hasConfiguredResponseFormat;
-
   // Run readiness is driven by the selected config's stored input_schema.
   const hasRunInputSchema = Object.keys(runInputSchema).length > 0;
   const hasRunPrompt = promptTemplate.trim().length > 0;
@@ -282,15 +289,13 @@ export function useAssessmentWorkflow(
     hasPrompt: hasRunPrompt,
   });
   const effectiveCompletedConfigSteps = useMemo(() => {
-    // Steps: 1 Configuration, 2 Input Schema, 3 Pre-filter (optional), 4 Assessment.
+    // Steps: 1 Choose config, 2 Pre-filter (optional), 3 Assessment.
     const merged = new Set(completedConfigSteps);
-    if (hasMapperSelection) {
-      merged.add(2);
-      merged.add(3); // Pre-filter is optional and always passable
-    }
-    if (canReachReview) merged.add(4);
+    // Pre-filter is optional: choosing a config unlocks jumping straight to
+    // the Assessment step.
+    if (merged.has(1)) merged.add(2);
     return merged;
-  }, [canReachReview, completedConfigSteps, hasMapperSelection]);
+  }, [completedConfigSteps]);
 
   return {
     activeTab,
@@ -326,15 +331,10 @@ export function useAssessmentWorkflow(
     },
     experimentTabProps: {
       onForbidden: handleForbiddenWithNotify,
-      textColumns: columnMapping.textColumns,
       promptTemplate,
       setPromptTemplate,
       configs,
       setConfigs,
-      outputSchema,
-      systemInstruction,
-      columnMapping,
-      prefilterConfig,
       datasetId,
       datasetName,
       setDatasetId,

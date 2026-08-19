@@ -2,9 +2,7 @@
 import type {
   AssessmentTab,
   AssessmentTabId,
-  SampleRow,
   StateSetter,
-  StepNavigationProps,
   ValueSetter,
   WithForbiddenHandler,
 } from "./core";
@@ -21,6 +19,9 @@ export interface ConfigDraftSeed {
   saveMode: ConfigSaveMode;
   configId: string;
   configName: string;
+  // Version the blob was loaded from (0 for a new config) — used for the
+  // template store key and the removed-columns warning on version saves.
+  configVersion: number;
   nonce: number;
 }
 
@@ -32,6 +33,7 @@ export interface ConfigSelectStepProps {
     blob: AssessmentConfigBlob,
     configId: string,
     configName: string,
+    version: number,
   ) => void;
   onForbidden: () => void;
   onNext: () => void;
@@ -40,75 +42,55 @@ export interface ConfigSelectStepProps {
   tag?: "default" | "ASSESSMENT";
 }
 
-export interface AssessmentFormState {
-  experimentName: string;
-  datasetId: string;
-  datasetName: string;
-  columns: string[];
-  sampleRow: SampleRow;
+// The editable config-authoring state shared by the Pre-filter and Assessment
+// sections (owned by useAssessmentWorkflow, edited via useConfigEditor).
+export interface ConfigEditorStateProps {
   columnMapping: ColumnMapping;
-  systemInstruction: string;
-  promptTemplate: string;
-  outputSchema: SchemaProperty[];
-  configs: ConfigSelection[];
-  prefilterConfig: PrefilterConfig | null;
-  postProcessingConfig: PostProcessingConfig | null;
-}
-
-export interface PromptPanelProps {
+  setColumnMapping: ValueSetter<ColumnMapping>;
   systemInstruction: string;
   setSystemInstruction: ValueSetter<string>;
+  promptTemplate: string;
+  setPromptTemplate: ValueSetter<string>;
+  outputSchema: SchemaProperty[];
+  setOutputSchema: ValueSetter<SchemaProperty[]>;
+  prefilterConfig: PrefilterConfig | null;
+  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
+  configs: ConfigSelection[];
+  setConfigs: StateSetter<ConfigSelection[]>;
+  configSeed: ConfigDraftSeed | null;
 }
 
-export interface ResponseSchemaProps {
-  schema: SchemaProperty[];
-  setSchema: ValueSetter<SchemaProperty[]>;
-  summary: string;
-  hasFields: boolean;
+export interface AssessmentSectionProps extends ConfigEditorStateProps {
+  onBack: () => void;
+  // Called after a successful save so the workflow can mark the step complete.
+  onSaved: () => void;
 }
 
-// Config tab authors + saves a dataset-independent config (Mapper builds the
-// input_schema directly -> Eliminatory -> Evaluation). Run submission lives in
-// the Experiment tab, so no dataset/submit/postprocessing here.
-export interface ConfigPanelProps {
-  columnMapping: ColumnMapping;
+// Config tab: 1 Choose config -> 2 Pre-filter (optional) -> 3 Assessment
+// (which ends in Review & save). The input schema is derived from the
+// @-references in the Submission editor, not authored as a form.
+export interface ConfigPanelProps extends ConfigEditorStateProps {
   completedSteps: Set<number>;
   configStep: number;
-  configs: ConfigSelection[];
-  prefilterConfig: PrefilterConfig | null;
-  outputSchema: SchemaProperty[];
-  systemInstruction: string;
-  promptTemplate: string;
-  setColumnMapping: ValueSetter<ColumnMapping>;
   setConfigStep: ValueSetter<number>;
-  setConfigs: StateSetter<ConfigSelection[]>;
-  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
-  setOutputSchema: ValueSetter<SchemaProperty[]>;
-  setSystemInstruction: ValueSetter<string>;
-  setPromptTemplate: ValueSetter<string>;
   onStepComplete: ValueSetter<number>;
-  configSeed: ConfigDraftSeed | null;
   onStartNewConfig: () => void;
   onLoadExistingConfig: (
     blob: AssessmentConfigBlob,
     configId: string,
     configName: string,
+    version: number,
   ) => void;
   onForbidden: () => void;
 }
 
 // Experiment tab: pick a saved config + a dataset, then dispatch a run.
 export interface ExperimentTabProps extends WithForbiddenHandler {
-  // Saved-config picker (fed to usePromptAndConfigStep).
-  textColumns: string[];
+  // Saved-config picker (fed to useSavedConfigList).
   promptTemplate: string;
   setPromptTemplate: ValueSetter<string>;
   configs: ConfigSelection[];
   setConfigs: StateSetter<ConfigSelection[]>;
-  outputSchema: SchemaProperty[];
-  systemInstruction: string;
-  columnMapping: ColumnMapping;
-  prefilterConfig: PrefilterConfig | null;
   // Dataset picker (fed to useAssessmentDatasetsTab).
   datasetId: string;
   datasetName: string;
@@ -143,31 +125,9 @@ export interface PageLayoutProps {
   evaluationsTabProps: EvaluationsTabProps;
 }
 
-export interface PostProcessingStepProps extends StepNavigationProps {
-  postProcessingConfig: PostProcessingConfig | null;
-  setPostProcessingConfig: (config: PostProcessingConfig | null) => void;
-  columnMapping: ColumnMapping;
-  outputSchema: SchemaProperty[];
-}
-
 export interface PostProcessingPanelProps {
   availableColumns: string[];
   fetchColumns?: () => Promise<string[]>;
   initialConfig: PostProcessingConfig | null;
   onSave: (config: PostProcessingConfig) => Promise<void>;
-}
-
-export interface PromptAndConfigStepProps extends StepNavigationProps {
-  textColumns: string[];
-  systemInstruction: string;
-  setSystemInstruction: ValueSetter<string>;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-  configs: ConfigSelection[];
-  setConfigs: StateSetter<ConfigSelection[]>;
-  outputSchema: SchemaProperty[];
-  setOutputSchema: ValueSetter<SchemaProperty[]>;
-  columnMapping: ColumnMapping;
-  prefilterConfig: PrefilterConfig | null;
-  configSeed?: ConfigDraftSeed | null;
 }

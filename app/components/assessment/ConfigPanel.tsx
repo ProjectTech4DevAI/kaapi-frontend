@@ -2,33 +2,23 @@
 
 import { ASSESSMENT_CONFIG_STEPS } from "@/app/lib/assessment/constants";
 import type { ConfigPanelProps } from "@/app/lib/types/assessment";
-import ColumnMapperStep from "./ColumnMapperStep";
+import AssessmentSection from "./config-editor/AssessmentSection";
+import PrefilterSection from "./config-editor/PrefilterSection";
 import ConfigSelectStep from "./ConfigSelectStep";
-import PrefilterStep from "./PrefilterStep";
-import PromptAndConfigStep from "./PromptAndConfigStep";
 import Stepper from "./Stepper";
 
+// Config authoring flow: 1 Choose config -> 2 Pre-filter (optional) ->
+// 3 Assessment (ends in Review & save). Steps stay mounted (hidden via CSS)
+// so in-flight edits survive navigation.
 export default function ConfigPanel({
-  columnMapping,
   completedSteps,
   configStep,
-  configs,
-  prefilterConfig,
-  outputSchema,
-  systemInstruction,
-  promptTemplate,
-  setColumnMapping,
   setConfigStep,
-  setConfigs,
-  setPrefilterConfig,
-  setOutputSchema,
-  setSystemInstruction,
-  setPromptTemplate,
   onStepComplete,
-  configSeed,
   onStartNewConfig,
   onLoadExistingConfig,
   onForbidden,
+  ...editorState
 }: ConfigPanelProps) {
   return (
     <>
@@ -57,11 +47,12 @@ export default function ConfigPanel({
             configStep === 2 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
           }
         >
-          <ColumnMapperStep
-            columnMapping={columnMapping}
-            setColumnMapping={setColumnMapping}
+          <PrefilterSection
+            prefilterConfig={editorState.prefilterConfig}
+            setPrefilterConfig={editorState.setPrefilterConfig}
             onNext={() => onStepComplete(2)}
-            syncToken={configSeed?.nonce}
+            onBack={() => setConfigStep(1)}
+            syncToken={editorState.configSeed?.nonce}
           />
         </div>
 
@@ -70,37 +61,10 @@ export default function ConfigPanel({
             configStep === 3 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
           }
         >
-          <PrefilterStep
-            columns={columnMapping.textColumns}
-            attachmentColumns={columnMapping.attachments.map((a) => a.column)}
-            prefilterConfig={prefilterConfig}
-            setPrefilterConfig={setPrefilterConfig}
-            onNext={() => onStepComplete(3)}
+          <AssessmentSection
+            {...editorState}
             onBack={() => setConfigStep(2)}
-            syncToken={configSeed?.nonce}
-          />
-        </div>
-
-        <div
-          className={
-            configStep === 4 ? "flex min-h-0 h-full flex-1 flex-col" : "hidden"
-          }
-        >
-          <PromptAndConfigStep
-            textColumns={columnMapping.textColumns}
-            systemInstruction={systemInstruction}
-            setSystemInstruction={setSystemInstruction}
-            promptTemplate={promptTemplate}
-            setPromptTemplate={setPromptTemplate}
-            configs={configs}
-            setConfigs={setConfigs}
-            outputSchema={outputSchema}
-            setOutputSchema={setOutputSchema}
-            columnMapping={columnMapping}
-            prefilterConfig={prefilterConfig}
-            configSeed={configSeed}
-            onNext={() => onStepComplete(4)}
-            onBack={() => setConfigStep(3)}
+            onSaved={() => onStepComplete(3)}
           />
         </div>
       </div>

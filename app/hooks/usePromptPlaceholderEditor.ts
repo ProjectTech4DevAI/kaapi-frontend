@@ -31,6 +31,7 @@ export interface UsePromptPlaceholderEditorResult {
   handleInput: () => void;
   handleKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   insertMention: (column: string) => void;
+  replaceMentionWith: (text: string) => void;
   insertPlaceholder: (column: string) => void;
   usedColumns: string[];
   orderedColumns: string[];
@@ -149,13 +150,15 @@ export function usePromptPlaceholderEditor({
     closeMention();
   }, [closeMention, computeCaretPosition, enablePlaceholders]);
 
-  const insertMention = useCallback(
-    (column: string) => {
+  // Replace the active "@query" text with arbitrary text (empty string just
+  // removes the mention — used when a pick becomes an attachment, not a token).
+  const replaceMentionWith = useCallback(
+    (text: string) => {
       const textarea = textareaRef.current;
       if (!textarea || mentionStart === null) return;
       const cursor = textarea.selectionStart;
-      const nextValue = `${value.substring(0, mentionStart)}{${column}}${value.substring(cursor)}`;
-      const nextCursor = mentionStart + column.length + 2;
+      const nextValue = `${value.substring(0, mentionStart)}${text}${value.substring(cursor)}`;
+      const nextCursor = mentionStart + text.length;
       onChange(nextValue);
       closeMention();
       setTimeout(() => {
@@ -164,6 +167,11 @@ export function usePromptPlaceholderEditor({
       }, 0);
     },
     [closeMention, mentionStart, onChange, value],
+  );
+
+  const insertMention = useCallback(
+    (column: string) => replaceMentionWith(`{${column}}`),
+    [replaceMentionWith],
   );
 
   const insertPlaceholder = (column: string) => {
@@ -271,6 +279,7 @@ export function usePromptPlaceholderEditor({
     handleInput,
     handleKeyDown,
     insertMention,
+    replaceMentionWith,
     insertPlaceholder,
     usedColumns,
     orderedColumns,

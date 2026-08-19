@@ -1,6 +1,5 @@
 // Assessment types: model configurations, versions, and config-selection UI.
 import type {
-  AssessmentConfigBlob,
   AssessmentInputSchemaColumn,
   CompletionConfig,
   ConfigPublic,
@@ -21,6 +20,9 @@ export interface ConfigSelection extends ConfigRef {
   // Stored input_schema of the selected config version, used to build the run's
   // input_binding without re-authoring a dataset mapping.
   input_schema?: Record<string, AssessmentInputSchemaColumn>;
+  // Submission template authored with the config (blob param when the backend
+  // persists it, otherwise the author's localStorage mirror).
+  query_template?: string;
 }
 
 export interface AssessmentRunConfigRef {
@@ -46,8 +48,6 @@ export interface AssessmentModelConfig {
 }
 
 export type ModelOption = LabeledValue;
-
-export type ConfigMode = "existing" | "create";
 
 // Config-tab save modal: create a brand-new config vs. a new version of one.
 export type ConfigSaveMode = "new" | "version";
@@ -87,41 +87,22 @@ export interface SavedConfigCardProps {
   ) => void | Promise<void>;
 }
 
-export interface ConfigCreatorProps {
-  currentProvider: string;
-  currentModel: string;
+// Shared model-configuration panel (provider + model + advanced params) used
+// by both the Pre-filter and Assessment sections.
+export interface ModelPanelProps {
+  provider: string;
+  model: string;
   providerModels: ModelOption[];
-  currentParamDefs: Record<string, ConfigParamDefinition>;
-  draftParams: Record<string, string | number | undefined>;
-  configName: string;
-  commitMessage: string;
-  isSaving: boolean;
-  // Save modal open-state is lifted so the trigger button can live in the
-  // step-level footer while the modal renders here.
-  isSaveModalOpen: boolean;
-  setIsSaveModalOpen: ValueSetter<boolean>;
-  // Save modal: new config vs. new version of an existing config.
-  saveMode: ConfigSaveMode;
-  setSaveMode: ValueSetter<ConfigSaveMode>;
-  versionConfigId: string;
-  setVersionConfigId: ValueSetter<string>;
-  existingConfigs: ConfigPublic[];
-  setConfigName: ValueSetter<string>;
-  setCommitMessage: ValueSetter<string>;
+  paramDefs: Record<string, ConfigParamDefinition>;
+  params: Record<string, string | number | undefined>;
   onProviderChange: ValueSetter<CompletionConfig["provider"]>;
   onModelChange: ValueSetter<string>;
   onParamChange: (key: string, value: string | number) => void;
-  onSave: () => void | Promise<void>;
 }
 
-export interface UsePromptAndConfigStepResult {
-  promptStatus: string;
-  responseSummary: string;
-  hasConfiguredResponseFormat: boolean;
-  canProceed: boolean;
-  nextBlockerMessage: string;
-  configMode: ConfigMode;
-  setConfigMode: ValueSetter<ConfigMode>;
+// Saved-config listing/selection state (Experiment tab picker + the save
+// dialog's "new version of existing" target list).
+export interface UseSavedConfigListResult {
   removeSelection: (configId: string, version: number) => void;
   filteredConfigCards: ConfigPublic[];
   searchQuery: string;
@@ -141,32 +122,5 @@ export interface UsePromptAndConfigStepResult {
     config: ConfigPublic,
     version: number,
   ) => Promise<void>;
-  currentProvider: string;
-  currentModel: string;
-  providerModels: ModelOption[];
-  currentParamDefs: Record<string, ConfigParamDefinition>;
-  draftParams: Record<string, string | number | undefined>;
-  configName: string;
-  commitMessage: string;
-  isSaving: boolean;
-  saveMode: ConfigSaveMode;
-  setSaveMode: ValueSetter<ConfigSaveMode>;
-  versionConfigId: string;
-  setVersionConfigId: ValueSetter<string>;
-  setConfigName: ValueSetter<string>;
-  setCommitMessage: ValueSetter<string>;
-  handleProviderChange: (provider: CompletionConfig["provider"]) => void;
-  handleModelChange: (modelName: string) => void;
-  updateDraftParam: (key: string, value: string | number) => void;
-  handleCreateAndAdd: () => Promise<void>;
-  configBlob: AssessmentConfigBlob;
-}
-
-// The Config tab renders only the "new configuration" builder (ConfigCreator);
-// selecting an existing saved config to run lives in the Experiment tab.
-export interface AssessmentConfigurationProps extends Omit<
-  ConfigCreatorProps,
-  "onSave"
-> {
-  onSaveConfig: () => void | Promise<void>;
+  addSelection: (selection: ConfigSelection) => void;
 }

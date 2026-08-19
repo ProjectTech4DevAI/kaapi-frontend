@@ -186,7 +186,6 @@ export default function ConfigSelectStep({
   useEffect(() => {
     if (!isAuthenticated) return;
     loadConfigs();
-     
   }, [isAuthenticated, apiKey, tag]);
 
   const filtered = useMemo(() => {
@@ -214,7 +213,7 @@ export default function ConfigSelectStep({
         tag,
       );
       const blob = detail.config_blob as unknown as AssessmentConfigBlob;
-      onLoadExisting(blob, config.id, config.name);
+      onLoadExisting(blob, config.id, config.name, version);
       onNext();
     } catch (err) {
       toast.error(

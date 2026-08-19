@@ -1,12 +1,12 @@
 "use client";
 
 // Experiment tab: pick a saved config version + a dataset, then dispatch a run.
-// Reuses the config picker from usePromptAndConfigStep and the dataset list from
+// Reuses the config picker from useSavedConfigList and the dataset list from
 // useAssessmentDatasetsTab so no run/selection logic is re-implemented here.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Loader, Modal, Select } from "@/app/components/ui";
 import { ExpandIcon } from "@/app/components/icons";
-import { usePromptAndConfigStep } from "@/app/hooks/usePromptAndConfigStep";
+import { useSavedConfigList } from "@/app/hooks/useSavedConfigList";
 import { useAssessmentDatasetsTab } from "@/app/hooks/useAssessmentDatasetsTab";
 import { useToast } from "@/app/hooks/useToast";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -18,15 +18,10 @@ import ExperimentReview from "./review/ExperimentReview";
 
 export default function ExperimentTab({
   onForbidden,
-  textColumns,
   promptTemplate,
   setPromptTemplate,
   configs,
   setConfigs,
-  outputSchema,
-  systemInstruction,
-  columnMapping,
-  prefilterConfig,
   datasetId,
   datasetName,
   setDatasetId,
@@ -55,16 +50,17 @@ export default function ExperimentTab({
     loadVersions,
     toggleConfigExpansion,
     toggleVersionSelection,
-  } = usePromptAndConfigStep({
-    textColumns,
-    promptTemplate,
-    configs,
-    setConfigs,
-    outputSchema,
-    systemInstruction,
-    columnMapping,
-    prefilterConfig,
-  });
+  } = useSavedConfigList({ configs, setConfigs });
+
+  // Prefill the user prompt from the selected config's Submission template
+  // (authored in the Config tab) when nothing has been typed here yet.
+  const configTemplate = configs[0]?.query_template ?? "";
+  useEffect(() => {
+    if (configTemplate && !promptTemplate.trim()) {
+      setPromptTemplate(configTemplate);
+    }
+     
+  }, [configTemplate]);
 
   const { datasets, isLoading, handleDatasetSelect } = useAssessmentDatasetsTab(
     {

@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Button, Select } from "@/app/components/ui";
 import { CloseIcon, TrashIcon } from "@/app/components/icons";
 import { SCHEMA_TYPE_OPTIONS } from "@/app/lib/assessment/constants";
+import { sanitizeFieldName } from "@/app/lib/utils/outputSchema";
 import type {
   SchemaProperty,
   SchemaPropertyType,
@@ -10,9 +12,17 @@ import type {
 } from "@/app/lib/types/assessment";
 import CompactToggleSwitch from "../CompactToggleSwitch";
 
+// Row grid: name | type | array toggle | delete. All fields are required
+// (provider strict structured-output mode rejects optional properties), so
+// there is no required toggle.
+export const SCHEMA_ROW_GRID =
+  "grid grid-cols-[minmax(0,1fr)_196px_56px_36px] items-center gap-3";
+
 interface SchemaPropertyRowProps {
   property: SchemaProperty;
   depth: number;
+  // Id of the row whose name input should grab focus (quick-add flow).
+  focusId?: string | null;
   onUpdate: (
     id: string,
     updater: (property: SchemaProperty) => SchemaProperty,
@@ -22,28 +32,54 @@ interface SchemaPropertyRowProps {
   onAddEnumValue: ValueSetter<string>;
   onUpdateEnumValue: (id: string, index: number, value: string) => void;
   onRemoveEnumValue: (id: string, index: number) => void;
+  // Enter in the name input appends the next field (rhythm: name, Tab, type,
+  // Enter, next field).
+  onEnterInName?: (id: string) => void;
 }
 
 export default function SchemaPropertyRow({
   property,
   depth,
+  focusId,
   onUpdate,
   onRemove,
   onAddChild,
   onAddEnumValue,
   onUpdateEnumValue,
   onRemoveEnumValue,
+  onEnterInName,
 }: SchemaPropertyRowProps) {
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (focusId && focusId === property.id) {
+      nameInputRef.current?.focus();
+    }
+  }, [focusId, property.id]);
+
   return (
     <div>
-      <div className="grid grid-cols-[minmax(0,1fr)_196px_56px_56px_36px] items-center gap-3">
+      <div className={SCHEMA_ROW_GRID}>
         <input
+          ref={nameInputRef}
           type="text"
           value={property.name}
           onChange={(e) =>
             onUpdate(property.id, (p) => ({ ...p, name: e.target.value }))
           }
-          placeholder="name"
+          onBlur={() =>
+            onUpdate(property.id, (p) => ({
+              ...p,
+              name: sanitizeFieldName(p.name),
+            }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && onEnterInName) {
+              e.preventDefault();
+              onEnterInName(property.id);
+            }
+          }}
+          placeholder="field name (e.g. q1_marks)"
           className="h-9 min-w-0 flex-1 rounded-md border border-border bg-bg-primary px-3 text-sm text-text-primary"
         />
         <div className="min-w-0">
@@ -73,13 +109,6 @@ export default function SchemaPropertyRow({
             onUpdate(property.id, (p) => ({ ...p, isArray: !p.isArray }))
           }
           title={property.isArray ? "Remove array wrapper" : "Make array"}
-        />
-        <CompactToggleSwitch
-          checked={property.isRequired}
-          onChange={() =>
-            onUpdate(property.id, (p) => ({ ...p, isRequired: !p.isRequired }))
-          }
-          title={property.isRequired ? "Mark optional" : "Mark required"}
         />
         <button
           type="button"
@@ -134,12 +163,14 @@ export default function SchemaPropertyRow({
               key={child.id}
               property={child}
               depth={depth + 1}
+              focusId={focusId}
               onUpdate={onUpdate}
               onRemove={onRemove}
               onAddChild={onAddChild}
               onAddEnumValue={onAddEnumValue}
               onUpdateEnumValue={onUpdateEnumValue}
               onRemoveEnumValue={onRemoveEnumValue}
+              onEnterInName={onEnterInName}
             />
           ))}
           <Button

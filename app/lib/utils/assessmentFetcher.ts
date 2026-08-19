@@ -1,22 +1,19 @@
-// Assessment-scoped config fetchers, model helpers, and save logic.
+// Assessment-scoped config fetchers, blob builders, and save logic.
 import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/configFetchers";
 import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
-import {
-  ASSESSMENT_DEFAULT_CONFIG,
-  ASSESSMENT_MODEL_CONFIGS,
-  GPT4_STYLE_CONFIG,
-} from "@/app/lib/data/assessmentModels";
+import { ASSESSMENT_DEFAULT_CONFIG } from "@/app/lib/data/assessmentModels";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-import { schemaToJsonSchema } from "@/app/lib/utils/assessment";
-import { fromJsonSchema } from "@/app/lib/utils/outputSchema";
+import {
+  toJsonSchemaOrNull,
+  fromJsonSchema,
+} from "@/app/lib/utils/outputSchema";
+import { loadStoredSubmissionTemplate } from "@/app/lib/utils/assessmentTemplate";
 import type {
   AssessmentDatasetRows,
   Attachment,
   ColumnMapping,
-  ConfigParamDefinition,
   ConfigSelection,
-  ModelOption,
   PagedResult,
   PrefilterConfig,
   SchemaProperty,
@@ -26,6 +23,7 @@ import type {
   AssessmentConfigBlob,
   AssessmentInputSchemaColumn,
   AssessmentParams,
+  AssessmentPreFilterParams,
   AssessmentPreFilters,
   ConfigCreate,
   ConfigListResponse,
@@ -37,39 +35,16 @@ import type {
   ConfigVersionResponse,
   ConfigWithVersionResponse,
   ProviderType,
-  SavedConfig,
 } from "@/app/lib/types/configs";
 
-export function getModelsByProvider(provider: string): ModelOption[] {
-  return ASSESSMENT_MODEL_CONFIGS.filter(
-    (model) => model.provider === provider,
-  ).map(({ model_name }) => ({ value: model_name, label: model_name }));
-}
-
-export function getDefaultModelForProvider(provider: string): string {
-  return (
-    ASSESSMENT_MODEL_CONFIGS.find((model) => model.provider === provider)
-      ?.model_name ?? "gpt-4o-mini"
-  );
-}
-
-export function getModelConfigDefinition(
-  modelName: string,
-): Record<string, ConfigParamDefinition> {
-  return (
-    ASSESSMENT_MODEL_CONFIGS.find((item) => item.model_name === modelName)
-      ?.config ?? GPT4_STYLE_CONFIG
-  );
-}
-
-export function buildDefaultParams(
-  modelName: string,
-): Record<string, number | string> {
-  const definition = getModelConfigDefinition(modelName);
-  return Object.fromEntries(
-    Object.entries(definition).map(([key, value]) => [key, value.default]),
-  );
-}
+// The single source for model catalog helpers lives in the data module;
+// re-exported here for existing import sites.
+export {
+  buildDefaultParams,
+  getDefaultModelForProvider,
+  getModelConfigDefinition,
+  getModelsByProvider,
+} from "@/app/lib/data/assessmentModels";
 
 export function buildInitialAssessmentConfigDraft(): AssessmentConfigBlob {
   return JSON.parse(
@@ -84,16 +59,6 @@ export function buildInitialAssessmentVersionState(): VersionListState {
     error: null,
     hasMore: true,
     nextSkip: 0,
-  };
-}
-
-export function toConfigSelection(saved: SavedConfig): ConfigSelection {
-  return {
-    config_id: saved.config_id,
-    config_version: saved.version,
-    name: saved.name,
-    provider: saved.provider,
-    model: saved.modelName,
   };
 }
 
@@ -114,6 +79,7 @@ const PRESERVED_ASSESSMENT_PARAM_KEYS = new Set([
   "instructions",
   "input_schema",
   "json_output_schema",
+  "query_template",
 ]);
 
 // Assessment config_blob provider must be a backend TextProvider
@@ -134,6 +100,9 @@ function normalizeConfigBlobForApi(
   };
   if (src.json_output_schema != null) {
     nextParams.json_output_schema = src.json_output_schema;
+  }
+  if (typeof src.query_template === "string" && src.query_template.trim()) {
+    nextParams.query_template = src.query_template;
   }
   Object.entries(src).forEach(([key, value]) => {
     if (PRESERVED_ASSESSMENT_PARAM_KEYS.has(key)) return;
@@ -190,32 +159,48 @@ export function buildAssessmentInputSchema(
   return schema;
 }
 
+// The backend rejects unknown pre-filter params (extra="forbid"), so only pass
+// through the generic text-LLM knobs.
+const PREFILTER_ALLOWED_PARAM_KEYS = new Set([
+  "temperature",
+  "top_p",
+  "effort",
+  "summary",
+  "reasoning",
+  "max_output_tokens",
+]);
+
 function buildPreFilters(
   prefilterConfig: PrefilterConfig | null,
-  provider: ProviderType,
-  model: string,
+  fallbackProvider: ProviderType,
+  existingPreFilters: AssessmentPreFilters | undefined,
 ): AssessmentPreFilters | undefined {
-  if (!prefilterConfig) return undefined;
   const preFilters: AssessmentPreFilters = {};
-  if (prefilterConfig.topic_relevance?.prompt?.trim()) {
+  const tr = prefilterConfig?.topic_relevance;
+  if (tr?.prompt?.trim()) {
+    const trParams: AssessmentPreFilterParams = {
+      instructions: tr.prompt.trim(),
+    };
+    // Omitting model applies the backend's recommended default (which also
+    // sets its own effort/summary defaults).
+    if (tr.model) {
+      trParams.model = tr.model;
+      Object.entries(tr.params ?? {}).forEach(([key, value]) => {
+        if (PREFILTER_ALLOWED_PARAM_KEYS.has(key)) trParams[key] = value;
+      });
+    }
     preFilters.topic_relevance = {
-      provider,
-      params: {
-        model,
-        instructions: prefilterConfig.topic_relevance.prompt.trim(),
-      },
-      stop_on_fail: true,
+      provider: toTextProvider(
+        (tr.provider ?? fallbackProvider) as ProviderType,
+      ),
+      params: trParams,
+      stop_on_fail: tr.stop_on_fail ?? true,
     };
   }
-  if (prefilterConfig.duplicate_detection) {
-    preFilters.duplicate_detection = {
-      provider,
-      params: {
-        model,
-        instructions: "Flag rows that duplicate an earlier row.",
-      },
-      stop_on_fail: false,
-    };
+  // Duplicate detection is not authored in the v2 UI; round-trip a loaded
+  // config's block untouched.
+  if (existingPreFilters?.duplicate_detection) {
+    preFilters.duplicate_detection = existingPreFilters.duplicate_detection;
   }
   return Object.keys(preFilters).length > 0 ? preFilters : undefined;
 }
@@ -223,31 +208,41 @@ function buildPreFilters(
 export function buildAssessmentConfigBlob(params: {
   draft: AssessmentConfigBlob;
   systemInstruction: string;
+  submissionTemplate: string;
   outputSchema: SchemaProperty[];
   columnMapping: ColumnMapping;
   prefilterConfig: PrefilterConfig | null;
 }): AssessmentConfigBlob {
-  const { draft, systemInstruction, outputSchema, columnMapping } = params;
+  const { draft, systemInstruction, submissionTemplate, outputSchema } = params;
   const provider = draft.assessment.provider;
   const model = String(draft.assessment.params.model || "");
-  const jsonOutputSchema = schemaToJsonSchema(outputSchema);
+  const jsonOutputSchema = toJsonSchemaOrNull(outputSchema);
 
   const nextParams: AssessmentParams = {
     ...draft.assessment.params,
     model,
     instructions: systemInstruction.trim(),
-    input_schema: buildAssessmentInputSchema(columnMapping),
+    input_schema: buildAssessmentInputSchema(params.columnMapping),
   };
   if (jsonOutputSchema) {
     nextParams.json_output_schema = jsonOutputSchema;
   } else {
     delete nextParams.json_output_schema;
   }
+  if (submissionTemplate.trim()) {
+    nextParams.query_template = submissionTemplate;
+  } else {
+    delete nextParams.query_template;
+  }
 
   const blob: AssessmentConfigBlob = {
     assessment: { provider, type: "text", params: nextParams },
   };
-  const preFilters = buildPreFilters(params.prefilterConfig, provider, model);
+  const preFilters = buildPreFilters(
+    params.prefilterConfig,
+    provider,
+    draft.pre_filters,
+  );
   if (preFilters) blob.pre_filters = preFilters;
   return blob;
 }
@@ -255,6 +250,7 @@ export function buildAssessmentConfigBlob(params: {
 export interface AssessmentBuilderState {
   draft: AssessmentConfigBlob;
   systemInstruction: string;
+  submissionTemplate: string;
   outputSchema: SchemaProperty[];
   columnMapping: ColumnMapping;
   prefilterConfig: PrefilterConfig | null;
@@ -304,9 +300,20 @@ export function assessmentBlobToBuilderState(
     const tr = blob.pre_filters.topic_relevance;
     if (tr) {
       const trParams = (tr.params ?? {}) as Record<string, unknown>;
+      const extraParams: Record<string, string | number> = {};
+      Object.entries(trParams).forEach(([key, value]) => {
+        if (key === "model" || key === "instructions") return;
+        if (typeof value === "string" || typeof value === "number") {
+          extraParams[key] = value;
+        }
+      });
       prefilterConfig.topic_relevance = {
         columns: [],
         prompt: String(trParams.instructions ?? ""),
+        provider: tr.provider,
+        model: trParams.model ? String(trParams.model) : undefined,
+        params: extraParams,
+        stop_on_fail: tr.stop_on_fail ?? true,
       };
     }
     if (blob.pre_filters.duplicate_detection) {
@@ -317,6 +324,8 @@ export function assessmentBlobToBuilderState(
   return {
     draft: blob,
     systemInstruction: String(params.instructions ?? ""),
+    submissionTemplate:
+      typeof params.query_template === "string" ? params.query_template : "",
     outputSchema: jsonOutputSchema ? fromJsonSchema(jsonOutputSchema) : [],
     columnMapping: {
       textColumns,
@@ -419,6 +428,10 @@ export async function fetchConfigSelection(
   );
   const blob = version.config_blob as unknown as AssessmentConfigBlob;
   const assessment = blob.assessment;
+  const blobTemplate =
+    typeof assessment?.params?.query_template === "string"
+      ? assessment.params.query_template
+      : "";
   return {
     config_id: config.id,
     config_version: version.version,
@@ -426,6 +439,12 @@ export async function fetchConfigSelection(
     provider: assessment?.provider ?? "",
     model: String(assessment?.params?.model || ""),
     input_schema: assessment?.params?.input_schema ?? {},
+    // Blob param when the backend persists it; the author's localStorage
+    // mirror otherwise.
+    query_template:
+      blobTemplate ||
+      loadStoredSubmissionTemplate(config.id, version.version) ||
+      undefined,
   };
 }
 

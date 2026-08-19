@@ -13,8 +13,6 @@ import {
   getModelsByProvider,
 } from "@/app/lib/data/assessmentModels";
 import {
-  DEFAULT_PREFILTER_CRITERIA,
-  DEFAULT_PREFILTER_SUBMISSION,
   PLACEHOLDER_PREFILTER_CRITERIA,
   PLACEHOLDER_PREFILTER_SUBMISSION,
 } from "@/app/lib/assessment/placeholders";
@@ -133,16 +131,7 @@ export default function PrefilterSection({
     return [...names];
   }, [attachmentFieldNames, reference.referenceDataset, textFieldNames]);
 
-  const toggleEnabled = () => {
-    setEnabled((wasEnabled) => {
-      // First enable starts from the working example instead of a blank page.
-      if (!wasEnabled && !criteria.trim() && !submission.trim()) {
-        setCriteria(DEFAULT_PREFILTER_CRITERIA);
-        setSubmission(DEFAULT_PREFILTER_SUBMISSION);
-      }
-      return !wasEnabled;
-    });
-  };
+  const toggleEnabled = () => setEnabled((wasEnabled) => !wasEnabled);
 
   const providerModels = [
     { value: DEFAULT_MODEL_OPTION, label: "Recommended (managed)" },

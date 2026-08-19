@@ -21,12 +21,7 @@ import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import { assessmentBlobToBuilderState } from "@/app/lib/utils/assessmentFetcher";
 import { loadStoredSubmissionTemplate } from "@/app/lib/utils/assessmentTemplate";
 import { buildExampleResponseFormat } from "@/app/lib/utils/outputSchema";
-import {
-  DEFAULT_ASSESSMENT_INSTRUCTIONS,
-  DEFAULT_ASSESSMENT_SUBMISSION,
-  DEFAULT_ATTACHMENT_FIELD,
-  DEFAULT_TEXT_FIELDS,
-} from "@/app/lib/assessment/placeholders";
+import { DEFAULT_ATTACHMENT_FIELD } from "@/app/lib/assessment/placeholders";
 import type {
   AssessmentRunConfigRef,
   AssessmentTabId,
@@ -99,19 +94,19 @@ export function useAssessmentWorkflow(
   const [configSeed, setConfigSeed] = useState<ConfigDraftSeed | null>(null);
   const seedNonce = useRef(0);
 
-  // A new config starts as a short, real, working example (teacher grading a
-  // Social Science paper from an id/name/submission dataset) that the user
-  // edits into their own use case.
+  // A new config starts with empty editors (the placeholders carry a full
+  // worked example in grey), plus the example dataset's attachment field and
+  // response-format fields prefilled — both editable, neither PII.
   const startNewConfig = useCallback(() => {
     setColumnMapping({
-      textColumns: [...DEFAULT_TEXT_FIELDS],
+      textColumns: [],
       attachments: [
         { column: DEFAULT_ATTACHMENT_FIELD, type: "pdf", format: "url" },
       ],
       groundTruthColumns: [],
     });
-    setSystemInstruction(DEFAULT_ASSESSMENT_INSTRUCTIONS);
-    setPromptTemplate(DEFAULT_ASSESSMENT_SUBMISSION);
+    setSystemInstruction("");
+    setPromptTemplate("");
     setOutputSchema(buildExampleResponseFormat());
     setPrefilterConfig(null);
     seedNonce.current += 1;

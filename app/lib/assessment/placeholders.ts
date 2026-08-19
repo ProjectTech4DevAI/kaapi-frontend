@@ -11,19 +11,16 @@
 
 export const PLACEHOLDER_ASSESSMENT_INSTRUCTIONS = `Tell the AI who it is and how to assess. Example:
 
-You are an experienced teacher grading scanned answer sheets for a Class 8 Social Science paper (total 20 marks).
+You are an experienced teacher assessing scanned answer sheets for a Class 8 Social Science paper (4 questions, 20 marks). Paste your question paper and marking scheme here.
 
-Question paper:
-Q1. Name the three organs of the Indian Union Government. (2 marks)
-Q2. Why does the Constitution provide for separation of powers? (4 marks)
-Q3. Explain any two Fundamental Rights, with one example each. (6 marks)
-Q4. "The judiciary is the guardian of the Constitution." Justify this statement. (8 marks)
+Marking rules:
+- Give full marks only if the answer covers every point the question asks for.
+- Give partial marks if the core concept is right but details or examples are missing.
+- Give 0 for unattempted questions; never exceed a question's maximum.
+- Never penalize spelling, grammar, or handwriting.
 
-How to grade:
-- Award marks for correct concepts even when the wording is simple.
-- Give partial marks for partly correct answers; never exceed a question's maximum.
-- If a question is not attempted, give 0 for it.
-- Do not penalize spelling, grammar, or handwriting.`;
+Feedback:
+- Write helpful, encouraging feedback for the student — start with what they did well, then point out one or two things to improve.`;
 
 export const PLACEHOLDER_ASSESSMENT_SUBMISSION = `Describe what to assess in each row. Type @ to insert a column from your dataset. Example:
 

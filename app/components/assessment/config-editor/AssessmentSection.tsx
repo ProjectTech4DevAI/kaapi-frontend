@@ -101,7 +101,7 @@ export default function AssessmentSection(
                   value={systemInstruction}
                   onChange={setSystemInstruction}
                   placeholder={PLACEHOLDER_ASSESSMENT_INSTRUCTIONS}
-                  minHeightClass="min-h-[300px]"
+                  minHeightClass="min-h-[420px]"
                 />
               </div>
 

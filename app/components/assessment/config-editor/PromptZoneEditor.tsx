@@ -125,6 +125,17 @@ export default function PromptZoneEditor({
   return (
     <div className="relative rounded-xl border border-border bg-bg-primary">
       <div className={`relative overflow-hidden rounded-xl ${minHeightClass}`}>
+        {/* Explicit grey placeholder layer: the textarea's text is transparent
+            (the highlight layer paints it), so the native ::placeholder can't
+            be relied on for a consistent grey across browsers. */}
+        {!value && placeholder && (
+          <pre
+            aria-hidden
+            className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre-wrap break-words px-4 py-3 font-sans text-text-secondary/70 ${EDITOR_FONT_CLASSES}`}
+          >
+            {placeholder}
+          </pre>
+        )}
         <pre
           ref={preRef}
           aria-hidden
@@ -149,9 +160,9 @@ export default function PromptZoneEditor({
           onKeyDown={onKeyDown}
           onSelect={handleInput}
           onScroll={syncScroll}
-          placeholder={placeholder}
+          aria-placeholder={placeholder}
           spellCheck={false}
-          className={`relative z-20 block w-full resize-none border-0 bg-transparent px-4 py-3 text-transparent caret-text-primary outline-none placeholder:text-text-secondary/70 whitespace-pre-wrap break-words ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
+          className={`relative z-20 block w-full resize-none border-0 bg-transparent px-4 py-3 text-transparent caret-text-primary outline-none whitespace-pre-wrap break-words ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
         />
         <div ref={mirrorRef} aria-hidden="true" />
       </div>

@@ -20,6 +20,13 @@ import {
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import { assessmentBlobToBuilderState } from "@/app/lib/utils/assessmentFetcher";
 import { loadStoredSubmissionTemplate } from "@/app/lib/utils/assessmentTemplate";
+import { buildExampleResponseFormat } from "@/app/lib/utils/outputSchema";
+import {
+  DEFAULT_ASSESSMENT_INSTRUCTIONS,
+  DEFAULT_ASSESSMENT_SUBMISSION,
+  DEFAULT_ATTACHMENT_FIELD,
+  DEFAULT_TEXT_FIELDS,
+} from "@/app/lib/assessment/placeholders";
 import type {
   AssessmentRunConfigRef,
   AssessmentTabId,
@@ -92,11 +99,20 @@ export function useAssessmentWorkflow(
   const [configSeed, setConfigSeed] = useState<ConfigDraftSeed | null>(null);
   const seedNonce = useRef(0);
 
+  // A new config starts as a short, real, working example (teacher grading a
+  // Social Science paper from an id/name/submission dataset) that the user
+  // edits into their own use case.
   const startNewConfig = useCallback(() => {
-    setColumnMapping(EMPTY_COLUMN_MAPPING);
-    setSystemInstruction("");
-    setPromptTemplate("");
-    setOutputSchema([]);
+    setColumnMapping({
+      textColumns: [...DEFAULT_TEXT_FIELDS],
+      attachments: [
+        { column: DEFAULT_ATTACHMENT_FIELD, type: "pdf", format: "url" },
+      ],
+      groundTruthColumns: [],
+    });
+    setSystemInstruction(DEFAULT_ASSESSMENT_INSTRUCTIONS);
+    setPromptTemplate(DEFAULT_ASSESSMENT_SUBMISSION);
+    setOutputSchema(buildExampleResponseFormat());
     setPrefilterConfig(null);
     seedNonce.current += 1;
     setConfigSeed({

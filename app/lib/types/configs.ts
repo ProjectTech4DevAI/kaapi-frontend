@@ -128,6 +128,11 @@ export interface AssessmentPreFilter {
   params: AssessmentPreFilterParams;
   stop_on_fail: boolean;
   knowledge_base_id?: string;
+  // Per-row Submission text; sent for forward compatibility (the backend
+  // ignores unknown top-level keys today — it must NOT go in params, which
+  // reject unknown keys). Also embedded into instructions (see
+  // PREFILTER_SUBMISSION_MARKER) so the model receives it now.
+  query_template?: string;
 }
 
 export interface AssessmentPreFilters {

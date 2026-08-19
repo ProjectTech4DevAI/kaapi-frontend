@@ -49,7 +49,12 @@ export interface PrefilterTopicRelevanceConfig {
   // automatically, so column selection is no longer authored.
   columns: string[];
   attachment_columns?: string[];
+  // The static criteria (Instructions zone).
   prompt: string;
+  // The per-row Submission text (with {column} references). Embedded into the
+  // sent instructions behind PREFILTER_SUBMISSION_MARKER until the backend
+  // supports a pre-filter query template.
+  submission_template?: string;
   // Pre-filters run their own LLM call; when unset the backend applies its
   // recommended default model.
   provider?: ProviderType;
@@ -71,6 +76,10 @@ export interface PrefilterConfig {
 export interface PrefilterSectionProps extends StepNavigationProps {
   prefilterConfig: PrefilterConfig | null;
   setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
+  // The pre-filter's Submission zone registers @-referenced columns as fields
+  // in the same input schema the Assessment section derives.
+  columnMapping: ColumnMapping;
+  setColumnMapping: ValueSetter<ColumnMapping>;
   // Changes when a config is (re)loaded, so local state re-syncs from props.
   syncToken?: number;
 }

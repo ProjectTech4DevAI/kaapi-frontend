@@ -1,3 +1,4 @@
+import { EXAMPLE_RESPONSE_FORMAT_FIELDS } from "@/app/lib/assessment/placeholders";
 import type {
   SchemaProperty,
   SchemaPropertyType,
@@ -40,6 +41,16 @@ export function removeFromTree(
   return props
     .filter((p) => p.id !== id)
     .map((p) => ({ ...p, children: removeFromTree(p.children, id) }));
+}
+
+// The example response format (marks per question + reasoning + feedback)
+// used both as the new-config default and the empty-state starter.
+export function buildExampleResponseFormat(): SchemaProperty[] {
+  return EXAMPLE_RESPONSE_FORMAT_FIELDS.map((field) => ({
+    ...createProperty(),
+    name: field.name,
+    type: field.type,
+  }));
 }
 
 // Insert a fresh property right after the row with `id` (wherever it nests)

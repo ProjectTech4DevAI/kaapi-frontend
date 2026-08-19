@@ -9,17 +9,19 @@ import {
   PLACEHOLDER_ASSESSMENT_SUBMISSION,
 } from "@/app/lib/assessment/placeholders";
 import type { AssessmentSectionProps } from "@/app/lib/types/assessment";
+import type { UseReferenceDatasetResult } from "@/app/hooks/useReferenceDataset";
 import FieldsCard from "./FieldsCard";
 import ModelPanel from "./ModelPanel";
 import PromptZoneEditor from "./PromptZoneEditor";
-import ReferenceDatasetPicker from "./ReferenceDatasetPicker";
 import ResponseFormatBlock from "./ResponseFormatBlock";
 import ReviewAndSave from "./ReviewAndSave";
 
 // The Assessment step: one continuous prompt document on the left
 // (Instructions -> Submission -> Response format, mirroring how the final
 // prompt is assembled) and the model + fields panels on the right.
-export default function AssessmentSection(props: AssessmentSectionProps) {
+export default function AssessmentSection(
+  props: AssessmentSectionProps & { reference: UseReferenceDatasetResult },
+) {
   const {
     systemInstruction,
     setSystemInstruction,
@@ -29,13 +31,12 @@ export default function AssessmentSection(props: AssessmentSectionProps) {
     setOutputSchema,
     prefilterConfig,
     columnMapping,
-    configSeed,
     onBack,
+    reference,
   } = props;
 
   const editor = useConfigEditor(props);
   const {
-    reference,
     fields,
     setFieldType,
     addField,
@@ -83,18 +84,10 @@ export default function AssessmentSection(props: AssessmentSectionProps) {
             Assessment
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Write your grading prompt like a document: who the AI is, what it
-            grades in each submission, and what it should return.
+            Write your assessment prompt like a document: who the AI is, what it
+            assesses in each submission, and what it should return.
           </p>
         </div>
-
-        <ReferenceDatasetPicker
-          datasets={reference.datasets}
-          isLoadingDatasets={reference.isLoadingDatasets}
-          referenceDataset={reference.referenceDataset}
-          isLoadingReference={reference.isLoadingReference}
-          onSelect={(id) => void reference.selectReferenceDataset(id)}
-        />
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
           <section className="min-w-0 space-y-4">
@@ -114,7 +107,7 @@ export default function AssessmentSection(props: AssessmentSectionProps) {
 
               {zoneHeader(
                 "Submission",
-                "Per student row — type @ to reference dataset columns",
+                "Per submission row — type @ to reference dataset columns",
               )}
               <div className="px-5 py-4">
                 <PromptZoneEditor
@@ -135,7 +128,6 @@ export default function AssessmentSection(props: AssessmentSectionProps) {
             <ResponseFormatBlock
               schema={outputSchema}
               setSchema={setOutputSchema}
-              syncToken={configSeed?.nonce}
             />
           </section>
 

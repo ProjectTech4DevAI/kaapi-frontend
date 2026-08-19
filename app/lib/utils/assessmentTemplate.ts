@@ -109,6 +109,42 @@ export function isLikelyUrl(sample: string | undefined): boolean {
   return value.startsWith("http://") || value.startsWith("https://");
 }
 
+// The pre-filter has no server-side user template: its user message is the
+// bare column values joined by newlines, and only `instructions` carries
+// author text. Until the backend supports a pre-filter query template, the
+// pre-filter's Submission text is embedded into the sent instructions behind
+// this marker and split back out on load.
+export const PREFILTER_SUBMISSION_MARKER = "\n\n[Submission to judge]\n";
+
+const PREFILTER_SUBMISSION_PREAMBLE =
+  "\nThe submission's column values follow in the message; {column} names refer to them.\n";
+
+export function joinPrefilterInstructions(
+  criteria: string,
+  submissionTemplate: string,
+): string {
+  const trimmedCriteria = criteria.trim();
+  const trimmedTemplate = submissionTemplate.trim();
+  if (!trimmedTemplate) return trimmedCriteria;
+  return `${trimmedCriteria}${PREFILTER_SUBMISSION_MARKER}${trimmedTemplate}${PREFILTER_SUBMISSION_PREAMBLE}`;
+}
+
+export function splitPrefilterInstructions(instructions: string): {
+  criteria: string;
+  submissionTemplate: string;
+} {
+  const index = instructions.lastIndexOf(PREFILTER_SUBMISSION_MARKER);
+  if (index === -1) return { criteria: instructions, submissionTemplate: "" };
+  let template = instructions.slice(index + PREFILTER_SUBMISSION_MARKER.length);
+  if (template.endsWith(PREFILTER_SUBMISSION_PREAMBLE)) {
+    template = template.slice(0, -PREFILTER_SUBMISSION_PREAMBLE.length);
+  }
+  return {
+    criteria: instructions.slice(0, index),
+    submissionTemplate: template,
+  };
+}
+
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 

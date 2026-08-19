@@ -20,10 +20,7 @@ import {
   diffDatasetCompatibility,
   storeSubmissionTemplate,
 } from "@/app/lib/utils/assessmentTemplate";
-import {
-  useReferenceDataset,
-  type UseReferenceDatasetResult,
-} from "@/app/hooks/useReferenceDataset";
+import type { UseReferenceDatasetResult } from "@/app/hooks/useReferenceDataset";
 import { useDerivedFields } from "@/app/hooks/useDerivedFields";
 import type {
   AssessmentSectionProps,
@@ -54,12 +51,13 @@ type UseConfigEditorParams = Pick<
   | "setConfigs"
   | "configSeed"
   | "onSaved"
->;
+> & { reference: UseReferenceDatasetResult };
 
 function buildReviewWarnings(params: {
   systemInstruction: string;
   promptTemplate: string;
   fields: DerivedField[];
+  hasNamedOutputFields: boolean;
   compatibility: {
     missingInDataset: string[];
     extraInDataset: string[];
@@ -75,6 +73,13 @@ function buildReviewWarnings(params: {
       level: "error",
       message:
         "No fields yet — reference at least one dataset column with @ in the Submission editor.",
+    });
+  }
+  if (!params.hasNamedOutputFields) {
+    warnings.push({
+      level: "error",
+      message:
+        "The response format needs at least one field — free-text output is not supported.",
     });
   }
   if (!params.promptTemplate.trim()) {
@@ -129,12 +134,12 @@ export function useConfigEditor({
   setConfigs,
   configSeed,
   onSaved,
+  reference,
 }: UseConfigEditorParams) {
   const toast = useToast();
   const { activeKey, isAuthenticated } = useAuth();
   const apiKey = activeKey?.key ?? "";
 
-  const reference: UseReferenceDatasetResult = useReferenceDataset();
   const sampleRow = reference.referenceDataset?.sampleRow ?? {};
 
   const [draft, setDraft] = useState<AssessmentConfigBlob>(() =>
@@ -279,12 +284,14 @@ export function useConfigEditor({
         systemInstruction,
         promptTemplate,
         fields: derived.fields,
+        hasNamedOutputFields: outputSchema.some((field) => field.name.trim()),
         compatibility,
         removedColumns,
       }),
     [
       compatibility,
       derived.fields,
+      outputSchema,
       promptTemplate,
       removedColumns,
       systemInstruction,

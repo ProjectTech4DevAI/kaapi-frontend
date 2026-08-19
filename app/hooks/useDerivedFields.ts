@@ -96,9 +96,9 @@ export function useDerivedFields({
         `${attachmentAdds.map((a) => a.column).join(", ")} will be attached automatically (file link).`,
       );
     }
-    // Only new tokens should trigger this; the mapping/template setters above
-    // would otherwise re-run it in a loop.
-  }, [templateTokens]);
+    // Re-runs when the mapping changes too (two editors share it — Assessment
+    // and Pre-filter Submission zones); the newTokens guard prevents loops.
+  }, [templateTokens, columnMapping]);
 
   const fields: DerivedField[] = useMemo(() => {
     const referenced = new Set(templateTokens);

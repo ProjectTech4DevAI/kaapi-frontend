@@ -8,7 +8,11 @@ import {
   toJsonSchemaOrNull,
   fromJsonSchema,
 } from "@/app/lib/utils/outputSchema";
-import { loadStoredSubmissionTemplate } from "@/app/lib/utils/assessmentTemplate";
+import {
+  joinPrefilterInstructions,
+  loadStoredSubmissionTemplate,
+  splitPrefilterInstructions,
+} from "@/app/lib/utils/assessmentTemplate";
 import type {
   AssessmentDatasetRows,
   Attachment,
@@ -179,7 +183,12 @@ function buildPreFilters(
   const tr = prefilterConfig?.topic_relevance;
   if (tr?.prompt?.trim()) {
     const trParams: AssessmentPreFilterParams = {
-      instructions: tr.prompt.trim(),
+      // The Submission text rides inside the instructions (the pre-filter has
+      // no server-side user template yet); split back out on load.
+      instructions: joinPrefilterInstructions(
+        tr.prompt,
+        tr.submission_template ?? "",
+      ),
     };
     // Omitting model applies the backend's recommended default (which also
     // sets its own effort/summary defaults).
@@ -196,6 +205,11 @@ function buildPreFilters(
       params: trParams,
       stop_on_fail: tr.stop_on_fail ?? true,
     };
+    if (tr.submission_template?.trim()) {
+      // Forward compatibility: ignored by the backend today (top-level extras
+      // are dropped), authoritative once a pre-filter query template lands.
+      preFilters.topic_relevance.query_template = tr.submission_template;
+    }
   }
   // Duplicate detection is not authored in the v2 UI; round-trip a loaded
   // config's block untouched.
@@ -307,9 +321,16 @@ export function assessmentBlobToBuilderState(
           extraParams[key] = value;
         }
       });
+      const { criteria, submissionTemplate } = splitPrefilterInstructions(
+        String(trParams.instructions ?? ""),
+      );
       prefilterConfig.topic_relevance = {
         columns: [],
-        prompt: String(trParams.instructions ?? ""),
+        prompt: criteria,
+        submission_template:
+          typeof tr.query_template === "string" && tr.query_template.trim()
+            ? tr.query_template
+            : submissionTemplate,
         provider: tr.provider,
         model: trParams.model ? String(trParams.model) : undefined,
         params: extraParams,

@@ -177,8 +177,8 @@ export default function ReviewAndSave({
                   ))}
                 </ul>
               ) : (
-                <span className="text-xs text-text-secondary">
-                  Free text response.
+                <span className="text-xs text-status-error-text">
+                  No output fields yet — structured output is required.
                 </span>
               )}
             </div>
@@ -193,16 +193,21 @@ export default function ReviewAndSave({
                 <div className="line-clamp-3 whitespace-pre-wrap">
                   {tr.prompt}
                 </div>
+                {tr.submission_template && (
+                  <div className="mt-1 line-clamp-2 whitespace-pre-wrap font-mono text-[11px] text-text-secondary">
+                    {tr.submission_template}
+                  </div>
+                )}
                 <div className="mt-1.5 text-text-secondary">
                   Model: {tr.model || "recommended default"} ·{" "}
                   {(tr.stop_on_fail ?? true)
                     ? "rejected submissions are skipped"
-                    : "rejected submissions are flagged but still graded"}
+                    : "rejected submissions are flagged but still assessed"}
                 </div>
               </div>
             ) : (
               <span className="text-xs text-text-secondary">
-                None — every submission is graded.
+                None — every submission is assessed.
               </span>
             )}
           </div>

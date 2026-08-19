@@ -31,7 +31,7 @@ export default function ReferenceDatasetPicker({
           </span>
         </div>
         <div className="mt-0.5 text-xs text-text-secondary">
-          Pick the dataset you plan to grade so typing @ suggests its columns.
+          Pick the dataset you plan to assess so typing @ suggests its columns.
         </div>
       </div>
       <div className="ml-auto flex items-center gap-2">

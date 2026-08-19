@@ -262,3 +262,16 @@ New/changed components (respecting the 500-LOC cap and `app/components/ui` kit):
 - State: extend `useAssessmentWorkflow` / `usePromptAndConfigStep` rather than introducing a new store; template + zone contents serialize into the existing `AssessmentConfigBlob` builders in [assessmentFetcher.ts](../app/lib/utils/assessmentFetcher.ts) (plus `query_template` once B1 lands).
 
 Suggested sequencing: (1) editor chassis + zones with `@` in Submission, (2) Fields card + derived input schema (delete ColumnMapperStep), (3) inline ResponseFormatBlock, (4) Pre-filter section on the shared chassis, (5) Review & save, (6) model-catalog migration, (7) cleanup/deletions. Backend B1/B3 can proceed in parallel and are prerequisites for shipping, not for starting.
+
+---
+
+## 10. Implementation status (this branch, frontend only)
+
+The design above is implemented in kaapi-frontend with **no backend changes**, which forced these deviations:
+
+1. **B1 workaround (Submission template persistence).** The blob is saved with `assessment.params.query_template`, but the backend's param validation drops unknown keys today, so the template is also mirrored to **localStorage per saved config version** (`lib/utils/assessmentTemplate.ts`). Load order: blob param → localStorage → empty. When B1 lands server-side, the blob wins automatically and the mirror becomes redundant. The Experiment tab prefills its user prompt from the selected config's template.
+2. **B2 degradation (pre-filter `@`).** As designed in §4.7: `@` is disabled in the pre-filter editor; copy explains that every column is shared automatically. The pre-filter now has its own model panel (provider/model/params, with a "Recommended (managed)" default that omits `model` so the backend default applies) and the "skip rejected submissions" toggle (`stop_on_fail`).
+3. **B3 mitigation (deep-merge column resurrection).** Review & save diffs the loaded version's `input_schema` keys against the current fields; removed columns raise a warning steering the user to "save as new configuration". Actually dropping a column from an existing config still requires the backend replace mode.
+4. **Deferred: model-catalog migration (§4.8).** The backend-driven `/models/grouped` schema is a narrower, incompatible param model (no `top_p`, different types); swapping it in is an orthogonal refactor with regression risk. The dedup half is done: the helpers now live only in `lib/data/assessmentModels.ts`. Migration remains a follow-up.
+
+New surface: `components/assessment/config-editor/` (AssessmentSection, PrefilterSection, PromptZoneEditor, FieldsCard, ResponseFormatBlock, ModelPanel, ReferenceDatasetPicker, ReviewAndSave) + hooks `useConfigEditor`, `useDerivedFields`, `useSavedConfigList`, `useReferenceDataset` + `lib/assessment/placeholders.ts` (teacher-walkthrough placeholder prompts: handwritten-answer-sheet relevance check; social-science paper grading with per-question marks, reasoning and overall feedback fields) and `lib/utils/assessmentTemplate.ts`. Deleted: ColumnMapperStep, PrefilterStep, PromptAndConfigStep, the output-schema modal entry, ConfigCreator/AssessmentConfiguration/ResponseSchema/SystemPrompt/PromptPanel/SetupProgress, usePromptAndConfigStep, and all dead review/step files from §2/§5.

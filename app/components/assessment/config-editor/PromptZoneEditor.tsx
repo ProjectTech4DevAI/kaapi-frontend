@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, type KeyboardEvent } from "react";
+import { useCallback, type KeyboardEvent } from "react";
 import { Button } from "@/app/components/ui";
 import { usePromptPlaceholderEditor } from "@/app/hooks/usePromptPlaceholderEditor";
 import { TEMPLATE_TOKEN_CLASSES } from "@/app/lib/assessment/constants";
@@ -40,7 +40,6 @@ export default function PromptZoneEditor({
   onPickAttachment,
   onCreateField,
 }: PromptZoneEditorProps) {
-  const preRef = useRef<HTMLPreElement>(null);
   const {
     textareaRef,
     mirrorRef,
@@ -61,13 +60,6 @@ export default function PromptZoneEditor({
     textColumns: mentionColumns.filter((col) => col.trim() !== ""),
     enablePlaceholders: enableMentions,
   });
-
-  const syncScroll = useCallback(() => {
-    if (textareaRef.current && preRef.current) {
-      preRef.current.scrollTop = textareaRef.current.scrollTop;
-      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
-    }
-  }, [textareaRef]);
 
   const pick = useCallback(
     (column: string) => {
@@ -122,24 +114,28 @@ export default function PromptZoneEditor({
     mentionPos !== null &&
     (mentionOptions.length > 0 || showCreateOption);
 
+  const layerClasses = `col-start-1 row-start-1 m-0 whitespace-pre-wrap break-words px-4 py-3 font-sans ${EDITOR_FONT_CLASSES} ${minHeightClass}`;
+
   return (
     <div className="relative rounded-xl border border-border bg-bg-primary">
-      <div className={`relative overflow-hidden rounded-xl ${minHeightClass}`}>
+      {/* Grid-stacked layers: the pre layers are in normal flow, so the
+          tallest one (value highlight or the grey placeholder) sets the
+          editor's height — it grows with the content and nothing truncates. */}
+      <div className="grid rounded-xl">
         {/* Explicit grey placeholder layer: the textarea's text is transparent
             (the highlight layer paints it), so the native ::placeholder can't
             be relied on for a consistent grey across browsers. */}
         {!value && placeholder && (
           <pre
             aria-hidden
-            className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre-wrap break-words px-4 py-3 font-sans text-text-secondary/70 ${EDITOR_FONT_CLASSES}`}
+            className={`pointer-events-none z-10 text-text-secondary/70 ${layerClasses}`}
           >
             {placeholder}
           </pre>
         )}
         <pre
-          ref={preRef}
           aria-hidden
-          className={`pointer-events-none absolute inset-0 z-10 m-0 overflow-hidden whitespace-pre-wrap break-words px-4 py-3 font-sans text-text-primary ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
+          className={`pointer-events-none z-10 text-text-primary ${layerClasses}`}
           dangerouslySetInnerHTML={{
             __html:
               highlightTemplate(
@@ -159,10 +155,9 @@ export default function PromptZoneEditor({
           }}
           onKeyDown={onKeyDown}
           onSelect={handleInput}
-          onScroll={syncScroll}
           aria-placeholder={placeholder}
           spellCheck={false}
-          className={`relative z-20 block w-full resize-none border-0 bg-transparent px-4 py-3 text-transparent caret-text-primary outline-none whitespace-pre-wrap break-words ${EDITOR_FONT_CLASSES} ${minHeightClass}`}
+          className={`z-20 block h-full w-full resize-none overflow-hidden border-0 bg-transparent text-transparent caret-text-primary outline-none ${layerClasses}`}
         />
         <div ref={mirrorRef} aria-hidden="true" />
       </div>

@@ -20,6 +20,7 @@ interface FieldsCardProps {
   onTypeChange: (name: string, type: AssessmentColumnType) => void;
   onRemove: (name: string) => void;
   onAdd: (name: string, type: AssessmentColumnType) => void;
+  onClearAll: () => void;
 }
 
 // Passive companion to the Submission editor: every @-referenced column shows
@@ -30,6 +31,7 @@ export default function FieldsCard({
   onTypeChange,
   onRemove,
   onAdd,
+  onClearAll,
 }: FieldsCardProps) {
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<AssessmentColumnType>("text");
@@ -88,11 +90,24 @@ export default function FieldsCard({
 
   return (
     <div className="rounded-2xl border border-border bg-bg-primary">
-      <div className="border-b border-border px-4 py-3">
-        <div className="text-sm font-semibold text-text-primary">Fields</div>
-        <div className="mt-0.5 text-xs text-text-secondary">
-          From your prompt — your dataset needs a column for each.
+      <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
+        <div>
+          <div className="text-sm font-semibold text-text-primary">Fields</div>
+          <div className="mt-0.5 text-xs text-text-secondary">
+            From your prompt — your dataset needs a column for each.
+          </div>
         </div>
+        {fields.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClearAll}
+            className="!px-2 text-text-secondary hover:text-status-error-text"
+          >
+            Clear all
+          </Button>
+        )}
       </div>
       <div className="px-4 py-3">
         {fields.length === 0 ? (

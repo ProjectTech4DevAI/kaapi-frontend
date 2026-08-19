@@ -210,9 +210,22 @@ export default function OutputSchemaEditorInner({
               onEnterInName={handleEnterInName}
             />
           ))}
-          <Button type="button" variant="outline" onClick={handleAddField}>
-            + Add field
-          </Button>
+          <div className="flex items-center justify-between gap-3">
+            <Button type="button" variant="outline" onClick={handleAddField}>
+              + Add field
+            </Button>
+            {schema.some((p) => p.name.trim() || p.children.length > 0) && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setSchema([createProperty()])}
+                className="!px-2 text-text-secondary hover:text-status-error-text"
+              >
+                Clear all fields
+              </Button>
+            )}
+          </div>
           <p className="text-[11px] text-text-secondary">
             Tip: press Enter in a field name to add the next one. Every field is
             always filled in by the AI.

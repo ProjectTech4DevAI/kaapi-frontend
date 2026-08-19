@@ -41,6 +41,7 @@ export default function AssessmentSection(
     setFieldType,
     addField,
     removeField,
+    clearAllFields,
     onPickAttachment,
     onCreateField,
     currentProvider,
@@ -153,6 +154,7 @@ export default function AssessmentSection(
               onTypeChange={setFieldType}
               onRemove={removeField}
               onAdd={addField}
+              onClearAll={clearAllFields}
             />
           </aside>
         </div>

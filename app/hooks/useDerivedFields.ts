@@ -197,6 +197,22 @@ export function useDerivedFields({
     [columnMapping, promptTemplate, setColumnMapping, setPromptTemplate],
   );
 
+  // Remove every field at once (and every {token} in this editor's template —
+  // leftover tokens would immediately re-derive their fields).
+  const clearAllFields = useCallback(() => {
+    setColumnMapping({
+      textColumns: [],
+      attachments: [],
+      groundTruthColumns: [],
+      strictColumns: [],
+    });
+    let nextTemplate = promptTemplate;
+    for (const token of extractTemplateTokens(promptTemplate)) {
+      nextTemplate = stripTokenFromTemplate(nextTemplate, token);
+    }
+    if (nextTemplate !== promptTemplate) setPromptTemplate(nextTemplate);
+  }, [promptTemplate, setColumnMapping, setPromptTemplate]);
+
   const onPickAttachment = useCallback(
     (column: string) => {
       toast.info(`${column} is attached automatically with every submission.`);
@@ -220,6 +236,7 @@ export function useDerivedFields({
     setFieldType,
     addField,
     removeField,
+    clearAllFields,
     onPickAttachment,
     onCreateField,
   };

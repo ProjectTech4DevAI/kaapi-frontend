@@ -1,0 +1,102 @@
+name: Agent UI Fix
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # 08:00 IST
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: "Issue number (blank = poora ready-for-agent queue)"
+        required: false
+        type: string
+
+concurrency:
+  group: agent-ui-fix
+  cancel-in-progress: false
+
+jobs:
+  queue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+    outputs:
+      issues: ${{ steps.list.outputs.issues }}
+    steps:
+      - id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ inputs.issue }}
+        run: |
+          if [ -n "$ISSUE" ]; then
+            [[ "$ISSUE" =~ ^[0-9]+$ ]] || { echo "::error::issue must be a number, got '$ISSUE'"; exit 1; }
+            issues="[$ISSUE]"
+          else
+            issues=$(gh issue list --label ready-for-agent --state open \
+              --search "-linked:pr" --limit 5 --json number --jq '[.[].number]')
+          fi
+          echo "queue: $issues"
+          echo "issues=$issues" >> "$GITHUB_OUTPUT"
+
+  fix:
+    needs: queue
+    if: needs.queue.outputs.issues != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        issue: ${{ fromJson(needs.queue.outputs.issues) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Generate agent token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
+      - uses: anthropics/claude-code-action@v1
+        id: claude
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ steps.app-token.outputs.token }}
+          bot_name: ${{ vars.AGENT_BOT_NAME }}
+          bot_id: ${{ vars.AGENT_BOT_ID }}
+          branch_prefix: "agent/ui-fix-"
+          base_branch: main
+          prompt: "/fix-issue ${{ matrix.issue }}"
+          claude_args: |
+            --max-turns 150
+            --model claude-sonnet-5
+            --append-system-prompt "Non-interactive GitHub Actions run: no human will reply to questions. Follow the command's non-interactive instructions."
+            --allowedTools "Bash(git:*),Bash(gh issue:*),Bash(gh pr:*),Bash(npm run lint),Bash(npm run lint:fix),Bash(npm run build),Bash(npm run format:*),Bash(npx eslint:*),Bash(npx prettier:*),Bash(npx tsc:*),Bash(npx playwright test:*),Bash(ls:*),Bash(cat:*),Read,Edit,Write,Glob,Grep"
+            --disallowedTools "Bash(git push *--force*),Bash(git push * -f *),Bash(git push -f*),Bash(git push * +*),Edit(/.github/**),Edit(/.releaserc)"
+
+      - if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ matrix.issue }}
+          OUTCOME: ${{ steps.claude.outcome }}
+          TOKEN_OK: ${{ steps.app-token.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue edit "$ISSUE" --remove-label ready-for-agent
+          if [ "$OUTCOME" != "success" ] || [ "$TOKEN_OK" != "success" ]; then
+            gh issue comment "$ISSUE" --body "Automated fix attempt ended with status \`$OUTCOME\`. Run: $RUN_URL — re-add \`ready-for-agent\` to retry."
+          fi

@@ -14,20 +14,20 @@ Repo: `ProjectTech4DevAI/kaapi-frontend`.
 - You push a **branch** and open a **PR**. Never push to `main`, never merge, never `--force`, never touch `.releaserc` or the workflows in `.github/`.
 - `cd-dev.yml` / `deploy-staging.yml` deploy from this repo — a bad merge to `main` ships. Branch + PR only, always.
 - One issue per run. Don't batch several issues into one branch.
-- If the issue is ambiguous, under-specified, or would touch auth / middleware gating / the BFF contract, **stop and ask** rather than guessing. Say what's unclear.
+- If the issue is ambiguous, under-specified, or would touch auth / middleware gating / the BFF contract, **stop and ask** rather than guessing. Say what's unclear. Non-interactive run (the system prompt says so, or `$CI` is set): post the question with `gh issue comment <n>` and stop.
 
 ## 1. Select the issue
 
 If `$ARGUMENTS` is an issue number, use it directly:
 
 ```bash
-gh issue view <n>
+gh issue view <n> --comments   # comments may hold answers to an earlier run's question
 ```
 
 Otherwise list the queue:
 
 ```bash
-gh issue list --label ready-for-agent --state open --json number,title,labels,body
+gh issue list --label ready-for-agent --state open --json number,title,labels,body,comments
 ```
 
 No open issues carry the label → say so plainly and stop. Don't invent work.
@@ -47,10 +47,11 @@ Say which issue you picked and why it outranked the others.
 ```bash
 git status              # never clobber uncommitted work — stash -u or stop
 git checkout main && git pull
-git checkout -b <type>/<kebab-slug>
+git ls-remote --heads origin <type>/<kebab-slug>   # left over from an earlier attempt?
+git checkout -b <type>/<kebab-slug>                # …or, if it exists: git fetch origin <branch> && git checkout <branch>
 ```
 
-Branch naming follows this repo's existing convention (`git branch -r` to confirm): `<type>/<kebab-slug>`, where type maps from the issue's label:
+Never force-push. Branch naming follows this repo's convention: `<type>/<kebab-slug>`, where type maps from the issue's label:
 
 | Issue label     | Branch prefix  | Commit type |
 | --------------- | -------------- | ----------- |
@@ -88,7 +89,7 @@ Both must pass before you commit. If the change is user-visible, run `npm run de
 
 ## 5. Commit
 
-`semantic-release` reads commit messages (`.releaserc`: `feat` → minor, `fix`/`chore`/`docs`/`refactor` → patch), so **conventional commits are required** — a non-conforming subject silently breaks versioning.
+This repo squash-merges with the PR title as the commit subject, and `semantic-release` reads that (`.releaserc`: `feat` → minor, `fix`/`chore`/`docs`/`refactor` → patch), so the **PR title must be a conventional commit** — a non-conforming one silently breaks versioning. `pr-formatter.yml` regenerates the title from the PR body on open, so the body must make the change type unmistakable.
 
 ```bash
 git diff                       # review before staging

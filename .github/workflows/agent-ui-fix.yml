@@ -1,6 +1,8 @@
 name: Agent UI Fix
 
 on:
+  push:
+    branches: [feat/agent-ui-fix]
   schedule:
     - cron: "30 2 * * *" # 08:00 IST
   workflow_dispatch:

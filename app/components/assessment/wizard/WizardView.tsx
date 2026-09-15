@@ -41,11 +41,12 @@ export default function WizardView({ wizard, onHome }: WizardViewProps) {
   const selectedSubmission = submission.submissions.find(
     (item) => item.submission_id === wizard.submissionId,
   );
-  const footer = wizardFooterState(
+  const footer = wizardFooterState({
     wizard,
-    Boolean(wizard.submissionId),
-    selectedSubmission?.total_items ?? null,
-  );
+    hasSubmission: Boolean(wizard.submissionId),
+    rowCount: selectedSubmission?.total_items ?? null,
+    hasPendingUpload: Boolean(submission.form.file),
+  });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

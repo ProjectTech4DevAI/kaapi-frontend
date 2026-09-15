@@ -12,6 +12,14 @@ interface FooterState {
   nextDisabled: boolean;
 }
 
+interface FooterInput {
+  wizard: UseAssessmentWizardResult;
+  hasSubmission: boolean;
+  rowCount: number | null;
+  /** A file is sitting in step 4's upload form, not yet created. */
+  hasPendingUpload: boolean;
+}
+
 const NEXT_LABELS: Record<AssessmentWizardStep, string> = {
   1: "Next: Pre-filter",
   2: "Next: Assessment",
@@ -26,11 +34,12 @@ const STEP_HINTS: Record<AssessmentWizardStep, string> = {
   4: "",
 };
 
-export function wizardFooterState(
-  wizard: UseAssessmentWizardResult,
-  hasSubmission: boolean,
-  rowCount: number | null,
-): FooterState {
+export function wizardFooterState({
+  wizard,
+  hasSubmission,
+  rowCount,
+  hasPendingUpload,
+}: FooterInput): FooterState {
   const { step, flow, submissionName } = wizard;
   // The entry step has no Back — the round home button is the way out.
   const showBack = step !== wizardEntryStep(flow);
@@ -61,9 +70,14 @@ export function wizardFooterState(
 
   return {
     showBack,
-    hint: runStepHint(Boolean(wizard.context), hasSubmission, rowCount),
+    hint: runStepHint({
+      hasVersion: Boolean(wizard.context),
+      hasSubmission,
+      rowCount,
+      hasPendingUpload,
+    }),
     nextLabel: NEXT_LABELS[4],
-    nextDisabled: !hasSubmission || !wizard.context,
+    nextDisabled: !hasSubmission || !wizard.context || hasPendingUpload,
   };
 }
 
@@ -100,11 +114,15 @@ function assessmentStepFooter(
   return { hint, nextLabel: NEXT_LABELS[3], nextDisabled: !canSave };
 }
 
-function runStepHint(
-  hasVersion: boolean,
-  hasSubmission: boolean,
-  rowCount: number | null,
-): string {
+function runStepHint({
+  hasVersion,
+  hasSubmission,
+  rowCount,
+  hasPendingUpload,
+}: Omit<FooterInput, "wizard"> & { hasVersion: boolean }): string {
+  if (hasPendingUpload) {
+    return "Create the uploaded submission first, or cancel it";
+  }
   if (!hasVersion) return "Save the assessor first to run it";
   if (!hasSubmission) return "Select a submission set";
   if (rowCount === null) return "Every row of the set will be queued";

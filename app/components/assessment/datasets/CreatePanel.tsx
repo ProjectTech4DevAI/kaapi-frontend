@@ -15,6 +15,7 @@ export default function CreatePanel({
   isCreating,
   onCreate,
   layout = "panel",
+  onCancel,
 }: CreatePanelProps) {
   const { file, fileInputRef } = form;
 
@@ -130,7 +131,14 @@ export default function CreatePanel({
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={form.reset}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              form.reset();
+              onCancel?.();
+            }}
+          >
             Cancel
           </Button>
           <Button

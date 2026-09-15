@@ -28,6 +28,9 @@ export const TERMINAL_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "failed",
 ]);
 
+/** Step 4's preview is a sanity check on the chosen set, not a data browser. */
+export const RUN_PREVIEW_ROW_LIMIT = 10;
+
 /** Result-row key conventions the table and the detail modal both read. */
 export const RESULT_SCORE_SUFFIX = "_score";
 export const RESULT_REASON_SUFFIX = "_reason";

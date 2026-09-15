@@ -92,4 +92,6 @@ export interface CreatePanelProps {
   onCreate: () => void;
   /** Step 1 shows it as the right-hand pane; step 4 embeds it inline. */
   layout?: "panel" | "inline";
+  /** Runs after Cancel clears the form — step 4 also collapses the panel. */
+  onCancel?: () => void;
 }

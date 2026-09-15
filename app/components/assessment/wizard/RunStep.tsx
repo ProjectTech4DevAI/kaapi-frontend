@@ -2,14 +2,50 @@
 
 import { useState } from "react";
 import { Button, Field, Select } from "@/app/components/ui";
-import { CloudUploadIcon } from "@/app/components/icons";
+import { CloudUploadIcon, EyeIcon } from "@/app/components/icons";
 import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
-import type { RunStepProps } from "@/app/lib/types/assessment";
+import DataViewModal from "@/app/components/assessment/DataViewModal";
+import { RUN_PREVIEW_ROW_LIMIT } from "@/app/lib/assessment/constants";
+import type {
+  RunStepProps,
+  UseSubmissionStepResult,
+} from "@/app/lib/types/assessment";
+
+interface PreviewState {
+  isLoading: boolean;
+  isDisabled: boolean;
+  rows: string[][];
+}
+
+function previewState(step: UseSubmissionStepResult): PreviewState {
+  return {
+    isLoading: step.viewingId === step.selectedId,
+    isDisabled: !step.selectedId || step.viewingId !== null,
+    rows: step.viewModalData?.rows.slice(0, RUN_PREVIEW_ROW_LIMIT) ?? [],
+  };
+}
+
+function previewSubtitle(shown: number, total: number | undefined): string {
+  if (total === undefined || total <= shown) {
+    return `${shown} row${shown === 1 ? "" : "s"}`;
+  }
+  return `First ${shown} of ${total} rows`;
+}
 
 /** Wizard step 4: confirm the submission set and assessor version, then run. */
 export default function RunStep({ wizard, step }: RunStepProps) {
   const [showUpload, setShowUpload] = useState(false);
   const linkedId = wizard.versionDetail?.submission_id;
+
+  const selected = step.submissions.find(
+    (submission) => submission.submission_id === step.selectedId,
+  );
+  const preview = previewState(step);
+
+  const closeUpload = () => {
+    step.form.reset();
+    setShowUpload(false);
+  };
 
   const options = step.submissions.map((submission) => {
     const isDefault = submission.submission_id === linkedId;
@@ -53,7 +89,20 @@ export default function RunStep({ wizard, step }: RunStepProps) {
               variant="outline"
               size="sm"
               className="shrink-0 rounded-md!"
-              onClick={() => setShowUpload((current) => !current)}
+              disabled={preview.isDisabled}
+              onClick={() =>
+                void step.handleView(step.selectedId, selected?.name ?? "")
+              }
+            >
+              <EyeIcon className="h-3.5 w-3.5" />
+              {preview.isLoading ? "Loading..." : "Preview"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 rounded-md!"
+              onClick={() => (showUpload ? closeUpload() : setShowUpload(true))}
             >
               <CloudUploadIcon className="h-3.5 w-3.5" />
               Upload new
@@ -69,6 +118,7 @@ export default function RunStep({ wizard, step }: RunStepProps) {
                 layout="inline"
                 form={step.form}
                 isCreating={step.isCreating}
+                onCancel={() => setShowUpload(false)}
                 onCreate={async () => {
                   await step.handleCreate();
                   setShowUpload(false);
@@ -119,6 +169,16 @@ export default function RunStep({ wizard, step }: RunStepProps) {
           />
         </section>
       </div>
+
+      {step.viewModalData && (
+        <DataViewModal
+          title={step.viewModalData.name}
+          subtitle={previewSubtitle(preview.rows.length, selected?.total_items)}
+          headers={step.viewModalData.headers}
+          rows={preview.rows}
+          onClose={() => step.setViewModalData(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import {} from "react";
 import { Button } from "@/app/components/ui";
 import { CheckIcon, HomeIcon } from "@/app/components/icons";
 import { getStepState, stepPillClasses } from "@/app/lib/assessment/wizard";

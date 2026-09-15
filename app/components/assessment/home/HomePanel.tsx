@@ -1,4 +1,3 @@
-import {} from "react";
 import { CursorPager, Pager } from "@/app/components/ui";
 import type { HomePanelProps } from "@/app/lib/types/assessment";
 

@@ -9,7 +9,8 @@ export default function RunRowMeta({ row }: RunRowMetaProps) {
   return (
     <>
       <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-text-secondary">
-        <span>{formatRelativeTime(assessment.updated_at)}</span>
+        {/* Creation time, not updated_at — the API orders this list by inserted_at. */}
+        <span>Started {formatRelativeTime(assessment.inserted_at)}</span>
         <span className="text-border">·</span>
         <span className="truncate">
           {assessorName}

@@ -53,12 +53,12 @@ export default function RunRowActions({
       )}
 
       <a
-          href={href}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-bg-primary px-3 py-1.5 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-50"
-        >
-          <EyeIcon className="w-3.5 h-3.5" />
-          View results
-        </a>
+        href={href}
+        className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-bg-primary px-3 py-1.5 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-50"
+      >
+        <EyeIcon className="w-3.5 h-3.5" />
+        View results
+      </a>
     </div>
   );
 }

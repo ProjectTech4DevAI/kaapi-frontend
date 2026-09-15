@@ -69,7 +69,9 @@ function flattenOutput(
     }
 
     // An output key colliding with an input column keeps both, prefixed.
-    const safeKey = taken.has(key) ? `${ASSESSMENT_OUTPUT_KEY_PREFIX}${key}` : key;
+    const safeKey = taken.has(key)
+      ? `${ASSESSMENT_OUTPUT_KEY_PREFIX}${key}`
+      : key;
     target[safeKey] = asCell(value);
   }
 }
@@ -95,7 +97,8 @@ function writePreFilter(target: FlatRow, output: BatchItemOutput): void {
 
 function rowStatus(row: BatchResultRow): string {
   if (row.error) return "error";
-  if (row.output.pre_filter?.topic_relevance?.verdict === false) return "filtered";
+  if (row.output.pre_filter?.topic_relevance?.verdict === false)
+    return "filtered";
   return row.output.assessment == null ? "processing" : "assessed";
 }
 

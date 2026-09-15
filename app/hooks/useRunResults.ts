@@ -79,7 +79,10 @@ export function useRunResults(
       );
       setError(null);
 
-      if (payload.rows.length > SPREADSHEET_PREVIEW_ROW_LIMIT && !warnedRef.current) {
+      if (
+        payload.rows.length > SPREADSHEET_PREVIEW_ROW_LIMIT &&
+        !warnedRef.current
+      ) {
         warnedRef.current = true;
         toast.warning(
           `Preview capped at ${SPREADSHEET_PREVIEW_ROW_LIMIT} rows. Download CSV for full data.`,
@@ -110,7 +113,8 @@ export function useRunResults(
   }, [assessmentId, load]);
 
   const isPolling =
-    status !== null && !TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));
+    status !== null &&
+    !TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 
   useEffect(() => {
     if (!isPolling) return;

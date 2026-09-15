@@ -25,7 +25,8 @@ export function createApiAssessmentSource(
     deleteAssessor: (configId) => assessors.deleteAssessor(apiKey, configId),
     deleteAssessorVersion: (configId, version) =>
       assessors.deleteAssessorVersion(apiKey, configId, version),
-    saveAssessorVersion: (input) => assessors.saveAssessorVersion(apiKey, input),
+    saveAssessorVersion: (input) =>
+      assessors.saveAssessorVersion(apiKey, input),
 
     listAssessments: (query) => runs.listAssessments(apiKey, query),
     createRun: (input) => runs.createRun(apiKey, input),

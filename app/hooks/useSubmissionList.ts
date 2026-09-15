@@ -43,9 +43,7 @@ export function useSubmissionList(): UseSubmissionListResult {
     async (id: string) => {
       const cached = previewCache.current[id];
       if (cached) return cached;
-      const preview = toDatasetPreview(
-        await data.getSubmissionPreview(id),
-      );
+      const preview = toDatasetPreview(await data.getSubmissionPreview(id));
       previewCache.current[id] = preview;
       return preview;
     },

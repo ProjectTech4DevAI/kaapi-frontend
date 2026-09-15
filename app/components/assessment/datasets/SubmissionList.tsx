@@ -69,8 +69,7 @@ export default function SubmissionList({
         ) : (
           <ul className="space-y-3">
             {submissions.map((submission) => {
-              const isSelected =
-                selectedId === submission.submission_id;
+              const isSelected = selectedId === submission.submission_id;
               return (
                 <li key={submission.submission_id}>
                   <div
@@ -85,10 +84,7 @@ export default function SubmissionList({
                         type="button"
                         aria-pressed={isSelected}
                         onClick={() =>
-                          onSelect(
-                            submission.submission_id,
-                            submission.name,
-                          )
+                          onSelect(submission.submission_id, submission.name)
                         }
                         className="min-w-0 flex-1 cursor-pointer text-left"
                       >
@@ -107,9 +103,7 @@ export default function SubmissionList({
                               submission.total_items && (
                               <>
                                 <span className="text-border">·</span>
-                                <span>
-                                  {submission.total_items} original
-                                </span>
+                                <span>{submission.total_items} original</span>
                               </>
                             )}
                         </span>
@@ -121,10 +115,7 @@ export default function SubmissionList({
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            onView(
-                              submission.submission_id,
-                              submission.name,
-                            )
+                            onView(submission.submission_id, submission.name)
                           }
                           disabled={viewingId === submission.submission_id}
                         >
@@ -136,7 +127,9 @@ export default function SubmissionList({
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => onRequestDelete(submission.submission_id)}
+                          onClick={() =>
+                            onRequestDelete(submission.submission_id)
+                          }
                           aria-label={`Delete ${submission.name}`}
                         >
                           Delete

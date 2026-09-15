@@ -73,8 +73,7 @@ export function useSubmissionStep(): UseSubmissionStepResult {
 
       const resolvedName =
         selectedName ??
-        list.submissions.find((item) => item.submission_id === id)
-          ?.name ??
+        list.submissions.find((item) => item.submission_id === id)?.name ??
         "";
       setDatasetName(resolvedName);
       setIsLoadingColumns(true);

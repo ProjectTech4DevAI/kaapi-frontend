@@ -90,7 +90,6 @@ export function canRetryStatus(status: string): boolean {
   return isFailedStatus(status);
 }
 
-
 /** Finished, however it ended — the rows it produced are final and exportable. */
 export function isTerminalStatus(status: string): boolean {
   return TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));

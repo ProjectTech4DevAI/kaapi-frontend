@@ -16,11 +16,7 @@ interface RunRowProps {
   onExport: (target: ResultsTarget, fileName: string) => void;
 }
 
-export default function RunRow({
-  row,
-  isExporting,
-  onExport,
-}: RunRowProps) {
+export default function RunRow({ row, isExporting, onExport }: RunRowProps) {
   const { assessment, stages, isActive } = row;
   const tone = getResultTone(assessment.status);
 
@@ -53,11 +49,7 @@ export default function RunRow({
         </div>
       )}
 
-      <RunRowActions
-        row={row}
-        isExporting={isExporting}
-        onExport={onExport}
-      />
+      <RunRowActions row={row} isExporting={isExporting} onExport={onExport} />
     </article>
   );
 }

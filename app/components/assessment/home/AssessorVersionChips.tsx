@@ -1,7 +1,10 @@
 "use client";
 
 import { ChevronDownIcon } from "@/app/components/icons";
-import type { AssessorSummary, AssessorVersion } from "@/app/lib/types/assessment";
+import type {
+  AssessorSummary,
+  AssessorVersion,
+} from "@/app/lib/types/assessment";
 
 interface AssessorVersionChipsProps {
   assessor: AssessorSummary;

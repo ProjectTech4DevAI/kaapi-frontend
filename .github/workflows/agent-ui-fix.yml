@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       issue:
-        description: "Issue number (blank = poora ready-for-agent queue)"
+        description: "Issue number (blank ready-for-agent queue)"
         required: false
         type: string
 

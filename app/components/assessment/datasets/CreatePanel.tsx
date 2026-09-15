@@ -51,7 +51,7 @@ export default function CreatePanel({
             Create New Dataset
           </h2>
           <p className="mt-0.5 text-xs text-text-secondary">
-            Upload a CSV file for evaluation
+            Upload a CSV file for assessment
           </p>
         </div>
 

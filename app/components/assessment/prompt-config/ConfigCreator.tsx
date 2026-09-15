@@ -1,6 +1,11 @@
-import { Button, Field, Select } from "@/app/components/ui";
+"use client";
+
+import { Button, Field, Modal, RadioGroup, Select } from "@/app/components/ui";
 import { PROVIDER_OPTIONS } from "@/app/lib/data/assessmentModels";
-import type { ConfigCreatorProps } from "@/app/lib/types/assessment";
+import type {
+  ConfigCreatorProps,
+  ConfigSaveMode,
+} from "@/app/lib/types/assessment";
 import type { CompletionConfig } from "@/app/lib/types/configs";
 import ConfigParamControl from "./ConfigParamControl";
 
@@ -16,6 +21,13 @@ export default function ConfigCreator({
   configName,
   commitMessage,
   isSaving,
+  isSaveModalOpen,
+  setIsSaveModalOpen,
+  saveMode,
+  setSaveMode,
+  versionConfigId,
+  setVersionConfigId,
+  existingConfigs,
   setConfigName,
   setCommitMessage,
   onProviderChange,
@@ -23,7 +35,14 @@ export default function ConfigCreator({
   onParamChange,
   onSave,
 }: ConfigCreatorProps) {
-  const saveDisabled = isSaving || !configName.trim();
+  const confirmDisabled =
+    isSaving ||
+    (saveMode === "version" ? !versionConfigId : !configName.trim());
+
+  const handleConfirm = () => {
+    void onSave();
+    setIsSaveModalOpen(false);
+  };
 
   return (
     <div className="space-y-4">
@@ -87,29 +106,73 @@ export default function ConfigCreator({
         </div>
       </details>
 
-      <div className="grid gap-3">
-        <Field
-          label="AI Configuration Name"
-          value={configName}
-          onChange={setConfigName}
-          placeholder="Helpful grader"
-        />
-        <Field
-          label="Save note"
-          value={commitMessage}
-          onChange={setCommitMessage}
-          placeholder="Optional"
-        />
-      </div>
-
-      <Button
-        type="button"
-        fullWidth
-        onClick={() => void onSave()}
-        disabled={saveDisabled}
+      <Modal
+        open={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        title="Save configuration"
+        maxWidth="max-w-md"
+        maxHeight="max-h-[90vh]"
       >
-        {isSaving ? "Saving..." : "Save behavior"}
-      </Button>
+        <div className="grid gap-3 px-6 pb-2">
+          <RadioGroup<ConfigSaveMode>
+            value={saveMode}
+            onChange={setSaveMode}
+            ariaLabel="Save mode"
+            options={[
+              { value: "new", label: "New configuration" },
+              { value: "version", label: "New version of existing" },
+            ]}
+          />
+
+          {saveMode === "new" ? (
+            <Field
+              label="AI Configuration Name"
+              value={configName}
+              onChange={setConfigName}
+              placeholder="Helpful grader"
+            />
+          ) : (
+            <div>
+              <label className="mb-2 block text-xs font-semibold text-text-primary">
+                Existing configuration
+              </label>
+              <Select
+                value={versionConfigId}
+                placeholder="Select a configuration"
+                options={existingConfigs.map((config) => ({
+                  value: config.id,
+                  label: config.name,
+                }))}
+                onChange={(event) => setVersionConfigId(event.target.value)}
+                className={selectClass}
+              />
+            </div>
+          )}
+
+          <Field
+            label="Save note"
+            value={commitMessage}
+            onChange={setCommitMessage}
+            placeholder="Optional"
+          />
+        </div>
+        <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsSaveModalOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirm}
+            disabled={confirmDisabled}
+          >
+            {isSaving ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

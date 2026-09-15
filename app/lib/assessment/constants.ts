@@ -1,5 +1,6 @@
 import type {
   AssessmentTab,
+  AssessmentTabId,
   ColumnRole,
   PostProcessingConfig,
   PostProcessingFilterRule,
@@ -91,11 +92,10 @@ export const SUMMARY_BADGE_CLASSES: Record<ResultTone, string> = {
 };
 
 export const ASSESSMENT_CONFIG_STEPS: Step[] = [
-  { id: 1, label: "Mapper" },
-  { id: 2, label: "Eliminatory (opt.)" },
-  { id: 3, label: "Evaluation" },
-  { id: 4, label: "Post Processing (opt.)" },
-  { id: 5, label: "Review" },
+  { id: 1, label: "Configuration" },
+  { id: 2, label: "Input Schema" },
+  { id: 3, label: "Pre-filter (opt.)" },
+  { id: 4, label: "Assessment" },
 ];
 
 export const SCHEMA_TYPE_OPTIONS: Array<{
@@ -250,10 +250,28 @@ export const CONFIGS_VISIBLE_BATCH_SIZE = 2;
 export const PAGE_TABS: ReadonlyArray<AssessmentTab> = [
   { id: "datasets", label: "Datasets" },
   { id: "config", label: "Config" },
-  { id: "results", label: "Result" },
+  { id: "experiment", label: "Experiment" },
+  { id: "results", label: "Runs" },
 ];
 
 export const MAX_CONFIGS = 4;
+
+// Each tab is its own route (sidebar sub-item). The `results` tab id keeps its
+// name for churn reasons but lives at the /assessment/runs URL.
+export const ASSESSMENT_TAB_ROUTES: Record<AssessmentTabId, string> = {
+  datasets: "/assessment",
+  config: "/assessment/config",
+  experiment: "/assessment/experiment",
+  results: "/assessment/runs",
+};
+
+// Reverse map from the /assessment/[tab] URL segment to the tab id.
+export const ASSESSMENT_ROUTE_SEGMENT_TO_TAB: Record<string, AssessmentTabId> =
+  {
+    config: "config",
+    experiment: "experiment",
+    runs: "results",
+  };
 
 export const ATTACHMENT_FORMATS: Record<string, string[]> = {
   mixed: ["url", "base64"],

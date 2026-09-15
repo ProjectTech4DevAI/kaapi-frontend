@@ -4,7 +4,6 @@ import type {
   CreateResponse,
   LabeledValue,
   ListResponse,
-  SampleRow,
   StepNavigationProps,
   ValueSetter,
 } from "./core";
@@ -22,6 +21,9 @@ export interface ColumnMapping {
   textColumns: string[];
   attachments: Attachment[];
   groundTruthColumns: string[];
+  // Names of columns marked strict (required in every submission row). Any
+  // column not listed is optional (strict: false).
+  strictColumns?: string[];
 }
 
 export type ColumnRole = "unmapped" | "text" | "attachment" | "ground_truth";
@@ -65,6 +67,8 @@ export interface PrefilterStepProps extends StepNavigationProps {
   attachmentColumns?: string[];
   prefilterConfig: PrefilterConfig | null;
   setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
+  // Changes when a config is (re)loaded, so local state re-syncs from props.
+  syncToken?: number;
 }
 
 export interface ColumnConfig {
@@ -83,27 +87,21 @@ export interface RoleVisuals {
   activeButtonClass: string;
 }
 
-export interface ColumnMapperStepProps extends StepNavigationProps {
-  columns: string[];
+// The Mapper authors the config's input_schema directly as a manual field list;
+// it no longer maps a dataset's columns, so it takes no `columns` and no back nav.
+export interface ColumnMapperStepProps {
   columnMapping: ColumnMapping;
   setColumnMapping: ValueSetter<ColumnMapping>;
+  onNext: () => void;
+  // Changes when a config is (re)loaded, so the local field list re-syncs.
+  syncToken?: number;
 }
 
 export interface AssessmentDatasetState {
   datasetId: string;
   datasetName: string;
-  columns: string[];
-  sampleRow: SampleRow;
-  columnMapping: ColumnMapping;
   setDatasetId: ValueSetter<string>;
   setDatasetName: ValueSetter<string>;
-  setDataset: (
-    datasetId: string,
-    columns: string[],
-    sampleRow: SampleRow,
-    datasetName?: string,
-  ) => void;
-  setColumnMapping: ValueSetter<ColumnMapping>;
   clearDataset: () => void;
 }
 
@@ -142,6 +140,13 @@ export interface DatasetViewModalData {
   name: string;
   headers: string[];
   rows: string[][];
+}
+
+// GET /api/assessment/datasets/{id}/rows — all rows, column-keyed.
+export interface AssessmentDatasetRows {
+  headers: string[];
+  rows: Record<string, string>[];
+  total_rows: number;
 }
 
 export type ReviewColumnRole = "text" | "attachment" | "ground truth";

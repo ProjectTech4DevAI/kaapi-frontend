@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Modal } from "@/app/components/ui";
 import { ExpandIcon } from "@/app/components/icons";
 import CompactToggleSwitch from "@/app/components/assessment/CompactToggleSwitch";
@@ -60,6 +60,7 @@ export default function PrefilterStep({
   setPrefilterConfig,
   onNext,
   onBack,
+  syncToken,
 }: PrefilterStepProps) {
   const [trEnabled, setTrEnabled] = useState(
     () => !!prefilterConfig?.topic_relevance,
@@ -83,6 +84,30 @@ export default function PrefilterStep({
     () => prefilterConfig?.duplicate_detection?.columns ?? [],
   );
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
+
+  // Re-seed local state from props whenever a config is (re)loaded. Keyed on
+  // syncToken only so ongoing edits (which flow to prefilterConfig on Next) are
+  // not clobbered mid-edit.
+  const propsRef = useRef({ prefilterConfig, attachmentColumns });
+  useEffect(() => {
+    propsRef.current = { prefilterConfig, attachmentColumns };
+  });
+  const isFirstSyncRef = useRef(true);
+  useEffect(() => {
+    if (isFirstSyncRef.current) {
+      isFirstSyncRef.current = false;
+      return;
+    }
+    const { prefilterConfig: pf, attachmentColumns: attach } = propsRef.current;
+    setTrEnabled(!!pf?.topic_relevance);
+    setDupEnabled(!!pf?.duplicate_detection);
+    setTrColumns(pf?.topic_relevance?.columns ?? []);
+    setTrAttachmentColumns(pf?.topic_relevance?.attachment_columns ?? attach);
+    setTrPrompt(
+      pf?.topic_relevance?.prompt ?? DEFAULT_PREFILTER_TOPIC_RELEVANCE_PROMPT,
+    );
+    setDupColumns(pf?.duplicate_detection?.columns ?? []);
+  }, [syncToken]);
 
   const trHasColumns = trColumns.length > 0 || trAttachmentColumns.length > 0;
 
@@ -113,11 +138,11 @@ export default function PrefilterStep({
       <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 pb-16">
         <div>
           <h2 className="text-lg font-semibold text-text-primary">
-            Eliminatory
+            Pre-filter
           </h2>
           <p className="mt-1 text-sm text-text-secondary">
             Optional pre-filters run before the LLM batch. Rows that fail Topic
-            Relevance are excluded from Evaluation and flagged in the export.
+            Relevance are excluded from Assessment and flagged in the export.
           </p>
         </div>
 
@@ -128,7 +153,7 @@ export default function PrefilterStep({
                 Topic Relevance
               </div>
               <div className="mt-0.5 text-xs text-text-secondary">
-                Gate: rows with decision=REJECT are excluded from Evaluation.
+                Gate: rows with decision=REJECT are excluded from Assessment.
               </div>
             </div>
             <CompactToggleSwitch
@@ -196,7 +221,7 @@ export default function PrefilterStep({
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="block text-xs font-medium text-text-secondary">
-                    Evaluation prompt / rubric
+                    Assessment prompt / rubric
                     <span className="ml-1 text-status-error-text">*</span>
                   </span>
                   <button
@@ -218,7 +243,7 @@ export default function PrefilterStep({
                 />
                 {!trPrompt.trim() && (
                   <p className="mt-1 text-xs text-status-warning">
-                    Evaluation prompt is required.
+                    Assessment prompt is required.
                   </p>
                 )}
               </div>
@@ -234,7 +259,7 @@ export default function PrefilterStep({
               </div>
               <div className="mt-0.5 text-xs text-text-secondary">
                 Passthrough: runs only on rows that passed Topic Relevance.
-                Results appear in export; does not gate Evaluation.
+                Results appear in export; does not gate Assessment.
               </div>
             </div>
             <CompactToggleSwitch
@@ -267,7 +292,7 @@ export default function PrefilterStep({
       <Modal
         open={isPromptModalOpen}
         onClose={() => setIsPromptModalOpen(false)}
-        title="Evaluation prompt / rubric"
+        title="Assessment prompt / rubric"
         maxWidth="max-w-4xl"
         maxHeight="max-h-[85vh]"
       >
@@ -295,13 +320,13 @@ export default function PrefilterStep({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <span className="text-xs text-text-secondary">
               {!trEnabled && !dupEnabled
-                ? "No filters enabled — Eliminatory will be skipped."
+                ? "No filters enabled — Pre-filter will be skipped."
                 : canProceed
                   ? "Ready to continue."
                   : "Complete required fields above."}
             </span>
             <Button type="button" onClick={handleNext} disabled={!canProceed}>
-              Next: Evaluation
+              Next: Assessment
             </Button>
           </div>
         </div>

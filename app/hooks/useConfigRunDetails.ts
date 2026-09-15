@@ -8,6 +8,7 @@ import {
 } from "@/app/lib/utils/assessment";
 import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
 import type {
+  AssessmentConfigBlob,
   ConfigResponse,
   ConfigVersionResponse,
 } from "@/app/lib/types/configs";
@@ -83,16 +84,16 @@ export default function useConfigRunDetails({
           );
         }
 
+        const assessmentBlob = versionResponse.data
+          .config_blob as unknown as AssessmentConfigBlob | null;
         const detail: ConfigRunDetail = {
           configId,
           version,
           name: configResponse.data.name,
           description: configResponse.data.description,
           commitMessage: versionResponse.data.commit_message,
-          provider:
-            versionResponse.data.config_blob?.completion?.provider || null,
-          model:
-            versionResponse.data.config_blob?.completion?.params?.model || null,
+          provider: assessmentBlob?.assessment?.provider || null,
+          model: assessmentBlob?.assessment?.params?.model || null,
         };
 
         setConfigDetailsByKey((prev) => ({ ...prev, [key]: detail }));

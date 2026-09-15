@@ -7,18 +7,8 @@ import {
   getModelConfigDefinition,
   getModelsByProvider,
 } from "@/app/lib/data/assessmentModels";
-import type {
-  AssessorModelSelection,
-  PromptStepId,
-} from "@/app/lib/types/assessment";
+import type { ModelPickerProps } from "@/app/lib/types/assessment";
 import type { ProviderType } from "@/app/lib/types/configs";
-
-interface ModelPickerProps {
-  step: PromptStepId;
-  selection: AssessorModelSelection;
-  onModel: (step: PromptStepId, provider: ProviderType, model: string) => void;
-  onParam: (step: PromptStepId, key: string, value: string | number) => void;
-}
 
 const fieldLabel =
   "block text-[10px] font-semibold tracking-wider uppercase text-text-secondary";

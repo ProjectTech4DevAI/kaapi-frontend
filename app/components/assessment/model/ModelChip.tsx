@@ -3,18 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, GearIcon } from "@/app/components/icons";
 import ModelPicker from "./ModelPicker";
-import type {
-  AssessorModelSelection,
-  PromptStepId,
-} from "@/app/lib/types/assessment";
-import type { ProviderType } from "@/app/lib/types/configs";
-
-interface ModelChipProps {
-  step: PromptStepId;
-  selection: AssessorModelSelection;
-  onModel: (step: PromptStepId, provider: ProviderType, model: string) => void;
-  onParam: (step: PromptStepId, key: string, value: string | number) => void;
-}
+import type { ModelChipProps } from "@/app/lib/types/assessment";
 
 /** The model in use for this step, opening its picker in the flow strip. */
 export default function ModelChip({

@@ -1,19 +1,10 @@
 "use client";
 
-import { ReactNode, useRef } from "react";
+import { useRef } from "react";
 import { SplitPane } from "@/app/components/ui";
 import { useSyncedScroll } from "@/app/hooks/useSyncedScroll";
 import PreviewPane from "./PreviewPane";
-import type { PromptFieldType, PromptZones } from "@/app/lib/types/assessment";
-
-interface EditorStepLayoutProps {
-  children: ReactNode;
-  zones: PromptZones;
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  sampleRow: Record<string, string>;
-  previewDisabledNote?: string;
-}
+import type { EditorStepLayoutProps } from "@/app/lib/types/assessment";
 
 /**
  * Steps 2 and 3 share this shape: editor on the left, live preview on the right,

@@ -11,22 +11,13 @@ import {
 } from "@/app/lib/assessment/promptTokens";
 import type {
   PreviewBlock,
+  PreviewBlockType,
+  PreviewPaneProps,
   PromptFieldType,
   PromptSegment,
-  PromptZones,
 } from "@/app/lib/types/assessment";
 
-interface PreviewPaneProps {
-  paneRef: React.RefObject<HTMLDivElement | null>;
-  zones: PromptZones;
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  sampleRow: Record<string, string>;
-  /** Shown instead of the document when the step is switched off. */
-  disabledNote?: string;
-}
-
-const BLOCK_CLASSES: Record<PreviewBlock["type"], string> = {
+const BLOCK_CLASSES: Record<PreviewBlockType, string> = {
   h1: "mt-6 mb-2.5 text-[15px] font-bold tracking-wider uppercase text-text-primary first:mt-0",
   h2: "mt-4 mb-2 text-base font-semibold text-text-primary",
   li: "my-0.5 ml-5 list-disc text-sm leading-7 text-text-primary",

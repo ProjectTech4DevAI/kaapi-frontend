@@ -2,16 +2,7 @@
 
 import { WarningIcon } from "@/app/components/icons";
 import { Button, Modal } from "@/app/components/ui";
-
-export type DeleteTarget =
-  | { kind: "assessor"; configId: string; name: string }
-  | { kind: "version"; configId: string; version: number };
-
-interface DeleteAssessorDialogProps {
-  target: DeleteTarget;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
+import type { DeleteAssessorDialogProps } from "@/app/lib/types/assessment";
 
 /** Confirms deleting an assessor (with every version) or a single version. */
 export default function DeleteAssessorDialog({

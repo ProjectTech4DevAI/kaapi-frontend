@@ -8,21 +8,7 @@ import { useCallback, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { isAllowedDatasetFile } from "@/app/lib/utils/assessment";
 import { MAX_DATASET_FILE_BYTES } from "@/app/lib/assessment/constants";
-
-export interface UseSubmissionFormResult {
-  name: string;
-  description: string;
-  file: File | null;
-  isDragging: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  setName: (value: string) => void;
-  setDescription: (value: string) => void;
-  setIsDragging: (value: boolean) => void;
-  removeFile: () => void;
-  reset: () => void;
-  handleFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleDrop: (event: React.DragEvent<HTMLElement>) => void;
-}
+import type { UseSubmissionFormResult } from "@/app/lib/types/assessment";
 
 const MAX_FILE_MB = MAX_DATASET_FILE_BYTES / (1024 * 1024);
 const EXTENSION_RE = /\.(csv|xlsx|xls)$/i;

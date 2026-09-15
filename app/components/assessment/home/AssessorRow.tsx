@@ -4,24 +4,7 @@ import { TrashIcon } from "@/app/components/icons";
 import { formatRelativeTime } from "@/app/lib/utils";
 import AssessorVersionChips from "./AssessorVersionChips";
 import AssessorVersionList from "./AssessorVersionList";
-import type {
-  AssessorSelection,
-  AssessorSummary,
-  AssessorVersion,
-} from "@/app/lib/types/assessment";
-
-interface AssessorRowProps {
-  assessor: AssessorSummary;
-  selection: AssessorSelection | null;
-  versions: AssessorVersion[] | undefined;
-  isExpanded: boolean;
-  deletingKey: string | null;
-  onSelectAssessor: (configId: string) => void;
-  onSelectVersion: (configId: string, version: number) => void;
-  onToggleExpanded: (configId: string) => void;
-  onRequestDeleteAssessor: (assessor: AssessorSummary) => void;
-  onRequestDeleteVersion: (configId: string, version: number) => void;
-}
+import type { AssessorRowProps } from "@/app/lib/types/assessment";
 
 const CHIP_COUNT = 2;
 

@@ -7,25 +7,7 @@ import {
   ASSESSMENT_ZONE_COPY,
   ASSESSMENT_ZONE_MIN_HEIGHT,
 } from "@/app/lib/assessment/promptCopy";
-import type {
-  PromptFieldType,
-  PromptZoneId,
-  PromptZones,
-  SchemaProperty,
-} from "@/app/lib/types/assessment";
-
-interface AssessmentStepProps {
-  zones: PromptZones;
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  fieldStrict: Record<string, boolean>;
-  sampleRow: Record<string, string>;
-  outputSchema: SchemaProperty[];
-  onZoneChange: (zone: PromptZoneId, value: string) => void;
-  onFieldType: (name: string, type: PromptFieldType) => void;
-  onFieldStrict: (name: string, strict: boolean) => void;
-  onOutputSchema: (schema: SchemaProperty[]) => void;
-}
+import type { AssessmentStepProps } from "@/app/lib/types/assessment";
 
 /** Wizard step 3: the assessor's prompt and the schema its answer must fill. */
 export default function AssessmentStep({

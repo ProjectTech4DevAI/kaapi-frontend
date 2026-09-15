@@ -96,16 +96,3 @@ export interface PostProcessingPanelProps {
   initialConfig: PostProcessingConfig | null;
   onSave: (config: PostProcessingConfig) => Promise<void>;
 }
-
-export interface PromptAndConfigStepProps extends StepNavigationProps {
-  textColumns: string[];
-  sampleRow: SampleRow;
-  systemInstruction: string;
-  setSystemInstruction: ValueSetter<string>;
-  promptTemplate: string;
-  setPromptTemplate: ValueSetter<string>;
-  configs: ConfigSelection[];
-  setConfigs: StateSetter<ConfigSelection[]>;
-  outputSchema: SchemaProperty[];
-  setOutputSchema: ValueSetter<SchemaProperty[]>;
-}

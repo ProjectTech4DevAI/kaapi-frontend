@@ -19,15 +19,10 @@ import {
   SPREADSHEET_STATE_DEBOUNCE_MS,
   UNIVER_MUTATION_TYPE,
 } from "@/app/lib/assessment/constants";
-import type { UniverAPI } from "@/app/lib/types/assessment";
-
-interface SpreadsheetViewProps {
-  runId: string;
-  title: string;
-  subtitle?: string;
-  headers: string[];
-  rows: string[][];
-}
+import type {
+  SpreadsheetViewProps,
+  UniverAPI,
+} from "@/app/lib/types/assessment";
 
 export default function SpreadsheetView({
   runId,

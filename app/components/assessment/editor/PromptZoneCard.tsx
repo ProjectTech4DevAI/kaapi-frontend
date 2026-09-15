@@ -2,24 +2,9 @@
 
 import PromptZoneEditor from "./PromptZoneEditor";
 import type {
-  PromptFieldType,
-  PromptZoneCopy,
+  PromptZoneCardProps,
   PromptZoneId,
-  PromptZones,
 } from "@/app/lib/types/assessment";
-
-interface PromptZoneCardProps {
-  zones: PromptZones;
-  copy: Record<PromptZoneId, PromptZoneCopy>;
-  /** Applied to both zones so they stay the same size. */
-  zoneMinHeight: number;
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  fieldStrict: Record<string, boolean>;
-  onZoneChange: (zone: PromptZoneId, value: string) => void;
-  onFieldType: (name: string, type: PromptFieldType) => void;
-  onFieldStrict: (name: string, strict: boolean) => void;
-}
 
 const ORDER: PromptZoneId[] = ["instructions", "submission"];
 

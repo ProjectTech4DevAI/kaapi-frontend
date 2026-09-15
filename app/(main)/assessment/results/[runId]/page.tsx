@@ -6,11 +6,12 @@ import dynamic from "next/dynamic";
 import { Loader } from "@/app/components/ui";
 import ResultRowModal from "@/app/components/assessment/results/ResultRowModal";
 import ResultsTable from "@/app/components/assessment/results/ResultsTable";
-import ResultsToolbar, {
-  type ResultsViewMode,
-} from "@/app/components/assessment/results/ResultsToolbar";
+import ResultsToolbar from "@/app/components/assessment/results/ResultsToolbar";
 import { useRunResults } from "@/app/hooks/useRunResults";
-import type { AssessmentMethodValue } from "@/app/lib/types/assessment";
+import type {
+  AssessmentMethodValue,
+  ResultsViewMode,
+} from "@/app/lib/types/assessment";
 import {
   downloadCsv,
   jsonResultsToTableData,

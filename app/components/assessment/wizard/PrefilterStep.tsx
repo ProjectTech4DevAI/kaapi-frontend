@@ -7,24 +7,7 @@ import {
   PREFILTER_ZONE_COPY,
   PREFILTER_ZONE_MIN_HEIGHT,
 } from "@/app/lib/assessment/promptCopy";
-import type {
-  PromptFieldType,
-  PromptZoneId,
-  PromptZones,
-} from "@/app/lib/types/assessment";
-
-interface PrefilterStepProps {
-  enabled: boolean;
-  zones: PromptZones;
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  fieldStrict: Record<string, boolean>;
-  sampleRow: Record<string, string>;
-  onToggle: (enabled: boolean) => void;
-  onZoneChange: (zone: PromptZoneId, value: string) => void;
-  onFieldType: (name: string, type: PromptFieldType) => void;
-  onFieldStrict: (name: string, strict: boolean) => void;
-}
+import type { PrefilterStepProps } from "@/app/lib/types/assessment";
 
 /** Wizard step 2: the optional relevance gate. Rejected rows never get assessed. */
 export default function PrefilterStep({

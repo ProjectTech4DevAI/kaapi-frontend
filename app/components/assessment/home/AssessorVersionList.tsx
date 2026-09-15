@@ -1,16 +1,7 @@
 "use client";
 
 import { TrashIcon } from "@/app/components/icons";
-import type { AssessorVersion } from "@/app/lib/types/assessment";
-
-interface AssessorVersionListProps {
-  configId: string;
-  versions: AssessorVersion[] | undefined;
-  selectedVersion: number | null;
-  deletingKey: string | null;
-  onSelectVersion: (configId: string, version: number) => void;
-  onRequestDeleteVersion: (configId: string, version: number) => void;
-}
+import type { AssessorVersionListProps } from "@/app/lib/types/assessment";
 
 /** Every version of one assessor, revealed in place under its row. */
 export default function AssessorVersionList({

@@ -3,13 +3,10 @@
 import { DownloadIcon, EyeIcon } from "@/app/components/icons";
 import { Button } from "@/app/components/ui";
 import { isTerminalStatus } from "@/app/lib/assessment/results";
-import type { HomeRunRow, ResultsTarget } from "@/app/lib/types/assessment";
-
-interface RunRowActionsProps {
-  row: HomeRunRow;
-  isExporting: boolean;
-  onExport: (target: ResultsTarget, fileName: string) => void;
-}
+import type {
+  HomeRunRow,
+  RunRowActionsProps,
+} from "@/app/lib/types/assessment";
 
 function resultsHref(row: HomeRunRow): string {
   const { assessment } = row;

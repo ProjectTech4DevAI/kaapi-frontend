@@ -9,17 +9,11 @@ import {
   tokenName,
 } from "@/app/lib/assessment/promptTokens";
 import { schemaToJsonSchema } from "@/app/lib/utils/assessment";
-import type { PromptFieldType, WizardDraft } from "@/app/lib/types/assessment";
-
-interface ReviewSaveModalProps {
-  open: boolean;
-  draft: WizardDraft;
-  sampleRow: Record<string, string>;
-  defaultName: string;
-  isSaving: boolean;
-  onClose: () => void;
-  onSave: (name: string, commitMessage: string) => void;
-}
+import type {
+  PromptFieldType,
+  ReviewSaveModalProps,
+  WizardDraft,
+} from "@/app/lib/types/assessment";
 
 const PREVIEW_LIMIT = 420;
 const VALUE_LIMIT = 90;

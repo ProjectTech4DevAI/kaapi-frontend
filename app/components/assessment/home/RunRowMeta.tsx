@@ -1,10 +1,6 @@
 import { DatabaseIcon } from "@/app/components/icons";
 import { formatRelativeTime } from "@/app/lib/utils";
-import type { HomeRunRow } from "@/app/lib/types/assessment";
-
-interface RunRowMetaProps {
-  row: HomeRunRow;
-}
+import type { RunRowMetaProps } from "@/app/lib/types/assessment";
 
 /** The two meta lines under a run's name: when · assessor vN, then the set. */
 export default function RunRowMeta({ row }: RunRowMetaProps) {

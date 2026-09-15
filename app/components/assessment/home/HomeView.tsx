@@ -6,17 +6,7 @@ import { ASSESSMENT_WIZARD_STEPS } from "@/app/lib/assessment/constants";
 import { useAssessmentHome } from "@/app/hooks/useAssessmentHome";
 import AssessorsPanel from "./AssessorsPanel";
 import RunsPanel from "./RunsPanel";
-import type {
-  AssessorSelection,
-  WizardContext,
-} from "@/app/lib/types/assessment";
-
-interface HomeViewProps {
-  initialSelection: AssessorSelection | null;
-  onNewAssessor: () => void;
-  onEditVersion: (context: WizardContext) => void;
-  onNewRun: (context: WizardContext) => void;
-}
+import type { HomeViewProps, WizardContext } from "@/app/lib/types/assessment";
 
 const NO_COMPLETED_STEPS = new Set<number>();
 const NO_STEP_CLICK = () => {};

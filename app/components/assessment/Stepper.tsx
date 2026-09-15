@@ -1,24 +1,10 @@
 "use client";
 
-import { ReactNode } from "react";
+import {} from "react";
 import { Button } from "@/app/components/ui";
 import { CheckIcon, HomeIcon } from "@/app/components/icons";
 import { getStepState, stepPillClasses } from "@/app/lib/assessment/wizard";
-import type { Step, ValueSetter } from "@/app/lib/types/assessment";
-
-interface StepperProps {
-  steps: Step[];
-  currentStep: number;
-  onStepClick: ValueSetter<number>;
-  completedSteps: Set<number>;
-  /** Home renders the same strip as an inert map of the flow. */
-  locked?: boolean;
-  /** Flow-specific gating; falls back to the sequential rule when omitted. */
-  isStepAllowed?: (step: number) => boolean;
-  onHome?: () => void;
-  leading?: ReactNode;
-  trailing?: ReactNode;
-}
+import type { StepperProps } from "@/app/lib/types/assessment";
 
 export default function Stepper({
   steps,

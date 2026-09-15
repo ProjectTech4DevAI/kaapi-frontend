@@ -1,16 +1,7 @@
 "use client";
 
 import { Button } from "@/app/components/ui";
-
-interface WizardFooterProps {
-  showBack: boolean;
-  hint: string;
-  nextLabel: string;
-  nextDisabled: boolean;
-  isBusy: boolean;
-  onBack: () => void;
-  onNext: () => void;
-}
+import type { WizardFooterProps } from "@/app/lib/types/assessment";
 
 /** The wizard's single pinned footer: Back · status · primary action. */
 export default function WizardFooter({

@@ -2,13 +2,7 @@
 
 import { Button, Modal } from "@/app/components/ui";
 import { CheckIcon } from "@/app/components/icons";
-
-interface SavedNextModalProps {
-  open: boolean;
-  title: string;
-  onRun: () => void;
-  onHome: () => void;
-}
+import type { SavedNextModalProps } from "@/app/lib/types/assessment";
 
 /** After a save: run this version now, or go back to Home. */
 export default function SavedNextModal({

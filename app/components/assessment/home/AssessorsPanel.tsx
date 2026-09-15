@@ -4,17 +4,12 @@ import { useState } from "react";
 import { PlusIcon, SearchIcon } from "@/app/components/icons";
 import { Button } from "@/app/components/ui";
 import AssessorRow from "./AssessorRow";
-import DeleteAssessorDialog, {
-  type DeleteTarget,
-} from "./DeleteAssessorDialog";
-import type { UseAssessmentHomeResult } from "@/app/lib/types/assessment";
+import DeleteAssessorDialog from "./DeleteAssessorDialog";
+import type {
+  AssessorsPanelProps,
+  DeleteTarget,
+} from "@/app/lib/types/assessment";
 import HomePanel from "./HomePanel";
-
-interface AssessorsPanelProps {
-  home: UseAssessmentHomeResult;
-  onNewAssessor: () => void;
-  onEditVersion: () => void;
-}
 
 export default function AssessorsPanel({
   home,

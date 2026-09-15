@@ -5,7 +5,6 @@ import type {
   LabeledValue,
   ListResponse,
   SampleRow,
-  StepNavigationProps,
   ValueSetter,
 } from "./core";
 
@@ -56,13 +55,6 @@ export interface PrefilterConfig {
   topic_relevance?: PrefilterTopicRelevanceConfig;
 }
 
-export interface PrefilterStepProps extends StepNavigationProps {
-  columns: string[];
-  attachmentColumns?: string[];
-  prefilterConfig: PrefilterConfig | null;
-  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
-}
-
 export interface ColumnConfig {
   role: ColumnRole;
   attachmentType?: "image" | "pdf" | "mixed";
@@ -77,12 +69,6 @@ export interface RoleVisuals {
   panelClass: string;
   dotClass: string;
   activeButtonClass: string;
-}
-
-export interface ColumnMapperStepProps extends StepNavigationProps {
-  columns: string[];
-  columnMapping: ColumnMapping;
-  setColumnMapping: ValueSetter<ColumnMapping>;
 }
 
 export interface AssessmentDatasetState {

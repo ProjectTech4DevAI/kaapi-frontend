@@ -1,29 +1,10 @@
 "use client";
 
 import { DocumentFileIcon, ImageIcon } from "@/app/components/icons";
-import type { PromptFieldType } from "@/app/lib/types/assessment";
 import type {
-  MentionColumnOption,
-  MentionStage,
-  MentionStrictOption,
-  MentionTypeOption,
-} from "@/app/hooks/usePromptMentions";
-
-interface MentionDropdownProps {
-  dropdownRef: React.RefObject<HTMLDivElement | null>;
-  position: { top: number; left: number } | null;
-  activeIndex: number;
-  pendingField: string | null;
-  stage: MentionStage | null;
-  columnOptions: MentionColumnOption[];
-  typeOptions: MentionTypeOption[];
-  strictOptions: MentionStrictOption[];
-  onPickColumn: (option: MentionColumnOption) => void;
-  onPickType: (type: PromptFieldType) => void;
-  onPickStrict: (strict: boolean) => void;
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
-}
+  MentionDropdownProps,
+  PromptFieldType,
+} from "@/app/lib/types/assessment";
 
 const TYPE_ICONS: Record<PromptFieldType, React.ReactNode> = {
   text: <span className="font-sans text-[11px] font-semibold">Aa</span>,

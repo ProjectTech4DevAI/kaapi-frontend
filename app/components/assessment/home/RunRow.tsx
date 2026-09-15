@@ -8,13 +8,7 @@ import {
 import { formatStatusLabel, getResultTone } from "@/app/lib/assessment/results";
 import RunRowActions from "./RunRowActions";
 import RunRowMeta from "./RunRowMeta";
-import type { HomeRunRow, ResultsTarget } from "@/app/lib/types/assessment";
-
-interface RunRowProps {
-  row: HomeRunRow;
-  isExporting: boolean;
-  onExport: (target: ResultsTarget, fileName: string) => void;
-}
+import type { RunRowProps } from "@/app/lib/types/assessment";
 
 export default function RunRow({ row, isExporting, onExport }: RunRowProps) {
   const { assessment, stages, isActive } = row;

@@ -4,13 +4,7 @@ import { useState } from "react";
 import { Button, Field, Select } from "@/app/components/ui";
 import { CloudUploadIcon } from "@/app/components/icons";
 import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
-import type { UseSubmissionStepResult } from "@/app/hooks/useSubmissionStep";
-import type { UseAssessmentWizardResult } from "@/app/lib/types/assessment";
-
-interface RunStepProps {
-  wizard: UseAssessmentWizardResult;
-  step: UseSubmissionStepResult;
-}
+import type { RunStepProps } from "@/app/lib/types/assessment";
 
 /** Wizard step 4: confirm the submission set and assessor version, then run. */
 export default function RunStep({ wizard, step }: RunStepProps) {

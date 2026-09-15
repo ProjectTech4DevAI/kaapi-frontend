@@ -4,12 +4,7 @@ import { Button, Select } from "@/app/components/ui";
 import { PlusIcon } from "@/app/components/icons";
 import RunRow from "./RunRow";
 import HomePanel from "./HomePanel";
-import type { UseAssessmentHomeResult } from "@/app/lib/types/assessment";
-
-interface RunsPanelProps {
-  home: UseAssessmentHomeResult;
-  onNewRun: () => void;
-}
+import type { RunsPanelProps } from "@/app/lib/types/assessment";
 
 export default function RunsPanel({ home, onNewRun }: RunsPanelProps) {
   const { runSlice, selection } = home;

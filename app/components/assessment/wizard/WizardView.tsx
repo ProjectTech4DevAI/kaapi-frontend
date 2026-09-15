@@ -14,12 +14,10 @@ import SavedNextModal from "./SavedNextModal";
 import WizardFooter from "./WizardFooter";
 import WizardStepBody from "./WizardStepBody";
 import { wizardFooterState, wizardContextLabel } from "./wizardCopy";
-import type { UseAssessmentWizardResult } from "@/app/lib/types/assessment";
-
-interface WizardViewProps {
-  wizard: UseAssessmentWizardResult;
-  onHome: () => void;
-}
+import type {
+  UseAssessmentWizardResult,
+  WizardViewProps,
+} from "@/app/lib/types/assessment";
 
 /** Step 4 runs; step 3 saves — except an untouched run flow, which moves on. */
 function runPrimaryAction(wizard: UseAssessmentWizardResult): void {

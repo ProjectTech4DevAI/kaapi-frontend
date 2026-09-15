@@ -15,29 +15,15 @@ import {
   canonicalToken,
   fieldTypeOf,
 } from "@/app/lib/assessment/promptTokens";
-import type { PromptFieldType } from "@/app/lib/types/assessment";
-
-export interface MentionColumnOption {
-  name: string;
-  isCreate: boolean;
-  type: PromptFieldType;
-}
-
-export interface MentionTypeOption {
-  type: PromptFieldType;
-  label: string;
-  isCurrent: boolean;
-}
-
-export interface MentionStrictOption {
-  strict: boolean;
-  label: string;
-  hint: string;
-  isCurrent: boolean;
-}
-
-/** Which follow-up question is open for `pendingField`. */
-export type MentionStage = "type" | "strict";
+import type {
+  MentionColumnOption,
+  MentionStage,
+  MentionStrictOption,
+  MentionTypeOption,
+  PromptFieldType,
+  UsePromptMentionsParams,
+  UsePromptMentionsResult,
+} from "@/app/lib/types/assessment";
 
 const TYPE_ORDER: PromptFieldType[] = ["text", "image", "pdf"];
 
@@ -94,16 +80,6 @@ function useHoverClose() {
   return { armHover, resetHover, cancelHoverClose, scheduleHover };
 }
 
-interface UsePromptMentionsParams {
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  fieldStrict: Record<string, boolean>;
-  value: string;
-  onChange: (value: string) => void;
-  onFieldType: (name: string, type: PromptFieldType) => void;
-  onFieldStrict: (name: string, strict: boolean) => void;
-}
-
 export function usePromptMentions({
   columns,
   fieldTypes,
@@ -112,7 +88,7 @@ export function usePromptMentions({
   onChange,
   onFieldType,
   onFieldStrict,
-}: UsePromptMentionsParams) {
+}: UsePromptMentionsParams): UsePromptMentionsResult {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);

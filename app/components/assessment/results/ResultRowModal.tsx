@@ -2,11 +2,7 @@
 
 import { Modal } from "@/app/components/ui";
 import { readResultRow, resultRowTitle } from "@/app/lib/assessment/resultRow";
-
-interface ResultRowModalProps {
-  row: Record<string, unknown> | null;
-  onClose: () => void;
-}
+import type { ResultRowModalProps } from "@/app/lib/types/assessment";
 
 const eyebrow =
   "mb-2 text-[11px] font-semibold tracking-wider uppercase text-text-secondary";

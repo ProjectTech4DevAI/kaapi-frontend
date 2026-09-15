@@ -3,22 +3,7 @@
 import { splitTokens } from "@/app/lib/assessment/promptTokens";
 import { usePromptMentions } from "@/app/hooks/usePromptMentions";
 import MentionDropdown from "./MentionDropdown";
-import type { PromptFieldType } from "@/app/lib/types/assessment";
-
-interface PromptZoneEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  minHeight: number;
-  /** Only the per-row zone offers `@` mentions. */
-  enableMentions: boolean;
-  columns: string[];
-  fieldTypes: Record<string, PromptFieldType>;
-  fieldStrict: Record<string, boolean>;
-  onFieldType: (name: string, type: PromptFieldType) => void;
-  onFieldStrict: (name: string, strict: boolean) => void;
-  ariaLabel: string;
-}
+import type { PromptZoneEditorProps } from "@/app/lib/types/assessment";
 
 const SEGMENT_CLASSES: Record<string, string> = {
   plain: "",
@@ -42,10 +27,8 @@ function markerPosition(marker: HTMLElement): { top: number; left: number } {
 }
 
 /**
- * A prompt zone: a transparent textarea over a highlighted mirror, so tokens can
- * be coloured while the caret, selection and IME stay native. The same layering
- * JsonEditor uses for JSON. A third, transparent copy sits above the textarea to
- * carry each token's clickable required/optional marker.
+ * A transparent textarea over a highlighted mirror, so tokens can be coloured
+ * while the caret, selection and IME stay native (the layering `JsonEditor` uses).
  */
 export default function PromptZoneEditor({
   value,

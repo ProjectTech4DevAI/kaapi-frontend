@@ -4,21 +4,7 @@ import { DatasetListSkeleton } from "@/app/components";
 import { DatabaseIcon } from "@/app/components/icons";
 import EvalDatasetDescription from "@/app/components/evaluations/EvalDatasetDescription";
 import { Button } from "@/app/components/ui";
-import type {
-  AssessmentSubmission,
-  ValueSetter,
-} from "@/app/lib/types/assessment";
-
-interface SubmissionListProps {
-  submissions: AssessmentSubmission[];
-  selectedId: string;
-  isLoading: boolean;
-  isLoadingColumns: boolean;
-  viewingId: string | null;
-  onSelect: (id: string, name?: string) => void;
-  onView: (submissionId: string, name: string) => void;
-  onRequestDelete: ValueSetter<string>;
-}
+import type { SubmissionListProps } from "@/app/lib/types/assessment";
 
 export default function SubmissionList({
   submissions,

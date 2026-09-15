@@ -1,25 +1,6 @@
-import { ReactNode } from "react";
+import {} from "react";
 import { CursorPager, Pager } from "@/app/components/ui";
-
-interface HomePanelProps {
-  title: string;
-  headerActions?: ReactNode;
-  banner?: ReactNode;
-  children: ReactNode;
-  countLabel: string;
-  /** Numbered pages, for a list held entirely in memory. */
-  page?: number;
-  pages?: number;
-  onGoto?: (page: number) => void;
-  /** Prev/next only, for a list paged through the API. */
-  cursor?: {
-    hasPrev: boolean;
-    hasNext: boolean;
-    onPrev: () => void;
-    onNext: () => void;
-  };
-  className?: string;
-}
+import type { HomePanelProps } from "@/app/lib/types/assessment";
 
 /** Shared shell for Home's two panels: header row, scrolling body, count + pager. */
 export default function HomePanel({

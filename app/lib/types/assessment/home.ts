@@ -1,5 +1,7 @@
 // Assessment types: Home surface (assessors panel, runs panel, version selection).
+import type { ReactNode } from "react";
 import type { PageSlice } from "./core";
+import type { WizardContext } from "./wizard";
 import type { ResultsTarget } from "./batch";
 import type { AssessorSummary, AssessorVersion } from "./dataSource";
 import type { AssessmentRun } from "./results";
@@ -58,4 +60,101 @@ export interface UseAssessmentHomeResult {
   gotoRunPage: (page: number) => void;
   exportRun: (target: ResultsTarget, fileName: string) => Promise<void>;
   exportingId: string | null;
+}
+
+/** What a delete confirmation is about: a whole assessor, or one version. */
+export type DeleteTarget =
+  | { kind: "assessor"; configId: string; name: string }
+  | { kind: "version"; configId: string; version: number };
+
+export interface HomeViewProps {
+  initialSelection: AssessorSelection | null;
+  onNewAssessor: () => void;
+  onEditVersion: (context: WizardContext) => void;
+  onNewRun: (context: WizardContext) => void;
+}
+
+export interface HomePanelProps {
+  title: string;
+  headerActions?: ReactNode;
+  banner?: ReactNode;
+  children: ReactNode;
+  countLabel: string;
+  /** Numbered pages, for a list held entirely in memory. */
+  page?: number;
+  pages?: number;
+  onGoto?: (page: number) => void;
+  /** Prev/next only, for a list paged through the API. */
+  cursor?: {
+    hasPrev: boolean;
+    hasNext: boolean;
+    onPrev: () => void;
+    onNext: () => void;
+  };
+  className?: string;
+}
+
+export interface AssessorsPanelProps {
+  home: UseAssessmentHomeResult;
+  onNewAssessor: () => void;
+  onEditVersion: () => void;
+}
+
+export interface AssessorRowProps {
+  assessor: AssessorSummary;
+  selection: AssessorSelection | null;
+  versions: AssessorVersion[] | undefined;
+  isExpanded: boolean;
+  deletingKey: string | null;
+  onSelectAssessor: (configId: string) => void;
+  onSelectVersion: (configId: string, version: number) => void;
+  onToggleExpanded: (configId: string) => void;
+  onRequestDeleteAssessor: (assessor: AssessorSummary) => void;
+  onRequestDeleteVersion: (configId: string, version: number) => void;
+}
+
+export interface AssessorVersionChipsProps {
+  assessor: AssessorSummary;
+  versions: AssessorVersion[] | undefined;
+  chipCount: number;
+  selectedVersion: number | null;
+  isExpanded: boolean;
+  onSelectVersion: (configId: string, version: number) => void;
+  onToggleExpanded: (configId: string) => void;
+}
+
+export interface AssessorVersionListProps {
+  configId: string;
+  versions: AssessorVersion[] | undefined;
+  selectedVersion: number | null;
+  deletingKey: string | null;
+  onSelectVersion: (configId: string, version: number) => void;
+  onRequestDeleteVersion: (configId: string, version: number) => void;
+}
+
+export interface DeleteAssessorDialogProps {
+  target: DeleteTarget;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+export interface RunsPanelProps {
+  home: UseAssessmentHomeResult;
+  onNewRun: () => void;
+}
+
+export interface RunRowProps {
+  row: HomeRunRow;
+  isExporting: boolean;
+  onExport: (target: ResultsTarget, fileName: string) => void;
+}
+
+export interface RunRowActionsProps {
+  row: HomeRunRow;
+  isExporting: boolean;
+  onExport: (target: ResultsTarget, fileName: string) => void;
+}
+
+export interface RunRowMetaProps {
+  row: HomeRunRow;
 }

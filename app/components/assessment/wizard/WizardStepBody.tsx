@@ -4,15 +4,7 @@ import SubmissionStep from "./SubmissionStep";
 import PrefilterStep from "./PrefilterStep";
 import AssessmentStep from "./AssessmentStep";
 import RunStep from "./RunStep";
-import type { UseSubmissionStepResult } from "@/app/hooks/useSubmissionStep";
-import type { UseAssessmentWizardResult } from "@/app/lib/types/assessment";
-
-interface WizardStepBodyProps {
-  wizard: UseAssessmentWizardResult;
-  submission: UseSubmissionStepResult;
-  columns: string[];
-  sampleRow: Record<string, string>;
-}
+import type { WizardStepBodyProps } from "@/app/lib/types/assessment";
 
 /** Renders whichever step is open. Kept apart so WizardView stays a shell. */
 export default function WizardStepBody({

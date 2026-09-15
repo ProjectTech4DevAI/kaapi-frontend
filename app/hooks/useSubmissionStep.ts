@@ -9,38 +9,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
-import {
-  useSubmissionForm,
-  type UseSubmissionFormResult,
-} from "@/app/hooks/useSubmissionForm";
+import { useSubmissionForm } from "@/app/hooks/useSubmissionForm";
 import { useSubmissionList } from "@/app/hooks/useSubmissionList";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import { nonBlankColumns } from "@/app/lib/utils/assessment";
 import { getAsyncErrorMessage } from "@/app/lib/assessment/results";
 import type {
-  AssessmentSubmission,
   DatasetViewModalData,
+  UseSubmissionStepResult,
 } from "@/app/lib/types/assessment";
-
-export interface UseSubmissionStepResult {
-  form: UseSubmissionFormResult;
-  submissions: AssessmentSubmission[];
-  selectedId: string;
-  isLoading: boolean;
-  isLoadingColumns: boolean;
-  isCreating: boolean;
-  viewingId: string | null;
-  deletingId: string | null;
-  viewModalData: DatasetViewModalData | null;
-  confirmDeleteId: string | null;
-  pendingDelete: AssessmentSubmission | undefined;
-  setConfirmDeleteId: (value: string | null) => void;
-  setViewModalData: (value: DatasetViewModalData | null) => void;
-  handleCreate: () => Promise<void>;
-  handleSelect: (id: string, name?: string) => Promise<void>;
-  handleView: (submissionId: string, name: string) => Promise<void>;
-  handleDelete: (id: string) => Promise<void>;
-}
 
 export function useSubmissionStep(): UseSubmissionStepResult {
   const toast = useToast();

@@ -2,17 +2,10 @@
 
 import { ArrowLeftIcon, DownloadIcon } from "@/app/components/icons";
 import { Button, RadioGroup } from "@/app/components/ui";
-
-export type ResultsViewMode = "table" | "sheet";
-
-interface ResultsToolbarProps {
-  title: string;
-  subtitle: string;
-  view: ResultsViewMode;
-  onViewChange: (view: ResultsViewMode) => void;
-  onBack: () => void;
-  onDownload: () => void;
-}
+import type {
+  ResultsToolbarProps,
+  ResultsViewMode,
+} from "@/app/lib/types/assessment";
 
 const VIEW_OPTIONS: { value: ResultsViewMode; label: string }[] = [
   { value: "table", label: "Table" },

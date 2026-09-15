@@ -1,11 +1,6 @@
 "use client";
 
-interface ResultsTableProps {
-  headers: string[];
-  rows: string[][];
-  onRowClick: (index: number) => void;
-}
-
+import type { ResultsTableProps } from "@/app/lib/types/assessment";
 const NARROW_COLUMNS = ["cid", "language", "state", "district", "id"];
 
 const isNumeric = (value: string) =>

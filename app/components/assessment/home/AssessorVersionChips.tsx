@@ -1,20 +1,7 @@
 "use client";
 
 import { ChevronDownIcon } from "@/app/components/icons";
-import type {
-  AssessorSummary,
-  AssessorVersion,
-} from "@/app/lib/types/assessment";
-
-interface AssessorVersionChipsProps {
-  assessor: AssessorSummary;
-  versions: AssessorVersion[] | undefined;
-  chipCount: number;
-  selectedVersion: number | null;
-  isExpanded: boolean;
-  onSelectVersion: (configId: string, version: number) => void;
-  onToggleExpanded: (configId: string) => void;
-}
+import type { AssessorVersionChipsProps } from "@/app/lib/types/assessment";
 
 const chipBase =
   "rounded-full border px-2.5 py-[3px] text-[11px] font-semibold transition-colors cursor-pointer";

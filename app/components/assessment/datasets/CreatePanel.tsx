@@ -3,15 +3,7 @@
 import { Button, Field } from "@/app/components/ui";
 import { CheckIcon, CloseIcon, CloudUploadIcon } from "@/app/components/icons";
 import { SUBMISSION_FORM_PANEL_CLASSES } from "@/app/lib/assessment/constants";
-import type { UseSubmissionFormResult } from "@/app/hooks/useSubmissionForm";
-
-interface CreatePanelProps {
-  form: UseSubmissionFormResult;
-  isCreating: boolean;
-  onCreate: () => void;
-  /** Step 1 shows it as the right-hand pane; step 4 embeds it inline. */
-  layout?: "panel" | "inline";
-}
+import type { CreatePanelProps } from "@/app/lib/types/assessment";
 
 const LAYOUT_CLASSES: Record<"panel" | "inline", string> = {
   panel: `${SUBMISSION_FORM_PANEL_CLASSES} shrink-0 border-l border-border bg-bg-primary`,

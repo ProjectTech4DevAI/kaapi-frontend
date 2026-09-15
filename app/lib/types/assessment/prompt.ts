@@ -1,4 +1,5 @@
-// Assessment types: the prompt editor — zones, tokens, and the wizard's editable draft.
+// Assessment types: the prompt editor — zones, tokens, mentions, preview, draft.
+import type { KeyboardEvent, ReactNode, RefObject } from "react";
 import type {
   AssessorModelSelection,
   AssessorVersionDetail,
@@ -76,4 +77,140 @@ export interface UseWizardDraftResult {
   ) => void;
   loadFromVersion: (detail: AssessorVersionDetail) => void;
   reset: () => void;
+}
+
+/** Which follow-up question is open for the pending field. */
+export type MentionStage = "type" | "strict";
+
+export interface MentionColumnOption {
+  name: string;
+  isCreate: boolean;
+  type: PromptFieldType;
+}
+
+export interface MentionTypeOption {
+  type: PromptFieldType;
+  label: string;
+  isCurrent: boolean;
+}
+
+export interface MentionStrictOption {
+  strict: boolean;
+  label: string;
+  hint: string;
+  isCurrent: boolean;
+}
+
+export interface UsePromptMentionsParams {
+  columns: string[];
+  fieldTypes: Record<string, PromptFieldType>;
+  fieldStrict: Record<string, boolean>;
+  value: string;
+  onChange: (value: string) => void;
+  onFieldType: (name: string, type: PromptFieldType) => void;
+  onFieldStrict: (name: string, strict: boolean) => void;
+}
+
+export interface UsePromptMentionsResult {
+  inputRef: RefObject<HTMLTextAreaElement | null>;
+  mirrorRef: RefObject<HTMLDivElement | null>;
+  dropdownRef: RefObject<HTMLDivElement | null>;
+  isOpen: boolean;
+  position: { top: number; left: number } | null;
+  activeIndex: number;
+  pendingField: string | null;
+  stage: MentionStage | null;
+  columnOptions: MentionColumnOption[];
+  typeOptions: MentionTypeOption[];
+  strictOptions: MentionStrictOption[];
+  onInput: (value: string, cursor: number) => void;
+  onKeyDown: (event: KeyboardEvent) => void;
+  pickColumn: (option: MentionColumnOption) => void;
+  pickType: (type: PromptFieldType) => void;
+  pickStrict: (strict: boolean) => void;
+  openStrictFor: (
+    name: string,
+    position: { top: number; left: number },
+    via: "hover" | "click",
+  ) => void;
+  scheduleHoverClose: () => void;
+  cancelHoverClose: () => void;
+  closeAll: () => void;
+}
+
+export interface MentionDropdownProps {
+  dropdownRef: RefObject<HTMLDivElement | null>;
+  position: { top: number; left: number } | null;
+  activeIndex: number;
+  pendingField: string | null;
+  stage: MentionStage | null;
+  columnOptions: MentionColumnOption[];
+  typeOptions: MentionTypeOption[];
+  strictOptions: MentionStrictOption[];
+  onPickColumn: (option: MentionColumnOption) => void;
+  onPickType: (type: PromptFieldType) => void;
+  onPickStrict: (strict: boolean) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+}
+
+export interface PreviewPaneProps {
+  paneRef: RefObject<HTMLDivElement | null>;
+  zones: PromptZones;
+  columns: string[];
+  fieldTypes: Record<string, PromptFieldType>;
+  sampleRow: Record<string, string>;
+  /** Shown instead of the document when the step is switched off. */
+  disabledNote?: string;
+}
+
+export interface PromptZoneCardProps {
+  zones: PromptZones;
+  copy: Record<PromptZoneId, PromptZoneCopy>;
+  /** Applied to both zones so they stay the same size. */
+  zoneMinHeight: number;
+  columns: string[];
+  fieldTypes: Record<string, PromptFieldType>;
+  fieldStrict: Record<string, boolean>;
+  onZoneChange: (zone: PromptZoneId, value: string) => void;
+  onFieldType: (name: string, type: PromptFieldType) => void;
+  onFieldStrict: (name: string, strict: boolean) => void;
+}
+
+export interface PromptZoneEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  minHeight: number;
+  /** Only the per-row zone offers `@` mentions. */
+  enableMentions: boolean;
+  columns: string[];
+  fieldTypes: Record<string, PromptFieldType>;
+  fieldStrict: Record<string, boolean>;
+  onFieldType: (name: string, type: PromptFieldType) => void;
+  onFieldStrict: (name: string, strict: boolean) => void;
+  ariaLabel: string;
+}
+
+export interface EditorStepLayoutProps {
+  children: ReactNode;
+  zones: PromptZones;
+  columns: string[];
+  fieldTypes: Record<string, PromptFieldType>;
+  sampleRow: Record<string, string>;
+  previewDisabledNote?: string;
+}
+
+export interface ModelChipProps {
+  step: PromptStepId;
+  selection: AssessorModelSelection;
+  onModel: (step: PromptStepId, provider: ProviderType, model: string) => void;
+  onParam: (step: PromptStepId, key: string, value: string | number) => void;
+}
+
+export interface ModelPickerProps {
+  step: PromptStepId;
+  selection: AssessorModelSelection;
+  onModel: (step: PromptStepId, provider: ProviderType, model: string) => void;
+  onParam: (step: PromptStepId, key: string, value: string | number) => void;
 }

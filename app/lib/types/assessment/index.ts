@@ -1,6 +1,12 @@
 // Barrel for assessment types. Import from "@/app/lib/types/assessment".
 export * from "./core";
+export * from "./batch";
 export * from "./config";
 export * from "./dataset";
+export * from "./submission";
+export * from "./dataSource";
+export * from "./home";
+export * from "./prompt";
 export * from "./results";
+export * from "./wizard";
 export * from "./workflow";

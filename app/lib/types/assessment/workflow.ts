@@ -1,16 +1,15 @@
 // Assessment types: composite page/panel/step props that span sub-domains.
 import type {
-  AssessmentTab,
-  AssessmentTabId,
   SampleRow,
   StateSetter,
   StepNavigationProps,
   ValueSetter,
-  WithForbiddenHandler,
 } from "./core";
 import type { ConfigSelection } from "./config";
 import type { ColumnMapping, PrefilterConfig, SchemaProperty } from "./dataset";
+import type { AssessorSelection } from "./home";
 import type { PostProcessingConfig } from "./results";
+import type { AssessmentView, UseAssessmentWizardResult } from "./wizard";
 
 export interface AssessmentFormState {
   experimentName: string;
@@ -76,23 +75,12 @@ export interface ConfigPanelProps {
   onStepComplete: ValueSetter<number>;
 }
 
-export type EvaluationsTabProps = WithForbiddenHandler;
-
-export interface DatasetsTabProps extends WithForbiddenHandler {
-  datasetId: string;
-  setDatasetId: ValueSetter<string>;
-  setSelectedDatasetName: ValueSetter<string>;
-  onColumnsLoaded: (columns: string[], sampleRow?: SampleRow) => void;
-  onNext: () => void;
-}
-
 export interface PageLayoutProps {
-  activeTab: AssessmentTabId;
-  tabs: AssessmentTab[];
-  onTabSwitch: ValueSetter<AssessmentTabId>;
-  datasetsTabProps: DatasetsTabProps;
-  configPanelProps: ConfigPanelProps;
-  evaluationsTabProps: EvaluationsTabProps;
+  view: AssessmentView;
+  wizard: UseAssessmentWizardResult;
+  /** Version to preselect on Home — set after a run is created. */
+  homeSelection: AssessorSelection | null;
+  onGoHome: () => void;
 }
 
 export interface PostProcessingStepProps extends StepNavigationProps {

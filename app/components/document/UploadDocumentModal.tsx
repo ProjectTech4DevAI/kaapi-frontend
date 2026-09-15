@@ -94,7 +94,7 @@ export function UploadDocumentModal({
           <div className="border-2 border-dashed rounded-lg p-10 text-center transition-colors border-border">
             <div className="space-y-4">
               <div className="text-text-secondary">
-                <CloudUploadIcon className="mx-auto" />
+                <CloudUploadIcon className="mx-auto h-12 w-12" />
               </div>
               <div>
                 <input

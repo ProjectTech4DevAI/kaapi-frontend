@@ -11,7 +11,7 @@ import {
   buildSpreadsheetWorkbookData,
   loadSpreadsheetState,
   persistSpreadsheetState,
-  rowsToCsv,
+  downloadCsv,
   savedSnapshotMatchesHeaders,
   spreadsheetSnapshotToRows,
 } from "@/app/lib/assessment/results";
@@ -21,10 +21,8 @@ import {
 } from "@/app/lib/assessment/constants";
 import type { UniverAPI } from "@/app/lib/types/assessment";
 
-const BOM_UTF8 = String.fromCharCode(0xfeff);
-
 interface SpreadsheetViewProps {
-  runId: number;
+  runId: string;
   title: string;
   subtitle?: string;
   headers: string[];
@@ -47,15 +45,7 @@ export default function SpreadsheetView({
     const matrix = snapshot
       ? spreadsheetSnapshotToRows(snapshot)
       : [headers, ...rows];
-    const csv = rowsToCsv(matrix);
-    // Prepend BOM so Excel reads UTF-8 (preserves Hindi/Telugu text).
-    const blob = new Blob([BOM_UTF8, csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title || "results"}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(title, matrix);
   };
 
   useEffect(() => {

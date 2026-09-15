@@ -10,6 +10,7 @@ import type {
   CreateDatasetResponse,
   DatasetPreview,
   DatasetPreviewResponse,
+  PageSlice,
   ReviewColumn,
   RoleVisuals,
   SchemaProperty,
@@ -20,6 +21,30 @@ export function isAllowedDatasetFile(fileName: string): boolean {
   return ALLOWED_DATASET_EXTENSIONS.some((extension) =>
     normalizedName.endsWith(extension),
   );
+}
+
+/** Shape adapter shared by the API path and the mock data source. */
+export function toDatasetPreview(
+  response: DatasetPreviewResponse,
+): DatasetPreview {
+  const payload = response?.data ?? response;
+  const preview = payload?.preview;
+  if (!preview) {
+    throw new Error("Dataset preview is unavailable.");
+  }
+
+  const headers = preview.headers ?? [];
+  if (headers.length === 0) {
+    throw new Error("Dataset file is missing column headers.");
+  }
+
+  const rowCount = preview.returned_rows ?? 0;
+  return {
+    headers,
+    rows: preview.rows ?? [],
+    totalItems: payload.total_items ?? rowCount,
+    truncated: Boolean(preview.truncated),
+  };
 }
 
 export async function fetchDatasetPreview(
@@ -41,22 +66,28 @@ export async function fetchDatasetPreview(
     throw new Error(message);
   }
 
-  const payload = res?.data ?? res;
-  const preview = payload?.preview;
-  if (!preview) {
-    throw new Error("Dataset preview is unavailable.");
-  }
+  return toDatasetPreview(res);
+}
 
-  const headers = preview.headers ?? [];
-  if (headers.length === 0) {
-    throw new Error("Dataset file is missing column headers.");
-  }
+/**
+ * Columns the sheet names. The header decides, not the sampled cells: a named
+ * column that happens to be empty in the preview is still in every row the
+ * backend parses, and `input_schema` must declare it or the run 422s.
+ */
+export function nonBlankColumns(preview: DatasetPreview): {
+  headers: string[];
+  sampleRow: Record<string, string>;
+} {
+  const keptIdx = preview.headers
+    .map((_, colIdx) => colIdx)
+    .filter((colIdx) => !isBlankCell(preview.headers[colIdx]));
 
+  const firstRow = preview.rows[0] || [];
   return {
-    headers,
-    rows: preview.rows ?? [],
-    totalItems: payload?.total_items ?? preview.returned_rows ?? 0,
-    truncated: Boolean(preview.truncated),
+    headers: keptIdx.map((idx) => preview.headers[idx]),
+    sampleRow: Object.fromEntries(
+      keptIdx.map((idx) => [preview.headers[idx], String(firstRow[idx] ?? "")]),
+    ),
   };
 }
 
@@ -237,6 +268,36 @@ export function highlightJson(code: string): string {
 
 export function isBlankCell(cell: string | undefined): boolean {
   return cell == null || String(cell).trim() === "";
+}
+
+export function paginate<T>(
+  items: T[],
+  page: number,
+  perPage: number,
+): PageSlice<T> {
+  const pages = Math.max(1, Math.ceil(items.length / perPage));
+  const safePage = Math.min(Math.max(1, page), pages);
+  return {
+    items: items.slice((safePage - 1) * perPage, safePage * perPage),
+    page: safePage,
+    pages,
+    total: items.length,
+  };
+}
+
+/** Page numbers to show around the current one, so long lists stay one row wide. */
+export function pageWindow(
+  page: number,
+  pages: number,
+  size: number,
+): number[] {
+  const start = Math.max(1, Math.min(page - 1, pages - size + 1));
+  const end = Math.min(pages, start + size - 1);
+  const window: number[] = [];
+  for (let candidate = start; candidate <= end; candidate += 1) {
+    window.push(candidate);
+  }
+  return window;
 }
 
 interface AssessmentSubmitChecks {

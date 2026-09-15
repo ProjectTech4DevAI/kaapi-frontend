@@ -21,7 +21,15 @@ export interface PagedResult<T> {
   nextSkip: number;
 }
 
-export type AssessmentTabId = "datasets" | "config" | "results";
+/** One page of a client-side paginated list (Home's assessors and runs panels). */
+export interface PageSlice<T> {
+  items: T[];
+  page: number;
+  pages: number;
+  total: number;
+}
+
+export type AssessmentTabId = "home" | "datasets" | "config" | "results";
 export interface AssessmentTab {
   id: AssessmentTabId;
   label: string;

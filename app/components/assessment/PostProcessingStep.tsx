@@ -39,13 +39,7 @@ export default function PostProcessingStep({
   // Derive available columns: input columns + L2 output schema fields + fixed L1 fields
   const inputCols = columnMapping.textColumns;
   const outputCols = outputSchema.map((f) => f.name).filter(Boolean);
-  const prefilterCols = [
-    "topic_relevance_decision",
-    "topic_relevance_reasoning",
-    "duplicate_detection_verdict",
-    "duplicate_detection_reason",
-    "duplicate_detection_match_title",
-  ];
+  const prefilterCols = ["prefilter_decision", "prefilter_reasoning"];
   const availableCols = [...inputCols, ...outputCols, ...prefilterCols];
 
   // Computed columns available for formula autocomplete (includes user-defined ones)

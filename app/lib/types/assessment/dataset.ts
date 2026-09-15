@@ -51,13 +51,9 @@ export interface PrefilterTopicRelevanceConfig {
   prompt: string;
 }
 
-export interface PrefilterDuplicateDetectionConfig {
-  columns: string[];
-}
-
+/** The one pre-filter the pipeline runs; the API keys it `topic_relevance`. */
 export interface PrefilterConfig {
   topic_relevance?: PrefilterTopicRelevanceConfig;
-  duplicate_detection?: PrefilterDuplicateDetectionConfig;
 }
 
 export interface PrefilterStepProps extends StepNavigationProps {

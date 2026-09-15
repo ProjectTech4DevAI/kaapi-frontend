@@ -1,22 +1,19 @@
 "use client";
 
-// Top-level layout for /assessment: sidebar, tab navigation, and active tab content.
+// Top-level layout for /assessment: sidebar, page header, then the active surface —
+// Home or the wizard. No tabs; the flow strip under the header is the navigation.
 import Sidebar from "@/app/components/Sidebar";
-import { TabNavigation } from "@/app/components/ui";
 import PageHeader from "@/app/components/PageHeader";
 import { useApp } from "@/app/lib/context/AppContext";
 import type { PageLayoutProps } from "@/app/lib/types/assessment";
-import ConfigPanel from "./ConfigPanel";
-import DatasetsTab from "./DatasetsTab";
-import EvaluationsTab from "./EvaluationsTab";
+import HomeView from "./home/HomeView";
+import WizardView from "./wizard/WizardView";
 
 export default function PageLayout({
-  activeTab,
-  tabs,
-  onTabSwitch,
-  datasetsTabProps,
-  configPanelProps,
-  evaluationsTabProps,
+  view,
+  wizard,
+  homeSelection,
+  onGoHome,
 }: PageLayoutProps) {
   const { sidebarCollapsed } = useApp();
 
@@ -25,36 +22,21 @@ export default function PageLayout({
       <div className="flex flex-1 overflow-hidden">
         <Sidebar collapsed={sidebarCollapsed} activeRoute="/assessment" />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <PageHeader
             title="Assessment"
-            subtitle="Multi-modal batch evaluation with prompt templates, attachments, and config comparison"
+            subtitle="Score submissions with versioned assessors, then track every run"
           />
 
-          <TabNavigation
-            activeTab={activeTab}
-            tabs={tabs}
-            onTabChange={(tabId) => onTabSwitch(tabId as typeof activeTab)}
-          />
-
-          {activeTab === "datasets" && (
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <DatasetsTab {...datasetsTabProps} />
-            </div>
-          )}
-
-          <div
-            className={`flex min-h-0 flex-1 flex-col overflow-hidden ${
-              activeTab === "config" ? "" : "hidden"
-            }`}
-          >
-            <ConfigPanel {...configPanelProps} />
-          </div>
-
-          {activeTab === "results" && (
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <EvaluationsTab {...evaluationsTabProps} />
-            </div>
+          {view === "home" ? (
+            <HomeView
+              initialSelection={homeSelection}
+              onNewAssessor={wizard.startNew}
+              onEditVersion={wizard.startEdit}
+              onNewRun={wizard.startRun}
+            />
+          ) : (
+            <WizardView wizard={wizard} onHome={onGoHome} />
           )}
         </div>
       </div>

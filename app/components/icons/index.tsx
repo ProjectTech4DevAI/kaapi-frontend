@@ -21,6 +21,9 @@ export { default as SidebarToggleIcon } from "./common/SidebarToggleIcon";
 export { default as MailIcon } from "./common/MailIcon";
 export { default as ErrorCircleIcon } from "./common/ErrorCircleIcon";
 export { default as DownloadIcon } from "./common/DownloadIcon";
+export { default as HomeIcon } from "./common/HomeIcon";
+export { default as ImageIcon } from "./common/ImageIcon";
+export { default as LockClosedIcon } from "./common/LockClosedIcon";
 
 // Evaluations Icons
 export { default as ChevronUpIcon } from "./evaluations/ChevronUpIcon";

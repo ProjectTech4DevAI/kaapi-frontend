@@ -14,6 +14,51 @@ interface FieldProps {
   autoFocus?: boolean;
   className?: string;
   maxLength?: number;
+  required?: boolean;
+  rows?: number;
+}
+
+interface ControlProps extends Omit<FieldProps, "label" | "error"> {
+  inputType: string;
+  controlClass: string;
+}
+
+function FieldControl({
+  value,
+  onChange,
+  placeholder,
+  type,
+  inputType,
+  controlClass,
+  disabled,
+  autoFocus,
+  maxLength,
+  required,
+  rows,
+}: ControlProps) {
+  const shared = {
+    value,
+    placeholder,
+    disabled,
+    autoFocus,
+    maxLength,
+    required,
+    onChange: (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => onChange(event.target.value),
+  };
+
+  if (type === "textarea") {
+    return (
+      <textarea
+        {...shared}
+        rows={rows ?? 6}
+        className={`${controlClass} font-mono resize-y`}
+      />
+    );
+  }
+
+  return <input {...shared} type={inputType} className={controlClass} />;
 }
 
 export default function Field({
@@ -27,28 +72,39 @@ export default function Field({
   autoFocus = false,
   className = "",
   maxLength,
+  required,
+  rows,
 }: FieldProps) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+  const controlClass = `w-full px-3 py-2 rounded-lg border text-sm text-text-primary bg-white placeholder:text-neutral-400 focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors ${
+    isPassword ? "pr-10" : ""
+  } ${error ? "border-red-400" : "border-border"} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
 
   return (
     <div>
       <label className="block text-xs font-medium text-text-secondary mb-1">
         {label}
+        {required && (
+          <span className="text-red-500 ml-0.5" aria-hidden="true">
+            *
+          </span>
+        )}
       </label>
       <div className="relative">
-        <input
-          type={inputType}
+        <FieldControl
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={onChange}
           placeholder={placeholder}
+          type={type}
+          inputType={inputType}
+          controlClass={controlClass}
           disabled={disabled}
           autoFocus={autoFocus}
           maxLength={maxLength}
-          className={`w-full px-3 py-2 rounded-lg border text-sm text-text-primary bg-white placeholder:text-neutral-400 focus:outline-none focus:ring-accent-primary/20 focus:border-accent-primary transition-colors ${
-            isPassword ? "pr-10" : ""
-          } ${error ? "border-red-400" : "border-border"} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
+          required={required}
+          rows={rows}
         />
         {isPassword && (
           <button

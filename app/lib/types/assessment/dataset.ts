@@ -1,11 +1,9 @@
-// Assessment types: datasets, column mapping, output schema, prefilter, review.
 import type { Dataset } from "@/app/lib/types/dataset";
 import type {
   CreateResponse,
   LabeledValue,
   ListResponse,
   SampleRow,
-  StepNavigationProps,
   ValueSetter,
 } from "./core";
 
@@ -13,7 +11,6 @@ export interface Attachment {
   column: string;
   type: "image" | "pdf" | "mixed";
   format: "url" | "base64";
-  // For 'mixed': column whose value decides each row's type + the value->type map.
   type_column?: string | null;
   type_value_map?: Record<string, string> | null;
 }
@@ -51,27 +48,14 @@ export interface PrefilterTopicRelevanceConfig {
   prompt: string;
 }
 
-export interface PrefilterDuplicateDetectionConfig {
-  columns: string[];
-}
-
 export interface PrefilterConfig {
   topic_relevance?: PrefilterTopicRelevanceConfig;
-  duplicate_detection?: PrefilterDuplicateDetectionConfig;
-}
-
-export interface PrefilterStepProps extends StepNavigationProps {
-  columns: string[];
-  attachmentColumns?: string[];
-  prefilterConfig: PrefilterConfig | null;
-  setPrefilterConfig: ValueSetter<PrefilterConfig | null>;
 }
 
 export interface ColumnConfig {
   role: ColumnRole;
   attachmentType?: "image" | "pdf" | "mixed";
   attachmentFormat?: string;
-  // For 'mixed': the type-deciding column + comma-separated values per type.
   attachmentTypeColumn?: string;
   attachmentImageValues?: string;
   attachmentPdfValues?: string;
@@ -81,12 +65,6 @@ export interface RoleVisuals {
   panelClass: string;
   dotClass: string;
   activeButtonClass: string;
-}
-
-export interface ColumnMapperStepProps extends StepNavigationProps {
-  columns: string[];
-  columnMapping: ColumnMapping;
-  setColumnMapping: ValueSetter<ColumnMapping>;
 }
 
 export interface AssessmentDatasetState {

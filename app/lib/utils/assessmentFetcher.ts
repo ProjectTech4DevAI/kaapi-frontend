@@ -89,10 +89,12 @@ function buildPageResult<T>(
   items: T[],
   skip: number,
   limit: number,
+  metadata?: Record<string, unknown> | null,
 ): PagedResult<T> {
+  const reported = metadata?.has_more;
   return {
     items,
-    hasMore: items.length === limit,
+    hasMore: typeof reported === "boolean" ? reported : items.length === limit,
     nextSkip: skip + items.length,
   };
 }
@@ -117,6 +119,7 @@ export async function fetchConfigPage(params: {
   apiKey: string;
   skip?: number;
   limit?: number;
+  search?: string;
 }): Promise<PagedResult<ConfigPublic>> {
   const skip = params.skip ?? 0;
   const limit = params.limit ?? DEFAULT_PAGE_LIMIT;
@@ -125,6 +128,7 @@ export async function fetchConfigPage(params: {
     limit: String(limit),
     tag: ASSESSMENT_TAG,
   });
+  if (params.search?.trim()) query.set("query", params.search.trim());
   const data = await apiFetch<ConfigListResponse>(
     `/api/configs?${query.toString()}`,
     params.apiKey,
@@ -132,7 +136,7 @@ export async function fetchConfigPage(params: {
   if (!data.success || !data.data) {
     throw new Error(data.error || "Failed to fetch configs");
   }
-  return buildPageResult(data.data, skip, limit);
+  return buildPageResult(data.data, skip, limit, data.metadata);
 }
 
 export async function fetchConfigVersionsPage(
@@ -154,7 +158,7 @@ export async function fetchConfigVersionsPage(
   if (!data.success || !data.data) {
     throw new Error(data.error || "Failed to fetch config versions");
   }
-  return buildPageResult(data.data, skip, limit);
+  return buildPageResult(data.data, skip, limit, data.metadata);
 }
 
 export async function fetchConfigVersionDetail(

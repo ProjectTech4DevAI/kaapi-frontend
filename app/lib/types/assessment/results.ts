@@ -1,4 +1,3 @@
-// Assessment types: runs, child runs, post-processing, results, spreadsheet.
 import type { ListResponse } from "./core";
 
 export interface PipelineStageEntry {
@@ -10,6 +9,8 @@ export interface PipelineStageEntry {
 export interface PipelineConfig {
   stages: PipelineStageEntry[];
 }
+
+import type { AssessmentSummary } from "./batch";
 
 export interface AssessmentRunStat {
   run_id: number;
@@ -24,24 +25,10 @@ export interface AssessmentRunStat {
   prefilter_total_rejected: number | null;
   stage: string | null;
   stage_status: string | null;
+  cost?: string | null;
 }
 
-export interface AssessmentRun {
-  id: number;
-  experiment_name: string;
-  dataset_name: string | null;
-  dataset_id: number | null;
-  status: string;
-  total_runs: number;
-  pending_runs: number;
-  processing_runs: number;
-  completed_runs: number;
-  failed_runs: number;
-  run_stats: AssessmentRunStat[];
-  error_message: string | null;
-  inserted_at: string;
-  updated_at: string;
-}
+export type AssessmentRun = AssessmentSummary;
 
 export interface PostProcessingComputedColumn {
   name: string;
@@ -100,19 +87,11 @@ export interface AssessmentChildRun {
   updated_at: string;
 }
 
-export type StatusFilter = "all" | "processing" | "completed" | "failed";
 export type ExportFormat = "csv" | "xlsx";
 export type ResultTone = "default" | "warning" | "success" | "error";
 export type AssessmentTag = "ASSESSMENT";
 export type AssessmentListResponse = ListResponse<AssessmentRun>;
 export type AssessmentChildRunListResponse = ListResponse<AssessmentChildRun>;
-
-export interface ResultsCounts {
-  total: number;
-  processing: number;
-  completed: number;
-  failed: number;
-}
 
 export type UniverCommandInfo = {
   id: string;
@@ -134,3 +113,16 @@ export type SpreadsheetStateEnvelope = {
   ts: number;
   data: object;
 };
+
+export interface ResultsToolbarProps {
+  title: string;
+  subtitle: string;
+  onBack: () => void;
+  onDownload: () => void;
+}
+
+export interface SpreadsheetViewProps {
+  runId: string;
+  headers: string[];
+  rows: string[][];
+}

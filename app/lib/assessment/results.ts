@@ -1,16 +1,14 @@
-// Result status utilities: status checks, counts, filters, and label formatting for assessment runs.
+// Result utilities: status checks, labels, run normalization, and spreadsheet state.
 import type {
-  AssessmentChildRun,
-  AssessmentRun,
+  PipelineConfig,
   ResultTone,
-  ResultsCounts,
   SpreadsheetStateEnvelope,
-  StatusFilter,
 } from "@/app/lib/types/assessment";
 import {
   ACTIVE_ASSESSMENT_STATUSES,
   COMPLETED_ASSESSMENT_STATUSES,
   FAILED_ASSESSMENT_STATUSES,
+  TERMINAL_ASSESSMENT_STATUSES,
   SPREADSHEET_STATE_SCHEMA_VERSION,
   SPREADSHEET_STATE_STORAGE_PREFIX,
   STAGE_LABELS,
@@ -28,8 +26,18 @@ export interface StageProgress {
   status: StageProgressStatus;
 }
 
-// Per-stage progress for a child run, derived from pipeline + stage + stage_status.
-export function getStageProgress(run: AssessmentChildRun): StageProgress[] {
+/**
+ * The stage fields `getStageProgress` reads. `AssessmentChildRun` satisfies it
+ * structurally; Home passes a parent run's `run_stats[0]` with a default pipeline.
+ */
+export interface StageProgressInput {
+  stage: string | null;
+  stage_status: string | null;
+  pipeline: PipelineConfig | null;
+}
+
+// Per-stage progress for a run, derived from pipeline + stage + stage_status.
+export function getStageProgress(run: StageProgressInput): StageProgress[] {
   const stages = run.pipeline?.stages ?? [];
   if (stages.length === 0 || !run.stage) return [];
 
@@ -61,118 +69,57 @@ export function getStageProgress(run: AssessmentChildRun): StageProgress[] {
   });
 }
 
-// True once any stage has completed, so partial results are worth previewing.
-export function hasViewableResults(run: AssessmentChildRun): boolean {
-  if (isCompletedStatus(run.status)) return true;
-  return getStageProgress(run).some((s) => s.status === "completed");
+/** The API returns uppercase statuses; the status sets are lowercase. */
+export function normalizeStatus(status: string): string {
+  return (status ?? "").trim().toLowerCase();
 }
 
 export function isActiveStatus(status: string): boolean {
-  return ACTIVE_ASSESSMENT_STATUSES.has(status);
+  return ACTIVE_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function isFailedStatus(status: string): boolean {
-  return FAILED_ASSESSMENT_STATUSES.has(status);
+  return FAILED_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function isCompletedStatus(status: string): boolean {
-  return COMPLETED_ASSESSMENT_STATUSES.has(status);
+  return COMPLETED_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function canRetryStatus(status: string): boolean {
   return isFailedStatus(status);
 }
 
-function safeCount(value: unknown, fallback = 0): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-/** Backfill run-count fields from run_stats when the API omits them. */
-export function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
-  const runStats = Array.isArray(run.run_stats) ? run.run_stats : [];
-  const pendingRuns = safeCount(
-    run.pending_runs,
-    runStats.filter((item) => item.status === "pending").length,
-  );
-  const processingRuns = safeCount(
-    run.processing_runs,
-    Math.max(
-      0,
-      runStats.filter((item) => isActiveStatus(item.status)).length -
-        pendingRuns,
-    ),
-  );
-  const completedRuns = safeCount(
-    run.completed_runs,
-    runStats.filter((item) => isCompletedStatus(item.status)).length,
-  );
-  const failedRuns = safeCount(
-    run.failed_runs,
-    runStats.filter((item) => isFailedStatus(item.status)).length,
-  );
-  const totalRuns = safeCount(
-    run.total_runs,
-    runStats.length ||
-      pendingRuns + processingRuns + completedRuns + failedRuns,
-  );
-
-  return {
-    ...run,
-    total_runs: totalRuns,
-    pending_runs: pendingRuns,
-    processing_runs: processingRuns,
-    completed_runs: completedRuns,
-    failed_runs: failedRuns,
-  };
+/** Finished, however it ended — the rows it produced are final and exportable. */
+export function isTerminalStatus(status: string): boolean {
+  return TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function getResultTone(status: string): ResultTone {
-  if (isCompletedStatus(status)) return "success";
-  if (status === "failed" || status === "prefilter_failed") return "error";
-  if (isActiveStatus(status) || status === "completed_with_errors") {
+  const value = normalizeStatus(status);
+  if (isCompletedStatus(value)) return "success";
+  if (value === "failed" || value === "prefilter_failed") return "error";
+  if (isActiveStatus(value) || value === "completed_with_errors") {
     return "warning";
   }
   return "default";
 }
 
 export function formatStatusLabel(status: string): string {
-  return status.replace(/_/g, " ");
+  return normalizeStatus(status).replace(/_/g, " ");
 }
 
 export function getAsyncErrorMessage(action: string, error: unknown): string {
   return `${action}: ${error instanceof Error ? error.message : "Unknown error"}`;
 }
 
-export function getResultsCounts(assessments: AssessmentRun[]): ResultsCounts {
-  return {
-    total: assessments.length,
-    processing: assessments.filter((run) => isActiveStatus(run.status)).length,
-    completed: assessments.filter((run) => isCompletedStatus(run.status))
-      .length,
-    failed: assessments.filter((run) => isFailedStatus(run.status)).length,
-  };
-}
-
-export function filterAssessments(
-  assessments: AssessmentRun[],
-  statusFilter: StatusFilter,
-): AssessmentRun[] {
-  if (statusFilter === "all") return assessments;
-
-  return assessments.filter((run) => {
-    if (statusFilter === "processing") return isActiveStatus(run.status);
-    if (statusFilter === "failed") return isFailedStatus(run.status);
-    return run.status === statusFilter;
-  });
-}
-
 export const PREVIEW_ROW_LIMIT = 10;
 
-export function spreadsheetStorageKey(runId: number): string {
+export function spreadsheetStorageKey(runId: string): string {
   return `${SPREADSHEET_STATE_STORAGE_PREFIX}${runId}`;
 }
 
-export function loadSpreadsheetState(runId: number): object | null {
+export function loadSpreadsheetState(runId: string): object | null {
   try {
     const raw = localStorage.getItem(spreadsheetStorageKey(runId));
     if (!raw) return null;
@@ -210,7 +157,7 @@ function evictOldestSpreadsheetStates(keep: number): void {
   }
 }
 
-export function persistSpreadsheetState(runId: number, data: object): void {
+export function persistSpreadsheetState(runId: string, data: object): void {
   const envelope: SpreadsheetStateEnvelope = {
     v: SPREADSHEET_STATE_SCHEMA_VERSION,
     ts: Date.now(),
@@ -333,6 +280,23 @@ export function savedSnapshotMatchesHeaders(
 }
 
 /** Serialize a string matrix to CSV with RFC-4180 quoting. */
+/** Excel needs the BOM to read UTF-8 (keeps Hindi/Telugu text intact). */
+const BOM_UTF8 = "\uFEFF";
+
+/** Downloads a matrix as a CSV file. Browser-only; no-ops server-side. */
+export function downloadCsv(fileName: string, matrix: string[][]): void {
+  if (typeof document === "undefined") return;
+  const blob = new Blob([BOM_UTF8, rowsToCsv(matrix)], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${fileName || "results"}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function rowsToCsv(matrix: string[][]): string {
   const escape = (cell: string) =>
     /[",\n\r]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell;
@@ -364,6 +328,7 @@ export function jsonResultsToTableData(
       "result_status",
       "error",
       "row_id",
+      "row_index",
       "experiment_name",
     ]);
 

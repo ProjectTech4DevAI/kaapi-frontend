@@ -1,4 +1,3 @@
-// Assessment types: generic utilities, navigation, and tab primitives.
 import type { Dispatch, SetStateAction } from "react";
 
 export type ValueSetter<T> = (value: T) => void;
@@ -21,7 +20,14 @@ export interface PagedResult<T> {
   nextSkip: number;
 }
 
-export type AssessmentTabId = "datasets" | "config" | "results";
+export interface PageSlice<T> {
+  items: T[];
+  page: number;
+  pages: number;
+  total: number;
+}
+
+export type AssessmentTabId = "home" | "datasets" | "config" | "results";
 export interface AssessmentTab {
   id: AssessmentTabId;
   label: string;

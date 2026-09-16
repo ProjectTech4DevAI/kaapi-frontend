@@ -61,6 +61,8 @@ export const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI",
   google: "Google",
   "google-aistudio": "Google AI Studio",
+  "google-gcp": "Google Vertex AI",
+  anthropic: "Anthropic",
 };
 
 export function getProviderLabel(provider: string): string {

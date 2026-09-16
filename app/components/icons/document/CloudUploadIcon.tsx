@@ -5,7 +5,7 @@ interface IconProps {
 export default function CloudUploadIcon({ className }: IconProps) {
   return (
     <svg
-      className={`w-12 h-12 ${className ?? ""}`}
+      className={className}
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"

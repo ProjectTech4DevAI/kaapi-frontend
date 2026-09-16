@@ -17,7 +17,12 @@ import {
   Credential,
   ProviderDef,
 } from "@/app/lib/types/credentials";
-import { getExistingForProvider } from "@/app/lib/utils";
+import {
+  buildCredentialPayload,
+  getExistingForProvider,
+  missingCredentialFields,
+  populateCredentialForm,
+} from "@/app/lib/utils";
 import ProviderSidebar from "@/app/components/settings/ProviderSidebar";
 import CredentialForm from "@/app/components/settings/credentials/CredentialForm";
 import { apiFetch } from "@/app/lib/apiClient";
@@ -46,23 +51,9 @@ export default function CredentialsPage() {
   // Re-populate form when provider or credentials change
   useEffect(() => {
     const existing = getExistingForProvider(selectedProvider, credentials);
-    if (existing) {
-      setExistingCredential(existing);
-      setIsActive(existing.is_active);
-      const populated: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        populated[f.key] = existing.credential[f.key] || "";
-      });
-      setFormValues(populated);
-    } else {
-      setExistingCredential(null);
-      setIsActive(true);
-      const blank: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        blank[f.key] = "";
-      });
-      setFormValues(blank);
-    }
+    setExistingCredential(existing);
+    setIsActive(existing ? existing.is_active : true);
+    setFormValues(populateCredentialForm(selectedProvider, existing));
   }, [selectedProvider, credentials]);
 
   const loadCredentials = async () => {
@@ -80,30 +71,24 @@ export default function CredentialsPage() {
     }
   };
 
-  const buildCredentialBody = (isUpdate: boolean) => {
-    const innerPayload: Record<string, string> = {};
-    selectedProvider.fields.forEach((f) => {
-      innerPayload[f.key] = formValues[f.key].trim();
-    });
-    return {
-      provider: selectedProvider.credentialKey,
-      is_active: isActive,
-      credential: isUpdate
-        ? innerPayload
-        : { [selectedProvider.credentialKey]: innerPayload },
-    };
-  };
-
   const handleSave = async () => {
     if (!isAuthenticated) {
       toast.error("Please add an API key in Keystore first");
       return;
     }
-    const missing = selectedProvider.fields.filter(
-      (f) => !formValues[f.key]?.trim(),
-    );
+    const missing = missingCredentialFields(selectedProvider, formValues);
     if (missing.length > 0) {
       toast.error(`Please fill in: ${missing.map((f) => f.label).join(", ")}`);
+      return;
+    }
+
+    const built = buildCredentialPayload(selectedProvider, formValues);
+    if (built.error) {
+      toast.error(built.error);
+      return;
+    }
+    if (Object.keys(built.payload).length === 0) {
+      toast.error("No changes to save");
       return;
     }
 
@@ -112,13 +97,21 @@ export default function CredentialsPage() {
       if (existingCredential) {
         await apiFetch("/api/credentials", apiKeys[0]?.key ?? "", {
           method: "PATCH",
-          body: JSON.stringify(buildCredentialBody(true)),
+          body: JSON.stringify({
+            provider: selectedProvider.credentialKey,
+            is_active: isActive,
+            credential: built.payload,
+          }),
         });
         toast.success(`${selectedProvider.name} credentials updated`);
       } else {
         await apiFetch("/api/credentials", apiKeys[0]?.key ?? "", {
           method: "POST",
-          body: JSON.stringify(buildCredentialBody(false)),
+          body: JSON.stringify({
+            provider: selectedProvider.credentialKey,
+            is_active: isActive,
+            credential: { [selectedProvider.credentialKey]: built.payload },
+          }),
         });
         toast.success(`${selectedProvider.name} credentials saved`);
       }
@@ -134,21 +127,8 @@ export default function CredentialsPage() {
 
   const handleCancel = () => {
     const existing = getExistingForProvider(selectedProvider, credentials);
-    if (existing) {
-      setIsActive(existing.is_active);
-      const populated: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        populated[f.key] = existing.credential[f.key] || "";
-      });
-      setFormValues(populated);
-    } else {
-      const blank: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        blank[f.key] = "";
-      });
-      setFormValues(blank);
-      setIsActive(true);
-    }
+    setIsActive(existing ? existing.is_active : true);
+    setFormValues(populateCredentialForm(selectedProvider, existing));
   };
 
   const handleDelete = async () => {

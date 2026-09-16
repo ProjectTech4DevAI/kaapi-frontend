@@ -1,7 +1,6 @@
 import { CursorPager, Pager } from "@/app/components/ui";
 import type { HomePanelProps } from "@/app/lib/types/assessment";
 
-/** Shared shell for Home's two panels: header row, scrolling body, count + pager. */
 export default function HomePanel({
   title,
   headerActions,
@@ -16,7 +15,6 @@ export default function HomePanel({
 }: HomePanelProps) {
   return (
     <section className={`flex min-h-0 min-w-0 flex-col ${className}`}>
-      {/* Fixed height, no wrap: both panels' headers align with each other. */}
       <div className="flex h-14 shrink-0 items-center gap-2 px-5">
         <h2 className="shrink-0 text-base font-semibold text-text-primary">
           {title}
@@ -30,7 +28,6 @@ export default function HomePanel({
         {children}
       </div>
 
-      {/* Fixed height so both panels' footers line up whether or not a pager shows. */}
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-t border-border bg-bg-primary px-5">
         <span className="text-xs text-text-secondary">{countLabel}</span>
         {cursor ? (

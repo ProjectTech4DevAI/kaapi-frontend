@@ -3,7 +3,7 @@
 import { LoaderBox } from "@/app/components/ui";
 import Stepper from "@/app/components/assessment/Stepper";
 import { ASSESSMENT_WIZARD_STEPS } from "@/app/lib/assessment/constants";
-import { useAssessmentHome } from "@/app/hooks/useAssessmentHome";
+import { useAssessmentHome } from "@/app/hooks";
 import AssessorsPanel from "./AssessorsPanel";
 import RunsPanel from "./RunsPanel";
 import type { HomeViewProps, WizardContext } from "@/app/lib/types/assessment";

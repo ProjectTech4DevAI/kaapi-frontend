@@ -7,7 +7,7 @@ import { Loader } from "@/app/components/ui";
 import ResultRowModal from "@/app/components/assessment/results/ResultRowModal";
 import ResultsTable from "@/app/components/assessment/results/ResultsTable";
 import ResultsToolbar from "@/app/components/assessment/results/ResultsToolbar";
-import { useRunResults } from "@/app/hooks/useRunResults";
+import { useRunResults } from "@/app/hooks";
 import type {
   AssessmentMethodValue,
   ResultsViewMode,
@@ -36,7 +36,7 @@ export default function AssessmentResultsPage() {
   const [view, setView] = useState<ResultsViewMode>("table");
   const [openRow, setOpenRow] = useState<number | null>(null);
 
-  const assessmentId = params?.runId ?? "";
+  const assessmentId = params.runId;
   const method =
     (searchParams.get("method") as AssessmentMethodValue | null) ?? "BATCH";
   const title = searchParams.get("title") ?? "Run results";
@@ -69,7 +69,6 @@ export default function AssessmentResultsPage() {
         onViewChange={setView}
         onBack={() => router.push("/assessment")}
         onDownload={() => {
-          // The table is capped for rendering; the CSV carries every row.
           const full = jsonResultsToTableData(results);
           downloadCsv(title, [full.headers, ...full.rows]);
         }}

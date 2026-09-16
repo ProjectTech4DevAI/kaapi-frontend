@@ -1,4 +1,3 @@
-// Assessment types: composite page/panel/step props that span sub-domains.
 import type { StepNavigationProps } from "./core";
 import type { ColumnMapping, SchemaProperty } from "./dataset";
 import type { AssessorSelection } from "./home";
@@ -8,7 +7,6 @@ import type { AssessmentView, UseAssessmentWizardResult } from "./wizard";
 export interface PageLayoutProps {
   view: AssessmentView;
   wizard: UseAssessmentWizardResult;
-  /** Version to preselect on Home — set after a run is created. */
   homeSelection: AssessorSelection | null;
   onGoHome: () => void;
 }

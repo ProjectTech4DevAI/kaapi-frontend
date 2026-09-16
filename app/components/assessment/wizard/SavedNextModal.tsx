@@ -4,7 +4,6 @@ import { Button, Modal } from "@/app/components/ui";
 import { CheckIcon } from "@/app/components/icons";
 import type { SavedNextModalProps } from "@/app/lib/types/assessment";
 
-/** After a save: run this version now, or go back to Home. */
 export default function SavedNextModal({
   open,
   title,

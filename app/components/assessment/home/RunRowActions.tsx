@@ -16,7 +16,6 @@ function resultsHref(row: HomeRunRow): string {
   return `/assessment/results/${assessment.assessment_id}?${query}`;
 }
 
-/** Export / View results, per the run's status. Retry has no BATCH endpoint yet. */
 export default function RunRowActions({
   row,
   isExporting,
@@ -24,7 +23,6 @@ export default function RunRowActions({
 }: RunRowActionsProps) {
   const { assessment } = row;
   const href = resultsHref(row);
-  // Exportable once the run stops, errors included — those rows are results too.
   const canExport = isTerminalStatus(assessment.status);
 
   return (

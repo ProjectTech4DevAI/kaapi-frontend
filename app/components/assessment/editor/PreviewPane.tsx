@@ -24,7 +24,6 @@ const BLOCK_CLASSES: Record<PreviewBlockType, string> = {
   p: "mb-2.5 text-sm leading-7 text-text-primary",
 };
 
-/** Read-only mirror of the prompt the model will see, filled with row 1. */
 export default function PreviewPane({
   paneRef,
   zones,

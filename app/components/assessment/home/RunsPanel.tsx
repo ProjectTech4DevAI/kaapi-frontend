@@ -29,7 +29,6 @@ export default function RunsPanel({ home, onNewRun }: RunsPanelProps) {
             onChange={(event) => home.setRunFilter(event.target.value)}
             className="max-w-[220px] text-[13px]"
           />
-          {/* Always present, disabled with a reason — it used to vanish instead. */}
           <Button
             size="sm"
             className="shrink-0"

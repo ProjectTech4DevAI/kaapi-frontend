@@ -9,7 +9,6 @@ import {
 } from "@/app/lib/assessment/promptCopy";
 import type { AssessmentStepProps } from "@/app/lib/types/assessment";
 
-/** Wizard step 3: the assessor's prompt and the schema its answer must fill. */
 export default function AssessmentStep({
   zones,
   columns,

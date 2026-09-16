@@ -1,4 +1,3 @@
-// Assessment types: the data-source contract shared by the mock fixture and the API layer.
 import type { PagedResult } from "./core";
 import type { Attachment, PrefilterConfig } from "./dataset";
 import type {
@@ -26,10 +25,8 @@ export interface AssessorModelSelection {
   params: ModelParams;
 }
 
-/** An assessor row on Home. Versions are fetched only when a row is opened. */
 export type AssessorSummary = ConfigPublic;
 
-/** One page of the assessors panel; `search` is the API's own name filter. */
 export interface AssessorPageQuery {
   skip?: number;
   limit?: number;
@@ -38,10 +35,6 @@ export interface AssessorPageQuery {
 
 export type AssessorVersion = ConfigVersionItems;
 
-/**
- * Everything the wizard needs to reopen a saved version. Field names mirror the run
- * payload so integration is a transport swap, not a remapping.
- */
 export interface AssessorVersionDetail {
   config_id: string;
   version: number;
@@ -53,7 +46,6 @@ export interface AssessorVersionDetail {
   system_instruction: string;
   prompt_template: string;
   attachments: Attachment[];
-  /** Columns declared `strict: true` in the blob's input_schema. */
   strict_columns: string[];
   prefilter_config: PrefilterConfig | null;
   prefilter_model: AssessorModelSelection | null;
@@ -67,7 +59,6 @@ export interface SaveAssessorVersionInput extends Omit<
   config_id: string | null;
   name: string;
   description?: string | null;
-  /** Every column of the selected submission. Informational: the blob declares only referenced columns. */
   input_columns: string[];
 }
 

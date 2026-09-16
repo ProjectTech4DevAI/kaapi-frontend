@@ -1,4 +1,3 @@
-// Assessment types: Home surface (assessors panel, runs panel, version selection).
 import type { ReactNode } from "react";
 import type { PageSlice } from "./core";
 import type { WizardContext } from "./wizard";
@@ -7,18 +6,15 @@ import type { AssessorSummary, AssessorVersion } from "./dataSource";
 import type { AssessmentRun } from "./results";
 import type { StageProgress } from "@/app/lib/assessment/results";
 
-/** The version selection that drives Edit, New run, and the runs filter. */
 export interface AssessorSelection {
   configId: string;
   version: number;
 }
 
-/** `all`, every run of one assessor (`a:<id>`), or one version (`v:<id>:<n>`). */
 export type RunFilterValue = string;
 
 export const RUN_FILTER_ALL = "all";
 
-/** A runs-panel row: the run plus the assessor facts the row displays. */
 export interface HomeRunRow {
   assessment: AssessmentRun;
   assessorName: string;
@@ -33,7 +29,6 @@ export interface UseAssessmentHomeResult {
   error: string | null;
   refresh: () => Promise<void>;
 
-  /** The current page of assessors; paging is server-side, `has_more` driven. */
   assessors: AssessorSummary[];
   hasPrevAssessors: boolean;
   hasNextAssessors: boolean;
@@ -50,7 +45,6 @@ export interface UseAssessmentHomeResult {
   selectVersion: (configId: string, version: number) => void;
   deleteAssessor: (configId: string) => Promise<void>;
   deleteAssessorVersion: (configId: string, version: number) => Promise<void>;
-  /** Config id, or `<configId>:v<n>`, while its delete is in flight. */
   deletingKey: string | null;
 
   runSlice: PageSlice<HomeRunRow>;
@@ -62,7 +56,6 @@ export interface UseAssessmentHomeResult {
   exportingId: string | null;
 }
 
-/** What a delete confirmation is about: a whole assessor, or one version. */
 export type DeleteTarget =
   | { kind: "assessor"; configId: string; name: string }
   | { kind: "version"; configId: string; version: number };
@@ -80,11 +73,9 @@ export interface HomePanelProps {
   banner?: ReactNode;
   children: ReactNode;
   countLabel: string;
-  /** Numbered pages, for a list held entirely in memory. */
   page?: number;
   pages?: number;
   onGoto?: (page: number) => void;
-  /** Prev/next only, for a list paged through the API. */
   cursor?: {
     hasPrev: boolean;
     hasNext: boolean;

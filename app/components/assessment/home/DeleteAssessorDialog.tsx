@@ -4,7 +4,6 @@ import { WarningIcon } from "@/app/components/icons";
 import { Button, Modal } from "@/app/components/ui";
 import type { DeleteAssessorDialogProps } from "@/app/lib/types/assessment";
 
-/** Confirms deleting an assessor (with every version) or a single version. */
 export default function DeleteAssessorDialog({
   target,
   onCancel,

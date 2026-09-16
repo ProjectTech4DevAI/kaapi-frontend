@@ -1,7 +1,7 @@
 "use client";
 
 import { splitTokens } from "@/app/lib/assessment/promptTokens";
-import { usePromptMentions } from "@/app/hooks/usePromptMentions";
+import { usePromptMentions } from "@/app/hooks";
 import MentionDropdown from "./MentionDropdown";
 import type { PromptZoneEditorProps } from "@/app/lib/types/assessment";
 
@@ -18,7 +18,6 @@ const MARKER_CLASSES = {
   optional: "text-accent-primary",
 };
 
-/** Where a marker's dropdown opens, in the editor's own coordinate space. */
 function markerPosition(marker: HTMLElement): { top: number; left: number } {
   const host = marker.closest<HTMLElement>("[data-mention-host]");
   const rect = marker.getBoundingClientRect();
@@ -26,10 +25,6 @@ function markerPosition(marker: HTMLElement): { top: number; left: number } {
   return { top: rect.bottom - origin.top, left: rect.left - origin.left };
 }
 
-/**
- * A transparent textarea over a highlighted mirror, so tokens can be coloured
- * while the caret, selection and IME stay native (the layering `JsonEditor` uses).
- */
 export default function PromptZoneEditor({
   value,
   onChange,
@@ -163,7 +158,6 @@ export default function PromptZoneEditor({
                     strict ? MARKER_CLASSES.required : MARKER_CLASSES.optional
                   }`}
                 >
-                  {/* The asterisk glyph sits high in its em box; pull it to the circle's centre. */}
                   <span className={strict ? "translate-y-[1.5px]" : undefined}>
                     {strict ? "*" : "?"}
                   </span>
@@ -175,7 +169,6 @@ export default function PromptZoneEditor({
         </pre>
       )}
 
-      {/* Caret-measuring mirror — absolute so it never takes part in layout. */}
       <div ref={mirrorRef} aria-hidden="true" className="absolute" />
 
       {enableMentions && isOpen && (

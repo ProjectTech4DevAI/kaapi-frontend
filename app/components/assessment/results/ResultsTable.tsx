@@ -6,7 +6,6 @@ const NARROW_COLUMNS = ["cid", "language", "state", "district", "id"];
 const isNumeric = (value: string) =>
   value.trim() !== "" && Number.isFinite(Number(value));
 
-/** Spreadsheet-style read-only grid; a row opens its full assessment. */
 export default function ResultsTable({
   headers,
   rows,

@@ -2,14 +2,10 @@
 
 import { useRef } from "react";
 import { SplitPane } from "@/app/components/ui";
-import { useSyncedScroll } from "@/app/hooks/useSyncedScroll";
+import { useSyncedScroll } from "@/app/hooks";
 import PreviewPane from "./PreviewPane";
 import type { EditorStepLayoutProps } from "@/app/lib/types/assessment";
 
-/**
- * Steps 2 and 3 share this shape: editor on the left, live preview on the right,
- * a draggable divider between them, and scroll kept in step on the zone headings.
- */
 export default function EditorStepLayout({
   children,
   zones,
@@ -34,7 +30,6 @@ export default function EditorStepLayout({
       left={
         <div
           ref={editorRef}
-          // Cards must never be flex-squashed — the pane scrolls instead.
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-bg-secondary px-5 py-5 [&>*]:shrink-0"
         >
           {children}

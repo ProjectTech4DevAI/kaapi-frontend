@@ -5,7 +5,6 @@ import { ChevronDownIcon, GearIcon } from "@/app/components/icons";
 import ModelPicker from "./ModelPicker";
 import type { ModelChipProps } from "@/app/lib/types/assessment";
 
-/** The model in use for this step, opening its picker in the flow strip. */
 export default function ModelChip({
   step,
   selection,

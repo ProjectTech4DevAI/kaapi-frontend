@@ -8,7 +8,6 @@ import type {
 
 const ORDER: PromptZoneId[] = ["instructions", "submission"];
 
-/** The Instructions + Submission pair. Its headings anchor the preview sync. */
 export default function PromptZoneCard({
   zones,
   copy,

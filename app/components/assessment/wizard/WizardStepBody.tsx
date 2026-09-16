@@ -6,7 +6,6 @@ import AssessmentStep from "./AssessmentStep";
 import RunStep from "./RunStep";
 import type { WizardStepBodyProps } from "@/app/lib/types/assessment";
 
-/** Renders whichever step is open. Kept apart so WizardView stays a shell. */
 export default function WizardStepBody({
   wizard,
   submission,

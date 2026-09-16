@@ -1,4 +1,3 @@
-// Assessment types: the prompt editor — zones, tokens, mentions, preview, draft.
 import type { KeyboardEvent, ReactNode, RefObject } from "react";
 import type {
   AssessorModelSelection,
@@ -7,12 +6,10 @@ import type {
 import type { SchemaProperty } from "./dataset";
 import type { ProviderType } from "@/app/lib/types/configs";
 
-/** What a referenced submission column carries. Drives the input schema. */
 export type PromptFieldType = "text" | "image" | "pdf";
 
 export type PromptZoneId = "instructions" | "submission";
 
-/** A prompt step's two zones: static instructions, and the per-row submission. */
 export interface PromptZones {
   instructions: string;
   submission: string;
@@ -20,25 +17,16 @@ export interface PromptZones {
 
 export type PromptStepId = "prefilter" | "assessment";
 
-/** Labels and placeholder for one zone. Both zones share a height. */
 export interface PromptZoneCopy {
   label: string;
   hint: string;
   placeholder: string;
 }
 
-export type PromptSegmentKind =
-  | "plain"
-  /** A known text column — `@Column`. */
-  | "text"
-  /** A known image/PDF column — `<Column>`. */
-  | "attachment"
-  /** Referenced but not a column of the selected set. */
-  | "unknown";
+export type PromptSegmentKind = "plain" | "text" | "attachment" | "unknown";
 
 export interface PromptSegment {
   kind: PromptSegmentKind;
-  /** Literal text for `plain`, the raw token for the rest. */
   text: string;
   name?: string;
 }
@@ -50,13 +38,11 @@ export interface PreviewBlock {
   segments: PromptSegment[];
 }
 
-/** Everything the wizard's steps 2–3 edit. */
 export interface WizardDraft {
   prefilterEnabled: boolean;
   prefilter: PromptZones;
   assessment: PromptZones;
   fieldTypes: Record<string, PromptFieldType>;
-  /** Columns a row may not leave blank. Absent means optional, the backend default. */
   fieldStrict: Record<string, boolean>;
   outputSchema: SchemaProperty[];
   models: Record<PromptStepId, AssessorModelSelection>;
@@ -79,7 +65,6 @@ export interface UseWizardDraftResult {
   reset: () => void;
 }
 
-/** Which follow-up question is open for the pending field. */
 export type MentionStage = "type" | "strict";
 
 export interface MentionColumnOption {
@@ -160,14 +145,12 @@ export interface PreviewPaneProps {
   columns: string[];
   fieldTypes: Record<string, PromptFieldType>;
   sampleRow: Record<string, string>;
-  /** Shown instead of the document when the step is switched off. */
   disabledNote?: string;
 }
 
 export interface PromptZoneCardProps {
   zones: PromptZones;
   copy: Record<PromptZoneId, PromptZoneCopy>;
-  /** Applied to both zones so they stay the same size. */
   zoneMinHeight: number;
   columns: string[];
   fieldTypes: Record<string, PromptFieldType>;
@@ -182,7 +165,6 @@ export interface PromptZoneEditorProps {
   onChange: (value: string) => void;
   placeholder: string;
   minHeight: number;
-  /** Only the per-row zone offers `@` mentions. */
   enableMentions: boolean;
   columns: string[];
   fieldTypes: Record<string, PromptFieldType>;

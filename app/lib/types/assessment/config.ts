@@ -1,4 +1,3 @@
-// Assessment types: model configurations, versions, and config-selection UI.
 import type {
   CompletionConfig,
   ConfigPublic,

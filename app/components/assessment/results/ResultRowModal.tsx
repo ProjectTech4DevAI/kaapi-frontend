@@ -7,7 +7,6 @@ import type { ResultRowModalProps } from "@/app/lib/types/assessment";
 const eyebrow =
   "mb-2 text-[11px] font-semibold tracking-wider uppercase text-text-secondary";
 
-/** One submission's full assessment: scores with reasons, then the long text. */
 export default function ResultRowModal({ row, onClose }: ResultRowModalProps) {
   if (!row) return null;
 

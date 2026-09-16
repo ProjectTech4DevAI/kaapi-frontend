@@ -34,7 +34,6 @@ export default function SpreadsheetView({
   const containerRef = useRef<HTMLDivElement>(null);
   const univerRef = useRef<UniverAPI | null>(null);
 
-  // Export the current (edited) sheet straight from the live Univer state — no API call.
   const handleDownloadCsv = () => {
     const snapshot = univerRef.current?.getActiveWorkbook()?.save();
     const matrix = snapshot
@@ -56,9 +55,6 @@ export default function SpreadsheetView({
     const api = univerAPI as unknown as UniverAPI;
     univerRef.current = api;
 
-    // Use the cached snapshot only when its columns still match the fresh data,
-    // so newly-available columns (e.g. duplicate detection, L2 output) aren't
-    // hidden by a stale snapshot persisted from an earlier, partial state.
     const saved = loadSpreadsheetState(runId);
     const useSaved =
       saved != null && savedSnapshotMatchesHeaders(saved, headers);
@@ -81,9 +77,7 @@ export default function SpreadsheetView({
         if (serialized === lastSerialized) return;
         lastSerialized = serialized;
         persistSpreadsheetState(runId, snapshot);
-      } catch {
-        // storage unavailable — keep in-memory state
-      }
+      } catch {}
     };
 
     const cmdDisposable = api.onCommandExecuted((info) => {

@@ -25,7 +25,6 @@ const blockHeading =
 const blockBody =
   "max-h-48 overflow-auto px-3 py-2 font-mono text-xs leading-6 whitespace-pre-wrap";
 
-/** Last stop before a version is written: what changed, and what to call it. */
 export default function ReviewSaveModal({
   open,
   draft,

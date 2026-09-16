@@ -32,7 +32,6 @@ function previewSubtitle(shown: number, total: number | undefined): string {
   return `First ${shown} of ${total} rows`;
 }
 
-/** Wizard step 4: confirm the submission set and assessor version, then run. */
 export default function RunStep({ wizard, step }: RunStepProps) {
   const [showUpload, setShowUpload] = useState(false);
   const linkedId = wizard.versionDetail?.submission_id;

@@ -1,7 +1,5 @@
 "use client";
 
-// Top-level layout for /assessment: sidebar, page header, then the active surface —
-// Home or the wizard. No tabs; the flow strip under the header is the navigation.
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { useApp } from "@/app/lib/context/AppContext";

@@ -9,7 +9,6 @@ import {
 } from "@/app/lib/assessment/promptCopy";
 import type { PrefilterStepProps } from "@/app/lib/types/assessment";
 
-/** Wizard step 2: the optional relevance gate. Rejected rows never get assessed. */
 export default function PrefilterStep({
   enabled,
   zones,

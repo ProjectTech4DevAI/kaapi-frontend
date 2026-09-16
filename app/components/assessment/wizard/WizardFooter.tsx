@@ -3,7 +3,6 @@
 import { Button } from "@/app/components/ui";
 import type { WizardFooterProps } from "@/app/lib/types/assessment";
 
-/** The wizard's single pinned footer: Back · status · primary action. */
 export default function WizardFooter({
   showBack,
   hint,

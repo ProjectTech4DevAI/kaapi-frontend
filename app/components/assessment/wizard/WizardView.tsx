@@ -7,7 +7,7 @@ import {
   isWizardStepAllowed,
   promptStepFor,
 } from "@/app/lib/assessment/wizard";
-import { useSubmissionStep } from "@/app/hooks/useSubmissionStep";
+import { useSubmissionStep } from "@/app/hooks";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
 import ReviewSaveModal from "./ReviewSaveModal";
 import SavedNextModal from "./SavedNextModal";
@@ -19,7 +19,6 @@ import type {
   WizardViewProps,
 } from "@/app/lib/types/assessment";
 
-/** Step 4 runs; step 3 saves — except an untouched run flow, which moves on. */
 function runPrimaryAction(wizard: UseAssessmentWizardResult): void {
   if (wizard.step === 4) {
     void wizard.submitRun();

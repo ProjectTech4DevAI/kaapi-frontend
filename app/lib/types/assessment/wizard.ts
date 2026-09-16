@@ -1,4 +1,3 @@
-// Assessment types: the 4-step wizard — flows, steps, and the hook contract.
 import type { ReactNode } from "react";
 import type { Step, ValueSetter } from "./core";
 import type { SchemaProperty } from "./dataset";
@@ -12,13 +11,11 @@ import type {
 } from "./prompt";
 import type { UseSubmissionStepResult } from "./submission";
 
-/** The two persistent surfaces: Home, or the wizard. */
 export type AssessmentView = "home" | "wizard";
 
 export type AssessmentWizardFlow = "new" | "edit" | "run";
 export type AssessmentWizardStep = 1 | 2 | 3 | 4;
 
-/** The assessor version a wizard run is anchored to (absent in the `new` flow). */
 export interface WizardContext {
   configId: string;
   version: number;
@@ -41,9 +38,7 @@ export interface UseAssessmentWizardResult {
   setRunName: (value: string) => void;
   isSubmitting: boolean;
 
-  /** True when the draft differs from the version it was loaded from. */
   isDirty: boolean;
-  /** Whether Review & save is allowed: a real diff, or content for a new assessor. */
   canSave: boolean;
   isSaving: boolean;
   isReviewOpen: boolean;
@@ -141,9 +136,7 @@ export interface StepperProps {
   currentStep: number;
   onStepClick: ValueSetter<number>;
   completedSteps: Set<number>;
-  /** Home renders the same strip as an inert map of the flow. */
   locked?: boolean;
-  /** Flow-specific gating; falls back to the sequential rule when omitted. */
   isStepAllowed?: (step: number) => boolean;
   onHome?: () => void;
   leading?: ReactNode;

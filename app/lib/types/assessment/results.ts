@@ -1,4 +1,3 @@
-// Assessment types: runs, child runs, post-processing, results, spreadsheet.
 import type { ListResponse } from "./core";
 
 export interface PipelineStageEntry {
@@ -26,11 +25,9 @@ export interface AssessmentRunStat {
   prefilter_total_rejected: number | null;
   stage: string | null;
   stage_status: string | null;
-  /** Provider spend for the run, when the backend reports it. */
   cost?: string | null;
 }
 
-/** A run as the list endpoint returns it. One execution per assessment. */
 export type AssessmentRun = AssessmentSummary;
 
 export interface PostProcessingComputedColumn {
@@ -117,7 +114,6 @@ export type SpreadsheetStateEnvelope = {
   data: object;
 };
 
-/** Which grid the results route is showing. */
 export type ResultsViewMode = "table" | "sheet";
 
 export interface ResultsToolbarProps {

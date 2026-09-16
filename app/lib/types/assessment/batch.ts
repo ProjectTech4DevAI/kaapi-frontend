@@ -1,5 +1,3 @@
-// BATCH assessment API shapes. Field names mirror the backend.
-
 export type AssessmentMethodValue = "BATCH" | "RUN" | "RESPONSE";
 
 export type AssessmentStatusValue =
@@ -24,15 +22,12 @@ export interface BatchPreFilter {
 }
 
 export interface BatchItemOutput {
-  /** Object when the config declares a json_output_schema, string for free text. */
   assessment?: Record<string, unknown> | string | null;
   pre_filter?: BatchPreFilter | null;
 }
 
 export interface BatchResultRow {
-  /** Stable correlator; position in the submitted rows. */
   row_index: number;
-  /** Submitted row echoed back; null when storage could not be read. */
   input?: Record<string, string> | null;
   output: BatchItemOutput;
   error?: string | null;
@@ -44,7 +39,6 @@ export interface BatchCounts {
   errors: number;
 }
 
-/** List row. No per-row counts by design: those need a storage read. */
 export interface AssessmentSummary {
   assessment_id: string;
   method: AssessmentMethodValue;
@@ -54,7 +48,6 @@ export interface AssessmentSummary {
   submission_name?: string | null;
   config?: AssessmentConfigRef | null;
   total_items: number;
-  /** This run's own stages, in order — one entry when no pre-filter is configured. */
   stages?: string[];
   stage?: string | null;
   stage_status?: string | null;
@@ -87,7 +80,6 @@ export interface ResultsTarget {
   method: AssessmentMethodValue;
 }
 
-/** Rows plus the status that decides whether to keep polling. */
 export interface AssessmentResultsPayload {
   status: AssessmentStatusValue;
   rows: Record<string, unknown>[];

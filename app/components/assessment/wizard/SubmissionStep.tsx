@@ -7,7 +7,6 @@ import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
 import SubmissionList from "@/app/components/assessment/datasets/SubmissionList";
 import type { SubmissionStepProps } from "@/app/lib/types/assessment";
 
-/** Wizard step 1: pick the submission set for this assessor, or upload a new one. */
 export default function SubmissionStep({ step }: SubmissionStepProps) {
   const { confirmDeleteId, pendingDelete } = step;
 

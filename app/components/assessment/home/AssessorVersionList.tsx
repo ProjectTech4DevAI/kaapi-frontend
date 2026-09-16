@@ -3,7 +3,6 @@
 import { TrashIcon } from "@/app/components/icons";
 import type { AssessorVersionListProps } from "@/app/lib/types/assessment";
 
-/** Every version of one assessor, revealed in place under its row. */
 export default function AssessorVersionList({
   configId,
   versions,

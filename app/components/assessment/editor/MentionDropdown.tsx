@@ -17,7 +17,6 @@ const rowBase =
 const eyebrow =
   "px-3 pt-2 pb-1 text-[10px] font-semibold tracking-wider uppercase text-text-secondary";
 
-/** Stage 1 picks the column; stage 2 asks what it carries; stage 3 whether it may be blank. */
 export default function MentionDropdown({
   dropdownRef,
   position,

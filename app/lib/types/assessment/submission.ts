@@ -1,8 +1,6 @@
-// Uploaded submission file. Separate from the shared `Dataset`, which stays
 import type { ValueSetter } from "./core";
 import type { DatasetViewModalData } from "./dataset";
 import type { ChangeEvent, DragEvent } from "react";
-// on numeric ids for evaluations, STT and TTS.
 
 export interface AssessmentSubmission {
   submission_id: string;
@@ -26,7 +24,6 @@ export interface SubmissionPreviewPayload {
   preview?: SubmissionPreviewRows;
 }
 
-/** Normalized preview the wizard renders. */
 export interface SubmissionPreview {
   headers: string[];
   rows: string[][];
@@ -90,8 +87,6 @@ export interface CreatePanelProps {
   form: UseSubmissionFormResult;
   isCreating: boolean;
   onCreate: () => void;
-  /** Step 1 shows it as the right-hand pane; step 4 embeds it inline. */
   layout?: "panel" | "inline";
-  /** Runs after Cancel clears the form — step 4 also collapses the panel. */
   onCancel?: () => void;
 }

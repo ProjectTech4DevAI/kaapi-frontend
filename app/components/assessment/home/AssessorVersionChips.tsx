@@ -9,10 +9,6 @@ const chipIdle =
   "border-border bg-bg-secondary text-text-secondary hover:border-accent-muted hover:text-text-primary";
 const chipSelected = "border-accent-primary bg-accent-primary text-white";
 
-/**
- * The chevron is the only thing shown until versions are loaded — a row's
- * version list costs its own request, so nothing fetches it up front.
- */
 export default function AssessorVersionChips({
   assessor,
   versions,

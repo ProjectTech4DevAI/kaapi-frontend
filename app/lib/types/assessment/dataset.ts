@@ -1,4 +1,3 @@
-// Assessment types: datasets, column mapping, output schema, prefilter, review.
 import type { Dataset } from "@/app/lib/types/dataset";
 import type {
   CreateResponse,
@@ -12,7 +11,6 @@ export interface Attachment {
   column: string;
   type: "image" | "pdf" | "mixed";
   format: "url" | "base64";
-  // For 'mixed': column whose value decides each row's type + the value->type map.
   type_column?: string | null;
   type_value_map?: Record<string, string> | null;
 }
@@ -50,7 +48,6 @@ export interface PrefilterTopicRelevanceConfig {
   prompt: string;
 }
 
-/** The one pre-filter the pipeline runs; the API keys it `topic_relevance`. */
 export interface PrefilterConfig {
   topic_relevance?: PrefilterTopicRelevanceConfig;
 }
@@ -59,7 +56,6 @@ export interface ColumnConfig {
   role: ColumnRole;
   attachmentType?: "image" | "pdf" | "mixed";
   attachmentFormat?: string;
-  // For 'mixed': the type-deciding column + comma-separated values per type.
   attachmentTypeColumn?: string;
   attachmentImageValues?: string;
   attachmentPdfValues?: string;

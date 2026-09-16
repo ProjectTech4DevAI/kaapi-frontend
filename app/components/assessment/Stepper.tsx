@@ -35,7 +35,6 @@ export default function Stepper({
         </>
       )}
 
-      {/* The pills scroll rather than wrap, so the bar stays one row tall. */}
       <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-2">
         {steps.map((step, index) => {
           const state = getStepState({

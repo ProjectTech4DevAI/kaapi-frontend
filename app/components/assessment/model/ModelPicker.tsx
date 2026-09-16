@@ -13,11 +13,6 @@ import type { ProviderType } from "@/app/lib/types/configs";
 const fieldLabel =
   "block text-[10px] font-semibold tracking-wider uppercase text-text-secondary";
 
-/**
- * Provider → model → that model's own parameters. The parameter set differs per
- * model (a reasoning model takes effort, a chat model takes temperature), so it
- * is read from the catalog rather than hardcoded.
- */
 export default function ModelPicker({
   step,
   selection,

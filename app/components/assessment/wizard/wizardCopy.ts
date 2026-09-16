@@ -1,4 +1,3 @@
-/** Footer labels and the strip's context line — pure, so the view stays markup. */
 import { wizardEntryStep } from "@/app/lib/assessment/wizard";
 import type {
   AssessmentWizardStep,
@@ -16,7 +15,6 @@ interface FooterInput {
   wizard: UseAssessmentWizardResult;
   hasSubmission: boolean;
   rowCount: number | null;
-  /** A file is sitting in step 4's upload form, not yet created. */
   hasPendingUpload: boolean;
 }
 
@@ -41,7 +39,6 @@ export function wizardFooterState({
   hasPendingUpload,
 }: FooterInput): FooterState {
   const { step, flow, submissionName } = wizard;
-  // The entry step has no Back — the round home button is the way out.
   const showBack = step !== wizardEntryStep(flow);
 
   if (step === 1) {
@@ -81,11 +78,6 @@ export function wizardFooterState({
   };
 }
 
-/**
- * Step 3 is the save gate. A brand-new assessor needs content; an existing one
- * needs a real diff. In the run flow an untouched draft just moves on, and any
- * edit turns the action into a version bump.
- */
 function assessmentStepFooter(
   wizard: UseAssessmentWizardResult,
 ): Omit<FooterState, "showBack"> {

@@ -2,7 +2,10 @@ export interface FieldDef {
   key: string;
   label: string;
   placeholder: string;
-  type?: "text" | "password";
+  type?: "text" | "password" | "textarea";
+  required?: boolean;
+  json?: boolean;
+  jsonRequiredKeys?: string[];
 }
 
 export interface ProviderDef {
@@ -35,6 +38,7 @@ export const PROVIDERS: ProviderDef[] = [
         label: "API Key",
         placeholder: "sk-xxxxx-xxxxx-xxxxx",
         type: "password",
+        required: true,
       },
     ],
   },
@@ -49,12 +53,19 @@ export const PROVIDERS: ProviderDef[] = [
         label: "Secret Key",
         placeholder: "sk-lf-xxxxx",
         type: "password",
+        required: true,
       },
-      { key: "public_key", label: "Public Key", placeholder: "pk-lf-xxxxx" },
+      {
+        key: "public_key",
+        label: "Public Key",
+        placeholder: "pk-lf-xxxxx",
+        required: true,
+      },
       {
         key: "host",
         label: "Host URL",
         placeholder: "https://cloud.langfuse.com",
+        required: true,
       },
     ],
   },
@@ -70,6 +81,56 @@ export const PROVIDERS: ProviderDef[] = [
         label: "API Key",
         placeholder: "AIzaSy-xxxxx",
         type: "password",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: "google-gcp",
+    name: "Google Vertex AI",
+    description:
+      "Run Gemini on Vertex AI. Batch jobs read and write through your own GCS bucket, authenticated with a service account.",
+    credentialKey: "google-gcp",
+    fields: [
+      {
+        key: "api_key",
+        label: "API Key",
+        placeholder: "AIzaSy-xxxxx",
+        type: "password",
+        required: true,
+      },
+      {
+        key: "project_id",
+        label: "GCP Project ID",
+        placeholder: "my-gcp-project",
+        required: true,
+      },
+      {
+        key: "location",
+        label: "Region",
+        placeholder: "us-central1",
+        required: true,
+      },
+      {
+        key: "gcs_bucket",
+        label: "GCS Bucket",
+        placeholder: "my-batch-bucket",
+        required: true,
+      },
+      {
+        key: "sa_key",
+        label: "Service Account Key (JSON)",
+        placeholder: '{\n  "type": "service_account",\n  "project_id": "…"\n}',
+        type: "textarea",
+        required: true,
+        json: true,
+        jsonRequiredKeys: [
+          "type",
+          "project_id",
+          "private_key",
+          "client_email",
+          "token_uri",
+        ],
       },
     ],
   },
@@ -84,6 +145,7 @@ export const PROVIDERS: ProviderDef[] = [
         label: "API Key",
         placeholder: "sk-ant-xxxxx",
         type: "password",
+        required: true,
       },
     ],
   },
@@ -98,6 +160,7 @@ export const PROVIDERS: ProviderDef[] = [
         label: "API Key",
         placeholder: "sk_xxxxx",
         type: "password",
+        required: true,
       },
     ],
   },
@@ -112,6 +175,7 @@ export const PROVIDERS: ProviderDef[] = [
         label: "API Key",
         placeholder: "xxxxx",
         type: "password",
+        required: true,
       },
     ],
   },

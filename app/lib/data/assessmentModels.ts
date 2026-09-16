@@ -3,91 +3,117 @@ import type {
   ConfigParamDefinition,
   ModelOption,
 } from "@/app/lib/types/assessment";
-import type { ConfigBlob } from "@/app/lib/types/configs";
+import type { ConfigBlob, ProviderType } from "@/app/lib/types/configs";
 
-export const GPT4_STYLE_CONFIG = {
-  top_p: {
-    max: 1.0,
-    min: 0.0,
-    type: "float",
-    default: 1.0,
-    description: "Nucleus sampling. Use either this or temperature, not both.",
-  },
-  temperature: {
-    max: 2.0,
-    min: 0.0,
-    type: "float",
-    default: 1.0,
-    description: "Controls randomness. Lower = more deterministic.",
-  },
-} as const satisfies Record<string, ConfigParamDefinition>;
+const TEMPERATURE: ConfigParamDefinition = {
+  type: "float",
+  default: 1.0,
+  min: 0.0,
+  max: 2.0,
+  description: "Controls randomness. Lower = more deterministic.",
+};
 
-const GEMINI_TEMPERATURE_CONFIG = {
-  temperature: {
-    max: 2.0,
-    min: 0.0,
-    type: "float",
-    default: 0.4,
-    description: "Controls randomness. Lower = more deterministic.",
-  },
-} as const satisfies Record<string, ConfigParamDefinition>;
+const TOP_P: ConfigParamDefinition = {
+  type: "float",
+  default: 1.0,
+  min: 0.0,
+  max: 1.0,
+  description: "Nucleus sampling. Use either this or temperature, not both.",
+};
 
-const GEMINI_THINKING_CONFIG = {
-  ...GEMINI_TEMPERATURE_CONFIG,
-  thinking_level: {
-    type: "enum",
-    default: "LOW",
-    options: ["MINIMAL", "LOW", "MEDIUM", "HIGH"],
-    description: "Controls how much the model thinks before responding.",
-  },
-} as const satisfies Record<string, ConfigParamDefinition>;
+const MAX_OUTPUT_TOKENS: ConfigParamDefinition = {
+  type: "int",
+  default: 2048,
+  min: 1,
+  max: 32768,
+  description: "Max tokens in the response.",
+};
 
-const GEMINI_THINKING_NO_MINIMAL_CONFIG = {
-  ...GEMINI_TEMPERATURE_CONFIG,
-  thinking_level: {
-    type: "enum",
-    default: "LOW",
-    options: ["LOW", "MEDIUM", "HIGH"],
-    description: "Controls how much the model thinks before responding.",
-  },
-} as const satisfies Record<string, ConfigParamDefinition>;
+const SUMMARY: ConfigParamDefinition = {
+  type: "enum",
+  default: "auto",
+  options: ["auto", "detailed", "concise"],
+  description: "Summarize the reasoning result.",
+};
 
-const ANTHROPIC_MODEL_CONFIG = {
-  top_p: {
-    max: 1.0,
-    min: 0.0,
-    type: "float",
-    default: 1.0,
-    description: "Nucleus sampling. Use either this or temperature, not both.",
-  },
-  temperature: {
-    max: 1.0,
-    min: 0.0,
-    type: "float",
-    default: 1.0,
-    description: "Controls randomness. Lower = more deterministic.",
-  },
-} as const satisfies Record<string, ConfigParamDefinition>;
+const GEMINI_TEMPERATURE: ConfigParamDefinition = {
+  type: "float",
+  default: 1,
+  min: 0,
+  max: 2,
+  description: "Controls randomness.",
+};
 
-const ANTHROPIC_OPUS_CONFIG = {
-  effort: {
-    type: "enum",
-    default: "high",
-    options: ["low", "medium", "high", "xhigh", "max"],
-    description:
-      "Reasoning effort. Higher = deeper thinking and more tokens. xhigh suits coding/agentic work.",
-  },
-  thinking: {
-    type: "enum",
-    default: "adaptive",
-    options: ["adaptive", "disabled"],
-    description:
-      "Adaptive thinking lets Claude decide depth. Sampling params (temperature/top_p) are not supported on Opus 4.8.",
-  },
-} as const satisfies Record<string, ConfigParamDefinition>;
+const THINKING_LEVEL_DESCRIPTION =
+  "Max reasoning depth before output. high = best quality, low = faster/cheaper.";
+
+const OPENAI_EFFORT_DESCRIPTION =
+  "How long the model spends reasoning. Higher = better but slower.";
+
+const ANTHROPIC_EFFORT_OPTIONS = ["low", "medium", "high", "xhigh", "max"];
+
+export const GPT4_STYLE_CONFIG: Record<string, ConfigParamDefinition> = {
+  top_p: TOP_P,
+  temperature: TEMPERATURE,
+  max_output_tokens: MAX_OUTPUT_TOKENS,
+};
+
+function openaiReasoning(
+  effortOptions: string[],
+): Record<string, ConfigParamDefinition> {
+  return {
+    effort: {
+      type: "enum",
+      default: "medium",
+      options: effortOptions,
+      description: OPENAI_EFFORT_DESCRIPTION,
+    },
+    summary: SUMMARY,
+  };
+}
+
+function anthropicReasoning(
+  description: string,
+): Record<string, ConfigParamDefinition> {
+  return {
+    effort: {
+      type: "enum",
+      default: "high",
+      options: ANTHROPIC_EFFORT_OPTIONS,
+      description,
+    },
+  };
+}
+
+function geminiThinking(
+  defaultLevel: string,
+): Record<string, ConfigParamDefinition> {
+  return {
+    temperature: GEMINI_TEMPERATURE,
+    thinking_level: {
+      type: "enum",
+      default: defaultLevel,
+      options: ["low", "medium", "high"],
+      description: THINKING_LEVEL_DESCRIPTION,
+    },
+  };
+}
+
+const ANTHROPIC_TEMPERATURE_CONFIG: Record<string, ConfigParamDefinition> = {
+  temperature: { type: "float", default: 1, min: 0, max: 2 },
+};
+
+const GEMINI_TEXT_MODELS: Omit<AssessmentModelConfig, "provider">[] = [
+  { model_name: "gemini-3-pro-preview", config: geminiThinking("high") },
+  { model_name: "gemini-3.5-flash-preview", config: geminiThinking("low") },
+  { model_name: "gemini-3-flash-preview", config: geminiThinking("low") },
+];
+
+function geminiModelsFor(provider: ProviderType): AssessmentModelConfig[] {
+  return GEMINI_TEXT_MODELS.map((model) => ({ provider, ...model }));
+}
 
 export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
-  // OpenAI
   { provider: "openai", model_name: "gpt-4o-mini", config: GPT4_STYLE_CONFIG },
   { provider: "openai", model_name: "gpt-4o", config: GPT4_STYLE_CONFIG },
   { provider: "openai", model_name: "gpt-4.1", config: GPT4_STYLE_CONFIG },
@@ -95,253 +121,103 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   { provider: "openai", model_name: "gpt-4.1-nano", config: GPT4_STYLE_CONFIG },
   {
     provider: "openai",
-    model_name: "o3-mini",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
-  },
-  {
-    provider: "openai",
-    model_name: "o3",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
-  },
-  {
-    provider: "openai",
-    model_name: "o4-mini",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
-  },
-  {
-    provider: "openai",
     model_name: "gpt-5",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["minimal", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: openaiReasoning(["minimal", "low", "medium", "high"]),
   },
   {
     provider: "openai",
     model_name: "gpt-5-mini",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["minimal", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: openaiReasoning(["minimal", "low", "medium", "high"]),
   },
   {
     provider: "openai",
     model_name: "gpt-5-nano",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["minimal", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: openaiReasoning(["minimal", "low", "medium", "high"]),
   },
   {
     provider: "openai",
     model_name: "gpt-5.1",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["none", "low", "medium", "high"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
-  },
-  {
-    provider: "openai",
-    model_name: "gpt-5.1-chat-latest",
-    config: {
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: openaiReasoning(["none", "low", "medium", "high"]),
   },
   {
     provider: "openai",
     model_name: "gpt-5.2",
-    config: {
-      effort: {
-        type: "enum",
-        default: "medium",
-        options: ["none", "low", "medium", "high", "xhigh"],
-        description:
-          "How long the model spends reasoning. Higher = better but slower.",
-      },
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh"]),
   },
   {
     provider: "openai",
-    model_name: "gpt-5.2-chat-latest",
-    config: {
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
+    model_name: "gpt-5.4",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh"]),
   },
   {
     provider: "openai",
-    model_name: "gpt-5.2-pro",
-    config: {
-      summary: {
-        type: "enum",
-        default: "auto",
-        options: ["auto", "detailed", "concise"],
-        description: "Summarize the reasoning result.",
-      },
-    },
-  },
-  // Google (Gemini)
-  {
-    provider: "google-aistudio",
-    model_name: "gemini-2.0-flash-lite",
-    config: GEMINI_TEMPERATURE_CONFIG,
+    model_name: "gpt-5.4-mini",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh"]),
   },
   {
-    provider: "google-aistudio",
-    model_name: "gemini-2.0-flash",
-    config: GEMINI_TEMPERATURE_CONFIG,
+    provider: "openai",
+    model_name: "gpt-5.4-nano",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh"]),
   },
   {
-    provider: "google-aistudio",
-    model_name: "gemini-2.5-flash-lite",
-    config: GEMINI_TEMPERATURE_CONFIG,
+    provider: "openai",
+    model_name: "gpt-5.4-pro",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh"]),
   },
   {
-    provider: "google-aistudio",
-    model_name: "gemini-2.5-flash",
-    config: GEMINI_TEMPERATURE_CONFIG,
+    provider: "openai",
+    model_name: "gpt-5.6-luna",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh", "max"]),
   },
   {
-    provider: "google-aistudio",
-    model_name: "gemini-2.5-pro",
-    config: GEMINI_TEMPERATURE_CONFIG,
+    provider: "openai",
+    model_name: "gpt-5.6-sol",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh", "max"]),
   },
   {
-    provider: "google-aistudio",
-    model_name: "gemini-3.1-flash-lite",
-    config: GEMINI_THINKING_CONFIG,
+    provider: "openai",
+    model_name: "gpt-5.6-terra",
+    config: openaiReasoning(["none", "low", "medium", "high", "xhigh", "max"]),
   },
+  ...geminiModelsFor("google-aistudio"),
+  ...geminiModelsFor("google-gcp"),
   {
-    provider: "google-aistudio",
-    model_name: "gemini-3.1-pro-preview",
-    config: GEMINI_THINKING_NO_MINIMAL_CONFIG,
-  },
-  {
-    provider: "google-aistudio",
-    model_name: "gemini-3-flash-preview",
-    config: GEMINI_THINKING_CONFIG,
+    provider: "anthropic",
+    model_name: "claude-sonnet-4-6",
+    config: ANTHROPIC_TEMPERATURE_CONFIG,
   },
   {
     provider: "anthropic",
     model_name: "claude-haiku-4-5",
-    config: ANTHROPIC_MODEL_CONFIG,
+    config: ANTHROPIC_TEMPERATURE_CONFIG,
   },
   {
     provider: "anthropic",
-    model_name: "claude-sonnet-4-6",
-    config: ANTHROPIC_MODEL_CONFIG,
+    model_name: "claude-sonnet-5",
+    config: anthropicReasoning(
+      "Reasoning depth with adaptive thinking. Higher = better but slower/costlier.",
+    ),
   },
   {
     provider: "anthropic",
     model_name: "claude-opus-4-8",
-    config: ANTHROPIC_OPUS_CONFIG,
+    config: anthropicReasoning(
+      "Reasoning depth with adaptive thinking. Higher = better but slower/costlier.",
+    ),
+  },
+  {
+    provider: "anthropic",
+    model_name: "claude-fable-5",
+    config: anthropicReasoning(
+      "Reasoning depth. Thinking is always on for this model. Higher = better but slower/costlier.",
+    ),
   },
 ];
 
 export const PROVIDER_OPTIONS = [
   { value: "openai", label: "OpenAI" },
-  { value: "google-aistudio", label: "Google (Gemini)" },
+  { value: "google-aistudio", label: "Google AI Studio (Gemini)" },
+  { value: "google-gcp", label: "Google Vertex AI (Gemini)" },
   { value: "anthropic", label: "Anthropic (Claude)" },
 ] as const;
 

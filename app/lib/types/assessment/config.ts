@@ -22,7 +22,7 @@ export type ConfigParamType = "float" | "int" | "enum";
 export interface ConfigParamDefinition {
   type: ConfigParamType;
   default: number | string;
-  description: string;
+  description?: string;
   min?: number;
   max?: number;
   options?: string[];

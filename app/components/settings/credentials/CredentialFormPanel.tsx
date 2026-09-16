@@ -71,6 +71,7 @@ export default function CredentialFormPanel({
               onChange={(val) => onChange(field.key, val)}
               placeholder={field.placeholder}
               type={field.type || "text"}
+              required={field.required}
             />
           ))}
 

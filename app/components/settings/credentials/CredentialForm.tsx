@@ -60,6 +60,7 @@ export default function CredentialForm({
               onChange={(val) => onChange(field.key, val)}
               placeholder={field.placeholder}
               type={field.type || "text"}
+              required={field.required}
             />
           ))}
 

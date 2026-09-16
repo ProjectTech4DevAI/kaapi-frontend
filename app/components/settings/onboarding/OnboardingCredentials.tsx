@@ -9,7 +9,12 @@ import {
   Credential,
   ProviderDef,
 } from "@/app/lib/types/credentials";
-import { getExistingForProvider } from "@/app/lib/utils";
+import {
+  buildCredentialPayload,
+  getExistingForProvider,
+  missingCredentialFields,
+  populateCredentialForm,
+} from "@/app/lib/utils";
 import ProviderSidebar from "@/app/components/settings/ProviderSidebar";
 import { CredentialFormPanel } from "@/app/components/settings/credentials";
 
@@ -62,48 +67,37 @@ export default function OnboardingCredentials({
   // Re-populate form when provider or credentials change
   useEffect(() => {
     const existing = getExistingForProvider(selectedProvider, credentials);
-    if (existing) {
-      setExistingCredential(existing);
-      setIsActive(existing.is_active);
-      const populated: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        populated[f.key] = existing.credential[f.key] || "";
-      });
-      setFormValues(populated);
-    } else {
-      setExistingCredential(null);
-      setIsActive(true);
-      const blank: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        blank[f.key] = "";
-      });
-      setFormValues(blank);
-    }
+    setExistingCredential(existing);
+    setIsActive(existing ? existing.is_active : true);
+    setFormValues(populateCredentialForm(selectedProvider, existing));
   }, [selectedProvider, credentials]);
 
   const handleSave = async () => {
-    const missing = selectedProvider.fields.filter(
-      (f) => !formValues[f.key]?.trim(),
-    );
+    const missing = missingCredentialFields(selectedProvider, formValues);
     if (missing.length > 0) {
       toast.error(`Please fill in: ${missing.map((f) => f.label).join(", ")}`);
       return;
     }
 
+    const built = buildCredentialPayload(selectedProvider, formValues);
+    if (built.error) {
+      toast.error(built.error);
+      return;
+    }
+    if (Object.keys(built.payload).length === 0) {
+      toast.error("No changes to save");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const innerPayload: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        innerPayload[f.key] = formValues[f.key].trim();
-      });
-
       await apiFetch(credentialsUrl, apiKey, {
         method: "PATCH",
         body: JSON.stringify({
           provider: selectedProvider.credentialKey,
           is_active: isActive,
           credential: {
-            [selectedProvider.credentialKey]: innerPayload,
+            [selectedProvider.credentialKey]: built.payload,
           },
         }),
       });
@@ -122,21 +116,8 @@ export default function OnboardingCredentials({
 
   const handleCancel = () => {
     const existing = getExistingForProvider(selectedProvider, credentials);
-    if (existing) {
-      setIsActive(existing.is_active);
-      const populated: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        populated[f.key] = existing.credential[f.key] || "";
-      });
-      setFormValues(populated);
-    } else {
-      const blank: Record<string, string> = {};
-      selectedProvider.fields.forEach((f) => {
-        blank[f.key] = "";
-      });
-      setFormValues(blank);
-      setIsActive(true);
-    }
+    setIsActive(existing ? existing.is_active : true);
+    setFormValues(populateCredentialForm(selectedProvider, existing));
   };
 
   const handleDelete = async () => {

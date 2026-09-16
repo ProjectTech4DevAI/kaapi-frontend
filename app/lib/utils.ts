@@ -1,4 +1,4 @@
-import { Credential, ProviderDef } from "@/app/lib/types/credentials";
+import { Credential, FieldDef, ProviderDef } from "@/app/lib/types/credentials";
 import { formatDistanceToNow } from "date-fns";
 import { clearConfigCache } from "@/app/lib/store/config";
 import {
@@ -31,6 +31,103 @@ export function getExistingForProvider(
   creds: Credential[],
 ): Credential | null {
   return creds.find((c) => c.provider === provider.credentialKey) || null;
+}
+
+export function isMaskedCredentialValue(value: string): boolean {
+  return value.includes("*");
+}
+
+export function populateCredentialForm(
+  provider: ProviderDef,
+  existing: Credential | null,
+): Record<string, string> {
+  const values: Record<string, string> = {};
+  provider.fields.forEach((field) => {
+    const stored = existing?.credential?.[field.key];
+    if (stored === undefined || stored === null) {
+      values[field.key] = "";
+    } else if (typeof stored === "string") {
+      values[field.key] = stored;
+    } else {
+      values[field.key] = JSON.stringify(stored, null, 2);
+    }
+  });
+  return values;
+}
+
+export interface CredentialPayloadResult {
+  payload: Record<string, unknown>;
+  error: string | null;
+}
+
+function repairPemNewlines(value: Record<string, unknown>) {
+  for (const [key, entry] of Object.entries(value)) {
+    if (
+      typeof entry === "string" &&
+      entry.includes("-----BEGIN") &&
+      entry.includes("\\n") &&
+      !entry.includes("\n")
+    ) {
+      value[key] = entry.replace(/\\n/g, "\n");
+    }
+  }
+}
+
+function parseJsonField(
+  field: FieldDef,
+  raw: string,
+): { value?: Record<string, unknown>; error?: string } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: `${field.label} must be valid JSON` };
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return { error: `${field.label} must be a JSON object` };
+  }
+
+  const value = parsed as Record<string, unknown>;
+  repairPemNewlines(value);
+
+  const missing = (field.jsonRequiredKeys ?? []).filter((key) => !value[key]);
+  if (missing.length > 0) {
+    return { error: `${field.label} is missing: ${missing.join(", ")}` };
+  }
+
+  return { value };
+}
+
+export function buildCredentialPayload(
+  provider: ProviderDef,
+  formValues: Record<string, string>,
+): CredentialPayloadResult {
+  const payload: Record<string, unknown> = {};
+
+  for (const field of provider.fields) {
+    const raw = (formValues[field.key] ?? "").trim();
+    if (!raw || isMaskedCredentialValue(raw)) continue;
+
+    if (field.json) {
+      const parsed = parseJsonField(field, raw);
+      if (parsed.error) return { payload, error: parsed.error };
+      payload[field.key] = parsed.value;
+    } else {
+      payload[field.key] = raw;
+    }
+  }
+
+  return { payload, error: null };
+}
+
+export function missingCredentialFields(
+  provider: ProviderDef,
+  formValues: Record<string, string>,
+): FieldDef[] {
+  return provider.fields.filter(
+    (field) => field.required && !formValues[field.key]?.trim(),
+  );
 }
 
 export const formatRelativeTime = (timestamp: string | number): string => {

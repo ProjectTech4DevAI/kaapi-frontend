@@ -157,7 +157,5 @@ export function useAssessmentHome(
     setRunFilter: changeRunFilter,
     runFilterOptions,
     gotoRunPage: setRunPage,
-    exportRun: source.exportRun,
-    exportingId: source.exportingId,
   };
 }

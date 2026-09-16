@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { PageSlice } from "./core";
 import type { WizardContext } from "./wizard";
-import type { ResultsTarget } from "./batch";
 import type { AssessorSummary, AssessorVersion } from "./dataSource";
 import type { AssessmentRun } from "./results";
 import type { StageProgress } from "@/app/lib/assessment/results";
@@ -52,8 +51,6 @@ export interface UseAssessmentHomeResult {
   setRunFilter: (value: RunFilterValue) => void;
   runFilterOptions: { value: string; label: string }[];
   gotoRunPage: (page: number) => void;
-  exportRun: (target: ResultsTarget, fileName: string) => Promise<void>;
-  exportingId: string | null;
 }
 
 export type DeleteTarget =
@@ -136,14 +133,10 @@ export interface RunsPanelProps {
 
 export interface RunRowProps {
   row: HomeRunRow;
-  isExporting: boolean;
-  onExport: (target: ResultsTarget, fileName: string) => void;
 }
 
 export interface RunRowActionsProps {
   row: HomeRunRow;
-  isExporting: boolean;
-  onExport: (target: ResultsTarget, fileName: string) => void;
 }
 
 export interface RunRowMetaProps {

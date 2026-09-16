@@ -5,15 +5,11 @@ import { createUniver, defaultTheme, LocaleType } from "@univerjs/presets";
 import { UniverSheetsCorePreset } from "@univerjs/preset-sheets-core";
 import sheetsEnUS from "@univerjs/preset-sheets-core/locales/en-US";
 import "@univerjs/preset-sheets-core/lib/index.css";
-import { Button } from "@/app/components/ui";
-import { DownloadIcon } from "@/app/components/icons";
 import {
   buildSpreadsheetWorkbookData,
   loadSpreadsheetState,
   persistSpreadsheetState,
-  downloadCsv,
   savedSnapshotMatchesHeaders,
-  spreadsheetSnapshotToRows,
 } from "@/app/lib/assessment/results";
 import {
   SPREADSHEET_STATE_DEBOUNCE_MS,
@@ -26,21 +22,11 @@ import type {
 
 export default function SpreadsheetView({
   runId,
-  title,
-  subtitle,
   headers,
   rows,
 }: SpreadsheetViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const univerRef = useRef<UniverAPI | null>(null);
-
-  const handleDownloadCsv = () => {
-    const snapshot = univerRef.current?.getActiveWorkbook()?.save();
-    const matrix = snapshot
-      ? spreadsheetSnapshotToRows(snapshot)
-      : [headers, ...rows];
-    downloadCsv(title, matrix);
-  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -103,27 +89,8 @@ export default function SpreadsheetView({
   }, [runId, headers, rows]);
 
   return (
-    <div className="w-full h-screen flex flex-col bg-bg-primary">
-      <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
-        <div>
-          <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
-          {subtitle && (
-            <p className="mt-0.5 text-xs text-text-secondary">{subtitle}</p>
-          )}
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleDownloadCsv}
-          className="!rounded-md !px-2.5 !py-1.5 !text-xs"
-          aria-label="Download CSV"
-        >
-          <DownloadIcon className="h-3.5 w-3.5" />
-          Download CSV
-        </Button>
-      </div>
-      <div ref={containerRef} className="flex-1 overflow-hidden" />
+    <div className="flex min-h-0 w-full flex-1 flex-col bg-bg-primary">
+      <div ref={containerRef} className="min-h-0 flex-1 overflow-hidden" />
     </div>
   );
 }

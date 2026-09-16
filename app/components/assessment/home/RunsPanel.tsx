@@ -47,12 +47,7 @@ export default function RunsPanel({ home, onNewRun }: RunsPanelProps) {
       }
     >
       {runSlice.items.map((row) => (
-        <RunRow
-          key={row.assessment.assessment_id}
-          row={row}
-          isExporting={home.exportingId === row.assessment.assessment_id}
-          onExport={home.exportRun}
-        />
+        <RunRow key={row.assessment.assessment_id} row={row} />
       ))}
 
       {runSlice.items.length === 0 && (

@@ -1,8 +1,6 @@
 "use client";
 
-import { DownloadIcon, EyeIcon } from "@/app/components/icons";
-import { Button } from "@/app/components/ui";
-import { isTerminalStatus } from "@/app/lib/assessment/results";
+import { EyeIcon } from "@/app/components/icons";
 import type {
   HomeRunRow,
   RunRowActionsProps,
@@ -16,37 +14,11 @@ function resultsHref(row: HomeRunRow): string {
   return `/assessment/results/${assessment.assessment_id}?${query}`;
 }
 
-export default function RunRowActions({
-  row,
-  isExporting,
-  onExport,
-}: RunRowActionsProps) {
-  const { assessment } = row;
+export default function RunRowActions({ row }: RunRowActionsProps) {
   const href = resultsHref(row);
-  const canExport = isTerminalStatus(assessment.status);
 
   return (
     <div className="mt-2.5 flex flex-wrap items-center justify-end gap-2">
-      {canExport && (
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={isExporting}
-          onClick={() =>
-            onExport(
-              {
-                assessment_id: assessment.assessment_id,
-                method: assessment.method,
-              },
-              assessment.experiment_name ?? assessment.assessment_id,
-            )
-          }
-        >
-          <DownloadIcon className="w-3.5 h-3.5" />
-          {isExporting ? "Exporting…" : "Export"}
-        </Button>
-      )}
-
       <a
         href={href}
         className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-bg-primary px-3 py-1.5 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-50"

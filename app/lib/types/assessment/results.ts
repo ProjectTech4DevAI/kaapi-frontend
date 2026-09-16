@@ -114,32 +114,15 @@ export type SpreadsheetStateEnvelope = {
   data: object;
 };
 
-export type ResultsViewMode = "table" | "sheet";
-
 export interface ResultsToolbarProps {
   title: string;
   subtitle: string;
-  view: ResultsViewMode;
-  onViewChange: (view: ResultsViewMode) => void;
   onBack: () => void;
   onDownload: () => void;
 }
 
-export interface ResultsTableProps {
-  headers: string[];
-  rows: string[][];
-  onRowClick: (index: number) => void;
-}
-
-export interface ResultRowModalProps {
-  row: Record<string, unknown> | null;
-  onClose: () => void;
-}
-
 export interface SpreadsheetViewProps {
   runId: string;
-  title: string;
-  subtitle?: string;
   headers: string[];
   rows: string[][];
 }

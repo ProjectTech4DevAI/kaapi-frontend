@@ -13,16 +13,11 @@ import {
   ASSESSOR_SEARCH_DEBOUNCE_MS,
   RESULTS_POLL_INTERVAL_MS,
 } from "@/app/lib/assessment/constants";
-import {
-  downloadCsv,
-  getAsyncErrorMessage,
-  jsonResultsToTableData,
-} from "@/app/lib/assessment/results";
+import { getAsyncErrorMessage } from "@/app/lib/assessment/results";
 import type {
   AssessmentRun,
   AssessorSummary,
   AssessorVersion,
-  ResultsTarget,
 } from "@/app/lib/types/assessment";
 
 export interface UseAssessmentHomeDataResult {
@@ -46,8 +41,6 @@ export interface UseAssessmentHomeDataResult {
   isLoading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  exportRun: (target: ResultsTarget, fileName: string) => Promise<void>;
-  exportingId: string | null;
 }
 
 export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
@@ -69,7 +62,6 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
   >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [exportingId, setExportingId] = useState<string | null>(null);
   const [deletingKey, setDeletingKey] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
@@ -168,22 +160,6 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
     [data, loadVersions, toast],
   );
 
-  const exportRun = useCallback(
-    async (target: ResultsTarget, fileName: string) => {
-      setExportingId(target.assessment_id);
-      try {
-        const payload = await data.getRunResults(target);
-        const table = jsonResultsToTableData(payload.rows);
-        downloadCsv(fileName, [table.headers, ...table.rows]);
-      } catch (caught) {
-        toast.error(getAsyncErrorMessage("export results", caught));
-      } finally {
-        if (isMountedRef.current) setExportingId(null);
-      }
-    },
-    [data, toast],
-  );
-
   const changeSearch = useCallback((value: string) => {
     setAssessorSearch(value);
     setAssessorSkip(0);
@@ -245,7 +221,5 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
     isLoading,
     error,
     refresh,
-    exportRun,
-    exportingId,
   };
 }

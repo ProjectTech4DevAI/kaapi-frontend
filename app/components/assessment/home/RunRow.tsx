@@ -10,7 +10,7 @@ import RunRowActions from "./RunRowActions";
 import RunRowMeta from "./RunRowMeta";
 import type { RunRowProps } from "@/app/lib/types/assessment";
 
-export default function RunRow({ row, isExporting, onExport }: RunRowProps) {
+export default function RunRow({ row }: RunRowProps) {
   const { assessment, stages, isActive } = row;
   const tone = getResultTone(assessment.status);
 
@@ -43,7 +43,7 @@ export default function RunRow({ row, isExporting, onExport }: RunRowProps) {
         </div>
       )}
 
-      <RunRowActions row={row} isExporting={isExporting} onExport={onExport} />
+      <RunRowActions row={row} />
     </article>
   );
 }

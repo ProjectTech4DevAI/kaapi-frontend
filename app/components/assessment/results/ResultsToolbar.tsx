@@ -1,22 +1,12 @@
 "use client";
 
 import { ArrowLeftIcon, DownloadIcon } from "@/app/components/icons";
-import { Button, RadioGroup } from "@/app/components/ui";
-import type {
-  ResultsToolbarProps,
-  ResultsViewMode,
-} from "@/app/lib/types/assessment";
-
-const VIEW_OPTIONS: { value: ResultsViewMode; label: string }[] = [
-  { value: "table", label: "Table" },
-  { value: "sheet", label: "Spreadsheet" },
-];
+import { Button } from "@/app/components/ui";
+import type { ResultsToolbarProps } from "@/app/lib/types/assessment";
 
 export default function ResultsToolbar({
   title,
   subtitle,
-  view,
-  onViewChange,
   onBack,
   onDownload,
 }: ResultsToolbarProps) {
@@ -30,12 +20,6 @@ export default function ResultsToolbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        <RadioGroup
-          options={VIEW_OPTIONS}
-          value={view}
-          onChange={onViewChange}
-          ariaLabel="Results view"
-        />
         <Button
           type="button"
           variant="outline"

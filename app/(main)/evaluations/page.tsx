@@ -19,7 +19,7 @@ import { FeatureGateModal, LoginModal } from "@/app/components/auth";
 import { Loader, TabNavigation } from "@/app/components/ui";
 import { useToast } from "@/app/hooks/useToast";
 import { DatasetsTab, EvaluationsTab } from "@/app/components/evaluations";
-import { RunMode, Tab } from "@/app/lib/types/evaluation";
+import { Tab } from "@/app/lib/types/evaluation";
 
 const leftPanelWidth = 450;
 
@@ -62,7 +62,6 @@ function SimplifiedEvalContent() {
     },
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [runMode, setRunMode] = useState<RunMode>("batch");
   const [nameError, setNameError] = useState<string>("");
   const [submitError, setSubmitError] = useState<string>("");
 
@@ -223,14 +222,11 @@ function SimplifiedEvalContent() {
 
     setIsEvaluating(true);
     try {
-      // `run_mode` is only sent when "fast" — omitting it means the backend
-      // defaults to batch, which is the safe behaviour for older clients too.
       const payload: Record<string, unknown> = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
         config_id: selectedConfigId,
         config_version: selectedConfigVersion,
-        run_mode: runMode === "fast" ? "fast" : "batch",
       };
 
       await apiFetch("/api/evaluations", apiKey, {
@@ -243,7 +239,6 @@ function SimplifiedEvalContent() {
       setSelectedDatasetId("");
       setSelectedConfigId("");
       setSelectedConfigVersion(0);
-      setRunMode("batch");
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
@@ -254,12 +249,12 @@ function SimplifiedEvalContent() {
           break;
         case "config_type_unsupported":
           setSubmitError(
-            "Fast mode only supports text-evaluation configs. Pick a text config or switch to Batch.",
+            "This evaluation only supports text-evaluation configs. Pick a text config to continue.",
           );
           break;
         case "dataset_too_large_for_fast":
           setSubmitError(
-            "This dataset is too large for Fast mode (limit is ~10 unique rows / 50 items). Pick a smaller dataset or switch to Batch.",
+            "This dataset is too large for evaluation (limit is 500 items). Pick a smaller dataset.",
           );
           break;
         default:
@@ -349,8 +344,6 @@ function SimplifiedEvalContent() {
               isEvaluating={isEvaluating}
               handleRunEvaluation={handleRunEvaluation}
               setActiveTab={setActiveTab}
-              runMode={runMode}
-              setRunMode={setRunMode}
               nameError={nameError}
               submitError={submitError}
             />

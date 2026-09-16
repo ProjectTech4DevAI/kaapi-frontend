@@ -37,7 +37,7 @@ export function defaultModel(): AssessorModelSelection {
 
 export function emptyDraft(): WizardDraft {
   return {
-    prefilterEnabled: true,
+    prefilterEnabled: false,
     prefilter: EMPTY_ZONES,
     assessment: EMPTY_ZONES,
     fieldTypes: {},

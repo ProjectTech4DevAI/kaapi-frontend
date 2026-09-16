@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     const { status, data } = await apiClient(
       request,
-      "/api/v1/evaluations/datasets",
+      "/api/v2/evaluations/datasets",
       {
         method: "POST",
         body: formData,

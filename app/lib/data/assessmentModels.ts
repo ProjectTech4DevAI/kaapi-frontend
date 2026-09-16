@@ -99,10 +99,6 @@ function geminiThinking(
   };
 }
 
-const ANTHROPIC_TEMPERATURE_CONFIG: Record<string, ConfigParamDefinition> = {
-  temperature: { type: "float", default: 1, min: 0, max: 2 },
-};
-
 const GEMINI_TEXT_MODELS: Omit<AssessmentModelConfig, "provider">[] = [
   { model_name: "gemini-3-pro-preview", config: geminiThinking("high") },
   { model_name: "gemini-3.5-flash-preview", config: geminiThinking("low") },
@@ -181,16 +177,8 @@ export const ASSESSMENT_MODEL_CONFIGS: AssessmentModelConfig[] = [
   },
   ...geminiModelsFor("google-aistudio"),
   ...geminiModelsFor("google-gcp"),
-  {
-    provider: "anthropic",
-    model_name: "claude-sonnet-4-6",
-    config: ANTHROPIC_TEMPERATURE_CONFIG,
-  },
-  {
-    provider: "anthropic",
-    model_name: "claude-haiku-4-5",
-    config: ANTHROPIC_TEMPERATURE_CONFIG,
-  },
+  { provider: "anthropic", model_name: "claude-sonnet-4-6", config: {} },
+  { provider: "anthropic", model_name: "claude-haiku-4-5", config: {} },
   {
     provider: "anthropic",
     model_name: "claude-sonnet-5",

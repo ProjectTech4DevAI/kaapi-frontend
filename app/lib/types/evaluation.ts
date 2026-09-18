@@ -15,6 +15,7 @@ export interface TraceItem {
   question_id?: number;
   category?: string;
   scores: TraceScore[];
+  score_trace_url?: string;
 }
 
 export interface GroupedTraceItem {
@@ -42,6 +43,7 @@ export interface IndividualScore {
     response_id?: string;
   };
   trace_scores: TraceScore[];
+  score_trace_url?: string;
 }
 
 export interface CategoryMetric {
@@ -129,6 +131,7 @@ export interface EvalJob {
   id: number;
   run_name: string;
   run_mode?: RunMode;
+  is_judge_run?: boolean;
   dataset_name: string;
   dataset_id: number;
   batch_job_id: number;

@@ -29,6 +29,7 @@ export { default as EditIcon } from "./evaluations/EditIcon";
 export { default as MenuIcon } from "./evaluations/MenuIcon";
 export { default as DatabaseIcon } from "./evaluations/DatabaseIcon";
 export { default as GroupIcon } from "./evaluations/GroupIcon";
+export { default as ExternalLinkIcon } from "./evaluations/ExternalLinkIcon";
 
 // Document Icons
 export { default as DocumentFileIcon } from "./document/DocumentFileIcon";

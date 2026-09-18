@@ -6,16 +6,21 @@
 "use client";
 
 import type { ScoreObject } from "@/app/lib/types/evaluation";
-import { hasSummaryScores } from "@/app/lib/utils/evaluation";
+import {
+  hasSummaryScores,
+  isCosineScoreName,
+} from "@/app/lib/utils/evaluation";
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;
   errorMessage?: string | null;
+  isJudgeRun?: boolean;
 }
 
 export default function ScoreDisplay({
   score,
   errorMessage,
+  isJudgeRun,
 }: ScoreDisplayProps) {
   if (!score) {
     return (
@@ -31,7 +36,9 @@ export default function ScoreDisplay({
 
   // Handle score format with summary_scores (V1, V2, or Basic)
   if (hasSummaryScores(score)) {
-    const summaryScores = score.summary_scores || [];
+    const summaryScores = (score.summary_scores || []).filter(
+      (s) => !isJudgeRun || !isCosineScoreName(s.name),
+    );
 
     if (summaryScores.length === 0) {
       return (

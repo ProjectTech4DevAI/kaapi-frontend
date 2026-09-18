@@ -15,7 +15,10 @@ import {
 } from "@/app/lib/utils/evaluation";
 import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
-import { GroupedResultsTable } from "@/app/components/evaluations";
+import {
+  GroupedResultsTable,
+  VerdictBadge,
+} from "@/app/components/evaluations";
 import { MarkdownContent } from "@/app/components/chat";
 
 interface DetailedResultsTableProps {
@@ -202,6 +205,11 @@ export default function DetailedResultsTable({
                           >
                             {value}
                           </div>
+                          <VerdictBadge
+                            name={score?.name}
+                            value={score?.value}
+                            dataType={score?.data_type}
+                          />
                           {score?.comment && (
                             <InfoTooltip text={score.comment} />
                           )}

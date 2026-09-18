@@ -16,9 +16,14 @@ import type { ConfigVersionPublic } from "@/app/lib/types/configs";
 
 export type PromptImprovementConfigVersion = ConfigVersionPublic;
 
-export interface PromptImprovementJobPublic {
+/** Only "prompt" exists today; the backend will widen this to a union as
+ * more recommendation types (e.g. config) are added. */
+export type RecommendationType = "prompt";
+
+export interface PromptRecommendationJobPublic {
   job_id: string;
   status: PromptImprovementStatus;
+  recommendation_type: RecommendationType;
   config_version: PromptImprovementConfigVersion | null;
   error_message: string | null;
 }
@@ -26,6 +31,7 @@ export interface PromptImprovementJobPublic {
 export interface PromptImprovementJobSnapshot {
   job_id: string;
   status: PromptImprovementStatus;
+  recommendation_type: RecommendationType;
   config_version: PromptImprovementConfigVersion | null;
   error_message: string | null;
   updated_at: string;

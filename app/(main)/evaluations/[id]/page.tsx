@@ -271,6 +271,10 @@ export default function EvaluationReport() {
     job.status.toLowerCase() !== "completed" &&
     job.status.toLowerCase() !== "failed";
 
+  // v2 prompt recommendations require judge-scored traces; v1 runs only
+  // have cosine similarity and can't be iterated on.
+  const isJudgedRun = !!scoreObject && isNewScoreObjectV2(scoreObject);
+
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
       <div className="flex flex-1 overflow-hidden">
@@ -356,6 +360,7 @@ export default function EvaluationReport() {
                 onClick={handleIteratePrompt}
                 disabled={
                   job.status.toLowerCase() !== "completed" ||
+                  !isJudgedRun ||
                   isImprovingPrompt ||
                   isFormatSwitching ||
                   isResyncing
@@ -363,7 +368,9 @@ export default function EvaluationReport() {
                 title={
                   job.status.toLowerCase() !== "completed"
                     ? "Only available for completed evaluations"
-                    : undefined
+                    : !isJudgedRun
+                      ? "Prompt iteration requires a judged evaluation run"
+                      : undefined
                 }
               >
                 {isImprovingPrompt && <Loader size="sm" />}

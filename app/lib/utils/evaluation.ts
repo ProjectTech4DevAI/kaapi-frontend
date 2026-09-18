@@ -8,6 +8,36 @@ import type {
   TraceItem,
 } from "@/app/lib/types/evaluation";
 
+export type VerdictBand = "good" | "needs_refinement" | "needs_improvement";
+
+export const VERDICT_LABELS: Record<VerdictBand, string> = {
+  good: "Good",
+  needs_refinement: "Needs Refinement",
+  needs_improvement: "Needs Improvement",
+};
+
+/**
+ * Judge-metric scores are banded 0-5: Good (4-5), Needs Refinement (2-3),
+ * Needs Improvement (0-1). Cosine scores and categorical/N/A entries carry
+ * no verdict, so this returns null for them.
+ */
+export function getVerdictBand(
+  value: number | string | null | undefined,
+  dataType: "NUMERIC" | "CATEGORICAL" | undefined,
+  name?: string,
+): VerdictBand | null {
+  if (dataType === "CATEGORICAL") return null;
+  if (name && /cosine/i.test(name)) return null;
+  if (value === null || value === undefined) return null;
+
+  const numValue = Number(value);
+  if (!Number.isFinite(numValue)) return null;
+
+  if (numValue >= 4) return "good";
+  if (numValue >= 2) return "needs_refinement";
+  return "needs_improvement";
+}
+
 export function hasSummaryScores(
   score: ScoreObject | null | undefined,
 ): score is NewScoreObjectV2 | BasicScoreObject {

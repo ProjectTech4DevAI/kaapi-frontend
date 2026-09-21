@@ -78,6 +78,7 @@ export interface AssessmentDataSource {
   listSubmissions: () => Promise<AssessmentSubmission[]>;
   getSubmissionPreview: (
     submissionId: string,
+    limitRows?: number,
   ) => Promise<SubmissionPreviewPayload>;
   createSubmission: (
     input: CreateSubmissionInput,

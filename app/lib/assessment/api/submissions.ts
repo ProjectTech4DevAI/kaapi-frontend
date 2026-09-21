@@ -31,9 +31,10 @@ export async function listSubmissions(
 export async function getSubmissionPreview(
   apiKey: string,
   submissionId: string,
+  limitRows: number = DATASET_SAMPLE_ROW_LIMIT,
 ): Promise<SubmissionPreviewPayload> {
   const response = await apiFetch<Envelope<AssessmentSubmission>>(
-    `${ENDPOINT}/${submissionId}?limit_rows=${DATASET_SAMPLE_ROW_LIMIT}`,
+    `${ENDPOINT}/${submissionId}?limit_rows=${limitRows}`,
     apiKey,
   );
   const submission = unwrap(response, {} as AssessmentSubmission);

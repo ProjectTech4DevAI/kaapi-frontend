@@ -6,8 +6,14 @@
  *
  * Polls while the run is in flight and stops at a terminal status, so an open
  * results tab fills in as stages land.
+ *
+ * The run payload only echoes the columns the config mapped, so the submission's
+ * own rows are fetched alongside and joined on `row_index`. That fetch is
+ * deliberately off the critical path: the grid paints on results alone and the
+ * source columns appear when they land, so a slow or failed submission read
+ * costs nothing but the extra columns.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
 import {
@@ -16,11 +22,18 @@ import {
   normalizeStatus,
 } from "@/app/lib/assessment/results";
 import {
+  buildColumnOrder,
+  mergeSubmissionInputs,
+  type SubmissionInputs,
+} from "@/app/lib/assessment/inputJoin";
+import { loadSubmissionInputs } from "@/app/lib/assessment/submissionInputs";
+import {
   RESULTS_POLL_INTERVAL_MS,
   SPREADSHEET_PREVIEW_ROW_LIMIT,
   TERMINAL_ASSESSMENT_STATUSES,
 } from "@/app/lib/assessment/constants";
 import type {
+  AssessmentConfigRef,
   AssessmentStatusValue,
   BatchCounts,
   ResultsTarget,
@@ -44,13 +57,16 @@ export function useRunResults(
   const toast = useToast();
   const data = useAssessmentData();
   const [results, setResults] = useState<Record<string, unknown>[]>([]);
-  const [table, setTable] = useState<{ headers: string[]; rows: string[][] }>({
-    headers: [],
-    rows: [],
-  });
   const [status, setStatus] = useState<AssessmentStatusValue | null>(null);
   const [counts, setCounts] = useState<BatchCounts | null>(null);
   const [totalItems, setTotalItems] = useState(0);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [config, setConfig] = useState<AssessmentConfigRef | null>(null);
+  const [inputs, setInputs] = useState<SubmissionInputs | null>(null);
+  const [outputSchema, setOutputSchema] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const warnedRef = useRef(false);
@@ -72,11 +88,8 @@ export function useRunResults(
       setStatus(payload.status);
       setCounts(payload.counts);
       setTotalItems(payload.total_items);
-      setTable(
-        jsonResultsToTableData(payload.rows, {
-          rowLimit: SPREADSHEET_PREVIEW_ROW_LIMIT,
-        }),
-      );
+      setSubmissionId(payload.submission_id);
+      setConfig(payload.config);
       setError(null);
 
       if (
@@ -112,6 +125,68 @@ export function useRunResults(
     };
   }, [assessmentId, load]);
 
+  // The source rows, once per submission. Immutable, so polling never refetches.
+  useEffect(() => {
+    if (!submissionId) return;
+    let cancelled = false;
+
+    console.warn("[join] fetching inputs", { submissionId, totalItems });
+    void loadSubmissionInputs(data, submissionId, totalItems)
+      .then((loaded) => {
+        console.warn("[join] inputs loaded", {
+          headers: loaded.headers,
+          records: loaded.records.length,
+        });
+        if (!cancelled && loaded.records.length > 0) setInputs(loaded);
+      })
+      .catch((err) => {
+        console.warn("[join] inputs failed", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data, submissionId, totalItems]);
+
+  // The output schema fixes column order, so it follows the config, not the rows.
+  useEffect(() => {
+    if (!config?.id) return;
+    let cancelled = false;
+
+    void data
+      .getAssessorVersion(config.id, config.version)
+      .then((version) => {
+        if (!cancelled) setOutputSchema(version.output_schema ?? null);
+      })
+      .catch(() => {
+        // Without a schema the columns keep their discovered order.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config?.id, config?.version, data]);
+
+  const joined = useMemo(() => {
+    const merged = inputs ? mergeSubmissionInputs(results, inputs) : results;
+    console.warn("[join] merge", {
+      hasInputs: Boolean(inputs),
+      resultKeys: Object.keys(results[0] ?? {}),
+      rowIndexes: results.slice(0, 3).map((r) => r.row_index),
+      mergedKeys: Object.keys(merged[0] ?? {}),
+    });
+    return merged;
+  }, [inputs, results]);
+
+  const table = useMemo(
+    () =>
+      jsonResultsToTableData(joined, {
+        rowLimit: SPREADSHEET_PREVIEW_ROW_LIMIT,
+        columnOrder: buildColumnOrder(inputs?.headers ?? [], outputSchema),
+      }),
+    [inputs, joined, outputSchema],
+  );
+
   const isPolling =
     status !== null &&
     !TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));
@@ -123,7 +198,7 @@ export function useRunResults(
   }, [isPolling, load]);
 
   return {
-    results,
+    results: joined,
     headers: table.headers,
     rows: table.rows,
     status,

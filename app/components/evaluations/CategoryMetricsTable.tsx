@@ -1,6 +1,7 @@
 "use client";
 
 import { CategoryMetric } from "@/app/lib/types/evaluation";
+import VerdictBadge from "./VerdictBadge";
 
 interface CategoryMetricsTableProps {
   categoryMetrics: CategoryMetric[];
@@ -60,7 +61,13 @@ export default function CategoryMetricsTable({
                   {formatScore(row.avg_cosine)}
                 </td>
                 <td className="px-5 py-2.5 text-sm text-right tabular-nums text-text-primary">
-                  {formatScore(row.avg_correctness)}
+                  <span className="inline-flex items-center gap-1.5">
+                    {formatScore(row.avg_correctness)}
+                    <VerdictBadge
+                      value={row.avg_correctness}
+                      dataType="NUMERIC"
+                    />
+                  </span>
                 </td>
               </tr>
             ))}

@@ -80,5 +80,7 @@ export async function getRunResults(
     rows: flattenBatchDetail(detail),
     total_items: detail.total_items ?? 0,
     counts: detail.counts ?? null,
+    submission_id: detail.submission_id ?? null,
+    config: detail.config ?? null,
   };
 }

@@ -303,9 +303,21 @@ export function rowsToCsv(matrix: string[][]): string {
   return matrix.map((row) => row.map(escape).join(",")).join("\r\n");
 }
 
+function orderKeys(keys: string[], order?: string[]): string[] {
+  if (!order || order.length === 0) return keys;
+  const present = new Set(keys);
+  const ranked = order.filter((key) => present.has(key));
+  const seen = new Set(ranked);
+  return [...ranked, ...keys.filter((key) => !seen.has(key))];
+}
+
 export function jsonResultsToTableData(
   results: Record<string, unknown>[],
-  opts?: { skipFields?: Set<string>; rowLimit?: number },
+  opts?: {
+    skipFields?: Set<string>;
+    rowLimit?: number;
+    columnOrder?: string[];
+  },
 ): { headers: string[]; rows: string[][] } {
   if (results.length === 0) return { headers: [], rows: [] };
 
@@ -332,7 +344,10 @@ export function jsonResultsToTableData(
       "experiment_name",
     ]);
 
-  const allKeys = Array.from(new Set(results.flatMap((r) => Object.keys(r))));
+  const allKeys = orderKeys(
+    Array.from(new Set(results.flatMap((r) => Object.keys(r)))),
+    opts?.columnOrder,
+  );
   const displayKeys = allKeys.filter((k) => !skipFields.has(k));
 
   const nonEmptyKeys = displayKeys.filter((key) =>

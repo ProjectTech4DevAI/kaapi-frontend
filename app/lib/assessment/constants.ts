@@ -49,10 +49,9 @@ export const SPREADSHEET_PREVIEW_ROW_LIMIT = 5000;
 
 export const MAX_DATASET_FILE_BYTES = 5 * 1024 * 1024;
 export const DATASET_SAMPLE_ROW_LIMIT = 10;
-/** Results join the whole submission back in, not a sample of it. The backend
- * rejects an oversized `limit_rows`, so this is only the fallback for when the
- * run's own row count is unknown. */
-export const SUBMISSION_INPUT_ROW_LIMIT = 1000;
+/** The dataset endpoint's `limit_rows` is capped at 100 server-side and 422s
+ * above it, so a run with more rows than this joins none of its source columns. */
+export const SUBMISSION_INPUT_ROW_LIMIT = 100;
 
 export const ACTIVE_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "pending",

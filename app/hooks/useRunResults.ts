@@ -130,17 +130,12 @@ export function useRunResults(
     if (!submissionId) return;
     let cancelled = false;
 
-    console.warn("[join] fetching inputs", { submissionId, totalItems });
     void loadSubmissionInputs(data, submissionId, totalItems)
       .then((loaded) => {
-        console.warn("[join] inputs loaded", {
-          headers: loaded.headers,
-          records: loaded.records.length,
-        });
         if (!cancelled && loaded.records.length > 0) setInputs(loaded);
       })
-      .catch((err) => {
-        console.warn("[join] inputs failed", err);
+      .catch(() => {
+        // Source columns are additive; without them the results still stand.
       });
 
     return () => {
@@ -167,16 +162,10 @@ export function useRunResults(
     };
   }, [config?.id, config?.version, data]);
 
-  const joined = useMemo(() => {
-    const merged = inputs ? mergeSubmissionInputs(results, inputs) : results;
-    console.warn("[join] merge", {
-      hasInputs: Boolean(inputs),
-      resultKeys: Object.keys(results[0] ?? {}),
-      rowIndexes: results.slice(0, 3).map((r) => r.row_index),
-      mergedKeys: Object.keys(merged[0] ?? {}),
-    });
-    return merged;
-  }, [inputs, results]);
+  const joined = useMemo(
+    () => (inputs ? mergeSubmissionInputs(results, inputs) : results),
+    [inputs, results],
+  );
 
   const table = useMemo(
     () =>

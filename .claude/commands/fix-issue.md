@@ -11,11 +11,19 @@ Fix issue #$1 in this repository.
 2. Find the relevant files. Use Glob and Grep, read before editing.
 3. Create a branch off main: `git checkout -b agent/ui-fix-$1 main`
 4. Implement the fix.
-   - Use existing design tokens and utility classes, never hardcoded
-     hex colours or pixel values.
-   - Touch only UI/styling files. Do not change business logic,
-     API calls, or auth.
+   - Any part of the app is in scope: UI, business logic, API routes,
+     data fetching, auth. Every PR is reviewed by a human before merge,
+     so fix what the issue actually asks for instead of narrowing it.
+   - Follow the conventions in CLAUDE.md: reuse existing components,
+     icons, hooks, types and utilities; use existing design tokens and
+     utility classes, never hardcoded hex colours or pixel values.
    - Keep the change as small as the issue requires.
+   - You cannot reach the backend or any network from this run. If the
+     issue names an endpoint, payload or contract, implement it as the
+     issue describes, mirror the shape of the existing code you are
+     replacing, and list the assumption in the PR body under
+     `## Assumptions` for the reviewer to confirm. Do not stop just
+     because you cannot verify a backend contract.
 5. Verify: `npm run lint` and `npm run build` must both pass.
    Fix anything you broke before continuing.
 6. Commit and push:
@@ -29,9 +37,14 @@ Fix issue #$1 in this repository.
 
 This runs in GitHub Actions. Nobody will answer questions.
 
-If the issue is too ambiguous to fix safely, do NOT change code.
-Instead: comment on the issue explaining what's unclear, add the
-`agent-needs-human` label, and stop.
+Missing context is not a reason to stop. Pick the most reasonable
+reading of the issue, implement it, and record what you assumed in the
+PR body — the reviewer corrects it there.
+
+Only bail out when the issue does not describe an actionable change at
+all (e.g. it contradicts itself, or the files it refers to do not
+exist). In that case: comment on the issue explaining what's blocking
+you, add the `agent-needs-human` label, and stop.
 
 ## Done means
 

@@ -45,6 +45,15 @@ function rowIndexOffset(rows: Record<string, unknown>[]): number {
   return Number.isFinite(lowest) ? Math.max(0, lowest) : 0;
 }
 
+// A source column can already be called `assessment_x`, so the prefixed name
+// is not automatically free. Number it until it is, rather than overwrite it.
+function freeKey(base: string, taken: Record<string, unknown>): string {
+  if (!(base in taken)) return base;
+  let suffix = 2;
+  while (`${base}_${suffix}` in taken) suffix += 1;
+  return `${base}_${suffix}`;
+}
+
 export function mergeSubmissionInputs(
   rows: Record<string, unknown>[],
   inputs: SubmissionInputs,
@@ -64,7 +73,7 @@ export function mergeSubmissionInputs(
         continue;
       }
       if (String(merged[key]) === String(value ?? "")) continue;
-      merged[`${ASSESSMENT_OUTPUT_KEY_PREFIX}${key}`] = value;
+      merged[freeKey(`${ASSESSMENT_OUTPUT_KEY_PREFIX}${key}`, merged)] = value;
     }
     return merged;
   });

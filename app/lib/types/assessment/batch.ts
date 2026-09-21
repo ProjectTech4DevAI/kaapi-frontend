@@ -85,4 +85,6 @@ export interface AssessmentResultsPayload {
   rows: Record<string, unknown>[];
   total_items: number;
   counts: BatchCounts | null;
+  submission_id: string | null;
+  config: AssessmentConfigRef | null;
 }

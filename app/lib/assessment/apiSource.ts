@@ -11,8 +11,8 @@ export function createApiAssessmentSource(
 ): AssessmentDataSource {
   return {
     listSubmissions: () => submissions.listSubmissions(apiKey),
-    getSubmissionPreview: (submissionId) =>
-      submissions.getSubmissionPreview(apiKey, submissionId),
+    getSubmissionPreview: (submissionId, limitRows) =>
+      submissions.getSubmissionPreview(apiKey, submissionId, limitRows),
     createSubmission: (input) => submissions.createSubmission(apiKey, input),
     deleteSubmission: (submissionId) =>
       submissions.deleteSubmission(apiKey, submissionId),

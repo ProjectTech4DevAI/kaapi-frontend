@@ -1,14 +1,3 @@
-/**
- * Caches a submission's rows so opening a run's results is snappy.
- *
- * A submission file never changes — re-uploading mints a new id — so entries
- * need no TTL and no invalidation. Memory serves the same tab; IndexedDB
- * survives a reload. Deliberately not localStorage: a thousand rows of source
- * text would evict the spreadsheet snapshots that already compete for the ~5MB
- * origin budget.
- *
- * Every path degrades to a miss, so a blocked or absent store only costs a refetch.
- */
 import type { SubmissionInputs } from "@/app/lib/assessment/inputJoin";
 
 const DB_NAME = "kaapi_assessment";

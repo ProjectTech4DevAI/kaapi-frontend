@@ -1,15 +1,3 @@
-/**
- * Joins a run's original submission rows onto its flattened results, and fixes
- * the column order the grid renders.
- *
- * Two problems this solves. The run payload only echoes the columns the config
- * mapped, so unmapped source columns never reach the results sheet. And the
- * column order is a first-seen union across rows, so it shifts whenever the
- * model emits output keys in a different order or an early row is a pre-filter
- * placeholder carrying no assessment keys at all.
- *
- * No React, no network.
- */
 import {
   ASSESSMENT_OUTPUT_KEY_PREFIX,
   MAX_OUTPUT_FLATTEN_DEPTH,
@@ -57,11 +45,6 @@ function rowIndexOffset(rows: Record<string, unknown>[]): number {
   return Number.isFinite(lowest) ? Math.max(0, lowest) : 0;
 }
 
-/**
- * Original columns first, then everything the run produced. A result key that
- * collides with a source column keeps both, the result copy prefixed — the same
- * convention `flattenBatchRow` already uses for output/input collisions.
- */
 export function mergeSubmissionInputs(
   rows: Record<string, unknown>[],
   inputs: SubmissionInputs,

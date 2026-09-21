@@ -303,12 +303,6 @@ export function rowsToCsv(matrix: string[][]): string {
   return matrix.map((row) => row.map(escape).join(",")).join("\r\n");
 }
 
-/**
- * Puts the known columns in the declared order and leaves the rest where they
- * were found. Without this the header order is a first-seen union across rows,
- * so it shifts whenever the model reorders its output keys or an early row is a
- * pre-filter placeholder with no assessment keys.
- */
 function orderKeys(keys: string[], order?: string[]): string[] {
   if (!order || order.length === 0) return keys;
   const present = new Set(keys);

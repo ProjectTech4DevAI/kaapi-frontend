@@ -1,18 +1,5 @@
 "use client";
 
-/**
- * One run's results, through the data source: the raw rows (for the detail
- * modal) plus the table projection the grids render.
- *
- * Polls while the run is in flight and stops at a terminal status, so an open
- * results tab fills in as stages land.
- *
- * The run payload only echoes the columns the config mapped, so the submission's
- * own rows are fetched alongside and joined on `row_index`. That fetch is
- * deliberately off the critical path: the grid paints on results alone and the
- * source columns appear when they land, so a slow or failed submission read
- * costs nothing but the extra columns.
- */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
@@ -39,6 +26,12 @@ import type {
   ResultsTarget,
 } from "@/app/lib/types/assessment";
 
+/** A fetched extra plus the id it was fetched for, so a stale one is spottable. */
+interface OwnedBy<T> {
+  owner: string;
+  value: T;
+}
+
 export interface UseRunResultsResult {
   results: Record<string, unknown>[];
   headers: string[];
@@ -62,27 +55,31 @@ export function useRunResults(
   const [totalItems, setTotalItems] = useState(0);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [config, setConfig] = useState<AssessmentConfigRef | null>(null);
-  const [inputs, setInputs] = useState<SubmissionInputs | null>(null);
-  const [outputSchema, setOutputSchema] = useState<Record<
+  const [inputs, setInputs] = useState<OwnedBy<SubmissionInputs> | null>(null);
+  const [outputSchema, setOutputSchema] = useState<OwnedBy<Record<
     string,
     unknown
-  > | null>(null);
+  > | null> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const warnedRef = useRef(false);
-  const cancelledRef = useRef(false);
+  const targetRef = useRef<string | null>(null);
 
   const assessmentId = target?.assessment_id ?? null;
   const method = target?.method ?? null;
+  const targetKey = assessmentId && method ? `${assessmentId}:${method}` : null;
+  const configKey = config ? `${config.id}@${config.version}` : null;
 
   const load = useCallback(async () => {
     if (!assessmentId || !method) return;
+    const startedFor = `${assessmentId}:${method}`;
+    const isStale = () => targetRef.current !== startedFor;
     try {
       const payload = await data.getRunResults({
         assessment_id: assessmentId,
         method,
       });
-      if (cancelledRef.current) return;
+      if (isStale()) return;
 
       setResults(payload.rows);
       setStatus(payload.status);
@@ -102,28 +99,35 @@ export function useRunResults(
         );
       }
     } catch (caught) {
-      if (!cancelledRef.current) {
-        setError(getAsyncErrorMessage("load results", caught));
-      }
+      if (!isStale()) setError(getAsyncErrorMessage("load results", caught));
     } finally {
-      if (!cancelledRef.current) setIsLoading(false);
+      if (!isStale()) setIsLoading(false);
     }
   }, [assessmentId, data, method, toast]);
 
   useEffect(() => {
-    cancelledRef.current = false;
-    if (!assessmentId) {
+    if (!assessmentId || !targetKey) {
       setError("Invalid assessment id.");
       setIsLoading(false);
       return;
     }
 
+    targetRef.current = targetKey;
+    // The previous run's rows are not this run's; show nothing until it loads.
+    setResults([]);
+    setStatus(null);
+    setCounts(null);
+    setTotalItems(0);
+    setSubmissionId(null);
+    setConfig(null);
+    warnedRef.current = false;
     setIsLoading(true);
     void load();
+
     return () => {
-      cancelledRef.current = true;
+      targetRef.current = null;
     };
-  }, [assessmentId, load]);
+  }, [assessmentId, load, targetKey]);
 
   // The source rows, once per submission. Immutable, so polling never refetches.
   useEffect(() => {
@@ -132,7 +136,9 @@ export function useRunResults(
 
     void loadSubmissionInputs(data, submissionId, totalItems)
       .then((loaded) => {
-        if (!cancelled && loaded.records.length > 0) setInputs(loaded);
+        if (!cancelled && loaded.records.length > 0) {
+          setInputs({ owner: submissionId, value: loaded });
+        }
       })
       .catch(() => {
         // Source columns are additive; without them the results still stand.
@@ -145,13 +151,15 @@ export function useRunResults(
 
   // The output schema fixes column order, so it follows the config, not the rows.
   useEffect(() => {
-    if (!config?.id) return;
+    if (!config?.id || !configKey) return;
     let cancelled = false;
 
     void data
       .getAssessorVersion(config.id, config.version)
       .then((version) => {
-        if (!cancelled) setOutputSchema(version.output_schema ?? null);
+        if (!cancelled) {
+          setOutputSchema({ owner: configKey, value: version.output_schema });
+        }
       })
       .catch(() => {
         // Without a schema the columns keep their discovered order.
@@ -160,20 +168,28 @@ export function useRunResults(
     return () => {
       cancelled = true;
     };
-  }, [config?.id, config?.version, data]);
+  }, [config?.id, config?.version, configKey, data]);
+
+  // A fetch that outlived its run must not colour the next one.
+  const ownInputs =
+    inputs && inputs.owner === submissionId ? inputs.value : null;
+  const ownSchema =
+    outputSchema && outputSchema.owner === configKey
+      ? outputSchema.value
+      : null;
 
   const joined = useMemo(
-    () => (inputs ? mergeSubmissionInputs(results, inputs) : results),
-    [inputs, results],
+    () => (ownInputs ? mergeSubmissionInputs(results, ownInputs) : results),
+    [ownInputs, results],
   );
 
   const table = useMemo(
     () =>
       jsonResultsToTableData(joined, {
         rowLimit: SPREADSHEET_PREVIEW_ROW_LIMIT,
-        columnOrder: buildColumnOrder(inputs?.headers ?? [], outputSchema),
+        columnOrder: buildColumnOrder(ownInputs?.headers ?? [], ownSchema),
       }),
-    [inputs, joined, outputSchema],
+    [joined, ownInputs, ownSchema],
   );
 
   const isPolling =

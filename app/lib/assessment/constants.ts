@@ -49,9 +49,6 @@ export const SPREADSHEET_PREVIEW_ROW_LIMIT = 5000;
 
 export const MAX_DATASET_FILE_BYTES = 5 * 1024 * 1024;
 export const DATASET_SAMPLE_ROW_LIMIT = 10;
-/** The dataset endpoint's `limit_rows` is capped at 100 server-side and 422s
- * above it, so a run with more rows than this joins none of its source columns. */
-export const SUBMISSION_INPUT_ROW_LIMIT = 100;
 
 export const ACTIVE_ASSESSMENT_STATUSES: ReadonlySet<string> = new Set([
   "pending",

@@ -5,7 +5,7 @@ import type {
   ScoreObject,
 } from "@/app/lib/types/evaluation";
 import { normalizeToIndividualScores } from "@/app/lib/utils/evaluation";
-import { sanitizeCSVCell } from "@/app/lib/utils";
+import { sanitizeCSVCell, getScoreNote } from "@/app/lib/utils";
 
 const downloadCSV = (csvContent: string, filename: string) => {
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -36,7 +36,7 @@ export const exportGroupedCSV = (
   for (let i = 1; i <= maxAnswers; i++) {
     csvContent += `,LLM Answer ${i},Trace ID ${i}`;
     scoreNames.forEach((name) => {
-      csvContent += `,${name} (${i}),${sanitizeCSVCell(`${name} (${i}) Comment`)}`;
+      csvContent += `,${name} (${i}),${sanitizeCSVCell(`${name} (${i}) Comment/Reasoning`)}`;
     });
   }
   csvContent += "\n";
@@ -54,8 +54,9 @@ export const exportGroupedCSV = (
       row.push(group.trace_ids[i] || "");
       scoreNames.forEach((name) => {
         const score = group.scores[i]?.find((s) => s.name === name);
+        const note = getScoreNote(score);
         row.push(score ? String(score.value) : "");
-        row.push(score?.comment ? sanitizeCSVCell(score.comment, true) : "");
+        row.push(note ? sanitizeCSVCell(note, true) : "");
       });
     }
     csvContent += row.join(",") + "\n";
@@ -89,7 +90,8 @@ export const exportRowCSV = (
   if (hasAnyCategory) csvContent += "Category,";
   csvContent += "Question,Answer,Ground Truth,";
   csvContent +=
-    scoreNames.map((name) => `${name},${name} (comment)`).join(",") + "\n";
+    scoreNames.map((name) => `${name},${name} (comment/reasoning)`).join(",") +
+    "\n";
 
   let rowCount = 0;
   individual_scores.forEach((item, index) => {
@@ -108,9 +110,10 @@ export const exportRowCSV = (
       `"${(item.metadata?.ground_truth || "").replace(/"/g, '""').replace(/\n/g, " ")}"`,
       ...scoreNames.flatMap((name) => {
         const score = item.trace_scores?.find((s) => s.name === name);
+        const note = getScoreNote(score);
         return [
           score ? score.value : "N/A",
-          score?.comment ? sanitizeCSVCell(score.comment, true) : "",
+          note ? sanitizeCSVCell(note, true) : "",
         ];
       }),
     ].join(",");

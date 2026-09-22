@@ -190,45 +190,64 @@ export const sanitizeCSVCell = (
   return `"${sanitized}"`;
 };
 
-export const formatScoreValue = (score: TraceScore | undefined) => {
-  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
+// v2 judge metrics score 0-5 (integers) instead of the legacy 0-1 cosine/correctness scale.
+const FIVE_POINT_SCORE_NAMES = new Set([
+  "adherence to ground truth",
+  "adherence to prompt",
+  "adherence to knowledge base",
+]);
 
-  if (score.data_type === "CATEGORICAL") {
-    const catValue = String(score.value);
-    let color = "#171717";
-    let bg = "#fafafa";
+const isFivePointScore = (name?: string): boolean =>
+  !!name && FIVE_POINT_SCORE_NAMES.has(name.toLowerCase());
 
-    if (catValue === "CORRECT") {
-      color = "#15803d";
-      bg = "#dcfce7";
-    } else if (catValue === "PARTIAL") {
-      color = "#92400e";
-      bg = "#fef3c7";
-    } else if (catValue === "INCORRECT") {
-      color = "#dc2626";
-      bg = "#fee2e2";
-    }
-
-    return { value: catValue, color, bg };
-  }
-
-  const numValue = Number(score.value);
-  const formattedValue = numValue.toFixed(2);
+const formatCategoricalScore = (value: number | string) => {
+  const catValue = String(value);
   let color = "#171717";
-  let bg = "transparent";
+  let bg = "#fafafa";
 
-  if (numValue >= 0.7) {
+  if (catValue === "CORRECT") {
     color = "#15803d";
     bg = "#dcfce7";
-  } else if (numValue >= 0.5) {
+  } else if (catValue === "PARTIAL") {
     color = "#92400e";
     bg = "#fef3c7";
-  } else {
+  } else if (catValue === "INCORRECT") {
     color = "#dc2626";
     bg = "#fee2e2";
   }
 
-  return { value: formattedValue, color, bg };
+  return { value: catValue, color, bg };
+};
+
+// Traffic light thresholds for v2 judge metrics: 0-1 needs improvement, 2-3 could improve, 4-5 good.
+const formatFivePointScore = (numValue: number) => {
+  if (numValue >= 4)
+    return { value: String(numValue), color: "#15803d", bg: "#dcfce7" };
+  if (numValue >= 2)
+    return { value: String(numValue), color: "#92400e", bg: "#fef3c7" };
+  return { value: String(numValue), color: "#dc2626", bg: "#fee2e2" };
+};
+
+// Legacy thresholds for cosine similarity / correctness on a 0-1 scale.
+const formatUnitScaleScore = (numValue: number) => {
+  const value = numValue.toFixed(2);
+  if (numValue >= 0.7) return { value, color: "#15803d", bg: "#dcfce7" };
+  if (numValue >= 0.5) return { value, color: "#92400e", bg: "#fef3c7" };
+  return { value, color: "#dc2626", bg: "#fee2e2" };
+};
+
+export const formatScoreValue = (score: TraceScore | undefined) => {
+  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
+
+  if (score.data_type === "CATEGORICAL") {
+    return formatCategoricalScore(score.value);
+  }
+
+  const numValue = Number(score.value);
+
+  return isFivePointScore(score.name)
+    ? formatFivePointScore(numValue)
+    : formatUnitScaleScore(numValue);
 };
 
 export const getScoreByName = (
@@ -238,6 +257,14 @@ export const getScoreByName = (
   if (!scores || !Array.isArray(scores)) return undefined;
   return scores.find((s) => s?.name === name);
 };
+
+/**
+ * Returns the judge's explanation for a score, preferring the v2 `reasoning`
+ * field over the legacy `comment` field.
+ */
+export const getScoreNote = (
+  score: TraceScore | undefined,
+): string | undefined => score?.reasoning || score?.comment;
 
 /**
  * Formats a USD cost value for display

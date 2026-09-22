@@ -24,6 +24,8 @@ function iteratePromptSyncError(code: string): string {
       return "Source config is no longer available for this evaluation";
     case "traces_not_available":
       return "Evaluation traces aren't available yet — try Resync first";
+    case "not_a_judge_run":
+      return "Prompt iteration requires a judged evaluation run";
     case "invalid_callback_url":
       return "Frontend callback URL is invalid. Set NEXT_PUBLIC_APP_URL to a public HTTPS host.";
     case "prompt_improvement_enqueue_failed":

@@ -47,7 +47,7 @@ export async function POST(
 
     const { status, data } = await apiClient(
       request,
-      `/api/v1/evaluations/${id}/improve-prompt`,
+      `/api/v2/evaluations/${id}/improve-prompt`,
       {
         method: "POST",
         body: JSON.stringify(payload),

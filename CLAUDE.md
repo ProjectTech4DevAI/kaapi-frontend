@@ -2,6 +2,37 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Claude Code Tooling
+
+This repo layers two complementary things; keep them separate and use both.
+
+1. **`superpowers` plugin — the _methodology_ (generic, repo-agnostic).** How work gets done: brainstorming, writing/executing plans, TDD, git worktrees, subagent-driven development, requesting/receiving code review, finishing a branch. It's wired into `.claude/settings.json` (`enabledPlugins`) from the auto-registered `claude-plugins-official` marketplace. First time, trust the repo folder and accept the install prompt, or run:
+
+   ```bash
+   /plugin install superpowers@claude-plugins-official
+   ```
+
+   Then restart Claude Code (its SessionStart hook only wires up on a fresh session). Skills are namespaced (e.g. `/superpowers:brainstorming`). Reach for these for _process_.
+
+2. **`.claude/rules/*` — the kaapi-frontend _conventions_ (project-specific).** What the code must look like in **this** repo: the BFF/`apiClient` proxy pattern, Tailwind design tokens with no `cn()`, hand-authored icons in `app/components/icons/`, the 500-LOC gate, App Router role gating, types/constants placement. These are **path-scoped** — each `rules/*.md` lists `paths:` and auto-loads only when you touch matching files. Superpowers does **not** know any of this; the rules are the source of truth for kaapi style. Don't duplicate them into `superpowers`.
+
+   | Rule file          | Applies when editing                   |
+   | ------------------ | -------------------------------------- |
+   | `code-quality.md`  | any `*.ts` / `*.tsx`                   |
+   | `components.md`    | `app/components/**`, route `*.tsx`     |
+   | `hooks.md`         | `app/hooks/**`                         |
+   | `styling.md`       | `app/**/*.tsx`, `globals.css`          |
+   | `data-fetching.md` | `app/api/**`, `apiClient.ts`, fetchers |
+   | `utils.md`         | `app/lib/utils.ts`, `app/lib/utils/**` |
+
+3. **Project commands & skills (`.claude/commands/`, `.claude/skills/`) — thin kaapi-specific wrappers.** They intentionally defer generic process to `superpowers` and cover only repo-specific contracts:
+   - `/new-feature` (skill) — the kaapi authoring contract (reuse-first scan, placement, in-style, within-limits). Planning/branching/TDD → defer to `superpowers`.
+   - `/pr-review` — kaapi convention checklist. Generic correctness/perf/a11y/security review → `superpowers` code-review or built-in `/code-review`.
+
+   Verification (lint + production build), git workflow, and issue/PR creation are handled by `npm run lint && npm run build` and the `superpowers` workflow skills — there are no project-specific wrappers for those.
+
+**Rule of thumb:** _process_ → superpowers; _kaapi conventions_ → `.claude/rules/*` + the project commands above.
+
 ## Commands
 
 ```bash

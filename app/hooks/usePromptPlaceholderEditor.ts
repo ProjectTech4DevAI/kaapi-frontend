@@ -9,14 +9,13 @@ import {
   useRef,
   useState,
 } from "react";
-import type { SampleRow, ValueSetter } from "@/app/lib/types/assessment";
+import type { ValueSetter } from "@/app/lib/types/assessment";
 
 interface UsePromptPlaceholderEditorParams {
   value: string;
   onChange: ValueSetter<string>;
   previewMode: boolean;
   textColumns: string[];
-  sampleRow: SampleRow;
   enablePlaceholders: boolean;
 }
 
@@ -43,7 +42,6 @@ export function usePromptPlaceholderEditor({
   onChange,
   previewMode,
   textColumns,
-  sampleRow,
   enablePlaceholders,
 }: UsePromptPlaceholderEditorParams): UsePromptPlaceholderEditorResult {
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
@@ -257,20 +255,9 @@ export function usePromptPlaceholderEditor({
     return [...used, ...unused];
   }, [textColumns, usedColumns]);
 
-  const previewText = useMemo(() => {
-    if (!value.trim()) return "";
-    if (!enablePlaceholders) return value;
-
-    let next = value;
-    textColumns.forEach((col) => {
-      const safe = col.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      next = next.replace(
-        new RegExp(`\\{${safe}\\}`, "g"),
-        sampleRow[col] || "",
-      );
-    });
-    return next;
-  }, [enablePlaceholders, sampleRow, textColumns, value]);
+  // No dataset sample data in the dataset-independent flow, so the preview shows
+  // the composed prompt as written (placeholders remain visible).
+  const previewText = useMemo(() => (value.trim() ? value : ""), [value]);
 
   return {
     textareaRef,

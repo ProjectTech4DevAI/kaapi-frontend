@@ -39,7 +39,7 @@ export default function SystemPrompt({
         <InfoTooltip
           text={
             <span>
-              Set the evaluation rules. Example: judge every answer fairly,
+              Set the assessment rules. Example: judge every answer fairly,
               follow the scoring format, and explain the result briefly.
             </span>
           }

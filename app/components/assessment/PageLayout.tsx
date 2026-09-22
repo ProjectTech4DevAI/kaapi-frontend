@@ -1,40 +1,39 @@
 "use client";
 
-// Top-level layout for /assessment: sidebar, tab navigation, and active tab content.
+// Top-level layout for /assessment. Tabs are sidebar sub-items (routes), so the
+// active tab is driven by the URL rather than an in-page tab bar.
+import { usePathname } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
-import { TabNavigation } from "@/app/components/ui";
 import PageHeader from "@/app/components/PageHeader";
 import { useApp } from "@/app/lib/context/AppContext";
 import type { PageLayoutProps } from "@/app/lib/types/assessment";
 import ConfigPanel from "./ConfigPanel";
 import DatasetsTab from "./DatasetsTab";
 import EvaluationsTab from "./EvaluationsTab";
+import ExperimentTab from "./ExperimentTab";
 
 export default function PageLayout({
   activeTab,
-  tabs,
-  onTabSwitch,
   datasetsTabProps,
   configPanelProps,
+  experimentTabProps,
   evaluationsTabProps,
 }: PageLayoutProps) {
   const { sidebarCollapsed } = useApp();
+  const pathname = usePathname();
 
   return (
     <div className="flex h-screen w-full flex-col bg-neutral-50">
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsed={sidebarCollapsed} activeRoute="/assessment" />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          activeRoute={pathname ?? undefined}
+        />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <PageHeader
             title="Assessment"
             subtitle="Multi-modal batch evaluation with prompt templates, attachments, and config comparison"
-          />
-
-          <TabNavigation
-            activeTab={activeTab}
-            tabs={tabs}
-            onTabChange={(tabId) => onTabSwitch(tabId as typeof activeTab)}
           />
 
           {activeTab === "datasets" && (
@@ -50,6 +49,12 @@ export default function PageLayout({
           >
             <ConfigPanel {...configPanelProps} />
           </div>
+
+          {activeTab === "experiment" && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <ExperimentTab {...experimentTabProps} />
+            </div>
+          )}
 
           {activeTab === "results" && (
             <div className="flex-1 overflow-hidden flex flex-col">

@@ -15,6 +15,7 @@ import {
   canRetryStatus,
   formatStatusLabel,
   getResultTone,
+  isFailedStatus,
 } from "@/app/lib/assessment/results";
 import {
   ASSESSMENT_CARD_CLASSES,
@@ -59,7 +60,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
       <div className="flex-1 overflow-auto p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-text-primary">
-            Evaluation Runs
+            Assessment Runs
           </h2>
           <div className="flex items-center gap-2">
             <Select
@@ -90,7 +91,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
             <div className="p-16 text-center">
               <ClipboardIcon className="w-12 h-12 mx-auto mb-3 text-border" />
               <p className="text-sm font-medium mb-1 text-text-primary">
-                No evaluation runs yet
+                No assessment runs yet
               </p>
               <p className="text-xs text-text-secondary">
                 Submit an assessment from the Config tab to get started
@@ -127,8 +128,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                               {formatRelativeTime(run.inserted_at)}
                             </div>
 
-                            {(run.status === "failed" ||
-                              run.status === "completed_with_errors") &&
+                            {isFailedStatus(run.status) &&
                               run.error_message && (
                                 <div className="mt-2 text-xs wrap-break-word overflow-hidden text-status-error-text">
                                   {run.error_message}
@@ -254,7 +254,7 @@ export default function EvaluationsTab({ onForbidden }: EvaluationsTabProps) {
                   No {statusFilter} runs
                 </p>
                 <p className="text-xs text-text-secondary">
-                  No evaluation runs with status &quot;{statusFilter}&quot;
+                  No assessment runs with status &quot;{statusFilter}&quot;
                 </p>
               </div>
             ))}

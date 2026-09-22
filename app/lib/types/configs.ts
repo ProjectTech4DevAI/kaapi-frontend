@@ -90,10 +90,56 @@ export interface ConfigBlob {
   output_guardrails?: GuardrailRef[];
 }
 
+export type AssessmentColumnType = "text" | "image" | "pdf";
+
+export interface AssessmentInputSchemaColumn {
+  type: AssessmentColumnType;
+  format?: "url";
+  // Whether the column must be present in every submission row (default false).
+  strict?: boolean;
+}
+
+export interface AssessmentParams {
+  model: string;
+  instructions: string;
+  input_schema: Record<string, AssessmentInputSchemaColumn>;
+  json_output_schema?: object | null;
+  [key: string]: unknown;
+}
+
+export interface AssessmentModelBlock {
+  provider: ProviderType;
+  type: "text";
+  params: AssessmentParams;
+}
+
+export interface AssessmentPreFilterParams {
+  model?: string;
+  instructions: string;
+  [key: string]: unknown;
+}
+
+export interface AssessmentPreFilter {
+  provider: ProviderType;
+  params: AssessmentPreFilterParams;
+  stop_on_fail: boolean;
+  knowledge_base_id?: string;
+}
+
+export interface AssessmentPreFilters {
+  topic_relevance?: AssessmentPreFilter;
+  duplicate_detection?: AssessmentPreFilter;
+}
+
+export interface AssessmentConfigBlob {
+  pre_filters?: AssessmentPreFilters;
+  assessment: AssessmentModelBlock;
+}
+
 export interface ConfigCreate {
   name: string;
   description?: string | null;
-  config_blob: ConfigBlob;
+  config_blob: ConfigBlob | AssessmentConfigBlob;
   commit_message?: string | null;
   tag?: ConfigTag | null;
 }
@@ -105,7 +151,7 @@ export interface ConfigUpdate {
 }
 
 export interface ConfigVersionCreate {
-  config_blob: ConfigBlob;
+  config_blob: ConfigBlob | AssessmentConfigBlob;
   commit_message?: string | null;
 }
 

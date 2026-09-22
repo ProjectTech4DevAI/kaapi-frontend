@@ -53,7 +53,7 @@ export default function SubmitReview({
             ) : (
               <>
                 <PlayIcon className="h-5 w-5" />
-                Submit Evaluation
+                Submit Assessment
               </>
             )}
           </Button>

@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
+import Button from "@/app/components/ui/Button";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useToast } from "@/app/hooks/useToast";
@@ -461,13 +462,9 @@ export default function ChatPage() {
             subtitle="Ask anything - answers come from your selected configuration"
             actions={
               hasConversation ? (
-                <button
-                  type="button"
-                  onClick={handleNewChat}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium border border-border bg-bg-primary text-text-primary hover:bg-neutral-50 transition-colors cursor-pointer"
-                >
+                <Button onClick={handleNewChat} size="sm">
                   New chat
-                </button>
+                </Button>
               ) : null
             }
           />

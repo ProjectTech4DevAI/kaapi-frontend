@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * Three-stage `@`-mentions for the prompt zones. Stage 1 suggests submission
- * columns (with a "create field" escape hatch); picking one asks its type — Text /
- * Image / PDF — and then whether a row may leave it blank, because those two
- * choices define the input schema. Stage 1 reuses useAtMention for trigger
- * detection, caret placement and insertion; stages 2–3 are this hook's own small
- * state machine, which a token's marker can also open directly at stage 3.
- */
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useAtMention } from "@/app/lib/hooks/useAtMention";
 import {
@@ -27,10 +19,8 @@ import type {
 
 const TYPE_ORDER: PromptFieldType[] = ["text", "image", "pdf"];
 
-/** Grace for the pointer to travel from a token's marker into its dropdown. */
 const HOVER_CLOSE_DELAY_MS = 200;
 
-// Optional first: it is the backend default, so it is what a plain `@Column` means.
 const STRICT_CHOICES: Omit<MentionStrictOption, "isCurrent">[] = [
   { strict: false, label: "Optional", hint: "rows may leave it blank" },
   { strict: true, label: "Required", hint: "a blank row fails the run" },
@@ -45,7 +35,6 @@ function strictIndexOf(
   );
 }
 
-/** Timer for hover-opened boxes: closes once the pointer has left marker and box. */
 function useHoverClose() {
   const openedByHover = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,7 +84,6 @@ export function usePromptMentions({
   const [pendingField, setPendingField] = useState<string | null>(null);
   const [stage, setStage] = useState<MentionStage | null>(null);
   const [optionIndex, setOptionIndex] = useState(0);
-  // Inserting closes stage 1, which clears its caret position — keep it for stages 2–3.
   const [stagePosition, setStagePosition] = useState<{
     top: number;
     left: number;
@@ -160,7 +148,6 @@ export function usePromptMentions({
     mention.close();
   }, [closeStages, mention]);
 
-  /** Stage 1 → insert the token, then ask for its type. */
   const pickColumn = useCallback(
     (option: MentionColumnOption) => {
       setStagePosition(mention.state.pos);
@@ -174,7 +161,6 @@ export function usePromptMentions({
     [fieldTypes, mention, onChange, value],
   );
 
-  /** Stage 2 → record the type, then ask whether a row may leave it blank. */
   const pickType = useCallback(
     (type: PromptFieldType) => {
       if (!pendingField) return;
@@ -185,7 +171,6 @@ export function usePromptMentions({
     [fieldStrict, onFieldType, pendingField],
   );
 
-  /** Stage 3 → record strictness and hand focus back to the textarea. */
   const pickStrict = useCallback(
     (strict: boolean) => {
       if (pendingField) onFieldStrict(pendingField, strict);
@@ -195,7 +180,6 @@ export function usePromptMentions({
     [closeStages, onFieldStrict, pendingField],
   );
 
-  /** From a token's marker: straight to the required/optional question. */
   const openStrictFor = useCallback(
     (
       name: string,
@@ -279,7 +263,6 @@ function handleColumnKeys(
     pick(options[Math.min(mention.state.index, options.length - 1)]);
     return;
   }
-  // Arrow keys and Escape are already handled by the stage-1 engine.
   mention.onKeyDown(event, "", () => {});
 }
 

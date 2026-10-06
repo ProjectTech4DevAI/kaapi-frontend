@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * Loads the assessor version an `edit` / `run` flow is anchored to, plus the
- * submission set it links to — the `edit` flow opens on step 2, so the prompt
- * zones need that set's columns and sample row before step 1 is ever visited.
- */
 import { useCallback, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
@@ -13,21 +8,11 @@ import { nonBlankColumns, toDatasetPreview } from "@/app/lib/utils/assessment";
 import { getAsyncErrorMessage } from "@/app/lib/assessment/results";
 import type {
   AssessmentDataSource,
+  AssessmentDatasetState,
   AssessorVersionDetail,
+  UseAssessorVersionContextResult,
   WizardContext,
 } from "@/app/lib/types/assessment";
-
-export interface UseAssessorVersionContextResult {
-  versionDetail: AssessorVersionDetail | null;
-  isLoading: boolean;
-  load: (
-    context: WizardContext,
-    onLoaded: (detail: AssessorVersionDetail) => void,
-  ) => void;
-  /** Adopt a version we just wrote, without a refetch. */
-  adopt: (detail: AssessorVersionDetail) => void;
-  reset: () => void;
-}
 
 export function useAssessorVersionContext(): UseAssessorVersionContextResult {
   const toast = useToast();
@@ -68,16 +53,8 @@ export function useAssessorVersionContext(): UseAssessorVersionContextResult {
   return { versionDetail, isLoading, load, adopt, reset };
 }
 
-type SetDataset = ReturnType<
-  typeof useAssessmentDatasetStore.getState
->["setDataset"];
-
 const LINKED_RUN_LOOKUP_LIMIT = 5;
 
-/**
- * The config blob stores no submission, so a reopened version takes the one its
- * most recent run used. A version never run leaves step 1 for the user to fill.
- */
 async function linkedSubmissionId(
   data: AssessmentDataSource,
   detail: AssessorVersionDetail,
@@ -95,7 +72,7 @@ async function linkedSubmissionId(
 async function selectLinkedSubmission(
   data: AssessmentDataSource,
   detail: AssessorVersionDetail,
-  setDataset: SetDataset,
+  setDataset: AssessmentDatasetState["setDataset"],
 ): Promise<void> {
   const id = await linkedSubmissionId(data, detail);
   if (!id) return;

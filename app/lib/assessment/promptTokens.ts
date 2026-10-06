@@ -1,8 +1,3 @@
-/**
- * Prompt tokens: the one place that knows `@Column` (text), `<Column>` (attachment)
- * and the legacy `{Column}` form, how they highlight, how they resolve against a
- * sample row, and how they convert to and from the wire payload. No React.
- */
 import type {
   Attachment,
   PromptFieldType,
@@ -31,7 +26,6 @@ export function fieldTypeOf(
   return fieldTypes[name] ?? "text";
 }
 
-/** Text columns stay `@Column`; image/PDF columns read as `<Column>`. */
 export function canonicalToken(name: string, type: PromptFieldType): string {
   return type === "text" ? `@${name}` : `<${name}>`;
 }
@@ -45,7 +39,6 @@ function segmentKind(
   return fieldTypeOf(fieldTypes, name) === "text" ? "text" : "attachment";
 }
 
-/** Splits prompt text into plain runs and tokens, for highlighting and preview. */
 export function splitTokens(
   text: string,
   columns: string[],
@@ -74,7 +67,6 @@ export function splitTokens(
   return segments;
 }
 
-/** Rewrites every reference to `name` into the form its type implies. */
 export function rewriteToken(
   text: string,
   name: string,
@@ -97,10 +89,6 @@ function blockOf(line: string): { type: PreviewBlockType; body: string } {
     : { type: "p", body: line };
 }
 
-/**
- * The preview document: instructions then submission under mirrored headings,
- * with tokens resolved against row 1 of the selected submission set.
- */
 export function buildPreviewBlocks(params: {
   zones: PromptZones;
   columns: string[];
@@ -151,10 +139,6 @@ function resolveSegments(
   });
 }
 
-/**
- * Editor text → wire payload. `prompt_template` keeps the `{Column}` form the
- * backend already accepts; image/PDF columns also travel in `attachments`.
- */
 export function toWireTemplate(
   text: string,
   fieldTypes: Record<string, PromptFieldType>,
@@ -173,7 +157,6 @@ export function toWireTemplate(
   return { template, attachments };
 }
 
-/** Wire payload → editor text, so a saved version reopens as it was authored. */
 export function fromWireTemplate(
   template: string,
   attachments: Attachment[],

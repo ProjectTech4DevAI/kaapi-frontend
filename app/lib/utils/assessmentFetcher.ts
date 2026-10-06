@@ -1,20 +1,8 @@
-// Assessment-scoped config fetchers, model helpers, and save logic.
 import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/configFetchers";
 import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
-import {
-  ASSESSMENT_DEFAULT_CONFIG,
-  ASSESSMENT_MODEL_CONFIGS,
-  GPT4_STYLE_CONFIG,
-} from "@/app/lib/data/assessmentModels";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-import type {
-  ConfigParamDefinition,
-  ConfigSelection,
-  ModelOption,
-  PagedResult,
-  VersionListState,
-} from "@/app/lib/types/assessment";
+import type { ConfigSelection, PagedResult } from "@/app/lib/types/assessment";
 import type {
   CompletionParams,
   ConfigBlob,
@@ -27,63 +15,7 @@ import type {
   ConfigVersionPublic,
   ConfigVersionResponse,
   ConfigWithVersionResponse,
-  SavedConfig,
 } from "@/app/lib/types/configs";
-
-export function getModelsByProvider(provider: string): ModelOption[] {
-  return ASSESSMENT_MODEL_CONFIGS.filter(
-    (model) => model.provider === provider,
-  ).map(({ model_name }) => ({ value: model_name, label: model_name }));
-}
-
-export function getDefaultModelForProvider(provider: string): string {
-  return (
-    ASSESSMENT_MODEL_CONFIGS.find((model) => model.provider === provider)
-      ?.model_name ?? "gpt-4o-mini"
-  );
-}
-
-export function getModelConfigDefinition(
-  modelName: string,
-): Record<string, ConfigParamDefinition> {
-  return (
-    ASSESSMENT_MODEL_CONFIGS.find((item) => item.model_name === modelName)
-      ?.config ?? GPT4_STYLE_CONFIG
-  );
-}
-
-export function buildDefaultParams(
-  modelName: string,
-): Record<string, number | string> {
-  const definition = getModelConfigDefinition(modelName);
-  return Object.fromEntries(
-    Object.entries(definition).map(([key, value]) => [key, value.default]),
-  );
-}
-
-export function buildInitialAssessmentConfigDraft(): ConfigBlob {
-  return JSON.parse(JSON.stringify(ASSESSMENT_DEFAULT_CONFIG)) as ConfigBlob;
-}
-
-export function buildInitialAssessmentVersionState(): VersionListState {
-  return {
-    items: [],
-    isLoading: false,
-    error: null,
-    hasMore: true,
-    nextSkip: 0,
-  };
-}
-
-export function toConfigSelection(saved: SavedConfig): ConfigSelection {
-  return {
-    config_id: saved.config_id,
-    config_version: saved.version,
-    name: saved.name,
-    provider: saved.provider,
-    model: saved.modelName,
-  };
-}
 
 function buildPageResult<T>(
   items: T[],

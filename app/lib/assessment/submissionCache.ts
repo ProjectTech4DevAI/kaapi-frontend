@@ -1,4 +1,4 @@
-import type { SubmissionInputs } from "@/app/lib/assessment/inputJoin";
+import type { SubmissionInputs } from "@/app/lib/types/assessment";
 
 const DB_NAME = "kaapi_assessment";
 const DB_VERSION = 1;

@@ -1,22 +1,11 @@
-/** Pure step + flow rules for the assessment wizard. No React, no network. */
 import type {
   AssessmentWizardFlow,
   AssessmentWizardStep,
   PromptStepId,
   Step,
+  WizardStepState,
 } from "@/app/lib/types/assessment";
 
-export interface StepState {
-  isActive: boolean;
-  isCompleted: boolean;
-  isClickable: boolean;
-}
-
-/**
- * Which steps each flow opens, and where it starts:
- * `new` walks 1→4 in order, `edit` reworks 1–3 from the pre-filter,
- * `run` lands on the run step with 2–3 open for tweaks.
- */
 const FLOW_OPEN_STEPS: Record<AssessmentWizardFlow, AssessmentWizardStep[]> = {
   new: [1, 2, 3, 4],
   edit: [1, 2, 3],
@@ -41,7 +30,6 @@ export function wizardEntryStep(
   return FLOW_ENTRY_STEP[flow];
 }
 
-/** Steps 2 and 3 are the prompt steps; each carries its own model. */
 export function promptStepFor(step: number): PromptStepId | null {
   if (step === 2) return "prefilter";
   if (step === 3) return "assessment";
@@ -59,7 +47,6 @@ export function isWizardStepAllowed(params: {
   if (!open.includes(step as AssessmentWizardStep)) return false;
   if (flow !== "new") return true;
 
-  // New assessors walk forward: a later step opens once every earlier one is done.
   return (
     step <= currentStep ||
     open
@@ -75,7 +62,7 @@ export function getStepState(params: {
   completedSteps: Set<number>;
   locked: boolean;
   isStepAllowed?: (step: number) => boolean;
-}): StepState {
+}): WizardStepState {
   const { step, steps, currentStep, completedSteps, locked, isStepAllowed } =
     params;
   if (locked) {
@@ -96,7 +83,7 @@ export function getStepState(params: {
   };
 }
 
-export function stepPillClasses(state: StepState): string {
+export function stepPillClasses(state: WizardStepState): string {
   if (state.isActive) {
     return "border-accent-primary! bg-accent-primary! text-white!";
   }

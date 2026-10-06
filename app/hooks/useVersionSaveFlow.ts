@@ -1,14 +1,5 @@
 "use client";
 
-/**
- * The save half of the wizard: whether the draft differs from the version it was
- * loaded from, the Review & save dialog, and what happens after a save.
- *
- * The baseline is derived from the loaded version's own detail rather than from
- * whatever the draft happens to hold at that moment — the draft and the linked
- * submission set arrive in separate renders, and comparing against a
- * half-applied draft would report a phantom diff.
- */
 import { useCallback, useMemo, useState } from "react";
 import { useAssessorSave } from "@/app/hooks/useAssessorSave";
 import {
@@ -19,31 +10,9 @@ import {
 } from "@/app/lib/assessment/draft";
 import type {
   AssessorVersionDetail,
-  WizardContext,
-  WizardDraft,
+  UseVersionSaveFlowParams,
+  UseVersionSaveFlowResult,
 } from "@/app/lib/types/assessment";
-
-interface UseVersionSaveFlowParams {
-  draft: WizardDraft;
-  submissionId: string;
-  submissionColumns: string[];
-  context: WizardContext | null;
-  onSaved: (context: WizardContext, detail: AssessorVersionDetail) => void;
-}
-
-export interface UseVersionSaveFlowResult {
-  isDirty: boolean;
-  canSave: boolean;
-  isSaving: boolean;
-  isReviewOpen: boolean;
-  savedTitle: string | null;
-  openReview: () => void;
-  closeReview: () => void;
-  saveVersion: (name: string, commitMessage: string) => Promise<void>;
-  dismissSaved: () => void;
-  /** Called when a flow starts, so the diff is measured from the right place. */
-  rebaseline: (detail: AssessorVersionDetail | null) => void;
-}
 
 function baselineOf(detail: AssessorVersionDetail | null): string {
   return detail

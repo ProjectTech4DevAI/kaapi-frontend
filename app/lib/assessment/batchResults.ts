@@ -1,11 +1,3 @@
-/**
- * Flattens the nested BATCH result into the wide row the results table and detail
- * modal already read. No React, no network.
- *
- * Kept on this side deliberately: `output.assessment` keys come from the user's own
- * json_output_schema, and the `X_score`/`X_reason` pairing is this UI's convention,
- * not something to freeze into a public API contract.
- */
 import {
   ASSESSMENT_OUTPUT_KEY_PREFIX,
   MAX_OUTPUT_FLATTEN_DEPTH,
@@ -16,16 +8,13 @@ import {
   PREFILTER_DECISION_KEY,
   PREFILTER_REASONING_KEY,
 } from "@/app/lib/assessment/constants";
+import { isPlainObject } from "@/app/lib/utils";
 import type {
   AssessmentDetail,
   BatchItemOutput,
   BatchResultRow,
+  FlatResultRow,
 } from "@/app/lib/types/assessment";
-
-type FlatRow = Record<string, unknown>;
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 const pick = (source: Record<string, unknown>, keys: readonly string[]) =>
   keys.map((key) => source[key]).find((value) => value !== undefined);
@@ -33,9 +22,8 @@ const pick = (source: Record<string, unknown>, keys: readonly string[]) =>
 const asCell = (value: unknown): unknown =>
   Array.isArray(value) || isPlainObject(value) ? JSON.stringify(value) : value;
 
-/** `{score, reason}` under one key becomes the `X_score` / `X_reason` pair. */
 function writeScorePair(
-  target: FlatRow,
+  target: FlatResultRow,
   key: string,
   value: Record<string, unknown>,
 ): boolean {
@@ -51,7 +39,7 @@ function writeScorePair(
 }
 
 function flattenOutput(
-  target: FlatRow,
+  target: FlatResultRow,
   output: Record<string, unknown>,
   taken: Set<string>,
   prefix = "",
@@ -68,7 +56,6 @@ function flattenOutput(
       }
     }
 
-    // An output key colliding with an input column keeps both, prefixed.
     const safeKey = taken.has(key)
       ? `${ASSESSMENT_OUTPUT_KEY_PREFIX}${key}`
       : key;
@@ -76,7 +63,7 @@ function flattenOutput(
   }
 }
 
-function writeAssessment(target: FlatRow, output: BatchItemOutput): void {
+function writeAssessment(target: FlatResultRow, output: BatchItemOutput): void {
   const assessment = output.assessment;
   if (assessment === null || assessment === undefined) return;
 
@@ -87,7 +74,7 @@ function writeAssessment(target: FlatRow, output: BatchItemOutput): void {
   flattenOutput(target, assessment, new Set(Object.keys(target)));
 }
 
-function writePreFilter(target: FlatRow, output: BatchItemOutput): void {
+function writePreFilter(target: FlatResultRow, output: BatchItemOutput): void {
   const verdict = output.pre_filter?.topic_relevance;
   if (!verdict) return;
 
@@ -102,9 +89,8 @@ function rowStatus(row: BatchResultRow): string {
   return row.output.assessment == null ? "processing" : "assessed";
 }
 
-/** One flat record per row: input columns first, then verdicts, then the output. */
-export function flattenBatchRow(row: BatchResultRow): FlatRow {
-  const flat: FlatRow = { ...(row.input ?? {}) };
+export function flattenBatchRow(row: BatchResultRow): FlatResultRow {
+  const flat: FlatResultRow = { ...(row.input ?? {}) };
   writePreFilter(flat, row.output);
   writeAssessment(flat, row.output);
 
@@ -114,6 +100,6 @@ export function flattenBatchRow(row: BatchResultRow): FlatRow {
   return flat;
 }
 
-export function flattenBatchDetail(detail: AssessmentDetail): FlatRow[] {
+export function flattenBatchDetail(detail: AssessmentDetail): FlatResultRow[] {
   return detail.items.map(flattenBatchRow);
 }

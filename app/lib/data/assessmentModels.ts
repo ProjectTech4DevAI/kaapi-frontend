@@ -3,7 +3,7 @@ import type {
   ConfigParamDefinition,
   ModelOption,
 } from "@/app/lib/types/assessment";
-import type { ConfigBlob, ProviderType } from "@/app/lib/types/configs";
+import type { ProviderType } from "@/app/lib/types/configs";
 
 const TEMPERATURE: ConfigParamDefinition = {
   type: "float",
@@ -239,15 +239,3 @@ export function buildDefaultParams(
     Object.entries(definition).map(([key, value]) => [key, value.default]),
   );
 }
-
-export const ASSESSMENT_DEFAULT_CONFIG: ConfigBlob = {
-  completion: {
-    provider: "openai",
-    type: "text",
-    params: {
-      model: "gpt-4o-mini",
-      instructions: "",
-      ...buildDefaultParams("gpt-4o-mini"),
-    },
-  },
-};

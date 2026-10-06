@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Loading side of Assessment Home: assessors, runs, version lists and retry.
- * The runs list polls on one slow cadence; assessors load on user action.
- */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
@@ -18,30 +14,8 @@ import type {
   AssessmentRun,
   AssessorSummary,
   AssessorVersion,
+  UseAssessmentHomeDataResult,
 } from "@/app/lib/types/assessment";
-
-export interface UseAssessmentHomeDataResult {
-  /** The current page of assessors. */
-  assessors: AssessorSummary[];
-  /** Every assessor seen so far, so a run row off the current page keeps its name. */
-  knownAssessors: AssessorSummary[];
-  hasPrevAssessors: boolean;
-  hasNextAssessors: boolean;
-  showPrevAssessors: () => void;
-  showNextAssessors: () => void;
-  assessorSearch: string;
-  setAssessorSearch: (value: string) => void;
-  assessments: AssessmentRun[];
-  versionsByAssessor: Record<string, AssessorVersion[]>;
-  loadVersions: (configId: string) => Promise<AssessorVersion[]>;
-  deleteAssessor: (configId: string) => Promise<void>;
-  deleteAssessorVersion: (configId: string, version: number) => Promise<void>;
-  /** Config id, or `<configId>:v<n>`, while its delete is in flight. */
-  deletingKey: string | null;
-  isLoading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
-}
 
 export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
   const toast = useToast();
@@ -101,7 +75,6 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
     }
   }, [assessorSkip, data, guard, searchTerm]);
 
-  // Only the runs list rides the interval; assessors change on user action.
   const refresh = useCallback(async () => {
     await Promise.all([loadAssessors(), loadAssessments()]);
     if (isMountedRef.current) setIsLoading(false);
@@ -165,7 +138,6 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
     setAssessorSkip(0);
   }, []);
 
-  // The search box hits the API, so let typing settle before asking for a page.
   useEffect(() => {
     const timer = setTimeout(
       () => setSearchTerm(assessorSearch),
@@ -174,7 +146,6 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
     return () => clearTimeout(timer);
   }, [assessorSearch]);
 
-  // Owns the assessors fetch: mount, and every page or search change after it.
   useEffect(() => {
     void loadAssessors();
   }, [loadAssessors]);

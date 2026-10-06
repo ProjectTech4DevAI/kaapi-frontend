@@ -1,23 +1,8 @@
 "use client";
 
-import { Credential, ProviderDef } from "@/app/lib/types/credentials";
+import type { CredentialFormPanelProps } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
 import { Button, Checkbox, Field, Loader } from "@/app/components/ui";
-interface CredentialFormPanelProps {
-  provider: ProviderDef;
-  existingCredential: Credential | null;
-  formValues: Record<string, string>;
-  isActive: boolean;
-  hasChanges: boolean;
-  isLoading: boolean;
-  isSaving: boolean;
-  isDeleting: boolean;
-  onChange: (key: string, value: string) => void;
-  onActiveChange: (active: boolean) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  onDelete: () => void;
-}
 
 export default function CredentialFormPanel({
   provider,

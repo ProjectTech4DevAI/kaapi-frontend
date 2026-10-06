@@ -1,25 +1,17 @@
-/**
- * Pure derivations for the Assessment Home surface: run rows, the runs filter
- * vocabulary, and assessor search. No React, no network.
- */
 import {
   RUN_FILTER_ALL,
   type AssessmentRun,
   type AssessorSummary,
   type HomeRunRow,
   type RunFilterValue,
-} from "@/app/lib/types/assessment";
-import {
-  getStageProgress,
-  isActiveStatus,
   type StageProgress,
-} from "@/app/lib/assessment/results";
+} from "@/app/lib/types/assessment";
+import { getStageProgress, isActiveStatus } from "@/app/lib/assessment/results";
 
 export const assessorFilterValue = (configId: string) => `a:${configId}`;
 export const versionFilterValue = (configId: string, version: number) =>
   `v:${configId}:${version}`;
 
-/** One execution per assessment, so the row reads its config pin off the run. */
 export function buildHomeRunRows(
   assessments: AssessmentRun[],
   assessors: AssessorSummary[],
@@ -29,7 +21,6 @@ export function buildHomeRunRows(
   return assessments.map((assessment) => toRunRow(assessment, byId));
 }
 
-/** A run's rail is its own stages — the API reports what this run actually has. */
 function stagesOf(assessment: AssessmentRun): StageProgress[] {
   const stages = assessment.stages ?? [];
   if (!assessment.stage || stages.length === 0) return [];
@@ -65,11 +56,6 @@ function toRunRow(
   };
 }
 
-/**
- * Version entries come from the runs themselves: an assessor's version list is
- * only fetched when its row is opened, and a version nothing ran under would
- * filter to an empty table anyway.
- */
 export function buildRunFilterOptions(
   assessors: AssessorSummary[],
   assessments: AssessmentRun[],

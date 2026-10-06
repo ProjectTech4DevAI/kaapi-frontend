@@ -8,15 +8,11 @@ import {
   RESULT_SCORE_SUFFIX,
   SCORE_OBJECT_KEYS,
 } from "@/app/lib/assessment/constants";
-import type { SubmissionPreviewRows } from "@/app/lib/types/assessment";
-
-export interface SubmissionInputs {
-  headers: string[];
-  records: Record<string, string>[];
-}
-
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
+import { isPlainObject } from "@/app/lib/utils";
+import type {
+  SubmissionInputs,
+  SubmissionPreviewRows,
+} from "@/app/lib/types/assessment";
 
 export function previewToInputs(
   preview: SubmissionPreviewRows | undefined,
@@ -35,7 +31,6 @@ export function previewToInputs(
   return { headers, records };
 }
 
-/** Results may number rows from 0 or from 1; the lowest index tells us which. */
 function rowIndexOffset(rows: Record<string, unknown>[]): number {
   let lowest = Number.POSITIVE_INFINITY;
   for (const row of rows) {
@@ -70,7 +65,6 @@ export function mergeSubmissionInputs(
   });
 }
 
-/** Column names one schema property flattens to, mirroring `flattenOutput`. */
 function schemaPropertyColumns(
   key: string,
   property: unknown,
@@ -97,7 +91,6 @@ function schemaPropertyColumns(
   );
 }
 
-/** Output columns in the schema's own order, so they stop shuffling per run. */
 export function outputSchemaColumns(
   schema: Record<string, unknown> | null,
 ): string[] {
@@ -108,11 +101,6 @@ export function outputSchemaColumns(
   );
 }
 
-/**
- * The order the sheet reads in: source columns, the pre-filter verdict that
- * explains an empty row, then the model's output as the schema declares it.
- * Anything unaccounted for keeps its discovered order at the end.
- */
 export function buildColumnOrder(
   submissionHeaders: string[],
   outputSchema: Record<string, unknown> | null,

@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * The 4-step assessment wizard: which flow is running, which step is open, and the
- * run it ends with. Step 1 owns submission state (useSubmissionStep); this hook only
- * needs the selected set, which it reads from the assessment store.
- */
 import { useCallback, useMemo, useState } from "react";
 import { useAssessorVersionContext } from "@/app/hooks/useAssessorVersionContext";
 import { useRunNameDraft } from "@/app/hooks/useRunNameDraft";
@@ -21,14 +16,10 @@ import type {
   AssessmentWizardFlow,
   AssessorVersionDetail,
   AssessmentWizardStep,
+  UseAssessmentWizardParams,
   UseAssessmentWizardResult,
   WizardContext,
 } from "@/app/lib/types/assessment";
-
-interface UseAssessmentWizardParams {
-  onExit: () => void;
-  onRunCreated: (context: WizardContext) => void;
-}
 
 export function useAssessmentWizard({
   onExit,
@@ -50,7 +41,6 @@ export function useAssessmentWizard({
   const [context, setContext] = useState<WizardContext | null>(null);
   const { runName, setRunName } = useRunNameDraft(context, step === 4);
 
-  // A saved version becomes the wizard's context, and the flow continues as a run.
   const onSaved = useCallback(
     (next: WizardContext, detail: AssessorVersionDetail) => {
       setContext(next);

@@ -1,7 +1,5 @@
-/** Zone labels, hints and placeholders for the prompt editor steps. */
 import type { PromptZoneCopy, PromptZoneId } from "@/app/lib/types/assessment";
 
-/** Both zones of a step are the same height, so the card reads as one document. */
 export const PREFILTER_ZONE_MIN_HEIGHT = 200;
 export const ASSESSMENT_ZONE_MIN_HEIGHT = 280;
 

@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * What steps 2–3 edit: the two prompt zones per step, each referenced column's
- * type, and the output schema. Loading a saved version fills it from the wire
- * shapes, so an assessor reopens exactly as it was authored.
- */
 import { useCallback, useState } from "react";
 import { rewriteToken } from "@/app/lib/assessment/promptTokens";
 import { draftFromVersion, emptyDraft } from "@/app/lib/assessment/draft";
@@ -41,7 +36,6 @@ export function useWizardDraft(): UseWizardDraftResult {
     [],
   );
 
-  /** A type change rewrites that column's token in every zone. */
   const setFieldType = useCallback((name: string, type: PromptFieldType) => {
     setDraft((current) => ({
       ...current,
@@ -62,10 +56,8 @@ export function useWizardDraft(): UseWizardDraftResult {
     setDraft((current) => ({ ...current, outputSchema }));
   }, []);
 
-  /** Switching model resets its parameters — each model accepts a different set. */
   const setModel = useCallback(
     (step: PromptStepId, provider: ProviderType, model: string) => {
-      // Changing provider passes no model — fall back to that provider's first.
       const next = model || getDefaultModelForProvider(provider);
       setDraft((current) => ({
         ...current,

@@ -1,6 +1,5 @@
 "use client";
 
-/** Loads submission sets and their previews through the data source, caching previews. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
@@ -10,15 +9,8 @@ import { getAsyncErrorMessage } from "@/app/lib/assessment/results";
 import type {
   AssessmentSubmission,
   DatasetPreview,
+  UseSubmissionListResult,
 } from "@/app/lib/types/assessment";
-
-export interface UseSubmissionListResult {
-  submissions: AssessmentSubmission[];
-  isLoading: boolean;
-  reload: () => Promise<void>;
-  loadPreview: (id: string) => Promise<DatasetPreview>;
-  forgetPreview: (id: string) => void;
-}
 
 export function useSubmissionList(): UseSubmissionListResult {
   const toast = useToast();

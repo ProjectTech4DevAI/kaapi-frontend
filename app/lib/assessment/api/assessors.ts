@@ -1,13 +1,8 @@
-/**
- * Assessor fetchers. Assessors are ASSESSMENT-tagged configs, so these ride the
- * existing `/api/configs` routes. Network only, no React.
- */
 import { apiFetch } from "@/app/lib/apiClient";
 import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
 import {
   blobToVersionDetail,
   versionDetailToBlob,
-  type AssessmentBlob,
 } from "@/app/lib/assessment/configBlob";
 import {
   fetchConfigPage,
@@ -15,6 +10,7 @@ import {
   fetchConfigVersionsPage,
 } from "@/app/lib/utils/assessmentFetcher";
 import type {
+  AssessmentBlob,
   AssessorPageQuery,
   AssessorSummary,
   AssessorVersion,
@@ -30,7 +26,6 @@ import type {
 
 const VERSION_PAGE_LIMIT = 100;
 
-/** One page of assessors; `has_more` from the API drives the next/prev chevrons. */
 export async function listAssessors(
   apiKey: string,
   page: AssessorPageQuery = {},
@@ -96,7 +91,6 @@ export async function deleteAssessorVersion(
   }
 }
 
-/** First save creates the config with its v1 blob; later saves append a version. */
 export async function saveAssessorVersion(
   apiKey: string,
   input: SaveAssessorVersionInput,

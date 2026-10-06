@@ -3,21 +3,16 @@
 import { useState } from "react";
 import { Button, Field, Select } from "@/app/components/ui";
 import { CloudUploadIcon, EyeIcon } from "@/app/components/icons";
-import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
+import CreatePanel from "@/app/components/assessment/submissions/CreatePanel";
 import DataViewModal from "@/app/components/assessment/DataViewModal";
 import { RUN_PREVIEW_ROW_LIMIT } from "@/app/lib/assessment/constants";
 import type {
+  RunPreviewState,
   RunStepProps,
   UseSubmissionStepResult,
 } from "@/app/lib/types/assessment";
 
-interface PreviewState {
-  isLoading: boolean;
-  isDisabled: boolean;
-  rows: string[][];
-}
-
-function previewState(step: UseSubmissionStepResult): PreviewState {
+function previewState(step: UseSubmissionStepResult): RunPreviewState {
   return {
     isLoading: step.viewingId === step.selectedId,
     isDisabled: !step.selectedId || step.viewingId !== null,

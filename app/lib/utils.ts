@@ -1,4 +1,9 @@
-import { Credential, FieldDef, ProviderDef } from "@/app/lib/types/credentials";
+import {
+  Credential,
+  CredentialPayloadResult,
+  FieldDef,
+  ProviderDef,
+} from "@/app/lib/types/credentials";
 import { formatDistanceToNow } from "date-fns";
 import { clearConfigCache } from "@/app/lib/store/config";
 import {
@@ -8,6 +13,7 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
+import type { CreateResponse } from "@/app/lib/types/assessment";
 import {
   SUPPORTED_PARAMS,
   getModelSchema,
@@ -53,11 +59,6 @@ export function populateCredentialForm(
     }
   });
   return values;
-}
-
-export interface CredentialPayloadResult {
-  payload: Record<string, unknown>;
-  error: string | null;
 }
 
 function repairPemNewlines(value: Record<string, unknown>) {
@@ -127,6 +128,22 @@ export function missingCredentialFields(
 ): FieldDef[] {
   return provider.fields.filter(
     (field) => field.required && !formValues[field.key]?.trim(),
+  );
+}
+
+export function hasCredentialChanges(
+  provider: ProviderDef,
+  formValues: Record<string, string>,
+  existing: Credential | null,
+  isActive: boolean,
+): boolean {
+  if (!existing) {
+    return provider.fields.some((field) => !!formValues[field.key]?.trim());
+  }
+  if (isActive !== existing.is_active) return true;
+  return provider.fields.some(
+    (field) =>
+      (formValues[field.key] || "") !== (existing.credential[field.key] || ""),
   );
 }
 
@@ -407,3 +424,13 @@ export const formatModelParamValue = (key: string, value: unknown): string => {
   }
   return getParamValueLabel(key, value);
 };
+
+export const isPlainObject = (
+  value: unknown,
+): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+export const unwrapResponse = <T>(
+  response: CreateResponse<T>,
+  fallback: T,
+): T => (response as { data?: T })?.data ?? (response as T) ?? fallback;

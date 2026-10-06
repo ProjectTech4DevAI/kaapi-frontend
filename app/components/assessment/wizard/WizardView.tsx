@@ -13,7 +13,10 @@ import ReviewSaveModal from "./ReviewSaveModal";
 import SavedNextModal from "./SavedNextModal";
 import WizardFooter from "./WizardFooter";
 import WizardStepBody from "./WizardStepBody";
-import { wizardFooterState, wizardContextLabel } from "./wizardCopy";
+import {
+  wizardFooterState,
+  wizardContextLabel,
+} from "@/app/lib/assessment/wizardCopy";
 import type {
   UseAssessmentWizardResult,
   WizardViewProps,

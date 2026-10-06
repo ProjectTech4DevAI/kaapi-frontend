@@ -4,15 +4,9 @@ import {
   JSON_TOKEN_CLASSES,
 } from "@/app/lib/assessment/constants";
 import type {
-  ColumnConfig,
-  ColumnMapping,
-  ColumnRole,
-  CreateDatasetResponse,
   DatasetPreview,
   DatasetPreviewResponse,
   PageSlice,
-  ReviewColumn,
-  RoleVisuals,
   SchemaProperty,
 } from "@/app/lib/types/assessment";
 
@@ -23,7 +17,6 @@ export function isAllowedDatasetFile(fileName: string): boolean {
   );
 }
 
-/** Shape adapter shared by the API path and the mock data source. */
 export function toDatasetPreview(
   response: DatasetPreviewResponse,
 ): DatasetPreview {
@@ -69,11 +62,6 @@ export async function fetchDatasetPreview(
   return toDatasetPreview(res);
 }
 
-/**
- * Columns the sheet names. The header decides, not the sampled cells: a named
- * column that happens to be empty in the preview is still in every row the
- * backend parses, and `input_schema` must declare it or the run 422s.
- */
 export function nonBlankColumns(preview: DatasetPreview): {
   headers: string[];
   sampleRow: Record<string, string>;
@@ -89,13 +77,6 @@ export function nonBlankColumns(preview: DatasetPreview): {
       keptIdx.map((idx) => [preview.headers[idx], String(firstRow[idx] ?? "")]),
     ),
   };
-}
-
-export function extractCreatedDataset(data: CreateDatasetResponse) {
-  return (
-    (data as { data?: { dataset_id?: number; dataset_name?: string } }).data ??
-    (data as { dataset_id?: number; dataset_name?: string })
-  );
 }
 
 export function handleForbiddenError(
@@ -136,96 +117,6 @@ export function getConfigDetailErrorMessage(error: unknown): string {
     return CONFIG_VERSION_UNAVAILABLE_MESSAGE;
   }
   return message || "Failed to load configuration details";
-}
-
-export function colorMapping(role: ColumnRole): RoleVisuals {
-  switch (role) {
-    case "text":
-      return {
-        panelClass: "border-status-success-border bg-status-success-bg",
-        dotClass: "bg-status-success",
-        activeButtonClass:
-          "!border-status-success-border !bg-status-success-bg !text-status-success-text hover:!bg-status-success-bg !ring-0",
-      };
-    case "attachment":
-      return {
-        panelClass: "border-status-warning-border bg-status-warning-bg",
-        dotClass: "bg-status-warning",
-        activeButtonClass:
-          "!border-status-warning-border !bg-status-warning-bg !text-status-warning-text hover:!bg-status-warning-bg !ring-0",
-      };
-    case "ground_truth":
-      return {
-        panelClass: "border-accent-subtle bg-accent-subtle/20",
-        dotClass: "bg-accent-primary",
-        activeButtonClass:
-          "!border-accent-subtle !bg-accent-subtle/20 !text-accent-primary hover:!bg-accent-subtle/20 !ring-0",
-      };
-    case "unmapped":
-    default:
-      return {
-        panelClass: "border-border bg-bg-primary",
-        dotClass: "bg-border",
-        activeButtonClass:
-          "!border-border !bg-bg-secondary !text-text-primary hover:!bg-bg-secondary !ring-0",
-      };
-  }
-}
-
-export function buildColumnConfigs(
-  columns: string[],
-  columnMapping: ColumnMapping,
-): ColumnConfig[] {
-  return columns.map((column) => {
-    if (columnMapping.textColumns.includes(column)) {
-      return { role: "text" };
-    }
-    const attachment = columnMapping.attachments.find(
-      (item) => item.column === column,
-    );
-    if (!attachment) {
-      return { role: "unmapped" };
-    }
-    const map = attachment.type_value_map ?? {};
-    const valuesFor = (t: string) =>
-      Object.entries(map)
-        .filter(([, v]) => v === t)
-        .map(([k]) => k)
-        .join(", ");
-    return {
-      role: "attachment",
-      attachmentType: attachment.type,
-      attachmentFormat: attachment.format,
-      attachmentTypeColumn: attachment.type_column ?? undefined,
-      attachmentImageValues: valuesFor("image"),
-      attachmentPdfValues: valuesFor("pdf"),
-    };
-  });
-}
-
-export function buildMappedColumns(
-  columnMapping: ColumnMapping,
-): ReviewColumn[] {
-  return [
-    ...columnMapping.textColumns.map((column) => ({
-      key: `text:${column}`,
-      column,
-      role: "text" as const,
-      badgeClass: "bg-status-success-bg text-status-success-text",
-    })),
-    ...columnMapping.attachments.map(({ column }) => ({
-      key: `attachment:${column}`,
-      column,
-      role: "attachment" as const,
-      badgeClass: "bg-status-warning-bg text-status-warning-text",
-    })),
-    ...columnMapping.groundTruthColumns.map((column) => ({
-      key: `ground_truth:${column}`,
-      column,
-      role: "ground truth" as const,
-      badgeClass: "bg-accent-subtle/30 text-accent-primary",
-    })),
-  ];
 }
 
 export function highlightJson(code: string): string {
@@ -285,7 +176,6 @@ export function paginate<T>(
   };
 }
 
-/** Page numbers to show around the current one, so long lists stay one row wide. */
 export function pageWindow(
   page: number,
   pages: number,
@@ -298,48 +188,6 @@ export function pageWindow(
     window.push(candidate);
   }
   return window;
-}
-
-interface AssessmentSubmitChecks {
-  datasetId: string | null;
-  hasMapperSelection: boolean;
-  hasResponseFormat: boolean;
-  configCount: number;
-  experimentName: string;
-}
-
-export function getAssessmentSubmitError(
-  checks: AssessmentSubmitChecks,
-): string | null {
-  if (!checks.datasetId) return "Dataset is required";
-  if (!checks.hasMapperSelection)
-    return "Map at least one text or attachment column";
-  if (!checks.hasResponseFormat) return "Response format is required";
-  if (checks.configCount === 0) return "Select at least one configuration";
-  if (!checks.experimentName.trim()) return "Experiment name is required";
-  return null;
-}
-
-interface AssessmentSubmitBlockerChecks {
-  datasetId: string | null;
-  hasMapperSelection: boolean;
-  hasResponseFormat: boolean;
-  configCount: number;
-  experimentName: string;
-}
-
-export function getAssessmentSubmitBlocker(
-  checks: AssessmentSubmitBlockerChecks,
-): string {
-  if (!checks.datasetId) return "Select a dataset to submit";
-  if (!checks.hasMapperSelection)
-    return "Map at least one text or attachment column to submit";
-  if (!checks.hasResponseFormat) return "Set response format to submit";
-  if (checks.configCount === 0)
-    return "Select at least one configuration to submit";
-  if (!checks.experimentName.trim())
-    return "Enter an experiment name to submit";
-  return "";
 }
 
 export function schemaToJsonSchema(

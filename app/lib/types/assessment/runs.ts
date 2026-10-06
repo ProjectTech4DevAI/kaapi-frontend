@@ -1,9 +1,148 @@
 import type { ReactNode } from "react";
-import type { PageSlice } from "./core";
+import type {
+  AssessmentStatusValue,
+  AssessmentSummary,
+  BatchCounts,
+  PageSlice,
+} from "./core";
+import type { AssessorSummary, AssessorVersion } from "./assessor";
 import type { WizardContext } from "./wizard";
-import type { AssessorSummary, AssessorVersion } from "./dataSource";
-import type { AssessmentRun } from "./results";
-import type { StageProgress } from "@/app/lib/assessment/results";
+
+export type AssessmentRun = AssessmentSummary;
+
+export type FlatResultRow = Record<string, unknown>;
+
+export interface PipelineStageEntry {
+  stage: string;
+  type?: string;
+  order?: number;
+}
+
+export interface PipelineConfig {
+  stages: PipelineStageEntry[];
+}
+
+export type StageProgressStatus =
+  | "completed"
+  | "processing"
+  | "pending"
+  | "failed";
+
+export interface StageProgress {
+  stage: string;
+  label: string;
+  status: StageProgressStatus;
+}
+
+export interface StageProgressInput {
+  stage: string | null;
+  stage_status: string | null;
+  pipeline: PipelineConfig | null;
+}
+
+export interface PostProcessingComputedColumn {
+  name: string;
+  formula: string;
+}
+
+export interface PostProcessingSortRule {
+  column: string;
+  direction: "asc" | "desc";
+}
+
+export interface PostProcessingFilterRule {
+  column: string;
+  op:
+    | "eq"
+    | "ne"
+    | "gt"
+    | "lt"
+    | "gte"
+    | "lte"
+    | "contains"
+    | "not_contains"
+    | "is_empty"
+    | "is_not_empty";
+  value?: string | number;
+}
+
+export interface PostProcessingConfig {
+  computed_columns: PostProcessingComputedColumn[];
+  sort: PostProcessingSortRule[];
+  filter: PostProcessingFilterRule[];
+}
+
+export type ResultTone = "default" | "warning" | "success" | "error";
+export type AssessmentTag = "ASSESSMENT";
+
+export type UniverCommandInfo = {
+  id: string;
+  type?: number;
+  params?: unknown;
+};
+
+export type UniverAPI = {
+  dispose?: () => void;
+  onCommandExecuted: (cb: (info: UniverCommandInfo) => void) => {
+    dispose: () => void;
+  };
+  getActiveWorkbook: () => { save: () => object } | null;
+  createUniverSheet: (d: object) => void;
+};
+
+export type SpreadsheetStateEnvelope = {
+  v: number;
+  ts: number;
+  data: object;
+};
+
+export type SpreadsheetCellEntry = {
+  v: string | number;
+  t: number;
+  s?: object;
+};
+
+export type SpreadsheetSnapshot = {
+  sheetOrder?: string[];
+  sheets?: Record<
+    string,
+    { cellData?: Record<string, Record<string, { v?: unknown }>> }
+  >;
+};
+
+export interface OwnedValue<T> {
+  owner: string;
+  value: T;
+}
+
+export interface UseRunResultsResult {
+  results: FlatResultRow[];
+  headers: string[];
+  rows: string[][];
+  status: AssessmentStatusValue | null;
+  counts: BatchCounts | null;
+  totalItems: number;
+  isPolling: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface ChildRunStageProgressProps {
+  stages: StageProgress[];
+}
+
+export interface ResultsToolbarProps {
+  title: string;
+  subtitle: string;
+  onBack: () => void;
+  onDownload: () => void;
+}
+
+export interface SpreadsheetViewProps {
+  runId: string;
+  headers: string[];
+  rows: string[][];
+}
 
 export interface AssessorSelection {
   configId: string;
@@ -21,6 +160,26 @@ export interface HomeRunRow {
   cost: string | null;
   stages: StageProgress[];
   isActive: boolean;
+}
+
+export interface UseAssessmentHomeDataResult {
+  assessors: AssessorSummary[];
+  knownAssessors: AssessorSummary[];
+  hasPrevAssessors: boolean;
+  hasNextAssessors: boolean;
+  showPrevAssessors: () => void;
+  showNextAssessors: () => void;
+  assessorSearch: string;
+  setAssessorSearch: (value: string) => void;
+  assessments: AssessmentRun[];
+  versionsByAssessor: Record<string, AssessorVersion[]>;
+  loadVersions: (configId: string) => Promise<AssessorVersion[]>;
+  deleteAssessor: (configId: string) => Promise<void>;
+  deleteAssessorVersion: (configId: string, version: number) => Promise<void>;
+  deletingKey: string | null;
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
 }
 
 export interface UseAssessmentHomeResult {

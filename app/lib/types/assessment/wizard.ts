@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
-import type { Step, ValueSetter } from "./core";
-import type { SchemaProperty } from "./dataset";
-import type { AssessorVersionDetail } from "./dataSource";
+import type {
+  SchemaProperty,
+  Step,
+  StepNavigationProps,
+  ColumnMapping,
+  UseSubmissionStepResult,
+  ValueSetter,
+} from "./core";
+import type { AssessorVersionDetail } from "./assessor";
 import type {
   PromptFieldType,
   PromptZoneId,
@@ -9,7 +15,7 @@ import type {
   UseWizardDraftResult,
   WizardDraft,
 } from "./prompt";
-import type { UseSubmissionStepResult } from "./submission";
+import type { AssessorSelection, PostProcessingConfig } from "./runs";
 
 export type AssessmentView = "home" | "wizard";
 
@@ -20,6 +26,17 @@ export interface WizardContext {
   configId: string;
   version: number;
   assessorName: string;
+}
+
+export interface WizardStepState {
+  isActive: boolean;
+  isCompleted: boolean;
+  isClickable: boolean;
+}
+
+export interface UseAssessmentWizardParams {
+  onExit: () => void;
+  onRunCreated: (context: WizardContext) => void;
 }
 
 export interface UseAssessmentWizardResult {
@@ -55,6 +72,71 @@ export interface UseAssessmentWizardResult {
   next: () => void;
   back: () => void;
   submitRun: () => Promise<void>;
+}
+
+export interface UseVersionSaveFlowParams {
+  draft: WizardDraft;
+  submissionId: string;
+  submissionColumns: string[];
+  context: WizardContext | null;
+  onSaved: (context: WizardContext, detail: AssessorVersionDetail) => void;
+}
+
+export interface UseVersionSaveFlowResult {
+  isDirty: boolean;
+  canSave: boolean;
+  isSaving: boolean;
+  isReviewOpen: boolean;
+  savedTitle: string | null;
+  openReview: () => void;
+  closeReview: () => void;
+  saveVersion: (name: string, commitMessage: string) => Promise<void>;
+  dismissSaved: () => void;
+  rebaseline: (detail: AssessorVersionDetail | null) => void;
+}
+
+export interface UseRunSubmitParams {
+  context: WizardContext | null;
+  submissionId: string;
+  runName: string;
+  onRunCreated: (context: WizardContext) => void;
+}
+
+export interface UseRunSubmitResult {
+  isSubmitting: boolean;
+  submitRun: () => Promise<void>;
+}
+
+export interface UseRunNameDraftResult {
+  runName: string;
+  setRunName: (value: string) => void;
+}
+
+export interface WizardFooterState {
+  showBack: boolean;
+  hint: string;
+  nextLabel: string;
+  nextDisabled: boolean;
+}
+
+export interface WizardFooterInput {
+  wizard: UseAssessmentWizardResult;
+  hasSubmission: boolean;
+  rowCount: number | null;
+  hasPendingUpload: boolean;
+}
+
+export interface RunPreviewState {
+  isLoading: boolean;
+  isDisabled: boolean;
+  rows: string[][];
+}
+
+export interface PageLayoutProps {
+  view: AssessmentView;
+  wizard: UseAssessmentWizardResult;
+  homeSelection: AssessorSelection | null;
+  onGoHome: () => void;
 }
 
 export interface WizardViewProps {
@@ -141,4 +223,18 @@ export interface StepperProps {
   onHome?: () => void;
   leading?: ReactNode;
   trailing?: ReactNode;
+}
+
+export interface PostProcessingStepProps extends StepNavigationProps {
+  postProcessingConfig: PostProcessingConfig | null;
+  setPostProcessingConfig: (config: PostProcessingConfig | null) => void;
+  columnMapping: ColumnMapping;
+  outputSchema: SchemaProperty[];
+}
+
+export interface PostProcessingPanelProps {
+  availableColumns: string[];
+  fetchColumns?: () => Promise<string[]>;
+  initialConfig: PostProcessingConfig | null;
+  onSave: (config: PostProcessingConfig) => Promise<void>;
 }

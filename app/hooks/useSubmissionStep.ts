@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * Wizard step 1 — submission sets. Composes the list (useSubmissionList) and the
- * create form (useSubmissionForm), owns selection plus the create/view/delete
- * actions, and reports the selection into the assessment store so later steps can
- * read the set's columns and sample row.
- */
 import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
@@ -129,7 +123,6 @@ export function useSubmissionStep(): UseSubmissionStepResult {
     [data, list, selectedId, setDatasetId, setDatasetName, toast],
   );
 
-  // The wizard can preselect a version's linked set before the list arrives.
   useEffect(() => {
     const selected = list.submissions.find(
       (item) => item.submission_id === selectedId,

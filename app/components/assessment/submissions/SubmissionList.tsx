@@ -84,14 +84,6 @@ export default function SubmissionList({
                         )}
                         <span className="mt-2 flex items-center gap-3 text-xs text-text-secondary">
                           <span>{submission.total_items} items</span>
-                          {submission.total_items > 0 &&
-                            submission.total_items !==
-                              submission.total_items && (
-                              <>
-                                <span className="text-border">·</span>
-                                <span>{submission.total_items} original</span>
-                              </>
-                            )}
                         </span>
                       </button>
 

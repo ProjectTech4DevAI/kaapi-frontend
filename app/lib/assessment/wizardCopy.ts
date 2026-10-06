@@ -2,21 +2,9 @@ import { wizardEntryStep } from "@/app/lib/assessment/wizard";
 import type {
   AssessmentWizardStep,
   UseAssessmentWizardResult,
+  WizardFooterInput,
+  WizardFooterState,
 } from "@/app/lib/types/assessment";
-
-interface FooterState {
-  showBack: boolean;
-  hint: string;
-  nextLabel: string;
-  nextDisabled: boolean;
-}
-
-interface FooterInput {
-  wizard: UseAssessmentWizardResult;
-  hasSubmission: boolean;
-  rowCount: number | null;
-  hasPendingUpload: boolean;
-}
 
 const NEXT_LABELS: Record<AssessmentWizardStep, string> = {
   1: "Next: Pre-filter",
@@ -37,7 +25,7 @@ export function wizardFooterState({
   hasSubmission,
   rowCount,
   hasPendingUpload,
-}: FooterInput): FooterState {
+}: WizardFooterInput): WizardFooterState {
   const { step, flow, submissionName } = wizard;
   const showBack = step !== wizardEntryStep(flow);
 
@@ -80,7 +68,7 @@ export function wizardFooterState({
 
 function assessmentStepFooter(
   wizard: UseAssessmentWizardResult,
-): Omit<FooterState, "showBack"> {
+): Omit<WizardFooterState, "showBack"> {
   const { flow, canSave, isDirty } = wizard;
 
   if (flow === "run") {
@@ -111,7 +99,7 @@ function runStepHint({
   hasSubmission,
   rowCount,
   hasPendingUpload,
-}: Omit<FooterInput, "wizard"> & { hasVersion: boolean }): string {
+}: Omit<WizardFooterInput, "wizard"> & { hasVersion: boolean }): string {
   if (hasPendingUpload) {
     return "Create the uploaded submission first, or cancel it";
   }

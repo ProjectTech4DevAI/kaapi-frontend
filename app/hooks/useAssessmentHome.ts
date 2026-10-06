@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * View state for Assessment Home. The version selection is the pivot: it enables
- * Edit, reveals New run, and filters the runs panel. Loading lives in
- * useAssessmentHomeData.
- */
 import { useCallback, useMemo, useState } from "react";
 import { useAssessmentHomeData } from "@/app/hooks/useAssessmentHomeData";
 import {
@@ -55,7 +50,6 @@ export function useAssessmentHome(
     setRunPage(1);
   }, []);
 
-  // Selecting an assessor means its latest version, which is one fetch away.
   const selectAssessor = useCallback(
     (configId: string) => {
       if (selection?.configId === configId) {
@@ -72,7 +66,6 @@ export function useAssessmentHome(
     [applySelection, loadVersions, selection, versionsByAssessor],
   );
 
-  // A deleted assessor or version must not stay selected — Edit would 404.
   const deleteAssessor = useCallback(
     async (configId: string) => {
       await source.deleteAssessor(configId);
@@ -118,8 +111,6 @@ export function useAssessmentHome(
     setRunPage(1);
   }, []);
 
-  // Newest run first; the source list arrives oldest-first from the API.
-  // Named off every assessor seen so far, not just the page on screen.
   const runSlice = useMemo(() => {
     const rows = buildHomeRunRows(assessments, knownAssessors)
       .reverse()

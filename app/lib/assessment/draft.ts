@@ -1,8 +1,3 @@
-/**
- * The wizard draft: its empty shape, how a saved version maps into it, and how
- * it serializes — for the "has anything actually changed?" check and for the
- * save payload. Whitespace-only edits must never count as a change. No React.
- */
 import {
   fieldTypesFromAttachments,
   fromWireTemplate,
@@ -85,7 +80,6 @@ export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-/** The columns marked required, sorted so two drafts compare by content. */
 export function strictColumns(fieldStrict: Record<string, boolean>): string[] {
   return Object.keys(fieldStrict)
     .filter((name) => fieldStrict[name])
@@ -118,7 +112,6 @@ export function serializeDraft(
   });
 }
 
-/** True when the assessment prompt has content — the bar for a brand-new assessor. */
 export function hasAssessmentContent(draft: WizardDraft): boolean {
   return Boolean(
     normalizeWhitespace(draft.assessment.instructions) ||
@@ -126,7 +119,6 @@ export function hasAssessmentContent(draft: WizardDraft): boolean {
   );
 }
 
-/** Draft → the save payload, in the wire shapes the backend already accepts. */
 export function draftToVersionInput(params: {
   draft: WizardDraft;
   submissionId: string;
@@ -184,14 +176,12 @@ export function draftToVersionInput(params: {
   };
 }
 
-/** The columns the pre-filter prompt references, in `{Column}` wire form. */
 function prefilterColumns(template: string): string[] {
   return [
     ...new Set([...template.matchAll(/\{([A-Za-z_]\w*)\}/g)].map((m) => m[1])),
   ];
 }
 
-/** The version a save produced, for re-baselining without a refetch. */
 export function versionDetailFrom(
   input: SaveAssessorVersionInput,
   configId: string,

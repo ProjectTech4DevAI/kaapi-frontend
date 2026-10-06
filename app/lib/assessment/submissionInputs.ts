@@ -1,15 +1,12 @@
-/**
- * Reads a run's source rows, from cache when we already have them.
- */
-import {
-  previewToInputs,
-  type SubmissionInputs,
-} from "@/app/lib/assessment/inputJoin";
+import { previewToInputs } from "@/app/lib/assessment/inputJoin";
 import {
   readCachedInputs,
   writeCachedInputs,
 } from "@/app/lib/assessment/submissionCache";
-import type { AssessmentDataSource } from "@/app/lib/types/assessment";
+import type {
+  AssessmentDataSource,
+  SubmissionInputs,
+} from "@/app/lib/types/assessment";
 
 export async function loadSubmissionInputs(
   source: AssessmentDataSource,
@@ -19,7 +16,6 @@ export async function loadSubmissionInputs(
   if (expectedRows <= 0) return { headers: [], records: [] };
 
   const cached = await readCachedInputs(submissionId);
-  // A shorter entry was cached under a smaller ask — fetch the rest.
   if (cached && cached.records.length >= expectedRows) return cached;
 
   const payload = await source.getSubmissionPreview(submissionId, expectedRows);

@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Single access point for assessment data: the API-backed source bound to the
- * active API key.
- */
 import { useMemo } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { createApiAssessmentSource } from "@/app/lib/assessment/apiSource";

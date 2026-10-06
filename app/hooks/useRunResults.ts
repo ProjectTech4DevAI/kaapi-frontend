@@ -11,7 +11,6 @@ import {
 import {
   buildColumnOrder,
   mergeSubmissionInputs,
-  type SubmissionInputs,
 } from "@/app/lib/assessment/inputJoin";
 import { loadSubmissionInputs } from "@/app/lib/assessment/submissionInputs";
 import {
@@ -23,40 +22,28 @@ import type {
   AssessmentConfigRef,
   AssessmentStatusValue,
   BatchCounts,
+  FlatResultRow,
+  OwnedValue,
   ResultsTarget,
+  SubmissionInputs,
+  UseRunResultsResult,
 } from "@/app/lib/types/assessment";
-
-/** A fetched extra plus the id it was fetched for, so a stale one is spottable. */
-interface OwnedBy<T> {
-  owner: string;
-  value: T;
-}
-
-export interface UseRunResultsResult {
-  results: Record<string, unknown>[];
-  headers: string[];
-  rows: string[][];
-  status: AssessmentStatusValue | null;
-  counts: BatchCounts | null;
-  totalItems: number;
-  isPolling: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
 
 export function useRunResults(
   target: ResultsTarget | null,
 ): UseRunResultsResult {
   const toast = useToast();
   const data = useAssessmentData();
-  const [results, setResults] = useState<Record<string, unknown>[]>([]);
+  const [results, setResults] = useState<FlatResultRow[]>([]);
   const [status, setStatus] = useState<AssessmentStatusValue | null>(null);
   const [counts, setCounts] = useState<BatchCounts | null>(null);
   const [totalItems, setTotalItems] = useState(0);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [config, setConfig] = useState<AssessmentConfigRef | null>(null);
-  const [inputs, setInputs] = useState<OwnedBy<SubmissionInputs> | null>(null);
-  const [outputSchema, setOutputSchema] = useState<OwnedBy<Record<
+  const [inputs, setInputs] = useState<OwnedValue<SubmissionInputs> | null>(
+    null,
+  );
+  const [outputSchema, setOutputSchema] = useState<OwnedValue<Record<
     string,
     unknown
   > | null> | null>(null);
@@ -113,7 +100,6 @@ export function useRunResults(
     }
 
     targetRef.current = targetKey;
-    // The previous run's rows are not this run's; show nothing until it loads.
     setResults([]);
     setStatus(null);
     setCounts(null);
@@ -129,7 +115,6 @@ export function useRunResults(
     };
   }, [assessmentId, load, targetKey]);
 
-  // The source rows, once per submission. Immutable, so polling never refetches.
   useEffect(() => {
     if (!submissionId) return;
     let cancelled = false;
@@ -140,16 +125,13 @@ export function useRunResults(
           setInputs({ owner: submissionId, value: loaded });
         }
       })
-      .catch(() => {
-        // Source columns are additive; without them the results still stand.
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
     };
   }, [data, submissionId, totalItems]);
 
-  // The output schema fixes column order, so it follows the config, not the rows.
   useEffect(() => {
     if (!config?.id || !configKey) return;
     let cancelled = false;
@@ -161,16 +143,13 @@ export function useRunResults(
           setOutputSchema({ owner: configKey, value: version.output_schema });
         }
       })
-      .catch(() => {
-        // Without a schema the columns keep their discovered order.
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
     };
   }, [config?.id, config?.version, configKey, data]);
 
-  // A fetch that outlived its run must not colour the next one.
   const ownInputs =
     inputs && inputs.owner === submissionId ? inputs.value : null;
   const ownSchema =

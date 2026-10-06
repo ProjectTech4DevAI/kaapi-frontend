@@ -200,3 +200,50 @@ export interface AddApiKeyRequest {
   key?: string;
   label?: string;
 }
+
+export interface CredentialPayloadResult {
+  payload: Record<string, unknown>;
+  error: string | null;
+}
+
+export interface UseCredentialFormResult {
+  selectedProvider: ProviderDef;
+  setSelectedProvider: (provider: ProviderDef) => void;
+  formValues: Record<string, string>;
+  isActive: boolean;
+  setIsActive: (active: boolean) => void;
+  existingCredential: Credential | null;
+  hasChanges: boolean;
+  handleFieldChange: (key: string, value: string) => void;
+  resetForm: () => void;
+  validatePayload: () => Record<string, unknown> | null;
+}
+
+export interface CredentialFormProps {
+  provider: ProviderDef;
+  existingCredential: Credential | null;
+  formValues: Record<string, string>;
+  isActive: boolean;
+  isLoading: boolean;
+  isSaving: boolean;
+  isDeleting?: boolean;
+  onChange: (key: string, value: string) => void;
+  onActiveChange: (active: boolean) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  onDelete?: () => void;
+}
+
+export interface CredentialFormPanelProps extends Omit<
+  CredentialFormProps,
+  "isDeleting" | "onDelete"
+> {
+  hasChanges: boolean;
+  isDeleting: boolean;
+  onDelete: () => void;
+}
+
+export interface OnboardingCredentialsProps {
+  organizationId: number;
+  projectId: number;
+}

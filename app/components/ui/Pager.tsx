@@ -1,23 +1,18 @@
 "use client";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "@/app/components/icons";
-import { PAGER_WINDOW_SIZE } from "@/app/lib/assessment/constants";
+import {
+  PAGER_BUTTON_BASE,
+  PAGER_BUTTON_CURRENT,
+  PAGER_BUTTON_IDLE,
+  PAGER_WINDOW_SIZE,
+} from "@/app/lib/constants";
 import { pageWindow } from "@/app/lib/utils/assessment";
+import type { PagerProps } from "@/app/lib/types/ui";
 
-interface PagerProps {
-  page: number;
-  pages: number;
-  onGoto: (page: number) => void;
-  label?: string;
-  className?: string;
-}
-
-const buttonBase =
-  "min-w-7 h-7 px-2 inline-flex items-center justify-center rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:cursor-default disabled:opacity-35";
-const idleStyles =
-  "border-border bg-bg-primary text-text-secondary hover:border-accent-muted hover:text-text-primary";
-const currentStyles =
-  "border-accent-primary bg-accent-primary text-white font-semibold";
+const buttonBase = `${PAGER_BUTTON_BASE} px-2`;
+const idleStyles = PAGER_BUTTON_IDLE;
+const currentStyles = PAGER_BUTTON_CURRENT;
 
 export default function Pager({
   page,

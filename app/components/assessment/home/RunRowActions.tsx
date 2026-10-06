@@ -22,13 +22,9 @@ export default function RunRowActions({ row }: RunRowActionsProps) {
   const { submission_id: submissionId, total_items: totalItems } =
     row.assessment;
 
-  /* Warms the submission cache during the hover before the click, so the
-     results sheet has its source columns by the time it paints. */
   const prefetchInputs = () => {
     if (!submissionId) return;
-    void loadSubmissionInputs(data, submissionId, totalItems).catch(() => {
-      // A cold cache is the only cost of a failed warm-up.
-    });
+    void loadSubmissionInputs(data, submissionId, totalItems).catch(() => {});
   };
 
   return (

@@ -1,22 +1,11 @@
 "use client";
 
 import { ChevronLeftIcon, ChevronRightIcon } from "@/app/components/icons";
+import type { CursorPagerProps } from "@/app/lib/types/ui";
+import { PAGER_BUTTON_BASE, PAGER_BUTTON_IDLE } from "@/app/lib/constants";
 
-interface CursorPagerProps {
-  hasPrev: boolean;
-  hasNext: boolean;
-  onPrev: () => void;
-  onNext: () => void;
-  label?: string;
-  className?: string;
-}
+const buttonClass = `${PAGER_BUTTON_BASE} ${PAGER_BUTTON_IDLE}`;
 
-const buttonBase =
-  "min-w-7 h-7 inline-flex items-center justify-center rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:cursor-default disabled:opacity-35";
-const idleStyles =
-  "border-border bg-bg-primary text-text-secondary hover:border-accent-muted hover:text-text-primary";
-
-/** Prev/next only — the API reports `has_more`, never a total page count. */
 export default function CursorPager({
   hasPrev,
   hasNext,
@@ -37,7 +26,7 @@ export default function CursorPager({
         aria-label="Previous page"
         disabled={!hasPrev}
         onClick={onPrev}
-        className={`${buttonBase} ${idleStyles}`}
+        className={buttonClass}
       >
         <ChevronLeftIcon className="w-3 h-3" />
       </button>
@@ -46,7 +35,7 @@ export default function CursorPager({
         aria-label="Next page"
         disabled={!hasNext}
         onClick={onNext}
-        className={`${buttonBase} ${idleStyles}`}
+        className={buttonClass}
       >
         <ChevronRightIcon className="w-3 h-3" />
       </button>

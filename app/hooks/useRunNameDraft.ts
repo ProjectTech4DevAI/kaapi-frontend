@@ -1,17 +1,11 @@
 "use client";
 
-/**
- * The run-name field on step 4. Defaults to `{assessor} — run {n}` once the
- * assessor's existing runs are counted, the way the prototype names runs.
- */
 import { useEffect, useState } from "react";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
-import type { WizardContext } from "@/app/lib/types/assessment";
-
-export interface UseRunNameDraftResult {
-  runName: string;
-  setRunName: (value: string) => void;
-}
+import type {
+  UseRunNameDraftResult,
+  WizardContext,
+} from "@/app/lib/types/assessment";
 
 export function useRunNameDraft(
   context: WizardContext | null,

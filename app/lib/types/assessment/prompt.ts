@@ -1,10 +1,7 @@
 import type { KeyboardEvent, ReactNode, RefObject } from "react";
-import type {
-  AssessorModelSelection,
-  AssessorVersionDetail,
-} from "./dataSource";
-import type { SchemaProperty } from "./dataset";
 import type { ProviderType } from "@/app/lib/types/configs";
+import type { SchemaProperty } from "./core";
+import type { AssessorModelSelection, AssessorVersionDetail } from "./assessor";
 
 export type PromptFieldType = "text" | "image" | "pdf";
 
@@ -121,6 +118,30 @@ export interface UsePromptMentionsResult {
   scheduleHoverClose: () => void;
   cancelHoverClose: () => void;
   closeAll: () => void;
+}
+
+export type ScrollAnchor = [number, number];
+
+export interface ScrollMapper {
+  forward: (value: number) => number;
+  backward: (value: number) => number;
+}
+
+export type SyncedScrollPane = "editor" | "preview";
+
+export interface SyncedScrollFollowState {
+  goal: { pane: HTMLElement; key: SyncedScrollPane; to: number } | null;
+  frame: number | null;
+  written: Record<SyncedScrollPane, number | null>;
+  driver: SyncedScrollPane | null;
+  snap: boolean;
+}
+
+export interface UseSyncedScrollParams {
+  editorRef: RefObject<HTMLDivElement | null>;
+  previewRef: RefObject<HTMLDivElement | null>;
+  editorAnchorSelector: string;
+  previewAnchorSelector: string;
 }
 
 export interface MentionDropdownProps {

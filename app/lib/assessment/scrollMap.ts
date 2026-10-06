@@ -1,22 +1,5 @@
-/**
- * Maps one pane's scroll position onto another's, given matched anchor points.
- *
- * Piecewise-linear interpolation makes the follower's *speed* jump at every
- * anchor (the slope changes abruptly), which reads as jerk. This uses monotone
- * cubic interpolation (Fritsch–Carlson): C1-continuous, so speed changes
- * gradually, and monotone, so the follower never backs up or overshoots.
- * No DOM, no React.
- */
+import type { ScrollAnchor, ScrollMapper } from "@/app/lib/types/assessment";
 
-/** `[sourceScrollTop, targetScrollTop]`, strictly increasing on both axes. */
-export type ScrollAnchor = [number, number];
-
-export interface ScrollMapper {
-  forward: (value: number) => number;
-  backward: (value: number) => number;
-}
-
-/** Average of the neighbouring secants, flattened at local extrema. */
 function initialSlopes(secants: number[]): number[] {
   const slopes = [secants[0]];
   for (let i = 1; i < secants.length; i += 1) {
@@ -28,7 +11,6 @@ function initialSlopes(secants: number[]): number[] {
   return slopes;
 }
 
-/** Fritsch–Carlson: clamp the slopes so no segment can overshoot. */
 function limitSlopes(slopes: number[], secants: number[]): void {
   for (let i = 0; i < secants.length; i += 1) {
     const secant = secants[i];
@@ -47,7 +29,6 @@ function limitSlopes(slopes: number[], secants: number[]): void {
   }
 }
 
-/** Slopes that keep a cubic through these points monotone. */
 function monotoneSlopes(xs: number[], ys: number[]): number[] {
   const secants: number[] = [];
   for (let i = 0; i < xs.length - 1; i += 1) {
@@ -77,7 +58,6 @@ function evaluate(
   const t2 = t * t;
   const t3 = t2 * t;
 
-  // Hermite basis
   return (
     (2 * t3 - 3 * t2 + 1) * ys[index] +
     (t3 - 2 * t2 + t) * span * slopes[index] +
@@ -100,7 +80,6 @@ export function createScrollMapper(anchors: ScrollAnchor[]): ScrollMapper {
   const xs = anchors.map(([source]) => source);
   const ys = anchors.map(([, target]) => target);
 
-  // Two points is a straight line; a cubic needs three to be worth building.
   if (anchors.length < 3) {
     return {
       forward: (value) => linear(xs, ys, value),

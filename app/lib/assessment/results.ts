@@ -1,47 +1,25 @@
-// Result utilities: status checks, labels, run normalization, and spreadsheet state.
 import type {
-  PipelineConfig,
   ResultTone,
+  SpreadsheetCellEntry,
+  SpreadsheetSnapshot,
   SpreadsheetStateEnvelope,
+  StageProgress,
+  StageProgressInput,
+  StageProgressStatus,
 } from "@/app/lib/types/assessment";
 import {
   ACTIVE_ASSESSMENT_STATUSES,
   COMPLETED_ASSESSMENT_STATUSES,
   FAILED_ASSESSMENT_STATUSES,
-  TERMINAL_ASSESSMENT_STATUSES,
   SPREADSHEET_STATE_SCHEMA_VERSION,
   SPREADSHEET_STATE_STORAGE_PREFIX,
   STAGE_LABELS,
 } from "@/app/lib/assessment/constants";
 
-export type StageProgressStatus =
-  | "completed"
-  | "processing"
-  | "pending"
-  | "failed";
-
-export interface StageProgress {
-  stage: string;
-  label: string;
-  status: StageProgressStatus;
-}
-
-/**
- * The stage fields `getStageProgress` reads. `AssessmentChildRun` satisfies it
- * structurally; Home passes a parent run's `run_stats[0]` with a default pipeline.
- */
-export interface StageProgressInput {
-  stage: string | null;
-  stage_status: string | null;
-  pipeline: PipelineConfig | null;
-}
-
-// Per-stage progress for a run, derived from pipeline + stage + stage_status.
 export function getStageProgress(run: StageProgressInput): StageProgress[] {
   const stages = run.pipeline?.stages ?? [];
   if (stages.length === 0 || !run.stage) return [];
 
-  // Terminal markers carry no pipeline position; let the status badge speak.
   if (run.stage === "FAILED") return [];
   if (run.stage === "COMPLETED") {
     return stages.map((s) => ({
@@ -69,7 +47,6 @@ export function getStageProgress(run: StageProgressInput): StageProgress[] {
   });
 }
 
-/** The API returns uppercase statuses; the status sets are lowercase. */
 export function normalizeStatus(status: string): string {
   return (status ?? "").trim().toLowerCase();
 }
@@ -84,15 +61,6 @@ export function isFailedStatus(status: string): boolean {
 
 export function isCompletedStatus(status: string): boolean {
   return COMPLETED_ASSESSMENT_STATUSES.has(normalizeStatus(status));
-}
-
-export function canRetryStatus(status: string): boolean {
-  return isFailedStatus(status);
-}
-
-/** Finished, however it ended — the rows it produced are final and exportable. */
-export function isTerminalStatus(status: string): boolean {
-  return TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function getResultTone(status: string): ResultTone {
@@ -113,8 +81,6 @@ export function getAsyncErrorMessage(action: string, error: unknown): string {
   return `${action}: ${error instanceof Error ? error.message : "Unknown error"}`;
 }
 
-export const PREVIEW_ROW_LIMIT = 10;
-
 export function spreadsheetStorageKey(runId: string): string {
   return `${SPREADSHEET_STATE_STORAGE_PREFIX}${runId}`;
 }
@@ -134,7 +100,6 @@ export function loadSpreadsheetState(runId: string): object | null {
   }
 }
 
-// Evict oldest spreadsheet-state entries until below `keep` count.
 function evictOldestSpreadsheetStates(keep: number): void {
   const entries: Array<{ key: string; ts: number }> = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -146,7 +111,6 @@ function evictOldestSpreadsheetStates(keep: number): void {
       const parsed = JSON.parse(raw) as Partial<SpreadsheetStateEnvelope>;
       entries.push({ key, ts: parsed?.ts ?? 0 });
     } catch {
-      // malformed — treat as oldest so it gets dropped first
       entries.push({ key, ts: 0 });
     }
   }
@@ -168,7 +132,6 @@ export function persistSpreadsheetState(runId: string, data: object): void {
   try {
     localStorage.setItem(key, payload);
   } catch (err) {
-    // Quota exceeded — drop oldest sheets (keep current) and retry once
     const isQuota =
       err instanceof DOMException &&
       (err.name === "QuotaExceededError" ||
@@ -178,13 +141,9 @@ export function persistSpreadsheetState(runId: string, data: object): void {
       localStorage.removeItem(key);
       evictOldestSpreadsheetStates(5);
       localStorage.setItem(key, payload);
-    } catch {
-      // still failing — give up silently; in-memory state remains intact
-    }
+    } catch {}
   }
 }
-
-type SpreadsheetCellEntry = { v: string | number; t: number; s?: object };
 
 export function buildSpreadsheetWorkbookData(
   headers: string[],
@@ -230,15 +189,6 @@ export function buildSpreadsheetWorkbookData(
   };
 }
 
-type SpreadsheetSnapshot = {
-  sheetOrder?: string[];
-  sheets?: Record<
-    string,
-    { cellData?: Record<string, Record<string, { v?: unknown }>> }
-  >;
-};
-
-/** Extract a row-major string matrix from a Univer workbook snapshot (includes user edits). */
 export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
   const snap = snapshot as SpreadsheetSnapshot;
   const sheets = snap.sheets ?? {};
@@ -267,9 +217,6 @@ export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
   return matrix;
 }
 
-/** True when a saved snapshot's header row still matches the fresh headers.
- *  Lets us keep user edits when columns are unchanged but discard a stale
- *  snapshot once new columns (e.g. duplicate detection) appear. */
 export function savedSnapshotMatchesHeaders(
   snapshot: object,
   headers: string[],
@@ -279,11 +226,8 @@ export function savedSnapshotMatchesHeaders(
   return headers.every((h, i) => savedHeaders[i] === h);
 }
 
-/** Serialize a string matrix to CSV with RFC-4180 quoting. */
-/** Excel needs the BOM to read UTF-8 (keeps Hindi/Telugu text intact). */
 const BOM_UTF8 = "\uFEFF";
 
-/** Downloads a matrix as a CSV file. Browser-only; no-ops server-side. */
 export function downloadCsv(fileName: string, matrix: string[][]): void {
   if (typeof document === "undefined") return;
   const blob = new Blob([BOM_UTF8, rowsToCsv(matrix)], {

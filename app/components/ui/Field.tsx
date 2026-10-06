@@ -2,26 +2,7 @@
 
 import { useState } from "react";
 import { EyeIcon, EyeOffIcon } from "@/app/components/icons";
-
-interface FieldProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  error?: string;
-  type?: string;
-  disabled?: boolean;
-  autoFocus?: boolean;
-  className?: string;
-  maxLength?: number;
-  required?: boolean;
-  rows?: number;
-}
-
-interface ControlProps extends Omit<FieldProps, "label" | "error"> {
-  inputType: string;
-  controlClass: string;
-}
+import type { FieldControlProps, FieldProps } from "@/app/lib/types/ui";
 
 function FieldControl({
   value,
@@ -35,7 +16,7 @@ function FieldControl({
   maxLength,
   required,
   rows,
-}: ControlProps) {
+}: FieldControlProps) {
   const shared = {
     value,
     placeholder,

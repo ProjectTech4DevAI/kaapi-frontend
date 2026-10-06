@@ -1,6 +1,3 @@
-/**
- * API-backed assessment data source. Composition only — fetchers live in `api/`.
- */
 import * as assessors from "@/app/lib/assessment/api/assessors";
 import * as runs from "@/app/lib/assessment/api/runs";
 import * as submissions from "@/app/lib/assessment/api/submissions";

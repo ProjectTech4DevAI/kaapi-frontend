@@ -1,12 +1,6 @@
 "use client";
 
-import { SelectHTMLAttributes } from "react";
-import { SelectOption } from "@/app/lib/types/ui";
-
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  options: SelectOption[];
-  placeholder?: string;
-}
+import type { SelectOption, SelectProps } from "@/app/lib/types/ui";
 
 export default function Select({
   options,

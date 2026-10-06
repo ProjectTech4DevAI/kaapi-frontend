@@ -1,21 +1,63 @@
-import type { PagedResult } from "./core";
-import type { Attachment, PrefilterConfig } from "./dataset";
-import type {
-  AssessmentResultsPayload,
-  ListAssessmentsQuery,
-  ResultsTarget,
-} from "./batch";
-import type {
-  AssessmentSubmission,
-  CreateSubmissionInput,
-  SubmissionPreviewPayload,
-} from "./submission";
 import type {
   ConfigPublic,
   ConfigVersionItems,
   ProviderType,
 } from "@/app/lib/types/configs";
-import type { AssessmentRun } from "./results";
+import type {
+  AssessmentResultsPayload,
+  AssessmentSubmission,
+  AssessmentSummary,
+  Attachment,
+  CreateSubmissionInput,
+  LabeledValue,
+  ListAssessmentsQuery,
+  PagedResult,
+  PrefilterConfig,
+  ResultsTarget,
+  SubmissionPreviewPayload,
+} from "./core";
+import type { PromptFieldType, WizardDraft } from "./prompt";
+import type { WizardContext } from "./wizard";
+
+export interface ConfigRef {
+  config_id: string;
+  config_version: number;
+}
+
+export interface ConfigSelection extends ConfigRef {
+  name?: string;
+  provider?: string;
+  model?: string;
+}
+
+export type ConfigParamType = "float" | "int" | "enum";
+
+export interface ConfigParamDefinition {
+  type: ConfigParamType;
+  default: number | string;
+  description?: string;
+  min?: number;
+  max?: number;
+  options?: string[];
+}
+
+export interface AssessmentModelConfig {
+  provider: ProviderType;
+  model_name: string;
+  config: Record<string, ConfigParamDefinition>;
+}
+
+export type ModelOption = LabeledValue;
+
+export interface ConfigRunDetail {
+  configId: string;
+  version: number;
+  name: string;
+  description: string | null;
+  commitMessage: string | null;
+  provider: string | null;
+  model: string | null;
+}
 
 export type ModelParams = Record<string, string | number>;
 
@@ -67,6 +109,14 @@ export interface SaveAssessorVersionResult {
   version: number;
 }
 
+export type AssessmentBlob = Record<string, unknown>;
+
+export interface AssessmentBlobInputColumn {
+  type: PromptFieldType;
+  format: "url" | "base64" | null;
+  strict?: boolean;
+}
+
 export interface CreateRunInput {
   experiment_name: string;
   submission_id: string;
@@ -99,7 +149,38 @@ export interface AssessmentDataSource {
     input: SaveAssessorVersionInput,
   ) => Promise<SaveAssessorVersionResult>;
 
-  listAssessments: (query?: ListAssessmentsQuery) => Promise<AssessmentRun[]>;
-  createRun: (input: CreateRunInput) => Promise<AssessmentRun>;
+  listAssessments: (
+    query?: ListAssessmentsQuery,
+  ) => Promise<AssessmentSummary[]>;
+  createRun: (input: CreateRunInput) => Promise<AssessmentSummary>;
   getRunResults: (target: ResultsTarget) => Promise<AssessmentResultsPayload>;
+}
+
+export interface SaveAssessorParams {
+  draft: WizardDraft;
+  submissionId: string;
+  submissionColumns: string[];
+  configId: string | null;
+  name: string;
+  commitMessage: string;
+}
+
+export interface UseAssessorSaveResult {
+  isSaving: boolean;
+  save: (
+    params: SaveAssessorParams,
+  ) => Promise<
+    (SaveAssessorVersionResult & { detail: AssessorVersionDetail }) | null
+  >;
+}
+
+export interface UseAssessorVersionContextResult {
+  versionDetail: AssessorVersionDetail | null;
+  isLoading: boolean;
+  load: (
+    context: WizardContext,
+    onLoaded: (detail: AssessorVersionDetail) => void,
+  ) => void;
+  adopt: (detail: AssessorVersionDetail) => void;
+  reset: () => void;
 }

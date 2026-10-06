@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * The "create submission set" form: name, description, and the file — picked from
- * the browser dialog or dropped on the zone, validated the same way either route.
- */
 import { useCallback, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { isAllowedDatasetFile } from "@/app/lib/utils/assessment";

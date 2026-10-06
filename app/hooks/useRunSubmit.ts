@@ -1,23 +1,13 @@
 "use client";
 
-/** Creates the run that ends the wizard, then hands control back to Home. */
 import { useCallback, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
 import { getAsyncErrorMessage } from "@/app/lib/assessment/results";
-import type { WizardContext } from "@/app/lib/types/assessment";
-
-interface UseRunSubmitParams {
-  context: WizardContext | null;
-  submissionId: string;
-  runName: string;
-  onRunCreated: (context: WizardContext) => void;
-}
-
-export interface UseRunSubmitResult {
-  isSubmitting: boolean;
-  submitRun: () => Promise<void>;
-}
+import type {
+  UseRunSubmitParams,
+  UseRunSubmitResult,
+} from "@/app/lib/types/assessment";
 
 export function useRunSubmit({
   context,

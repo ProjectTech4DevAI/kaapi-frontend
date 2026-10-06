@@ -1,10 +1,9 @@
-/**
- * Assessment run fetchers against the BATCH API. Network only, no React.
- */
 import { apiFetch } from "@/app/lib/apiClient";
+import { unwrapResponse } from "@/app/lib/utils";
 import { ASSESSMENT_BATCH_ENDPOINT } from "@/app/lib/assessment/constants";
 import { flattenBatchDetail } from "@/app/lib/assessment/batchResults";
 import type {
+  CreateResponse,
   AssessmentDetail,
   AssessmentResultsPayload,
   AssessmentRun,
@@ -12,11 +11,6 @@ import type {
   ListAssessmentsQuery,
   ResultsTarget,
 } from "@/app/lib/types/assessment";
-
-type Envelope<T> = T | { data?: T };
-
-const unwrap = <T>(response: Envelope<T>, fallback: T): T =>
-  (response as { data?: T })?.data ?? (response as T) ?? fallback;
 
 function buildQuery(query: ListAssessmentsQuery): string {
   const params = new URLSearchParams();
@@ -31,29 +25,29 @@ export async function listAssessments(
   apiKey: string,
   query: ListAssessmentsQuery = {},
 ): Promise<AssessmentRun[]> {
-  const response = await apiFetch<Envelope<AssessmentRun[]>>(
+  const response = await apiFetch<CreateResponse<AssessmentRun[]>>(
     `${ASSESSMENT_BATCH_ENDPOINT}${buildQuery(query)}`,
     apiKey,
   );
-  return Array.isArray(response) ? response : unwrap(response, []);
+  return Array.isArray(response) ? response : unwrapResponse(response, []);
 }
 
 export async function getAssessmentDetail(
   apiKey: string,
   assessmentId: string,
 ): Promise<AssessmentDetail> {
-  const response = await apiFetch<Envelope<AssessmentDetail>>(
+  const response = await apiFetch<CreateResponse<AssessmentDetail>>(
     `${ASSESSMENT_BATCH_ENDPOINT}/${assessmentId}`,
     apiKey,
   );
-  return unwrap(response, {} as AssessmentDetail);
+  return unwrapResponse(response, {} as AssessmentDetail);
 }
 
 export async function createRun(
   apiKey: string,
   input: CreateRunInput,
 ): Promise<AssessmentRun> {
-  const response = await apiFetch<Envelope<{ assessment_id: string }>>(
+  const response = await apiFetch<CreateResponse<{ assessment_id: string }>>(
     ASSESSMENT_BATCH_ENDPOINT,
     apiKey,
     {
@@ -65,8 +59,7 @@ export async function createRun(
       }),
     },
   );
-  const ack = unwrap(response, {} as { assessment_id: string });
-  // The submit ack is flat; read the full row back so callers get a list-shaped run.
+  const ack = unwrapResponse(response, {} as { assessment_id: string });
   return getAssessmentDetail(apiKey, ack.assessment_id);
 }
 

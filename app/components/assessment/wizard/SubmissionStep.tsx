@@ -3,8 +3,8 @@
 import { Button, Modal } from "@/app/components/ui";
 import { WarningIcon } from "@/app/components/icons";
 import DataViewModal from "@/app/components/assessment/DataViewModal";
-import CreatePanel from "@/app/components/assessment/datasets/CreatePanel";
-import SubmissionList from "@/app/components/assessment/datasets/SubmissionList";
+import CreatePanel from "@/app/components/assessment/submissions/CreatePanel";
+import SubmissionList from "@/app/components/assessment/submissions/SubmissionList";
 import type { SubmissionStepProps } from "@/app/lib/types/assessment";
 
 export default function SubmissionStep({ step }: SubmissionStepProps) {

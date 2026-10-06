@@ -1,14 +1,7 @@
 "use client";
 
-import { ReactNode, useCallback, useRef, useState } from "react";
-
-interface SplitPaneProps {
-  left: ReactNode;
-  right: ReactNode;
-  /** Left pane width as a percentage; clamped to MIN..MAX. */
-  defaultLeftPercent?: number;
-  label?: string;
-}
+import { useCallback, useRef, useState } from "react";
+import type { SplitPaneProps } from "@/app/lib/types/ui";
 
 const MIN_PERCENT = 28;
 const MAX_PERCENT = 72;
@@ -17,10 +10,6 @@ const KEY_STEP = 4;
 const clamp = (value: number) =>
   Math.min(MAX_PERCENT, Math.max(MIN_PERCENT, value));
 
-/**
- * Two panes with a draggable divider. Stacks vertically below `lg`, where a
- * horizontal split has no room. Keyboard-resizable via the divider's arrow keys.
- */
 export default function SplitPane({
   left,
   right,

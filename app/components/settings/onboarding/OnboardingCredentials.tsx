@@ -3,25 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useToast } from "@/app/hooks/useToast";
+import { useCredentialForm } from "@/app/hooks/useCredentialForm";
 import { apiFetch } from "@/app/lib/apiClient";
 import {
   PROVIDERS,
-  Credential,
-  ProviderDef,
+  type Credential,
+  type OnboardingCredentialsProps,
 } from "@/app/lib/types/credentials";
-import {
-  buildCredentialPayload,
-  getExistingForProvider,
-  missingCredentialFields,
-  populateCredentialForm,
-} from "@/app/lib/utils";
 import ProviderSidebar from "@/app/components/settings/ProviderSidebar";
 import { CredentialFormPanel } from "@/app/components/settings/credentials";
-
-interface OnboardingCredentialsProps {
-  organizationId: number;
-  projectId: number;
-}
 
 export default function OnboardingCredentials({
   organizationId,
@@ -31,17 +21,12 @@ export default function OnboardingCredentials({
   const { activeKey } = useAuth();
   const apiKey = activeKey?.key ?? "";
 
-  const [selectedProvider, setSelectedProvider] = useState<ProviderDef>(
-    PROVIDERS[0],
-  );
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [isActive, setIsActive] = useState(true);
-  const [existingCredential, setExistingCredential] =
-    useState<Credential | null>(null);
+  const form = useCredentialForm(credentials);
+  const { selectedProvider, existingCredential, isActive } = form;
 
   const credentialsUrl = `/api/credentials/org/${organizationId}/${projectId}`;
 
@@ -49,7 +34,7 @@ export default function OnboardingCredentials({
     setIsLoading(true);
     try {
       const data = await apiFetch<{ data?: Credential[] } | Credential[]>(
-        `/api/credentials/org/${organizationId}/${projectId}`,
+        credentialsUrl,
         apiKey,
       );
       setCredentials(Array.isArray(data) ? data : data.data || []);
@@ -58,36 +43,15 @@ export default function OnboardingCredentials({
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, organizationId, projectId]);
+  }, [apiKey, credentialsUrl]);
 
   useEffect(() => {
     loadCredentials();
   }, [loadCredentials]);
 
-  // Re-populate form when provider or credentials change
-  useEffect(() => {
-    const existing = getExistingForProvider(selectedProvider, credentials);
-    setExistingCredential(existing);
-    setIsActive(existing ? existing.is_active : true);
-    setFormValues(populateCredentialForm(selectedProvider, existing));
-  }, [selectedProvider, credentials]);
-
   const handleSave = async () => {
-    const missing = missingCredentialFields(selectedProvider, formValues);
-    if (missing.length > 0) {
-      toast.error(`Please fill in: ${missing.map((f) => f.label).join(", ")}`);
-      return;
-    }
-
-    const built = buildCredentialPayload(selectedProvider, formValues);
-    if (built.error) {
-      toast.error(built.error);
-      return;
-    }
-    if (Object.keys(built.payload).length === 0) {
-      toast.error("No changes to save");
-      return;
-    }
+    const payload = form.validatePayload();
+    if (!payload) return;
 
     setIsSaving(true);
     try {
@@ -97,7 +61,7 @@ export default function OnboardingCredentials({
           provider: selectedProvider.credentialKey,
           is_active: isActive,
           credential: {
-            [selectedProvider.credentialKey]: built.payload,
+            [selectedProvider.credentialKey]: payload,
           },
         }),
       });
@@ -112,12 +76,6 @@ export default function OnboardingCredentials({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCancel = () => {
-    const existing = getExistingForProvider(selectedProvider, credentials);
-    setIsActive(existing ? existing.is_active : true);
-    setFormValues(populateCredentialForm(selectedProvider, existing));
   };
 
   const handleDelete = async () => {
@@ -140,10 +98,6 @@ export default function OnboardingCredentials({
     }
   };
 
-  const handleFieldChange = (key: string, value: string) => {
-    setFormValues((prev) => ({ ...prev, [key]: value }));
-  };
-
   return (
     <div>
       <div className="flex gap-8 mt-4">
@@ -151,32 +105,23 @@ export default function OnboardingCredentials({
           providers={PROVIDERS}
           selectedProvider={selectedProvider}
           credentials={credentials}
-          onSelect={setSelectedProvider}
+          onSelect={form.setSelectedProvider}
           className="w-44"
         />
 
         <CredentialFormPanel
           provider={selectedProvider}
           existingCredential={existingCredential}
-          formValues={formValues}
+          formValues={form.formValues}
           isActive={isActive}
-          hasChanges={
-            existingCredential
-              ? isActive !== existingCredential.is_active ||
-                selectedProvider.fields.some(
-                  (f) =>
-                    (formValues[f.key] || "") !==
-                    (existingCredential.credential[f.key] || ""),
-                )
-              : selectedProvider.fields.some((f) => !!formValues[f.key]?.trim())
-          }
+          hasChanges={form.hasChanges}
           isLoading={isLoading}
           isSaving={isSaving}
           isDeleting={isDeleting}
-          onChange={handleFieldChange}
-          onActiveChange={setIsActive}
+          onChange={form.handleFieldChange}
+          onActiveChange={form.setIsActive}
           onSave={handleSave}
-          onCancel={handleCancel}
+          onCancel={form.resetForm}
           onDelete={handleDelete}
         />
       </div>

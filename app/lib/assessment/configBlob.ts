@@ -1,11 +1,6 @@
-/**
- * Maps between the wizard's `AssessorVersionDetail` and the ASSESSMENT config blob
- * the backend stores. Pure — no React, no network.
- *
- * `input_schema` is the only record of a column's type, so it carries the
- * attachments both ways: flattening it to text loses them on reopen.
- */
 import type {
+  AssessmentBlob,
+  AssessmentBlobInputColumn,
   AssessorModelSelection,
   AssessorVersionDetail,
   Attachment,
@@ -14,16 +9,6 @@ import type {
   PromptFieldType,
 } from "@/app/lib/types/assessment";
 import type { ProviderType } from "@/app/lib/types/configs";
-
-/** The stored blob. Loosely typed: the config service owns its exact shape. */
-export type AssessmentBlob = Record<string, unknown>;
-
-interface InputColumn {
-  type: PromptFieldType;
-  format: "url" | "base64" | null;
-  /** `true` rejects a row where the column is absent or blank; backend default is `false`. */
-  strict?: boolean;
-}
 
 const PLACEHOLDER_RE = /\{([A-Za-z_]\w*)\}/g;
 
@@ -35,7 +20,6 @@ const asRecord = (value: unknown): Record<string, unknown> =>
 const asString = (value: unknown, fallback = ""): string =>
   typeof value === "string" ? value : fallback;
 
-/** Params the wizard owns; the rest of the blob's params are structural. */
 const STRUCTURAL_PARAM_KEYS = new Set([
   "model",
   "submission",
@@ -53,7 +37,9 @@ function modelParams(params: Record<string, unknown>): ModelParams {
   return out;
 }
 
-function columnTypes(blob: AssessmentBlob): Record<string, InputColumn> {
+function columnTypes(
+  blob: AssessmentBlob,
+): Record<string, AssessmentBlobInputColumn> {
   return Object.fromEntries(
     Object.entries(asRecord(blob.input_schema)).map(([name, spec]) => {
       const column = asRecord(spec);
@@ -69,7 +55,9 @@ function columnTypes(blob: AssessmentBlob): Record<string, InputColumn> {
   );
 }
 
-function attachmentsFrom(columns: Record<string, InputColumn>): Attachment[] {
+function attachmentsFrom(
+  columns: Record<string, AssessmentBlobInputColumn>,
+): Attachment[] {
   return Object.entries(columns)
     .filter(([, column]) => column.type !== "text")
     .map(([name, column]) => ({
@@ -101,13 +89,12 @@ function prefilterSelection(
 
 function prefilterConfig(
   prefilters: Record<string, unknown>,
-  columns: Record<string, InputColumn>,
+  columns: Record<string, AssessmentBlobInputColumn>,
 ): PrefilterConfig | null {
   const topic = asRecord(prefilters.topic_relevance);
   if (!Object.keys(topic).length) return null;
 
   const params = asRecord(topic.params);
-  // No stored template means the pre-filter read every column.
   const referenced = params.submission
     ? placeholders(asString(params.submission))
     : Object.keys(columns);
@@ -156,12 +143,11 @@ export function blobToVersionDetail(
   };
 }
 
-/** Only the columns the prompts reference; the backend drops the rest of the sheet. */
 function inputSchema(
   referenced: string[],
   attachments: Attachment[],
   strictColumns: string[],
-): Record<string, InputColumn> {
+): Record<string, AssessmentBlobInputColumn> {
   const byColumn = new Map(attachments.map((item) => [item.column, item]));
   const strict = new Set(strictColumns);
   const names = [...new Set([...referenced, ...byColumn.keys()])];
@@ -169,7 +155,7 @@ function inputSchema(
   return Object.fromEntries(
     names.map((name) => {
       const attachment = byColumn.get(name);
-      const column: InputColumn =
+      const column: AssessmentBlobInputColumn =
         attachment && attachment.type !== "mixed"
           ? { type: attachment.type, format: attachment.format ?? "url" }
           : { type: "text", format: null };
@@ -178,12 +164,10 @@ function inputSchema(
   );
 }
 
-/** The pre-filter's own template, so it reads the chosen columns and no others. */
 function prefilterTemplate(columns: string[]): string {
   return columns.map((name) => `${name}: {${name}}`).join("\n");
 }
 
-/** Columns the prompts read: the assessment template's placeholders plus the pre-filter's picks. */
 function referencedColumns(
   detail: Omit<AssessorVersionDetail, "config_id" | "version">,
 ): string[] {

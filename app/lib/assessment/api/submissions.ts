@@ -1,11 +1,8 @@
-/**
- * Submission-file fetchers. Network only, no React.
- *
- * The backend paths still read `/datasets`; everything they return is a submission.
- */
 import { apiFetch } from "@/app/lib/apiClient";
+import { unwrapResponse } from "@/app/lib/utils";
 import { DATASET_SAMPLE_ROW_LIMIT } from "@/app/lib/assessment/constants";
 import type {
+  CreateResponse,
   AssessmentSubmission,
   CreateSubmissionInput,
   SubmissionPreviewPayload,
@@ -13,19 +10,14 @@ import type {
 
 const ENDPOINT = "/api/assessment/datasets";
 
-type Envelope<T> = T | { data?: T };
-
-const unwrap = <T>(response: Envelope<T>, fallback: T): T =>
-  (response as { data?: T })?.data ?? (response as T) ?? fallback;
-
 export async function listSubmissions(
   apiKey: string,
 ): Promise<AssessmentSubmission[]> {
-  const response = await apiFetch<Envelope<AssessmentSubmission[]>>(
+  const response = await apiFetch<CreateResponse<AssessmentSubmission[]>>(
     ENDPOINT,
     apiKey,
   );
-  return Array.isArray(response) ? response : unwrap(response, []);
+  return Array.isArray(response) ? response : unwrapResponse(response, []);
 }
 
 export async function getSubmissionPreview(
@@ -33,11 +25,11 @@ export async function getSubmissionPreview(
   submissionId: string,
   limitRows: number = DATASET_SAMPLE_ROW_LIMIT,
 ): Promise<SubmissionPreviewPayload> {
-  const response = await apiFetch<Envelope<AssessmentSubmission>>(
+  const response = await apiFetch<CreateResponse<AssessmentSubmission>>(
     `${ENDPOINT}/${submissionId}?limit_rows=${limitRows}`,
     apiKey,
   );
-  const submission = unwrap(response, {} as AssessmentSubmission);
+  const submission = unwrapResponse(response, {} as AssessmentSubmission);
   return {
     total_items: submission.total_items,
     preview: submission.preview ?? undefined,
@@ -53,12 +45,12 @@ export async function createSubmission(
   if (description) body.append("description", description);
   body.append("file", file);
 
-  const response = await apiFetch<Envelope<AssessmentSubmission>>(
+  const response = await apiFetch<CreateResponse<AssessmentSubmission>>(
     ENDPOINT,
     apiKey,
     { method: "POST", body },
   );
-  return unwrap(response, {} as AssessmentSubmission);
+  return unwrapResponse(response, {} as AssessmentSubmission);
 }
 
 export async function deleteSubmission(

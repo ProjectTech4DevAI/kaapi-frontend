@@ -1,9 +1,5 @@
 "use client";
 
-/**
- * Composition root for /assessment: which surface is showing (Home or the wizard),
- * and the version Home should preselect when the wizard hands control back.
- */
 import { useCallback, useState } from "react";
 import { useAssessmentWizard } from "@/app/hooks/useAssessmentWizard";
 import type {
@@ -13,9 +9,7 @@ import type {
   WizardContext,
 } from "@/app/lib/types/assessment";
 
-export type UseAssessmentWorkflowResult = PageLayoutProps;
-
-export function useAssessmentWorkflow(): UseAssessmentWorkflowResult {
+export function useAssessmentWorkflow(): PageLayoutProps {
   const [view, setView] = useState<AssessmentView>("home");
   const [homeSelection, setHomeSelection] = useState<AssessorSelection | null>(
     null,

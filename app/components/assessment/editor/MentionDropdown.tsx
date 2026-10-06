@@ -1,5 +1,7 @@
 "use client";
 
+import { useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { DocumentFileIcon, ImageIcon } from "@/app/components/icons";
 import type {
   MentionDropdownProps,
@@ -17,8 +19,27 @@ const rowBase =
 const eyebrow =
   "px-3 pt-2 pb-1 text-[10px] font-semibold tracking-wider uppercase text-text-secondary";
 
+const VIEWPORT_GUTTER_PX = 8;
+const DROPDOWN_MIN_WIDTH_PX = 220;
+
+function viewportPosition(
+  anchor: HTMLElement | null,
+  position: { top: number; left: number },
+): { top: number; left: number } {
+  const origin = anchor?.getBoundingClientRect() ?? { top: 0, left: 0 };
+  const left = Math.min(
+    origin.left + position.left,
+    window.innerWidth - DROPDOWN_MIN_WIDTH_PX - VIEWPORT_GUTTER_PX,
+  );
+  return {
+    top: origin.top + position.top,
+    left: Math.max(left, VIEWPORT_GUTTER_PX),
+  };
+}
+
 export default function MentionDropdown({
   dropdownRef,
+  anchorRef,
   position,
   activeIndex,
   pendingField,
@@ -32,15 +53,23 @@ export default function MentionDropdown({
   onMouseEnter,
   onMouseLeave,
 }: MentionDropdownProps) {
-  if (!position) return null;
+  const [fixed, setFixed] = useState<{ top: number; left: number } | null>(
+    null,
+  );
 
-  return (
+  useLayoutEffect(() => {
+    setFixed(position ? viewportPosition(anchorRef.current, position) : null);
+  }, [anchorRef, position]);
+
+  if (!fixed || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       ref={dropdownRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ top: position.top, left: position.left }}
-      className="absolute z-40 max-h-52 min-w-[220px] overflow-y-auto rounded-xl border border-border bg-bg-primary shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+      style={{ top: fixed.top, left: fixed.left }}
+      className="fixed z-50 max-h-52 min-w-[220px] overflow-y-auto rounded-xl border border-border bg-bg-primary shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
     >
       {stage === "type" && (
         <>
@@ -111,7 +140,8 @@ export default function MentionDropdown({
             )}
           </button>
         ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

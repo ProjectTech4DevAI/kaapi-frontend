@@ -146,6 +146,7 @@ export interface UseSyncedScrollParams {
 
 export interface MentionDropdownProps {
   dropdownRef: RefObject<HTMLDivElement | null>;
+  anchorRef: RefObject<HTMLElement | null>;
   position: { top: number; left: number } | null;
   activeIndex: number;
   pendingField: string | null;

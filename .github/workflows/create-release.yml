@@ -63,7 +63,6 @@ jobs:
           : "${BUILD_DIRECTORY:?BUILD_DIRECTORY secret is not set}"
           echo "Deploying commit: $DEPLOY_SHA to $BUILD_DIRECTORY"
 
-          # nvm is sourced before `set -e` since nvm.sh can return non-zero internally.
           REMOTE_CMD="export HOME=/home/$ROOT_USER \
             && export NVM_DIR=/home/$ROOT_USER/.nvm \
             && . \$NVM_DIR/nvm.sh \

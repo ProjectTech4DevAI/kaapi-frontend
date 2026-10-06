@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
+import { useVisiblePolling } from "@/app/hooks/useVisiblePolling";
 import {
   getAsyncErrorMessage,
   jsonResultsToTableData,
@@ -175,11 +176,7 @@ export function useRunResults(
     status !== null &&
     !TERMINAL_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 
-  useEffect(() => {
-    if (!isPolling) return;
-    const interval = setInterval(() => void load(), RESULTS_POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [isPolling, load]);
+  useVisiblePolling(load, RESULTS_POLL_INTERVAL_MS, { enabled: isPolling });
 
   return {
     results: joined,

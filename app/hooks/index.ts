@@ -10,4 +10,5 @@ export { usePromptMentions } from "./usePromptMentions";
 export { useRunResults } from "./useRunResults";
 export { useSubmissionStep } from "./useSubmissionStep";
 export { useSyncedScroll } from "./useSyncedScroll";
+export { useVisiblePolling } from "./useVisiblePolling";
 export type { UsePaginatedListResult } from "@/app/lib/types/pagination";

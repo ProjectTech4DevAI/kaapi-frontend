@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useAssessmentData } from "@/app/hooks/useAssessmentData";
 import { useAssessmentFeatureGuard } from "@/app/hooks/useAssessmentFeatureGuard";
+import { useVisiblePolling } from "@/app/hooks/useVisiblePolling";
 import {
   ASSESSORS_PER_PAGE,
   ASSESSOR_SEARCH_DEBOUNCE_MS,
@@ -160,13 +161,7 @@ export function useAssessmentHomeData(): UseAssessmentHomeDataResult {
     };
   }, [loadAssessments]);
 
-  useEffect(() => {
-    const interval = setInterval(
-      () => void loadAssessments(),
-      RESULTS_POLL_INTERVAL_MS,
-    );
-    return () => clearInterval(interval);
-  }, [loadAssessments]);
+  useVisiblePolling(loadAssessments, RESULTS_POLL_INTERVAL_MS);
 
   return {
     assessors,

@@ -1,12 +1,8 @@
 import { Fragment } from "react";
 import type {
-  StageProgress,
+  ChildRunStageProgressProps,
   StageProgressStatus,
-} from "@/app/lib/assessment/results";
-
-interface ChildRunStageProgressProps {
-  stages: StageProgress[];
-}
+} from "@/app/lib/types/assessment";
 
 const nodeClass: Record<StageProgressStatus, string> = {
   completed: "bg-status-success border-status-success text-white",

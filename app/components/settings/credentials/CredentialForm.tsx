@@ -1,23 +1,8 @@
 "use client";
 
 import { Button, Checkbox, Field, Loader } from "@/app/components/ui";
-import { Credential, ProviderDef } from "@/app/lib/types/credentials";
+import type { CredentialFormProps } from "@/app/lib/types/credentials";
 import { timeAgo } from "@/app/lib/utils";
-
-interface Props {
-  provider: ProviderDef;
-  existingCredential: Credential | null;
-  formValues: Record<string, string>;
-  isActive: boolean;
-  isLoading: boolean;
-  isSaving: boolean;
-  isDeleting?: boolean;
-  onChange: (key: string, value: string) => void;
-  onActiveChange: (active: boolean) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  onDelete?: () => void;
-}
 
 export default function CredentialForm({
   provider,
@@ -32,7 +17,7 @@ export default function CredentialForm({
   onSave,
   onCancel,
   onDelete,
-}: Props) {
+}: CredentialFormProps) {
   return (
     <div className="max-w-lg">
       <h2 className="text-xl font-semibold mb-1 text-text-primary">
@@ -60,6 +45,7 @@ export default function CredentialForm({
               onChange={(val) => onChange(field.key, val)}
               placeholder={field.placeholder}
               type={field.type || "text"}
+              required={field.required}
             />
           ))}
 

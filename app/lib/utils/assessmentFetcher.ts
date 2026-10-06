@@ -1,20 +1,8 @@
-// Assessment-scoped config fetchers, model helpers, and save logic.
 import { apiFetch } from "@/app/lib/apiClient";
 import { invalidateConfigCache } from "@/app/lib/configFetchers";
 import { ASSESSMENT_TAG } from "@/app/lib/assessment/constants";
-import {
-  ASSESSMENT_DEFAULT_CONFIG,
-  ASSESSMENT_MODEL_CONFIGS,
-  GPT4_STYLE_CONFIG,
-} from "@/app/lib/data/assessmentModels";
 import { DEFAULT_PAGE_LIMIT } from "@/app/lib/constants";
-import type {
-  ConfigParamDefinition,
-  ConfigSelection,
-  ModelOption,
-  PagedResult,
-  VersionListState,
-} from "@/app/lib/types/assessment";
+import type { ConfigSelection, PagedResult } from "@/app/lib/types/assessment";
 import type {
   CompletionParams,
   ConfigBlob,
@@ -27,72 +15,18 @@ import type {
   ConfigVersionPublic,
   ConfigVersionResponse,
   ConfigWithVersionResponse,
-  SavedConfig,
 } from "@/app/lib/types/configs";
-
-export function getModelsByProvider(provider: string): ModelOption[] {
-  return ASSESSMENT_MODEL_CONFIGS.filter(
-    (model) => model.provider === provider,
-  ).map(({ model_name }) => ({ value: model_name, label: model_name }));
-}
-
-export function getDefaultModelForProvider(provider: string): string {
-  return (
-    ASSESSMENT_MODEL_CONFIGS.find((model) => model.provider === provider)
-      ?.model_name ?? "gpt-4o-mini"
-  );
-}
-
-export function getModelConfigDefinition(
-  modelName: string,
-): Record<string, ConfigParamDefinition> {
-  return (
-    ASSESSMENT_MODEL_CONFIGS.find((item) => item.model_name === modelName)
-      ?.config ?? GPT4_STYLE_CONFIG
-  );
-}
-
-export function buildDefaultParams(
-  modelName: string,
-): Record<string, number | string> {
-  const definition = getModelConfigDefinition(modelName);
-  return Object.fromEntries(
-    Object.entries(definition).map(([key, value]) => [key, value.default]),
-  );
-}
-
-export function buildInitialAssessmentConfigDraft(): ConfigBlob {
-  return JSON.parse(JSON.stringify(ASSESSMENT_DEFAULT_CONFIG)) as ConfigBlob;
-}
-
-export function buildInitialAssessmentVersionState(): VersionListState {
-  return {
-    items: [],
-    isLoading: false,
-    error: null,
-    hasMore: true,
-    nextSkip: 0,
-  };
-}
-
-export function toConfigSelection(saved: SavedConfig): ConfigSelection {
-  return {
-    config_id: saved.config_id,
-    config_version: saved.version,
-    name: saved.name,
-    provider: saved.provider,
-    model: saved.modelName,
-  };
-}
 
 function buildPageResult<T>(
   items: T[],
   skip: number,
   limit: number,
+  metadata?: Record<string, unknown> | null,
 ): PagedResult<T> {
+  const reported = metadata?.has_more;
   return {
     items,
-    hasMore: items.length === limit,
+    hasMore: typeof reported === "boolean" ? reported : items.length === limit,
     nextSkip: skip + items.length,
   };
 }
@@ -117,6 +51,7 @@ export async function fetchConfigPage(params: {
   apiKey: string;
   skip?: number;
   limit?: number;
+  search?: string;
 }): Promise<PagedResult<ConfigPublic>> {
   const skip = params.skip ?? 0;
   const limit = params.limit ?? DEFAULT_PAGE_LIMIT;
@@ -125,6 +60,7 @@ export async function fetchConfigPage(params: {
     limit: String(limit),
     tag: ASSESSMENT_TAG,
   });
+  if (params.search?.trim()) query.set("query", params.search.trim());
   const data = await apiFetch<ConfigListResponse>(
     `/api/configs?${query.toString()}`,
     params.apiKey,
@@ -132,7 +68,7 @@ export async function fetchConfigPage(params: {
   if (!data.success || !data.data) {
     throw new Error(data.error || "Failed to fetch configs");
   }
-  return buildPageResult(data.data, skip, limit);
+  return buildPageResult(data.data, skip, limit, data.metadata);
 }
 
 export async function fetchConfigVersionsPage(
@@ -154,7 +90,7 @@ export async function fetchConfigVersionsPage(
   if (!data.success || !data.data) {
     throw new Error(data.error || "Failed to fetch config versions");
   }
-  return buildPageResult(data.data, skip, limit);
+  return buildPageResult(data.data, skip, limit, data.metadata);
 }
 
 export async function fetchConfigVersionDetail(

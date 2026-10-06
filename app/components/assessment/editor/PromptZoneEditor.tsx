@@ -128,7 +128,11 @@ export default function PromptZoneEditor({
           {segments.map((segment, index) => {
             const key = `${index}-${segment.text}`;
             const name = segment.name;
-            if (segment.kind === "plain" || !name) {
+            if (
+              segment.kind === "plain" ||
+              segment.kind === "unknown" ||
+              !name
+            ) {
               return <span key={key}>{segment.text}</span>;
             }
             const strict = fieldStrict[name] ?? false;

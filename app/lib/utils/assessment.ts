@@ -34,7 +34,7 @@ export function toDatasetPreview(
   const rowCount = preview.returned_rows ?? 0;
   return {
     headers,
-    rows: preview.rows ?? [],
+    rows: (preview.rows ?? []).map((row) => row.map(formatPreviewCell)),
     totalItems: payload.total_items ?? rowCount,
     truncated: Boolean(preview.truncated),
   };
@@ -159,6 +159,96 @@ export function highlightJson(code: string): string {
 
 export function isBlankCell(cell: string | undefined): boolean {
   return cell == null || String(cell).trim() === "";
+}
+
+const INTEGER_WITH_ZERO_FRACTION_RE = /^-?\d+\.0+$/;
+
+export function formatPreviewCell(cell: string): string {
+  const value = String(cell ?? "");
+  return INTEGER_WITH_ZERO_FRACTION_RE.test(value.trim())
+    ? value.trim().split(".")[0]
+    : value;
+}
+
+export function normalizeHeaderName(header: string): string {
+  return header.trim().replace(/\s+/g, "");
+}
+
+function splitCsvHeaderLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (quoted && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === "," && !quoted) {
+      cells.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current);
+  return cells;
+}
+
+function toCsvHeaderLine(cells: string[]): string {
+  return cells
+    .map((cell) =>
+      /[",\n\r]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell,
+    )
+    .join(",");
+}
+
+async function normalizeCsvHeaders(file: File): Promise<File> {
+  const text = await file.text();
+  const newline = text.indexOf("\n");
+  const headerLine = newline === -1 ? text : text.slice(0, newline);
+  const rest = newline === -1 ? "" : text.slice(newline);
+  const header = toCsvHeaderLine(
+    splitCsvHeaderLine(headerLine.replace(/\r$/, "")).map(normalizeHeaderName),
+  );
+  const normalized = `${header}${headerLine.endsWith("\r") ? "\r" : ""}${rest}`;
+  if (normalized === text) return file;
+  return new File([normalized], file.name, { type: file.type });
+}
+
+async function normalizeExcelHeaders(file: File): Promise<File> {
+  const XLSX = await import("xlsx");
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+  let changed = false;
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const ref = sheet["!ref"];
+    if (!ref) continue;
+    const range = XLSX.utils.decode_range(ref);
+    for (let col = range.s.c; col <= range.e.c; col += 1) {
+      const address = XLSX.utils.encode_cell({ r: range.s.r, c: col });
+      const cell = sheet[address];
+      if (!cell || typeof cell.v !== "string") continue;
+      const next = normalizeHeaderName(cell.v);
+      if (next !== cell.v) {
+        sheet[address] = { t: "s", v: next };
+        changed = true;
+      }
+    }
+  }
+  if (!changed) return file;
+  const bookType = file.name.toLowerCase().endsWith(".xls") ? "xls" : "xlsx";
+  const out = XLSX.write(workbook, { type: "array", bookType });
+  return new File([out], file.name, { type: file.type });
+}
+
+export async function normalizeSubmissionHeaders(file: File): Promise<File> {
+  return file.name.toLowerCase().endsWith(".csv")
+    ? normalizeCsvHeaders(file)
+    : normalizeExcelHeaders(file);
 }
 
 export function paginate<T>(

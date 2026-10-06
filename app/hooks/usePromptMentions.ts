@@ -197,6 +197,14 @@ export function usePromptMentions({
     [armHover, fieldStrict, mention],
   );
 
+  const onInput = useCallback(
+    (nextValue: string, cursor: number) => {
+      if (stage) closeStages();
+      mention.onInput(nextValue, cursor);
+    },
+    [closeStages, mention, stage],
+  );
+
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (!stage) {
@@ -240,7 +248,7 @@ export function usePromptMentions({
     columnOptions,
     typeOptions,
     strictOptions,
-    onInput: mention.onInput,
+    onInput,
     onKeyDown,
     pickColumn,
     pickType,

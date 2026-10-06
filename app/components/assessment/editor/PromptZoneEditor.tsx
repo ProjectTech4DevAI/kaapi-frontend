@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { splitTokens } from "@/app/lib/assessment/promptTokens";
 import { usePromptMentions } from "@/app/hooks";
 import MentionDropdown from "./MentionDropdown";
@@ -69,12 +70,14 @@ export default function PromptZoneEditor({
     onFieldStrict,
   });
 
+  const hostRef = useRef<HTMLDivElement>(null);
   const segments = splitTokens(value, columns, fieldTypes);
   const layer =
     "m-0 px-0 font-sans text-sm leading-5 whitespace-pre-wrap break-words";
 
   return (
     <div
+      ref={hostRef}
       data-mention-host
       className="relative grid h-auto cursor-text"
       style={{ minHeight: `${minHeight}px` }}
@@ -128,7 +131,11 @@ export default function PromptZoneEditor({
           {segments.map((segment, index) => {
             const key = `${index}-${segment.text}`;
             const name = segment.name;
-            if (segment.kind === "plain" || !name) {
+            if (
+              segment.kind === "plain" ||
+              segment.kind === "unknown" ||
+              !name
+            ) {
               return <span key={key}>{segment.text}</span>;
             }
             const strict = fieldStrict[name] ?? false;
@@ -174,6 +181,7 @@ export default function PromptZoneEditor({
       {enableMentions && isOpen && (
         <MentionDropdown
           dropdownRef={dropdownRef}
+          anchorRef={hostRef}
           position={position}
           activeIndex={activeIndex}
           pendingField={pendingField}

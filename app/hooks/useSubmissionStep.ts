@@ -6,7 +6,10 @@ import { useAssessmentData } from "@/app/hooks/useAssessmentData";
 import { useSubmissionForm } from "@/app/hooks/useSubmissionForm";
 import { useSubmissionList } from "@/app/hooks/useSubmissionList";
 import { useAssessmentDatasetStore } from "@/app/lib/store/assessment";
-import { nonBlankColumns } from "@/app/lib/utils/assessment";
+import {
+  nonBlankColumns,
+  normalizeSubmissionHeaders,
+} from "@/app/lib/utils/assessment";
 import { getAsyncErrorMessage } from "@/app/lib/assessment/results";
 import type {
   DatasetViewModalData,
@@ -70,7 +73,7 @@ export function useSubmissionStep(): UseSubmissionStepResult {
       const created = await data.createSubmission({
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        file: form.file,
+        file: await normalizeSubmissionHeaders(form.file),
       });
       await list.reload();
       form.reset();

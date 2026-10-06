@@ -12,9 +12,10 @@ import { TooltipIcon } from "@/app/components/icons";
 
 interface InfoTooltipProps {
   text: ReactNode;
+  icon?: ReactNode;
 }
 
-export default function InfoTooltip({ text }: InfoTooltipProps) {
+export default function InfoTooltip({ text, icon }: InfoTooltipProps) {
   const [visible, setVisible] = useState(false);
   const [positioned, setPositioned] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -65,7 +66,7 @@ export default function InfoTooltip({ text }: InfoTooltipProps) {
         onBlur={() => setVisible(false)}
         className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none cursor-pointer"
       >
-        <TooltipIcon className="w-4 h-4 text-[#99B3C1]" />
+        {icon ?? <TooltipIcon className="w-4 h-4 text-[#99B3C1]" />}
       </button>
       {visible &&
         createPortal(

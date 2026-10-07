@@ -30,19 +30,8 @@ export async function POST(
   try {
     const { id } = await params;
 
-    let userBody: Record<string, unknown> = {};
-    try {
-      const parsed = await request.json();
-      if (parsed && typeof parsed === "object") {
-        userBody = parsed as Record<string, unknown>;
-      }
-    } catch {
-      userBody = {};
-    }
-
     const payload = {
-      ...userBody,
-      callback_url: userBody.callback_url ?? resolveCallbackUrl(request),
+      callback_url: resolveCallbackUrl(request),
     };
 
     const { status, data } = await apiClient(

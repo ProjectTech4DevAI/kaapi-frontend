@@ -1,11 +1,11 @@
-// Result status utilities: status checks, counts, filters, and label formatting for assessment runs.
 import type {
-  AssessmentChildRun,
-  AssessmentRun,
   ResultTone,
-  ResultsCounts,
+  SpreadsheetCellEntry,
+  SpreadsheetSnapshot,
   SpreadsheetStateEnvelope,
-  StatusFilter,
+  StageProgress,
+  StageProgressInput,
+  StageProgressStatus,
 } from "@/app/lib/types/assessment";
 import {
   ACTIVE_ASSESSMENT_STATUSES,
@@ -16,24 +16,10 @@ import {
   STAGE_LABELS,
 } from "@/app/lib/assessment/constants";
 
-export type StageProgressStatus =
-  | "completed"
-  | "processing"
-  | "pending"
-  | "failed";
-
-export interface StageProgress {
-  stage: string;
-  label: string;
-  status: StageProgressStatus;
-}
-
-// Per-stage progress for a child run, derived from pipeline + stage + stage_status.
-export function getStageProgress(run: AssessmentChildRun): StageProgress[] {
+export function getStageProgress(run: StageProgressInput): StageProgress[] {
   const stages = run.pipeline?.stages ?? [];
   if (stages.length === 0 || !run.stage) return [];
 
-  // Terminal markers carry no pipeline position; let the status badge speak.
   if (run.stage === "FAILED") return [];
   if (run.stage === "COMPLETED") {
     return stages.map((s) => ({
@@ -61,118 +47,45 @@ export function getStageProgress(run: AssessmentChildRun): StageProgress[] {
   });
 }
 
-// True once any stage has completed, so partial results are worth previewing.
-export function hasViewableResults(run: AssessmentChildRun): boolean {
-  if (isCompletedStatus(run.status)) return true;
-  return getStageProgress(run).some((s) => s.status === "completed");
+export function normalizeStatus(status: string): string {
+  return (status ?? "").trim().toLowerCase();
 }
 
 export function isActiveStatus(status: string): boolean {
-  return ACTIVE_ASSESSMENT_STATUSES.has(status);
+  return ACTIVE_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function isFailedStatus(status: string): boolean {
-  return FAILED_ASSESSMENT_STATUSES.has(status);
+  return FAILED_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function isCompletedStatus(status: string): boolean {
-  return COMPLETED_ASSESSMENT_STATUSES.has(status);
-}
-
-export function canRetryStatus(status: string): boolean {
-  return isFailedStatus(status);
-}
-
-function safeCount(value: unknown, fallback = 0): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-/** Backfill run-count fields from run_stats when the API omits them. */
-export function normalizeAssessmentRun(run: AssessmentRun): AssessmentRun {
-  const runStats = Array.isArray(run.run_stats) ? run.run_stats : [];
-  const pendingRuns = safeCount(
-    run.pending_runs,
-    runStats.filter((item) => item.status === "pending").length,
-  );
-  const processingRuns = safeCount(
-    run.processing_runs,
-    Math.max(
-      0,
-      runStats.filter((item) => isActiveStatus(item.status)).length -
-        pendingRuns,
-    ),
-  );
-  const completedRuns = safeCount(
-    run.completed_runs,
-    runStats.filter((item) => isCompletedStatus(item.status)).length,
-  );
-  const failedRuns = safeCount(
-    run.failed_runs,
-    runStats.filter((item) => isFailedStatus(item.status)).length,
-  );
-  const totalRuns = safeCount(
-    run.total_runs,
-    runStats.length ||
-      pendingRuns + processingRuns + completedRuns + failedRuns,
-  );
-
-  return {
-    ...run,
-    total_runs: totalRuns,
-    pending_runs: pendingRuns,
-    processing_runs: processingRuns,
-    completed_runs: completedRuns,
-    failed_runs: failedRuns,
-  };
+  return COMPLETED_ASSESSMENT_STATUSES.has(normalizeStatus(status));
 }
 
 export function getResultTone(status: string): ResultTone {
-  if (isCompletedStatus(status)) return "success";
-  if (status === "failed" || status === "prefilter_failed") return "error";
-  if (isActiveStatus(status) || status === "completed_with_errors") {
+  const value = normalizeStatus(status);
+  if (isCompletedStatus(value)) return "success";
+  if (value === "failed" || value === "prefilter_failed") return "error";
+  if (isActiveStatus(value) || value === "completed_with_errors") {
     return "warning";
   }
   return "default";
 }
 
 export function formatStatusLabel(status: string): string {
-  return status.replace(/_/g, " ");
+  return normalizeStatus(status).replace(/_/g, " ");
 }
 
 export function getAsyncErrorMessage(action: string, error: unknown): string {
   return `${action}: ${error instanceof Error ? error.message : "Unknown error"}`;
 }
 
-export function getResultsCounts(assessments: AssessmentRun[]): ResultsCounts {
-  return {
-    total: assessments.length,
-    processing: assessments.filter((run) => isActiveStatus(run.status)).length,
-    completed: assessments.filter((run) => isCompletedStatus(run.status))
-      .length,
-    failed: assessments.filter((run) => isFailedStatus(run.status)).length,
-  };
-}
-
-export function filterAssessments(
-  assessments: AssessmentRun[],
-  statusFilter: StatusFilter,
-): AssessmentRun[] {
-  if (statusFilter === "all") return assessments;
-
-  return assessments.filter((run) => {
-    if (statusFilter === "processing") return isActiveStatus(run.status);
-    if (statusFilter === "failed") return isFailedStatus(run.status);
-    return run.status === statusFilter;
-  });
-}
-
-export const PREVIEW_ROW_LIMIT = 10;
-
-export function spreadsheetStorageKey(runId: number): string {
+export function spreadsheetStorageKey(runId: string): string {
   return `${SPREADSHEET_STATE_STORAGE_PREFIX}${runId}`;
 }
 
-export function loadSpreadsheetState(runId: number): object | null {
+export function loadSpreadsheetState(runId: string): object | null {
   try {
     const raw = localStorage.getItem(spreadsheetStorageKey(runId));
     if (!raw) return null;
@@ -187,7 +100,6 @@ export function loadSpreadsheetState(runId: number): object | null {
   }
 }
 
-// Evict oldest spreadsheet-state entries until below `keep` count.
 function evictOldestSpreadsheetStates(keep: number): void {
   const entries: Array<{ key: string; ts: number }> = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -199,7 +111,6 @@ function evictOldestSpreadsheetStates(keep: number): void {
       const parsed = JSON.parse(raw) as Partial<SpreadsheetStateEnvelope>;
       entries.push({ key, ts: parsed?.ts ?? 0 });
     } catch {
-      // malformed — treat as oldest so it gets dropped first
       entries.push({ key, ts: 0 });
     }
   }
@@ -210,7 +121,7 @@ function evictOldestSpreadsheetStates(keep: number): void {
   }
 }
 
-export function persistSpreadsheetState(runId: number, data: object): void {
+export function persistSpreadsheetState(runId: string, data: object): void {
   const envelope: SpreadsheetStateEnvelope = {
     v: SPREADSHEET_STATE_SCHEMA_VERSION,
     ts: Date.now(),
@@ -221,7 +132,6 @@ export function persistSpreadsheetState(runId: number, data: object): void {
   try {
     localStorage.setItem(key, payload);
   } catch (err) {
-    // Quota exceeded — drop oldest sheets (keep current) and retry once
     const isQuota =
       err instanceof DOMException &&
       (err.name === "QuotaExceededError" ||
@@ -231,13 +141,9 @@ export function persistSpreadsheetState(runId: number, data: object): void {
       localStorage.removeItem(key);
       evictOldestSpreadsheetStates(5);
       localStorage.setItem(key, payload);
-    } catch {
-      // still failing — give up silently; in-memory state remains intact
-    }
+    } catch {}
   }
 }
-
-type SpreadsheetCellEntry = { v: string | number; t: number; s?: object };
 
 export function buildSpreadsheetWorkbookData(
   headers: string[],
@@ -283,15 +189,6 @@ export function buildSpreadsheetWorkbookData(
   };
 }
 
-type SpreadsheetSnapshot = {
-  sheetOrder?: string[];
-  sheets?: Record<
-    string,
-    { cellData?: Record<string, Record<string, { v?: unknown }>> }
-  >;
-};
-
-/** Extract a row-major string matrix from a Univer workbook snapshot (includes user edits). */
 export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
   const snap = snapshot as SpreadsheetSnapshot;
   const sheets = snap.sheets ?? {};
@@ -320,9 +217,6 @@ export function spreadsheetSnapshotToRows(snapshot: object): string[][] {
   return matrix;
 }
 
-/** True when a saved snapshot's header row still matches the fresh headers.
- *  Lets us keep user edits when columns are unchanged but discard a stale
- *  snapshot once new columns (e.g. duplicate detection) appear. */
 export function savedSnapshotMatchesHeaders(
   snapshot: object,
   headers: string[],
@@ -332,16 +226,42 @@ export function savedSnapshotMatchesHeaders(
   return headers.every((h, i) => savedHeaders[i] === h);
 }
 
-/** Serialize a string matrix to CSV with RFC-4180 quoting. */
+const BOM_UTF8 = "\uFEFF";
+
+export function downloadCsv(fileName: string, matrix: string[][]): void {
+  if (typeof document === "undefined") return;
+  const blob = new Blob([BOM_UTF8, rowsToCsv(matrix)], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${fileName || "results"}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function rowsToCsv(matrix: string[][]): string {
   const escape = (cell: string) =>
     /[",\n\r]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell;
   return matrix.map((row) => row.map(escape).join(",")).join("\r\n");
 }
 
+function orderKeys(keys: string[], order?: string[]): string[] {
+  if (!order || order.length === 0) return keys;
+  const present = new Set(keys);
+  const ranked = order.filter((key) => present.has(key));
+  const seen = new Set(ranked);
+  return [...ranked, ...keys.filter((key) => !seen.has(key))];
+}
+
 export function jsonResultsToTableData(
   results: Record<string, unknown>[],
-  opts?: { skipFields?: Set<string>; rowLimit?: number },
+  opts?: {
+    skipFields?: Set<string>;
+    rowLimit?: number;
+    columnOrder?: string[];
+  },
 ): { headers: string[]; rows: string[][] } {
   if (results.length === 0) return { headers: [], rows: [] };
 
@@ -364,10 +284,14 @@ export function jsonResultsToTableData(
       "result_status",
       "error",
       "row_id",
+      "row_index",
       "experiment_name",
     ]);
 
-  const allKeys = Array.from(new Set(results.flatMap((r) => Object.keys(r))));
+  const allKeys = orderKeys(
+    Array.from(new Set(results.flatMap((r) => Object.keys(r)))),
+    opts?.columnOrder,
+  );
   const displayKeys = allKeys.filter((k) => !skipFields.has(k));
 
   const nonEmptyKeys = displayKeys.filter((key) =>

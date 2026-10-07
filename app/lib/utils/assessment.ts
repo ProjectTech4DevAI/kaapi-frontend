@@ -4,14 +4,9 @@ import {
   JSON_TOKEN_CLASSES,
 } from "@/app/lib/assessment/constants";
 import type {
-  ColumnConfig,
-  ColumnMapping,
-  ColumnRole,
-  CreateDatasetResponse,
   DatasetPreview,
   DatasetPreviewResponse,
-  ReviewColumn,
-  RoleVisuals,
+  PageSlice,
   SchemaProperty,
 } from "@/app/lib/types/assessment";
 
@@ -20,6 +15,29 @@ export function isAllowedDatasetFile(fileName: string): boolean {
   return ALLOWED_DATASET_EXTENSIONS.some((extension) =>
     normalizedName.endsWith(extension),
   );
+}
+
+export function toDatasetPreview(
+  response: DatasetPreviewResponse,
+): DatasetPreview {
+  const payload = response?.data ?? response;
+  const preview = payload?.preview;
+  if (!preview) {
+    throw new Error("Dataset preview is unavailable.");
+  }
+
+  const headers = preview.headers ?? [];
+  if (headers.length === 0) {
+    throw new Error("Dataset file is missing column headers.");
+  }
+
+  const rowCount = preview.returned_rows ?? 0;
+  return {
+    headers,
+    rows: (preview.rows ?? []).map((row) => row.map(formatPreviewCell)),
+    totalItems: payload.total_items ?? rowCount,
+    truncated: Boolean(preview.truncated),
+  };
 }
 
 export async function fetchDatasetPreview(
@@ -41,30 +59,24 @@ export async function fetchDatasetPreview(
     throw new Error(message);
   }
 
-  const payload = res?.data ?? res;
-  const preview = payload?.preview;
-  if (!preview) {
-    throw new Error("Dataset preview is unavailable.");
-  }
-
-  const headers = preview.headers ?? [];
-  if (headers.length === 0) {
-    throw new Error("Dataset file is missing column headers.");
-  }
-
-  return {
-    headers,
-    rows: preview.rows ?? [],
-    totalItems: payload?.total_items ?? preview.returned_rows ?? 0,
-    truncated: Boolean(preview.truncated),
-  };
+  return toDatasetPreview(res);
 }
 
-export function extractCreatedDataset(data: CreateDatasetResponse) {
-  return (
-    (data as { data?: { dataset_id?: number; dataset_name?: string } }).data ??
-    (data as { dataset_id?: number; dataset_name?: string })
-  );
+export function nonBlankColumns(preview: DatasetPreview): {
+  headers: string[];
+  sampleRow: Record<string, string>;
+} {
+  const keptIdx = preview.headers
+    .map((_, colIdx) => colIdx)
+    .filter((colIdx) => !isBlankCell(preview.headers[colIdx]));
+
+  const firstRow = preview.rows[0] || [];
+  return {
+    headers: keptIdx.map((idx) => preview.headers[idx]),
+    sampleRow: Object.fromEntries(
+      keptIdx.map((idx) => [preview.headers[idx], String(firstRow[idx] ?? "")]),
+    ),
+  };
 }
 
 export function handleForbiddenError(
@@ -105,96 +117,6 @@ export function getConfigDetailErrorMessage(error: unknown): string {
     return CONFIG_VERSION_UNAVAILABLE_MESSAGE;
   }
   return message || "Failed to load configuration details";
-}
-
-export function colorMapping(role: ColumnRole): RoleVisuals {
-  switch (role) {
-    case "text":
-      return {
-        panelClass: "border-status-success-border bg-status-success-bg",
-        dotClass: "bg-status-success",
-        activeButtonClass:
-          "!border-status-success-border !bg-status-success-bg !text-status-success-text hover:!bg-status-success-bg !ring-0",
-      };
-    case "attachment":
-      return {
-        panelClass: "border-status-warning-border bg-status-warning-bg",
-        dotClass: "bg-status-warning",
-        activeButtonClass:
-          "!border-status-warning-border !bg-status-warning-bg !text-status-warning-text hover:!bg-status-warning-bg !ring-0",
-      };
-    case "ground_truth":
-      return {
-        panelClass: "border-accent-subtle bg-accent-subtle/20",
-        dotClass: "bg-accent-primary",
-        activeButtonClass:
-          "!border-accent-subtle !bg-accent-subtle/20 !text-accent-primary hover:!bg-accent-subtle/20 !ring-0",
-      };
-    case "unmapped":
-    default:
-      return {
-        panelClass: "border-border bg-bg-primary",
-        dotClass: "bg-border",
-        activeButtonClass:
-          "!border-border !bg-bg-secondary !text-text-primary hover:!bg-bg-secondary !ring-0",
-      };
-  }
-}
-
-export function buildColumnConfigs(
-  columns: string[],
-  columnMapping: ColumnMapping,
-): ColumnConfig[] {
-  return columns.map((column) => {
-    if (columnMapping.textColumns.includes(column)) {
-      return { role: "text" };
-    }
-    const attachment = columnMapping.attachments.find(
-      (item) => item.column === column,
-    );
-    if (!attachment) {
-      return { role: "unmapped" };
-    }
-    const map = attachment.type_value_map ?? {};
-    const valuesFor = (t: string) =>
-      Object.entries(map)
-        .filter(([, v]) => v === t)
-        .map(([k]) => k)
-        .join(", ");
-    return {
-      role: "attachment",
-      attachmentType: attachment.type,
-      attachmentFormat: attachment.format,
-      attachmentTypeColumn: attachment.type_column ?? undefined,
-      attachmentImageValues: valuesFor("image"),
-      attachmentPdfValues: valuesFor("pdf"),
-    };
-  });
-}
-
-export function buildMappedColumns(
-  columnMapping: ColumnMapping,
-): ReviewColumn[] {
-  return [
-    ...columnMapping.textColumns.map((column) => ({
-      key: `text:${column}`,
-      column,
-      role: "text" as const,
-      badgeClass: "bg-status-success-bg text-status-success-text",
-    })),
-    ...columnMapping.attachments.map(({ column }) => ({
-      key: `attachment:${column}`,
-      column,
-      role: "attachment" as const,
-      badgeClass: "bg-status-warning-bg text-status-warning-text",
-    })),
-    ...columnMapping.groundTruthColumns.map((column) => ({
-      key: `ground_truth:${column}`,
-      column,
-      role: "ground truth" as const,
-      badgeClass: "bg-accent-subtle/30 text-accent-primary",
-    })),
-  ];
 }
 
 export function highlightJson(code: string): string {
@@ -239,46 +161,123 @@ export function isBlankCell(cell: string | undefined): boolean {
   return cell == null || String(cell).trim() === "";
 }
 
-interface AssessmentSubmitChecks {
-  datasetId: string | null;
-  hasMapperSelection: boolean;
-  hasResponseFormat: boolean;
-  configCount: number;
-  experimentName: string;
+const INTEGER_WITH_ZERO_FRACTION_RE = /^-?\d+\.0+$/;
+
+export function formatPreviewCell(cell: string): string {
+  const value = String(cell ?? "");
+  return INTEGER_WITH_ZERO_FRACTION_RE.test(value.trim())
+    ? value.trim().split(".")[0]
+    : value;
 }
 
-export function getAssessmentSubmitError(
-  checks: AssessmentSubmitChecks,
-): string | null {
-  if (!checks.datasetId) return "Dataset is required";
-  if (!checks.hasMapperSelection)
-    return "Map at least one text or attachment column";
-  if (!checks.hasResponseFormat) return "Response format is required";
-  if (checks.configCount === 0) return "Select at least one configuration";
-  if (!checks.experimentName.trim()) return "Experiment name is required";
-  return null;
+export function normalizeHeaderName(header: string): string {
+  return header.trim().replace(/\s+/g, "");
 }
 
-interface AssessmentSubmitBlockerChecks {
-  datasetId: string | null;
-  hasMapperSelection: boolean;
-  hasResponseFormat: boolean;
-  configCount: number;
-  experimentName: string;
+function splitCsvHeaderLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === '"') {
+      if (quoted && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (char === "," && !quoted) {
+      cells.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current);
+  return cells;
 }
 
-export function getAssessmentSubmitBlocker(
-  checks: AssessmentSubmitBlockerChecks,
-): string {
-  if (!checks.datasetId) return "Select a dataset to submit";
-  if (!checks.hasMapperSelection)
-    return "Map at least one text or attachment column to submit";
-  if (!checks.hasResponseFormat) return "Set response format to submit";
-  if (checks.configCount === 0)
-    return "Select at least one configuration to submit";
-  if (!checks.experimentName.trim())
-    return "Enter an experiment name to submit";
-  return "";
+function toCsvHeaderLine(cells: string[]): string {
+  return cells
+    .map((cell) =>
+      /[",\n\r]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell,
+    )
+    .join(",");
+}
+
+async function normalizeCsvHeaders(file: File): Promise<File> {
+  const text = await file.text();
+  const newline = text.indexOf("\n");
+  const headerLine = newline === -1 ? text : text.slice(0, newline);
+  const rest = newline === -1 ? "" : text.slice(newline);
+  const header = toCsvHeaderLine(
+    splitCsvHeaderLine(headerLine.replace(/\r$/, "")).map(normalizeHeaderName),
+  );
+  const normalized = `${header}${headerLine.endsWith("\r") ? "\r" : ""}${rest}`;
+  if (normalized === text) return file;
+  return new File([normalized], file.name, { type: file.type });
+}
+
+async function normalizeExcelHeaders(file: File): Promise<File> {
+  const XLSX = await import("xlsx");
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+  let changed = false;
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const ref = sheet["!ref"];
+    if (!ref) continue;
+    const range = XLSX.utils.decode_range(ref);
+    for (let col = range.s.c; col <= range.e.c; col += 1) {
+      const address = XLSX.utils.encode_cell({ r: range.s.r, c: col });
+      const cell = sheet[address];
+      if (!cell || typeof cell.v !== "string") continue;
+      const next = normalizeHeaderName(cell.v);
+      if (next !== cell.v) {
+        sheet[address] = { t: "s", v: next };
+        changed = true;
+      }
+    }
+  }
+  if (!changed) return file;
+  const bookType = file.name.toLowerCase().endsWith(".xls") ? "xls" : "xlsx";
+  const out = XLSX.write(workbook, { type: "array", bookType });
+  return new File([out], file.name, { type: file.type });
+}
+
+export async function normalizeSubmissionHeaders(file: File): Promise<File> {
+  return file.name.toLowerCase().endsWith(".csv")
+    ? normalizeCsvHeaders(file)
+    : normalizeExcelHeaders(file);
+}
+
+export function paginate<T>(
+  items: T[],
+  page: number,
+  perPage: number,
+): PageSlice<T> {
+  const pages = Math.max(1, Math.ceil(items.length / perPage));
+  const safePage = Math.min(Math.max(1, page), pages);
+  return {
+    items: items.slice((safePage - 1) * perPage, safePage * perPage),
+    page: safePage,
+    pages,
+    total: items.length,
+  };
+}
+
+export function pageWindow(
+  page: number,
+  pages: number,
+  size: number,
+): number[] {
+  const start = Math.max(1, Math.min(page - 1, pages - size + 1));
+  const end = Math.min(pages, start + size - 1);
+  const window: number[] = [];
+  for (let candidate = start; candidate <= end; candidate += 1) {
+    window.push(candidate);
+  }
+  return window;
 }
 
 export function schemaToJsonSchema(

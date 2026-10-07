@@ -57,23 +57,18 @@ jobs:
           APP_NAME: ${{ secrets.PM2_APP_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
-          ROOT_USER: ${{ secrets.USER }}
           DEPLOY_SHA: ${{ github.sha }}
         run: |
           : "${BUILD_DIRECTORY:?BUILD_DIRECTORY secret is not set}"
           echo "Deploying commit: $DEPLOY_SHA to $BUILD_DIRECTORY"
 
-          REMOTE_CMD="export HOME=/home/$ROOT_USER \
-            && export NVM_DIR=/home/$ROOT_USER/.nvm \
-            && . \$NVM_DIR/nvm.sh \
-            && set -e \
-            && git config --global --add safe.directory $BUILD_DIRECTORY \
+          REMOTE_CMD="git config --global --add safe.directory $BUILD_DIRECTORY \
             && cd $BUILD_DIRECTORY \
             && git fetch origin --tags --prune \
             && git checkout $DEPLOY_SHA \
             && npm ci \
             && npm run build \
-            && sudo -iu $ROOT_USER pm2 restart $APP_NAME"
+            && pm2 restart $APP_NAME"
 
           # Build the parameters as JSON so quoting in REMOTE_CMD can't break it.
           PARAMS=$(jq -n --arg cmd "$REMOTE_CMD" '{commands: [$cmd]}')

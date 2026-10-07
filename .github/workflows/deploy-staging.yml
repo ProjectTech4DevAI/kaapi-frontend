@@ -44,8 +44,7 @@ jobs:
           : "${BUILD_DIRECTORY:?BUILD_DIRECTORY secret is not set}"
           echo "Deploying commit: $DEPLOY_SHA to $BUILD_DIRECTORY"
 
-          REMOTE_CMD="set -e \
-            && git config --global --add safe.directory $BUILD_DIRECTORY \
+          REMOTE_CMD="git config --global --add safe.directory $BUILD_DIRECTORY \
             && cd $BUILD_DIRECTORY \
             && git fetch origin --tags --prune \
             && git checkout $DEPLOY_SHA \

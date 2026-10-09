@@ -5,45 +5,83 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # Deploy only when tags like v1.0.0, v2.1.0, etc., are created
 
+concurrency:
+  group: production-ec2-deploy
+  cancel-in-progress: false
+
 jobs:
+  verify-ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Confirm CI passed on the tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA="${{ github.sha }}"
+          echo "Checking Kaapi CI conclusion for ${SHA}"
+          CONCLUSION=$(gh api \
+            "repos/${{ github.repository }}/actions/runs?head_sha=${SHA}" \
+            --jq 'first(.workflow_runs[]
+                    | select(.name == "Kaapi CI" and .status == "completed")
+                    | .conclusion) // "missing"')
+          echo "Kaapi CI conclusion: ${CONCLUSION}"
+          if [ "${CONCLUSION}" != "success" ]; then
+            echo "::error::Kaapi CI has not passed for ${SHA} (conclusion: ${CONCLUSION}). Aborting release."
+            exit 1
+          fi
+
   deploy:
+    needs: verify-ci
     runs-on: ubuntu-latest
     environment: AWS_ENV
 
     permissions:
-      packages: write
-      contents: read
-      attestations: write
       id-token: write
+      contents: read
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy via SSM
+      - name: Trigger deploy on EC2 via SSM
         id: ssm
         env:
           BUILD_DIRECTORY: ${{ secrets.BUILD_DIRECTORY }}
           APP_NAME: ${{ secrets.PM2_APP_NAME }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
-          ROOT_USER: ${{ secrets.USER }}
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
-          REMOTE_CMD="export HOME=/home/$ROOT_USER && export NVM_DIR="/home/$ROOT_USER/.nvm" && [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh" && git config --global --add safe.directory ${BUILD_DIRECTORY} && set -e && cd ${BUILD_DIRECTORY} && git pull origin main && npm ci && npm run build && sudo -iu ${ROOT_USER} pm2 restart ${APP_NAME}"
+          : "${BUILD_DIRECTORY:?BUILD_DIRECTORY secret is not set}"
+          echo "Deploying commit: $DEPLOY_SHA to $BUILD_DIRECTORY"
+
+          REMOTE_CMD="git config --global --add safe.directory $BUILD_DIRECTORY \
+            && cd $BUILD_DIRECTORY \
+            && git fetch origin --tags --prune \
+            && git checkout $DEPLOY_SHA \
+            && npm ci \
+            && npm run build \
+            && pm2 restart $APP_NAME"
+
+          # Build the parameters as JSON so quoting in REMOTE_CMD can't break it.
+          PARAMS=$(jq -n --arg cmd "$REMOTE_CMD" '{commands: [$cmd]}')
+
           CMD_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters commands="[\"$REMOTE_CMD\"]" \
+            --comment "Deploy kaapi-frontend ${{ github.ref_name }}" \
+            --parameters "$PARAMS" \
             --region "$AWS_REGION" \
-            --query 'Command.CommandId' \
-            --output text)
+            --query "Command.CommandId" --output text)
           echo "cmd_id=$CMD_ID" >> "$GITHUB_OUTPUT"
+          echo "Sent SSM command: $CMD_ID"
 
       - name: Wait for SSM command to finish
         timeout-minutes: 20
@@ -83,3 +121,20 @@ jobs:
             --instance-id "$INSTANCE_ID" \
             --query '{Status:Status,Stdout:StandardOutputContent,Stderr:StandardErrorContent}' \
             --output json
+
+  notify:
+    needs: [verify-ci, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/discord-notify
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          name: kaapi-frontend-production
+          release: ${{ github.ref_name }}
+          sha: ${{ github.sha }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ok: ${{ needs.deploy.result == 'success' }}
+          # Call out the specific case where the release was blocked by CI.
+          failure-reason: ${{ needs.verify-ci.result != 'success' && 'CI never passed on the tagged commit — release blocked.' || '' }}

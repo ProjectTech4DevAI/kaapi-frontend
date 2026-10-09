@@ -213,3 +213,7 @@ export const PAGER_BUTTON_IDLE =
   "border-border bg-bg-primary text-text-secondary hover:border-accent-muted hover:text-text-primary";
 export const PAGER_BUTTON_CURRENT =
   "border-accent-primary bg-accent-primary text-white font-semibold";
+
+/** Chatbot flow — default per-request limits for the test panel. */
+export const CHATBOT_DEFAULT_MAX_TOKENS = 2048;
+export const CHATBOT_DEFAULT_HISTORY_TOKEN_LIMIT = 6000;

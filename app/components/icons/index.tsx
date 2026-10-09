@@ -53,6 +53,7 @@ export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
 export { default as LogoutIcon } from "./sidebar/LogoutIcon";
 export { default as AssessmentIcon } from "./sidebar/AssessmentIcon";
 export { default as ChatIcon } from "./sidebar/ChatIcon";
+export { default as FlowIcon } from "./sidebar/FlowIcon";
 export { default as SendIcon } from "./sidebar/SendIcon";
 export { default as ChartBarIcon } from "./sidebar/ChartBarIcon";
 

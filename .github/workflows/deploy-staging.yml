@@ -1,10 +1,12 @@
 name: Deploy Kaapi to EC2 Staging
 
 on:
-  workflow_run:
-    workflows: ["Kaapi CI"]
-    branches: [main]
-    types: [completed]
+  # workflow_run:
+  #   workflows: ["Kaapi CI"]
+  #   branches: [main]
+  #   types: [completed]
+  push:
+    branches: [feat/deployment-script-improvements]
   workflow_dispatch:
 
 concurrency:
@@ -17,9 +19,8 @@ jobs:
     environment: Staging
     # workflow_dispatch runs unconditionally; workflow_run only on a green CI from a push to main (not PRs).
     if: >-
-      ${{ github.event_name == 'workflow_dispatch' ||
-          (github.event.workflow_run.conclusion == 'success' &&
-           github.event.workflow_run.event == 'push') }}
+      ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+          github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
       id-token: write

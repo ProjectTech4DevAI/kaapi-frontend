@@ -60,7 +60,6 @@ jobs:
           DEPLOY_SHA: ${{ github.sha }}
         run: |
           : "${BUILD_DIRECTORY:?BUILD_DIRECTORY secret is not set}"
-          echo "Deploying commit: $DEPLOY_SHA to $BUILD_DIRECTORY"
 
           REMOTE_CMD="git config --global --add safe.directory $BUILD_DIRECTORY \
             && cd $BUILD_DIRECTORY \

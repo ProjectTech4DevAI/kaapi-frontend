@@ -43,7 +43,6 @@ jobs:
         run: |
           : "${BUILD_DIRECTORY:?BUILD_DIRECTORY secret is not set}"
           : "${ROOT_USER:?USER secret is not set}"
-          echo "Deploying commit: $DEPLOY_SHA to $BUILD_DIRECTORY"
 
           REMOTE_CMD="export HOME=/home/$ROOT_USER \
             && export NVM_DIR=/home/$ROOT_USER/.nvm \

@@ -91,6 +91,14 @@ export default function EvalRunCard({
                           </span>
                         </>
                       )}
+                      {job.cost.judge && (
+                        <>
+                          <span>Judge scoring</span>
+                          <span className="text-left">
+                            {formatCostUSD(job.cost.judge.cost_usd)}
+                          </span>
+                        </>
+                      )}
                       {job.cost.embedding && (
                         <>
                           <span>Cosine similarity calculation</span>

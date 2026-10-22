@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   addEdge,
   Connection,
@@ -8,10 +8,8 @@ import {
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
-import {
-  CHATBOT_DEFAULT_HISTORY_TOKEN_LIMIT,
-  CHATBOT_DEFAULT_MAX_TOKENS,
-} from "@/app/lib/constants";
+import { DEFAULT_CHATBOT_NAME } from "@/app/lib/constants";
+import { useChatbotStore } from "@/app/lib/store/chatbot";
 import {
   ChatbotFlowNode,
   ChatbotLlmNode,
@@ -20,35 +18,17 @@ import {
 
 const INPUT_ID = "input";
 const OUTPUT_ID = "output";
-const LLM_ID_PREFIX = "LLMResponseWithPrompt";
-const INITIAL_LLM_ID = `${LLM_ID_PREFIX}-1`;
+// Fixed so server and client render the same id (avoids hydration mismatch).
+const LLM_ID = "LLMResponseWithPrompt-1";
 
-function shortId(): string {
-  return Math.random().toString(16).slice(2, 7);
-}
-
-function createLlmNode(
-  position: { x: number; y: number },
-  label = "New step",
-  id = `${LLM_ID_PREFIX}-${shortId()}`,
-): ChatbotLlmNode {
-  return {
-    id,
-    type: "llm",
-    position,
-    data: {
-      label,
-      systemPrompt: "",
-      configId: "",
-      configVersion: undefined,
-      maxTokens: CHATBOT_DEFAULT_MAX_TOKENS,
-      historyTokenLimit: CHATBOT_DEFAULT_HISTORY_TOKEN_LIMIT,
-    },
-  };
-}
+const DEFAULT_NODE_DATA: ChatbotNodeData = {
+  label: DEFAULT_CHATBOT_NAME,
+  systemPrompt: "",
+  configId: "",
+  configVersion: undefined,
+};
 
 function createInitialFlow(): { nodes: ChatbotFlowNode[]; edges: Edge[] } {
-  const llm = createLlmNode({ x: 260, y: 0 }, "Onboarding", INITIAL_LLM_ID);
   return {
     nodes: [
       {
@@ -58,18 +38,24 @@ function createInitialFlow(): { nodes: ChatbotFlowNode[]; edges: Edge[] } {
         data: { label: "Input" },
         deletable: false,
       },
-      llm,
+      {
+        id: LLM_ID,
+        type: "llm",
+        position: { x: 260, y: 0 },
+        data: DEFAULT_NODE_DATA,
+        deletable: false,
+      },
       {
         id: OUTPUT_ID,
         type: "flowOutput",
-        position: { x: 640, y: 270 },
+        position: { x: 640, y: 230 },
         data: { label: "Output" },
         deletable: false,
       },
     ],
     edges: [
-      { id: `${INPUT_ID}->${llm.id}`, source: INPUT_ID, target: llm.id },
-      { id: `${llm.id}->${OUTPUT_ID}`, source: llm.id, target: OUTPUT_ID },
+      { id: `${INPUT_ID}->${LLM_ID}`, source: INPUT_ID, target: LLM_ID },
+      { id: `${LLM_ID}->${OUTPUT_ID}`, source: LLM_ID, target: OUTPUT_ID },
     ],
   };
 }
@@ -78,30 +64,55 @@ function isLlmNode(node: ChatbotFlowNode): node is ChatbotLlmNode {
   return node.type === "llm";
 }
 
-/** Owns the in-memory (unsaved) chatbot flow graph and the node under test. */
+function isSameData(a: ChatbotNodeData, b: ChatbotNodeData): boolean {
+  return (
+    a.label === b.label &&
+    a.systemPrompt === b.systemPrompt &&
+    a.configId === b.configId &&
+    (a.configVersion ?? null) === (b.configVersion ?? null)
+  );
+}
+
+/**
+ * Owns the canvas graph (Input → LLM → Output) and tracks the LLM node's
+ * edits against the last saved version, for the Save / Discard buttons.
+ */
 export function useChatbotFlow() {
   const [initial] = useState(createInitialFlow);
   const [nodes, setNodes, onNodesChange] = useNodesState<ChatbotFlowNode>(
     initial.nodes,
   );
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initial.edges);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const llmNodes = nodes.filter(isLlmNode);
-  // Fall back to the first LLM node so the test panel always has a target.
-  const selectedNode =
-    llmNodes.find((n) => n.id === selectedId) ?? llmNodes[0] ?? null;
+  const savedFlow = useChatbotStore((s) => s.savedFlow);
+  const hasHydrated = useChatbotStore((s) => s.hasHydrated);
+  const setSavedFlow = useChatbotStore((s) => s.setSavedFlow);
+
+  const llmNode = nodes.find(isLlmNode) ?? null;
+  const baseline = savedFlow ?? DEFAULT_NODE_DATA;
+  const isDirty = !!llmNode && !isSameData(llmNode.data, baseline);
+
+  const replaceNodeData = useCallback(
+    (data: ChatbotNodeData) => {
+      setNodes((prev) =>
+        prev.map((n) => (isLlmNode(n) ? { ...n, data: { ...data } } : n)),
+      );
+    },
+    [setNodes],
+  );
+
+  // Load the saved flow into the node once localStorage has rehydrated.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (!hasHydrated || restoredRef.current) return;
+    restoredRef.current = true;
+    if (savedFlow) replaceNodeData(savedFlow);
+  }, [hasHydrated, savedFlow, replaceNodeData]);
 
   const onConnect = useCallback(
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges],
   );
-
-  const addNode = useCallback(() => {
-    const node = createLlmNode({ x: 260, y: 160 + llmNodes.length * 60 });
-    setNodes((prev) => [...prev, node]);
-    setSelectedId(node.id);
-  }, [llmNodes.length, setNodes]);
 
   const updateNodeData = useCallback(
     (id: string, patch: Partial<ChatbotNodeData>) => {
@@ -116,15 +127,26 @@ export function useChatbotFlow() {
     [setNodes],
   );
 
+  const discard = useCallback(
+    () => replaceNodeData(baseline),
+    [baseline, replaceNodeData],
+  );
+
+  const markSaved = useCallback(
+    (data: ChatbotNodeData) => setSavedFlow({ ...data }),
+    [setSavedFlow],
+  );
+
   return {
     nodes,
     edges,
     onNodesChange,
     onEdgesChange,
     onConnect,
-    selectedNode,
-    setSelectedId,
-    addNode,
     updateNodeData,
+    llmNode,
+    isDirty,
+    discard,
+    markSaved,
   };
 }

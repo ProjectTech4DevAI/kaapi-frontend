@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
   DOCUMENT_SIZES: "document_file_sizes",
   SIDEBAR_MENUS: "sidebar-expanded-menus",
   CHAT_STATE: "kaapi_chat_state",
+  CHATBOT_STATE: "kaapi_chatbot_state",
 } as const;
 
 export const COOKIE_KEYS = {
@@ -29,6 +30,7 @@ export const COOKIE_KEYS = {
   FEATURES: "kaapi_features",
   API_KEY: "kaapi_api_key",
   API_KEY_META: "kaapi_api_key_meta",
+  CHATBOT_SESSION: "kaapi_chatbot_session",
 } as const;
 
 export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -214,6 +216,9 @@ export const PAGER_BUTTON_IDLE =
 export const PAGER_BUTTON_CURRENT =
   "border-accent-primary bg-accent-primary text-white font-semibold";
 
-/** Chatbot flow — default per-request limits for the test panel. */
-export const CHATBOT_DEFAULT_MAX_TOKENS = 2048;
-export const CHATBOT_DEFAULT_HISTORY_TOKEN_LIMIT = 6000;
+/** Chatbot flow — how long the test panel waits for a webhook reply. */
+export const CHATBOT_REPLY_TIMEOUT_MS = 90_000;
+/** Backend limit on a chatbot session's `name`. */
+export const CHATBOT_NAME_MAX_LENGTH = 255;
+/** Name used when the title is empty or the backend returns none (matches backend default). */
+export const DEFAULT_CHATBOT_NAME = "Untitled Chatbot";

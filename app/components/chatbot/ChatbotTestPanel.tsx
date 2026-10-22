@@ -1,118 +1,137 @@
 /**
- * ChatbotTestPanel - Runs a throwaway test conversation against the selected
- * node's current (unsaved) prompt and config.
+ * ChatbotTestPanel - Chats with the saved flow's server-side session. Replies
+ * arrive asynchronously via the webhook stream, so the panel only renders
+ * state owned by useChatbotSession.
  */
 
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui";
-import { MarkdownContent } from "@/app/components/chat";
-import { RefreshIcon, SendIcon } from "@/app/components/icons";
-import { useChatbotTest } from "@/app/hooks/useChatbotTest";
-import { ChatbotMessage, ChatbotNodeData } from "@/app/lib/types/chatbot";
+import { RefreshIcon } from "@/app/components/icons";
+import ChatbotMessageBubble from "@/app/components/chatbot/ChatbotMessageBubble";
+import ChatbotChatInput from "@/app/components/chatbot/ChatbotChatInput";
+import { ChatbotStatusBadge } from "@/app/components/chatbot/ChatbotSessionInfo";
+import {
+  ChatbotChatMessage,
+  ChatbotCompletionStatus,
+  ChatbotSessionStatus,
+} from "@/app/lib/types/chatbot";
 
 interface ChatbotTestPanelProps {
-  data: ChatbotNodeData;
+  hasSession: boolean;
+  sessionName: string | null;
+  status: ChatbotSessionStatus | null;
+  completionStatus: ChatbotCompletionStatus | null;
+  messages: ChatbotChatMessage[];
+  isPending: boolean;
+  isRestarting: boolean;
+  isDirty: boolean;
+  onSend: (message?: string) => Promise<boolean>;
+  onRestart: () => void;
 }
 
-function MessageBubble({ message }: { message: ChatbotMessage }) {
-  const isUser = message.role === "user";
-  return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-          isUser
-            ? "bg-accent-primary text-white whitespace-pre-wrap"
-            : "bg-bg-secondary text-text-primary"
-        }`}
-      >
-        {isUser ? message.content : <MarkdownContent text={message.content} />}
-      </div>
-    </div>
-  );
+function inputPlaceholder(isEnded: boolean, hasStarted: boolean): string {
+  if (isEnded) return "Session closed";
+  if (!hasStarted) return "Click Start chat to begin…";
+  return "Reply as the user…";
 }
 
-export default function ChatbotTestPanel({ data }: ChatbotTestPanelProps) {
-  const { history, pendingMessage, isPending, canSend, send, reset } =
-    useChatbotTest(data);
-  const [input, setInput] = useState("");
+export default function ChatbotTestPanel({
+  hasSession,
+  sessionName,
+  status,
+  completionStatus,
+  messages,
+  isPending,
+  isRestarting,
+  isDirty,
+  onSend,
+  onRestart,
+}: ChatbotTestPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  const visible = history.filter((m) => m.role !== "system");
-  const hasStarted = history.length > 0;
+  // Inactive = superseded by a newer session; a complete one still chats.
+  const isEnded = status === "inactive";
+  const hasStarted = messages.length > 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [visible.length, pendingMessage, isPending]);
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || isPending) return;
-    setInput("");
-    const ok = await send(text);
-    if (!ok) setInput(text);
-  };
+  }, [messages.length, isPending]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="text-sm font-semibold text-text-primary truncate">
+            {sessionName ? `Test: ${sessionName}` : "Test chat"}
+          </p>
+          <ChatbotStatusBadge
+            status={status}
+            completionStatus={completionStatus}
+          />
+        </div>
+        {hasSession && (
+          <button
+            type="button"
+            onClick={onRestart}
+            disabled={isRestarting || isPending}
+            title="Start a new session with the saved flow"
+            className="p-1.5 rounded-full text-text-secondary hover:bg-neutral-100 hover:text-text-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshIcon className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {isDirty && (
+        <p className="px-4 py-2 text-xs bg-status-warning-bg text-status-warning-text border-b border-border">
+          You have unsaved changes. The chat uses the last saved flow. Save to
+          test your edits.
+        </p>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {!hasStarted && !isPending && (
-          <div className="h-full flex flex-col items-center justify-center text-center gap-3">
-            <p className="text-sm text-text-secondary max-w-[260px]">
-              {canSend
-                ? "Start a test - the bot will send the first message."
-                : "Pick a configuration and write a system prompt to start testing."}
-            </p>
-            <Button size="sm" onClick={() => send()} disabled={!canSend}>
-              Start test
-            </Button>
-          </div>
+        {!hasSession ? (
+          <p className="h-full flex items-center justify-center text-center text-sm text-text-secondary px-6">
+            Pick a configuration, write a prompt and click Save to start a
+            chatbot session.
+          </p>
+        ) : (
+          messages.length === 0 &&
+          !isPending && (
+            <div className="h-full flex flex-col items-center justify-center text-center gap-3">
+              <p className="text-sm text-text-secondary max-w-[260px]">
+                The bot will send the first message.
+              </p>
+              <Button size="sm" onClick={() => onSend()}>
+                Start chat
+              </Button>
+            </div>
+          )
         )}
-        {visible.map((m, i) => (
-          <MessageBubble key={i} message={m} />
+        {messages.map((m) => (
+          <ChatbotMessageBubble key={m.id} message={m} />
         ))}
-        {pendingMessage && (
-          <MessageBubble message={{ role: "user", content: pendingMessage }} />
-        )}
         {isPending && (
           <p className="text-xs text-text-secondary animate-pulse">
             Bot is typing…
           </p>
         )}
+        {isEnded && (
+          <p className="text-xs text-center text-text-secondary">
+            This session was replaced by a newer one. Restart to continue
+            testing.
+          </p>
+        )}
         <div ref={bottomRef} />
       </div>
 
-      {hasStarted && (
-        <form
-          onSubmit={handleSubmit}
-          className="border-t border-border p-3 flex items-center gap-2"
-        >
-          <button
-            type="button"
-            onClick={reset}
-            title="Restart test"
-            className="p-2 rounded-full text-text-secondary hover:bg-neutral-100 hover:text-text-primary cursor-pointer"
-          >
-            <RefreshIcon className="w-4 h-4" />
-          </button>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Reply as the user…"
-            disabled={isPending}
-            className="flex-1 px-3 py-2 rounded-full border border-border text-sm bg-bg-primary text-text-primary focus:outline-none focus:border-accent-primary disabled:opacity-60"
-          />
-          <button
-            type="submit"
-            disabled={isPending || !input.trim()}
-            title="Send"
-            className="p-2 rounded-full bg-accent-primary text-white hover:bg-accent-hover disabled:bg-neutral-200 disabled:text-text-secondary cursor-pointer disabled:cursor-not-allowed"
-          >
-            <SendIcon className="w-4 h-4" />
-          </button>
-        </form>
+      {hasSession && (
+        <ChatbotChatInput
+          disabled={isPending || isEnded || !hasStarted}
+          placeholder={inputPlaceholder(isEnded, hasStarted)}
+          onSend={onSend}
+        />
       )}
     </div>
   );

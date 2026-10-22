@@ -21,21 +21,21 @@ export type {
  * surface a specific error code instead of a generic 500.
  */
 export function readWebhookSecret(): WebhookSecretResult {
-  const raw = process.env.PROMPT_IMPROVEMENT_WEBHOOK_SECRET;
+  const raw = process.env.WEBHOOK_SECRET;
   if (!raw) {
-    return { ok: false, reason: "prompt_improvement_webhook_secret_missing" };
+    return { ok: false, reason: "webhook_secret_missing" };
   }
   const trimmed = raw.trim();
   if (PLACEHOLDER_VALUES.has(trimmed.toLowerCase())) {
     return {
       ok: false,
-      reason: "prompt_improvement_webhook_secret_placeholder",
+      reason: "webhook_secret_placeholder",
     };
   }
   if (!HEX_SECRET_REGEX.test(trimmed)) {
     return {
       ok: false,
-      reason: "prompt_improvement_webhook_secret_invalid_format",
+      reason: "webhook_secret_invalid_format",
     };
   }
   return { ok: true, secret: trimmed };

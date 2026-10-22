@@ -31,7 +31,6 @@ interface ChatbotFlowCanvasProps {
   onNodesChange: (changes: NodeChange<ChatbotFlowNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
   onConnect: (connection: Connection) => void;
-  onSelectNode: (id: string) => void;
   updateNodeData: (id: string, patch: Partial<ChatbotNodeData>) => void;
 }
 
@@ -41,7 +40,6 @@ export default function ChatbotFlowCanvas({
   onNodesChange,
   onEdgesChange,
   onConnect,
-  onSelectNode,
   updateNodeData,
 }: ChatbotFlowCanvasProps) {
   const contextValue = useMemo(() => ({ updateNodeData }), [updateNodeData]);
@@ -56,7 +54,6 @@ export default function ChatbotFlowCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onNodeClick={(_, node) => onSelectNode(node.id)}
         fitView
         fitViewOptions={{ maxZoom: 1, padding: 0.2 }}
         proOptions={{ hideAttribution: true }}

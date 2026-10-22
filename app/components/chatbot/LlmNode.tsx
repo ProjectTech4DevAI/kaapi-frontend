@@ -1,18 +1,19 @@
 /**
- * LlmNode - Editable LLM step on the chatbot canvas: config, prompt and limits
- * are edited inline, mirroring the node's data used by the test panel.
+ * LlmNode - Editable LLM step on the chatbot canvas: config and prompt are
+ * edited inline; Save turns them into a chatbot session.
  */
 
 "use client";
 
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { ChatConfigPicker } from "@/app/components/chat";
+import { CHATBOT_NAME_MAX_LENGTH } from "@/app/lib/constants";
+import { useChatbotStore } from "@/app/lib/store/chatbot";
 import { ChatbotLlmNode, ChatbotNodeData } from "@/app/lib/types/chatbot";
 import { useChatbotFlowContext } from "@/app/components/chatbot/ChatbotFlowContext";
 import { FLOW_HANDLE_STYLE } from "@/app/components/chatbot/flowHandleStyle";
 import NodeFieldLabel from "@/app/components/chatbot/NodeFieldLabel";
 import LlmNodePromptField from "@/app/components/chatbot/LlmNodePromptField";
-import LlmNodeAdvanced from "@/app/components/chatbot/LlmNodeAdvanced";
 
 const PORT_LABEL_CLASS = "text-sm font-semibold font-mono text-text-primary";
 
@@ -22,6 +23,8 @@ export default function LlmNode({
   selected,
 }: NodeProps<ChatbotLlmNode>) {
   const { updateNodeData } = useChatbotFlowContext();
+  // Shown only once the backend has generated it on the first save.
+  const chatbotRef = useChatbotStore((s) => s.chatbotRef);
   const update = (patch: Partial<ChatbotNodeData>) => updateNodeData(id, patch);
 
   return (
@@ -36,10 +39,15 @@ export default function LlmNode({
         <input
           value={data.label}
           onChange={(e) => update({ label: e.target.value })}
+          maxLength={CHATBOT_NAME_MAX_LENGTH}
           placeholder="Untitled step"
           className="nodrag w-full px-6 text-center text-base font-semibold text-text-primary bg-transparent focus:outline-none"
         />
-        <p className="text-[11px] text-text-secondary truncate">{id}</p>
+        {chatbotRef && (
+          <p className="text-[11px] text-text-secondary truncate">
+            {chatbotRef}
+          </p>
+        )}
       </div>
 
       <div className="relative px-4 py-1">
@@ -71,8 +79,6 @@ export default function LlmNode({
           value={data.systemPrompt}
           onChange={(systemPrompt) => update({ systemPrompt })}
         />
-
-        <LlmNodeAdvanced data={data} onChange={update} />
       </div>
 
       <div className="relative px-4 py-2.5 border-t-2 border-text-primary text-right">

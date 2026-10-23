@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useToast } from "@/app/hooks/useToast";
 import { useChatbotReplyStream } from "@/app/hooks/useChatbotReplyStream";
 import { useChatbotPendingReply } from "@/app/hooks/useChatbotPendingReply";
-import { useChatbotStore } from "@/app/lib/store/chatbot";
+import {
+  useChatbotStore,
+  useChatbotStoreHydration,
+} from "@/app/lib/store/chatbot";
 import {
   CHATBOT_REPLY_TIMEOUT_MS,
   DEFAULT_CHATBOT_NAME,
@@ -20,33 +23,42 @@ import {
   writeChatbotSessionCookie,
 } from "@/app/lib/utils/chatbotSessionCookie";
 import {
+  ChatbotChatMessage,
   ChatbotNodeData,
   ChatbotSessionEvent,
   ChatbotCompletionStatus,
   ChatbotSessionStatus,
 } from "@/app/lib/types/chatbot";
 
+// Backend 422 when the greeting is requested on a session that already has turns.
+const ALREADY_STARTED_RE = /required once the session has started/i;
+// Backend 409 once a newer session of the same chatbot superseded this one.
+const INACTIVE_RE = /session is inactive/i;
+
 /**
- * Owns the server-side chatbot session used by the test panel: creating it
- * on Save (id kept in a cookie), sending turns, and applying replies that
- * arrive asynchronously through the webhook stream.
+ * Owns the server-side chatbot session: creating it on Save (id kept in a
+ * cookie and the shared store), sending turns, and applying replies that
+ * arrive asynchronously through the webhook stream. The transcript is kept
+ * in this hook's state only. Pages that don't chat (the flow canvas) pass
+ * `listen: false` to skip opening the reply stream.
  */
-export function useChatbotSession() {
+export function useChatbotSession({
+  listen = true,
+}: { listen?: boolean } = {}) {
   const { activeKey, currentUser, isAuthenticated } = useAuth();
   const apiKey = activeKey?.key ?? "";
   const toast = useToast();
 
+  useChatbotStoreHydration();
   const hasHydrated = useChatbotStore((s) => s.hasHydrated);
-  const messages = useChatbotStore((s) => s.messages);
-  const bindSession = useChatbotStore((s) => s.bindSession);
-  const appendMessage = useChatbotStore((s) => s.appendMessage);
-  const removeMessage = useChatbotStore((s) => s.removeMessage);
-  const setLastEventSeq = useChatbotStore((s) => s.setLastEventSeq);
+  const sessionId = useChatbotStore((s) => s.sessionId);
+  const setSessionId = useChatbotStore((s) => s.setSessionId);
   const chatbotRef = useChatbotStore((s) => s.chatbotRef);
   const setChatbotRef = useChatbotStore((s) => s.setChatbotRef);
   const setSavedFlow = useChatbotStore((s) => s.setSavedFlow);
 
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatbotChatMessage[]>([]);
+  const lastEventSeqRef = useRef(0);
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [status, setStatus] = useState<ChatbotSessionStatus | null>(null);
   const [completionStatus, setCompletionStatus] =
@@ -59,12 +71,18 @@ export function useChatbotSession() {
 
   const contactRef = currentUser?.id ? `kaapi-user-${currentUser.id}` : null;
 
-  const adoptSession = useCallback(
+  // A different session (new Save, another tab, restore) starts a new transcript.
+  useEffect(() => {
+    setMessages([]);
+    lastEventSeqRef.current = 0;
+  }, [sessionId]);
+
+  const activateSession = useCallback(
     (id: string) => {
+      writeChatbotSessionCookie(id);
       setSessionId(id);
-      bindSession(id);
     },
-    [bindSession],
+    [setSessionId],
   );
 
   // Restore the session from the cookie, falling back to the user's latest
@@ -74,16 +92,13 @@ export function useChatbotSession() {
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !contactRef) return;
     const cookieId = readChatbotSessionCookie();
-    if (cookieId) adoptSession(cookieId);
+    if (cookieId) setSessionId(cookieId);
 
     let cancelled = false;
     getLatestChatbotSession(contactRef, chatbotRef, apiKey).then((summary) => {
       if (cancelled || !summary) return;
       if (cookieId && cookieId !== summary.session_id) return;
-      if (!cookieId) {
-        writeChatbotSessionCookie(summary.session_id);
-        adoptSession(summary.session_id);
-      }
+      if (!cookieId) activateSession(summary.session_id);
       const name = summary.name || DEFAULT_CHATBOT_NAME;
       setChatbotRef(summary.chatbot_ref);
       setSavedFlow({
@@ -108,45 +123,53 @@ export function useChatbotSession() {
     contactRef,
     chatbotRef,
     apiKey,
-    adoptSession,
+    activateSession,
+    setSessionId,
     setChatbotRef,
     setSavedFlow,
   ]);
 
   const handleEvent = useCallback(
     (event: ChatbotSessionEvent) => {
-      if (event.seq <= useChatbotStore.getState().lastEventSeq) return;
-      setLastEventSeq(event.seq);
+      if (event.seq <= lastEventSeqRef.current) return;
+      lastEventSeqRef.current = event.seq;
       clearPending();
       if (!event.success) {
         toast.error(event.error || "The chatbot couldn't reply.");
         return;
       }
-      if (event.reply) {
-        appendMessage({
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: event.reply,
-        });
+      const reply = event.reply;
+      if (reply) {
+        setMessages((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", content: reply },
+        ]);
       }
       if (event.status) setStatus(event.status);
       if (event.completionStatus) setCompletionStatus(event.completionStatus);
     },
-    [appendMessage, clearPending, setLastEventSeq, toast],
+    [clearPending, toast],
   );
 
   useChatbotReplyStream(
-    hasHydrated ? sessionId : null,
-    () => useChatbotStore.getState().lastEventSeq,
+    hasHydrated && listen ? sessionId : null,
+    () => lastEventSeqRef.current,
     handleEvent,
   );
 
-  /** Creates a new session for the saved flow and makes it the active one. */
+  /**
+   * Creates a new session for the flow and makes it the active one.
+   * Resolves to the new session id, or null when creation failed.
+   * `keepPending` leaves the "bot is typing" state on while a turn is retried.
+   */
   const startSession = useCallback(
-    async (data: ChatbotNodeData): Promise<boolean> => {
+    async (
+      data: ChatbotNodeData,
+      { keepPending = false }: { keepPending?: boolean } = {},
+    ): Promise<string | null> => {
       if (!contactRef) {
         toast.error("Couldn't identify your account. Please log in again.");
-        return false;
+        return null;
       }
       const name = data.label.trim() || DEFAULT_CHATBOT_NAME;
       setIsCreating(true);
@@ -163,61 +186,102 @@ export function useChatbotSession() {
           },
           apiKey,
         );
-        writeChatbotSessionCookie(created.sessionId);
         setChatbotRef(created.chatbotRef);
-        clearPending();
-        adoptSession(created.sessionId);
+        if (!keepPending) clearPending();
+        activateSession(created.sessionId);
         setSessionName(name);
         setStatus("active");
         setCompletionStatus("in_progress");
-        return true;
+        return created.sessionId;
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : "Failed to save the flow.",
         );
-        return false;
+        return null;
       } finally {
         setIsCreating(false);
       }
     },
-    [adoptSession, apiKey, clearPending, contactRef, setChatbotRef, toast],
+    [
+      activateSession,
+      apiKey,
+      chatbotRef,
+      clearPending,
+      contactRef,
+      setChatbotRef,
+      toast,
+    ],
   );
 
-  /** Queues a turn; omit `message` to get the greeting on a fresh session. */
+  /**
+   * Queues one turn on `id`; on failure rolls back the optimistic message and
+   * rethrows. The pending state is left to the caller, which may retry.
+   */
+  const queueTurn = useCallback(
+    async (id: string, message?: string): Promise<void> => {
+      const optimisticId = message ? crypto.randomUUID() : null;
+      if (optimisticId && message) {
+        setMessages((prev) => [
+          ...prev,
+          { id: optimisticId, role: "user", content: message },
+        ]);
+      }
+      startPending();
+      try {
+        await sendChatbotSessionMessage(id, message, apiKey);
+      } catch (err) {
+        if (optimisticId) {
+          setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        }
+        throw err;
+      }
+    },
+    [apiKey, startPending],
+  );
+
+  /**
+   * Sends a turn; omit `message` to get the greeting. "Start chat" always
+   * opens a conversation: if this session already has turns this tab never
+   * saw (e.g. after a reload), a fresh session of the saved flow is started.
+   */
   const send = useCallback(
     async (message?: string): Promise<boolean> => {
       if (!sessionId) {
         toast.error("Save the flow first to start a session.");
         return false;
       }
-      const optimisticId = message ? crypto.randomUUID() : null;
-      if (optimisticId && message) {
-        appendMessage({ id: optimisticId, role: "user", content: message });
-      }
-      startPending();
-
+      const savedFlow = useChatbotStore.getState().savedFlow;
       try {
-        await sendChatbotSessionMessage(sessionId, message, apiKey);
+        await queueTurn(sessionId, message);
         return true;
       } catch (err) {
-        if (optimisticId) removeMessage(optimisticId);
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to send the message.";
+        if (INACTIVE_RE.test(errorMessage)) setStatus("inactive");
+        if (message || !savedFlow || !ALREADY_STARTED_RE.test(errorMessage)) {
+          clearPending();
+          toast.error(errorMessage);
+          return false;
+        }
+      }
+      // Keep the typing dots up through the retry so "Start chat" doesn't flash.
+      const freshId = await startSession(savedFlow, { keepPending: true });
+      if (!freshId) {
+        clearPending();
+        return false;
+      }
+      try {
+        await queueTurn(freshId);
+        return true;
+      } catch (err) {
         clearPending();
         toast.error(
-          err instanceof Error ? err.message : "Failed to send the message.",
+          err instanceof Error ? err.message : "Failed to start the chat.",
         );
         return false;
       }
     },
-    [
-      appendMessage,
-      apiKey,
-      chatbotRef,
-      clearPending,
-      removeMessage,
-      sessionId,
-      startPending,
-      toast,
-    ],
+    [clearPending, queueTurn, sessionId, startSession, toast],
   );
 
   return {
@@ -225,7 +289,7 @@ export function useChatbotSession() {
     sessionName,
     status,
     completionStatus,
-    messages: sessionId ? messages : [],
+    messages,
     isPending: pending.isPending,
     isCreating,
     startSession,

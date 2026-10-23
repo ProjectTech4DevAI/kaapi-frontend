@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
 import { Button } from "@/app/components/ui";
-import { ChatbotFlowCanvas, ChatbotTestPanel } from "@/app/components/chatbot";
+import { PlayIcon } from "@/app/components/icons";
+import { ChatbotFlowCanvas } from "@/app/components/chatbot";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useToast } from "@/app/hooks/useToast";
 import { useChatbotFlow } from "@/app/hooks/useChatbotFlow";
 import { useChatbotSession } from "@/app/hooks/useChatbotSession";
-import { useChatbotStore } from "@/app/lib/store/chatbot";
 import { ChatbotNodeData } from "@/app/lib/types/chatbot";
 
 function validateFlow(data: ChatbotNodeData): string | null {
@@ -22,13 +22,8 @@ export default function ChatbotPage() {
   const { sidebarCollapsed } = useApp();
   const toast = useToast();
   const flow = useChatbotFlow();
-  const session = useChatbotSession();
-  const savedFlow = useChatbotStore((s) => s.savedFlow);
-
-  // Trigger persisted-state rehydration on mount.
-  useEffect(() => {
-    useChatbotStore.persist.rehydrate();
-  }, []);
+  // The canvas only creates sessions; chatting happens on /chatbot/chat.
+  const session = useChatbotSession({ listen: false });
 
   const createSessionFor = useCallback(
     async (data: ChatbotNodeData): Promise<boolean> => {
@@ -37,7 +32,7 @@ export default function ChatbotPage() {
         toast.error(error);
         return false;
       }
-      return session.startSession(data);
+      return (await session.startSession(data)) !== null;
     },
     [session, toast],
   );
@@ -51,14 +46,18 @@ export default function ChatbotPage() {
     }
   };
 
-  const handleRestart = async () => {
-    if (!savedFlow) {
-      toast.error("Save the flow first to start a session.");
+  // The chat runs on the saved session, so unsaved edits wouldn't be tested.
+  // It opens in a new tab so the canvas stays as it is.
+  const handlePlay = () => {
+    if (flow.isDirty) {
+      toast.error("Save your changes before testing the chatbot.");
       return;
     }
-    if (await createSessionFor(savedFlow)) {
-      toast.success("New chat session started.");
+    if (!session.sessionId) {
+      toast.error("Save the flow first to start a chat session.");
+      return;
     }
+    window.open("/chatbot/chat", "_blank", "noopener,noreferrer");
   };
 
   const canEdit = flow.isDirty && !session.isCreating;
@@ -89,32 +88,24 @@ export default function ChatbotPage() {
             }
           />
 
-          <div className="flex flex-1 min-h-0">
-            <div className="flex-1 min-w-0 bg-bg-primary">
-              <ChatbotFlowCanvas
-                nodes={flow.nodes}
-                edges={flow.edges}
-                onNodesChange={flow.onNodesChange}
-                onEdgesChange={flow.onEdgesChange}
-                onConnect={flow.onConnect}
-                updateNodeData={flow.updateNodeData}
-              />
-            </div>
-
-            <aside className="w-[380px] shrink-0 border-l border-border flex flex-col min-h-0 bg-bg-primary">
-              <ChatbotTestPanel
-                hasSession={!!session.sessionId}
-                sessionName={session.sessionName}
-                status={session.status}
-                completionStatus={session.completionStatus}
-                messages={session.messages}
-                isPending={session.isPending}
-                isRestarting={session.isCreating}
-                isDirty={flow.isDirty}
-                onSend={session.send}
-                onRestart={handleRestart}
-              />
-            </aside>
+          <div className="relative flex-1 min-h-0 bg-bg-primary">
+            <ChatbotFlowCanvas
+              nodes={flow.nodes}
+              edges={flow.edges}
+              onNodesChange={flow.onNodesChange}
+              onEdgesChange={flow.onEdgesChange}
+              onConnect={flow.onConnect}
+              updateNodeData={flow.updateNodeData}
+            />
+            <Button
+              size="icon"
+              onClick={handlePlay}
+              title="Test the chatbot"
+              aria-label="Test the chatbot"
+              className="absolute top-4 left-4 z-10 w-11 h-11 shadow-md"
+            >
+              <PlayIcon className="w-5 h-5 ml-0.5" />
+            </Button>
           </div>
         </div>
       </div>

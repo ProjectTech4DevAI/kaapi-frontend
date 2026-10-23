@@ -7,7 +7,6 @@ import { SendIcon } from "@/app/components/icons";
 interface ChatbotChatInputProps {
   disabled: boolean;
   placeholder: string;
-  /** Resolves false when sending failed, so the draft is restored. */
   onSend: (message: string) => Promise<boolean>;
 }
 
@@ -29,23 +28,18 @@ export default function ChatbotChatInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="border-t border-border p-3 flex items-center gap-2"
+      className="border-t border-border bg-bg-primary p-3 flex items-center gap-2"
     >
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="flex-1 px-3 py-2 rounded-full border border-border text-sm bg-bg-primary text-text-primary focus:outline-none focus:border-accent-primary disabled:opacity-60"
+        className="flex-1 px-4 py-2.5 rounded-full border border-border text-sm bg-bg-primary text-text-primary focus:outline-none focus:border-accent-primary disabled:opacity-60"
       />
-      <Button
-        type="submit"
-        size="icon"
-        disabled={disabled || !input.trim()}
-        title="Send"
-        aria-label="Send"
-      >
+      <Button type="submit" disabled={disabled || !input.trim()}>
         <SendIcon className="w-4 h-4" />
+        Send
       </Button>
     </form>
   );

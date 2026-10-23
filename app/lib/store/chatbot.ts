@@ -1,28 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/app/lib/constants";
-import { ChatbotChatMessage, ChatbotNodeData } from "@/app/lib/types/chatbot";
-
-const MAX_PERSISTED_MESSAGES = 100;
+import { ChatbotNodeData } from "@/app/lib/types/chatbot";
 
 interface ChatbotState {
   savedFlow: ChatbotNodeData | null;
   chatbotRef: string | null;
-  messagesSessionId: string | null;
-  messages: ChatbotChatMessage[];
-  lastEventSeq: number;
+  sessionId: string | null;
   hasHydrated: boolean;
 }
 
 interface ChatbotActions {
   setSavedFlow: (flow: ChatbotNodeData) => void;
   setChatbotRef: (ref: string) => void;
-  bindSession: (sessionId: string) => void;
-  appendMessage: (message: ChatbotChatMessage) => void;
-  removeMessage: (id: string) => void;
-  setLastEventSeq: (seq: number) => void;
+  setSessionId: (sessionId: string) => void;
   setHasHydrated: (value: boolean) => void;
   reset: () => void;
 }
@@ -30,11 +24,14 @@ interface ChatbotActions {
 const INITIAL_STATE: ChatbotState = {
   savedFlow: null,
   chatbotRef: null,
-  messagesSessionId: null,
-  messages: [],
-  lastEventSeq: 0,
+  sessionId: null,
   hasHydrated: false,
 };
+
+type PersistedChatbotState = Pick<
+  ChatbotState,
+  "savedFlow" | "chatbotRef" | "sessionId"
+>;
 
 export const useChatbotStore = create<ChatbotState & ChatbotActions>()(
   persist(
@@ -45,24 +42,7 @@ export const useChatbotStore = create<ChatbotState & ChatbotActions>()(
 
       setChatbotRef: (ref) => set({ chatbotRef: ref }),
 
-      bindSession: (sessionId) =>
-        set((state) =>
-          state.messagesSessionId === sessionId
-            ? state
-            : { messagesSessionId: sessionId, messages: [], lastEventSeq: 0 },
-        ),
-
-      appendMessage: (message) =>
-        set((state) => ({
-          messages: [...state.messages, message].slice(-MAX_PERSISTED_MESSAGES),
-        })),
-
-      removeMessage: (id) =>
-        set((state) => ({
-          messages: state.messages.filter((m) => m.id !== id),
-        })),
-
-      setLastEventSeq: (seq) => set({ lastEventSeq: seq }),
+      setSessionId: (sessionId) => set({ sessionId }),
 
       setHasHydrated: (value) => set({ hasHydrated: value }),
 
@@ -70,19 +50,45 @@ export const useChatbotStore = create<ChatbotState & ChatbotActions>()(
     }),
     {
       name: STORAGE_KEYS.CHATBOT_STATE,
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
-      partialize: (state) => ({
+      partialize: (state): PersistedChatbotState => ({
         savedFlow: state.savedFlow,
         chatbotRef: state.chatbotRef,
-        messagesSessionId: state.messagesSessionId,
-        messages: state.messages,
-        lastEventSeq: state.lastEventSeq,
+        sessionId: state.sessionId,
       }),
+      // v1 also stored the transcript; keep only the shared fields.
+      migrate: (persisted) => {
+        const old = (persisted ?? {}) as Partial<
+          PersistedChatbotState & { messagesSessionId: string | null }
+        >;
+        return {
+          savedFlow: old.savedFlow ?? null,
+          chatbotRef: old.chatbotRef ?? null,
+          sessionId: old.sessionId ?? old.messagesSessionId ?? null,
+        };
+      },
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
     },
   ),
 );
+
+/**
+ * Loads the persisted chatbot state and keeps it in sync across tabs, so a
+ * chat tab follows a session created by Save on the canvas tab.
+ */
+export function useChatbotStoreHydration(): void {
+  useEffect(() => {
+    useChatbotStore.persist.rehydrate();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEYS.CHATBOT_STATE) {
+        useChatbotStore.persist.rehydrate();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+}

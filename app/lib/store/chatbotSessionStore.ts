@@ -30,7 +30,6 @@ function prune(): void {
     const last = events[events.length - 1];
     if (!last || last.seq < cutoff) store.events.delete(sessionId);
   }
-  // Map keeps insertion order, so the first keys are the oldest sessions.
   for (const sessionId of store.events.keys()) {
     if (store.events.size <= MAX_SESSIONS) break;
     store.events.delete(sessionId);

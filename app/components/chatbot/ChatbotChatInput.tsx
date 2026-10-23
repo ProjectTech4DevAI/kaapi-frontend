@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Button } from "@/app/components/ui";
 import { SendIcon } from "@/app/components/icons";
 
 interface ChatbotChatInputProps {
@@ -37,14 +38,15 @@ export default function ChatbotChatInput({
         disabled={disabled}
         className="flex-1 px-3 py-2 rounded-full border border-border text-sm bg-bg-primary text-text-primary focus:outline-none focus:border-accent-primary disabled:opacity-60"
       />
-      <button
+      <Button
         type="submit"
+        size="icon"
         disabled={disabled || !input.trim()}
         title="Send"
-        className="p-2 rounded-full bg-accent-primary text-white hover:bg-accent-hover disabled:bg-neutral-200 disabled:text-text-secondary cursor-pointer disabled:cursor-not-allowed"
+        aria-label="Send"
       >
         <SendIcon className="w-4 h-4" />
-      </button>
+      </Button>
     </form>
   );
 }

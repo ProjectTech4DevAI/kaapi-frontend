@@ -24,9 +24,12 @@ export function useChatbotReplyStream(
 
   useEffect(() => {
     if (!sessionId || typeof EventSource === "undefined") return;
+    // 0 = nothing applied yet for this session: take only new replies,
+    // never a backlog of bot messages without the user turns around them.
+    const afterSeq = getAfterSeqRef.current();
     const params = new URLSearchParams({
       session_id: sessionId,
-      after: String(getAfterSeqRef.current()),
+      after: afterSeq > 0 ? String(afterSeq) : "latest",
     });
     const source = new EventSource(`/api/webhooks/chatbot/stream?${params}`);
     source.addEventListener("reply", (e) => {

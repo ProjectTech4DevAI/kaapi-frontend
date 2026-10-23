@@ -9,6 +9,7 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui";
 import { RefreshIcon } from "@/app/components/icons";
+import { AssistantAvatar, ThinkingDots } from "@/app/components/chat";
 import ChatbotMessageBubble from "@/app/components/chatbot/ChatbotMessageBubble";
 import ChatbotChatInput from "@/app/components/chatbot/ChatbotChatInput";
 import { ChatbotStatusBadge } from "@/app/components/chatbot/ChatbotSessionInfo";
@@ -71,15 +72,17 @@ export default function ChatbotTestPanel({
           />
         </div>
         {hasSession && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onRestart}
             disabled={isRestarting || isPending}
             title="Start a new session with the saved flow"
-            className="p-1.5 rounded-full text-text-secondary hover:bg-neutral-100 hover:text-text-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Restart session"
           >
             <RefreshIcon className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -113,9 +116,12 @@ export default function ChatbotTestPanel({
           <ChatbotMessageBubble key={m.id} message={m} />
         ))}
         {isPending && (
-          <p className="text-xs text-text-secondary animate-pulse">
-            Bot is typing…
-          </p>
+          <div className="flex gap-3" aria-label="Bot is typing">
+            <AssistantAvatar />
+            <div className="pt-1">
+              <ThinkingDots />
+            </div>
+          </div>
         )}
         {isEnded && (
           <p className="text-xs text-center text-text-secondary">

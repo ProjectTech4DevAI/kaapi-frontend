@@ -22,6 +22,8 @@ import {
   STORAGE_KEYS,
 } from "@/app/lib/constants";
 import { useChatStore } from "@/app/lib/store/chat";
+import { useChatbotStore } from "@/app/lib/store/chatbot";
+import { clearChatbotSessionCookie } from "@/app/lib/utils/chatbotSessionCookie";
 import { clearAllStorage, readClientCookie } from "@/app/lib/utils";
 export type { User, GoogleProfile, Session } from "@/app/lib/types/auth";
 
@@ -145,6 +147,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
     clearAllStorage();
     useChatStore.getState().reset();
+    // Chatbot session + transcript belong to this user; never leak them to the next login.
+    useChatbotStore.getState().reset();
+    clearChatbotSessionCookie();
     setApiKeys([]);
     window.dispatchEvent(new Event("kaapi-auth-changed"));
     window.location.replace("/chat");

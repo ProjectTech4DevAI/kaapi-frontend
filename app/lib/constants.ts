@@ -11,6 +11,7 @@ export const APP_NAME = "Kaapi Konsole";
 
 export const FeatureFlag = {
   ASSESSMENT: ASSESSMENT_FEATURE_FLAG,
+  CHATBOT: "CHATBOT",
 } as const;
 
 export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
@@ -216,9 +217,6 @@ export const PAGER_BUTTON_IDLE =
 export const PAGER_BUTTON_CURRENT =
   "border-accent-primary bg-accent-primary text-white font-semibold";
 
-/** Chatbot flow — how long the test panel waits for a webhook reply. */
 export const CHATBOT_REPLY_TIMEOUT_MS = 90_000;
-/** Backend limit on a chatbot session's `name`. */
 export const CHATBOT_NAME_MAX_LENGTH = 255;
-/** Name used when the title is empty or the backend returns none (matches backend default). */
 export const DEFAULT_CHATBOT_NAME = "Untitled Chatbot";

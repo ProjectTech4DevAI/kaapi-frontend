@@ -1,8 +1,3 @@
-/**
- * Chatbot - Design the chatbot flow on a canvas; Save stores it as a
- * server-side session that the test panel chats with.
- */
-
 "use client";
 
 import { useCallback, useEffect } from "react";

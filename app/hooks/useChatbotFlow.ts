@@ -101,12 +101,15 @@ export function useChatbotFlow() {
     [setNodes],
   );
 
-  // Load the saved flow into the node once localStorage has rehydrated.
-  const restoredRef = useRef(false);
+  // Mirror the saved flow into the node whenever it changes (localStorage
+  // rehydration, or the latest session restored from the backend), unless the
+  // user has unsaved edits against the previously applied version.
+  const appliedRef = useRef<ChatbotNodeData>(DEFAULT_NODE_DATA);
   useEffect(() => {
-    if (!hasHydrated || restoredRef.current) return;
-    restoredRef.current = true;
-    if (savedFlow) replaceNodeData(savedFlow);
+    if (!hasHydrated || !savedFlow || !llmNode) return;
+    const untouched = isSameData(llmNode.data, appliedRef.current);
+    appliedRef.current = savedFlow;
+    if (untouched) replaceNodeData(savedFlow);
   }, [hasHydrated, savedFlow, replaceNodeData]);
 
   const onConnect = useCallback(

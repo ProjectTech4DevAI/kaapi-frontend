@@ -2,21 +2,16 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-
 import { STORAGE_KEYS } from "@/app/lib/constants";
 import { ChatbotChatMessage, ChatbotNodeData } from "@/app/lib/types/chatbot";
 
 const MAX_PERSISTED_MESSAGES = 100;
 
 interface ChatbotState {
-  /** Last saved node data; the baseline for Discard and dirty checks. */
   savedFlow: ChatbotNodeData | null;
-  /** Backend-generated chatbot id; null until the first save. */
   chatbotRef: string | null;
-  /** Session the stored transcript belongs to (the cookie holds the active id). */
   messagesSessionId: string | null;
   messages: ChatbotChatMessage[];
-  /** Last webhook event applied, so reconnects don't replay it. */
   lastEventSeq: number;
   hasHydrated: boolean;
 }
@@ -24,12 +19,12 @@ interface ChatbotState {
 interface ChatbotActions {
   setSavedFlow: (flow: ChatbotNodeData) => void;
   setChatbotRef: (ref: string) => void;
-  /** Points the transcript at a session, clearing it if the session changed. */
   bindSession: (sessionId: string) => void;
   appendMessage: (message: ChatbotChatMessage) => void;
   removeMessage: (id: string) => void;
   setLastEventSeq: (seq: number) => void;
   setHasHydrated: (value: boolean) => void;
+  reset: () => void;
 }
 
 const INITIAL_STATE: ChatbotState = {
@@ -70,6 +65,8 @@ export const useChatbotStore = create<ChatbotState & ChatbotActions>()(
       setLastEventSeq: (seq) => set({ lastEventSeq: seq }),
 
       setHasHydrated: (value) => set({ hasHydrated: value }),
+
+      reset: () => set({ ...INITIAL_STATE, hasHydrated: true }),
     }),
     {
       name: STORAGE_KEYS.CHATBOT_STATE,

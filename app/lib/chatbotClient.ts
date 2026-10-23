@@ -29,17 +29,19 @@ export async function createChatbotSession(
   };
 }
 
-/** Latest session of this chatbot for the contact, or null when there is none. */
+/**
+ * Latest session for the contact, or null when there is none. Without a
+ * `chatbotRef` the backend picks the contact's latest session and its
+ * response carries the ref to reuse from then on.
+ */
 export async function getLatestChatbotSession(
   contactRef: string,
-  chatbotRef: string,
+  chatbotRef: string | null,
   apiKey: string,
 ): Promise<ChatbotSessionSummary | null> {
   try {
-    const params = new URLSearchParams({
-      contact_ref: contactRef,
-      chatbot_ref: chatbotRef,
-    });
+    const params = new URLSearchParams({ contact_ref: contactRef });
+    if (chatbotRef) params.set("chatbot_ref", chatbotRef);
     const res = await apiFetch<ChatbotSessionSummaryResponse>(
       `/api/chatbot/sessions?${params}`,
       apiKey,

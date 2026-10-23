@@ -1,10 +1,3 @@
-/**
- * Server-side in-memory store for chatbot session replies. The backend POSTs
- * each completed turn to `/api/webhooks/chatbot`; this store keeps a short
- * per-session buffer and fans events out to open SSE streams, so the browser
- * never has to receive webhooks directly.
- */
-
 import type {
   ChatbotSessionEvent,
   ChatbotSessionEventListener,
@@ -26,7 +19,6 @@ const MAX_EVENTS_PER_SESSION = 50;
 const MAX_SESSIONS = 500;
 const TTL_MS = 30 * 60 * 1000;
 
-/** Date-based so ids keep increasing across server restarts. */
 function nextSeq(): number {
   store.lastSeq = Math.max(Date.now(), store.lastSeq + 1);
   return store.lastSeq;
@@ -68,6 +60,12 @@ export function saveSessionEvent(
   prune();
   emit(saved);
   return saved;
+}
+
+/** Seq of the newest buffered event for a session (0 when none). */
+export function getLatestSessionSeq(sessionId: string): number {
+  const events = store.events.get(sessionId);
+  return events?.[events.length - 1]?.seq ?? 0;
 }
 
 /** Events newer than `afterSeq`, oldest first. */

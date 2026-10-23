@@ -5,6 +5,8 @@ export { default as ChatConfigPicker } from "./ChatConfigPicker";
 export { default as ChatEmptyState } from "./ChatEmptyState";
 export { default as VoiceInput } from "./VoiceInput";
 export { default as MarkdownContent } from "./MarkdownContent";
+export { default as ThinkingDots } from "./ThinkingDots";
+export { default as AssistantAvatar } from "./AssistantAvatar";
 export { default as AttachmentChip } from "./AttachmentChip";
 export type { AttachmentChipFile } from "./AttachmentChip";
 export { default as AttachmentPreviewModal } from "./AttachmentPreviewModal";

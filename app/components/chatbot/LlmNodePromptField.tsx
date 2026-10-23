@@ -1,12 +1,8 @@
-/**
- * LlmNodePromptField - Inline system-prompt editor with an expanded modal view.
- */
-
 "use client";
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Modal } from "@/app/components/ui";
+import { Button, Modal } from "@/app/components/ui";
 import { ExpandIcon } from "@/app/components/icons";
 import NodeFieldLabel from "@/app/components/chatbot/NodeFieldLabel";
 
@@ -30,14 +26,17 @@ export default function LlmNodePromptField({
         label="Prompt"
         hint="System prompt for this step. Editing it resets the test conversation."
       >
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setExpanded(true)}
           title="Expand prompt"
-          className="nodrag text-text-primary hover:text-accent-primary cursor-pointer"
+          aria-label="Expand prompt"
+          className="nodrag"
         >
           <ExpandIcon className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </NodeFieldLabel>
       <textarea
         value={value}
@@ -47,7 +46,6 @@ export default function LlmNodePromptField({
         className="nodrag nowheel w-full px-2.5 py-2 rounded-md border border-border text-xs text-text-primary bg-bg-primary placeholder:text-neutral-400 resize-none focus:outline-none focus:border-accent-primary"
       />
 
-      {/* Portaled: the canvas viewport is CSS-transformed, which breaks `fixed`. */}
       {expanded &&
         createPortal(
           <Modal

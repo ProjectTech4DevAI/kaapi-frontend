@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import {
+  getLatestSessionSeq,
   getSessionEventsAfter,
   subscribeSessionEvents,
 } from "@/app/lib/store/chatbotSessionStore";
@@ -18,15 +19,20 @@ function parseSeq(value: string | null): number {
 /**
  * SSE stream of webhook replies for one chatbot session. Each event carries
  * its `seq` as the SSE id, so a reconnecting EventSource resumes via
- * `Last-Event-ID`; `after` lets a fresh page load skip replies it already has.
+ * `Last-Event-ID`; `after` lets a fresh page load skip replies it already
+ * has, and `after=latest` skips the whole backlog (a client with no local
+ * transcript must not get old bot replies without the user turns between).
  */
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("session_id");
   if (!sessionId) {
     return new Response("session_id_required", { status: 400 });
   }
+  const afterParam = request.nextUrl.searchParams.get("after");
   const afterSeq = Math.max(
-    parseSeq(request.nextUrl.searchParams.get("after")),
+    afterParam === "latest"
+      ? getLatestSessionSeq(sessionId)
+      : parseSeq(afterParam),
     parseSeq(request.headers.get("last-event-id")),
   );
 

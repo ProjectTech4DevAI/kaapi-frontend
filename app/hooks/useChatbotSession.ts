@@ -44,6 +44,7 @@ export function useChatbotSession() {
   const setLastEventSeq = useChatbotStore((s) => s.setLastEventSeq);
   const chatbotRef = useChatbotStore((s) => s.chatbotRef);
   const setChatbotRef = useChatbotStore((s) => s.setChatbotRef);
+  const setSavedFlow = useChatbotStore((s) => s.setSavedFlow);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionName, setSessionName] = useState<string | null>(null);
@@ -56,8 +57,7 @@ export function useChatbotSession() {
   );
   const { clear: clearPending, start: startPending } = pending;
 
-  const userRef = currentUser?.id ?? activeKey?.id;
-  const contactRef = userRef ? `kaapi-user-${userRef}` : null;
+  const contactRef = currentUser?.id ? `kaapi-user-${currentUser.id}` : null;
 
   const adoptSession = useCallback(
     (id: string) => {
@@ -67,27 +67,37 @@ export function useChatbotSession() {
     [bindSession],
   );
 
-  // Restore the session from the cookie, falling back to this chatbot's
-  // latest session for the contact; either way refresh its status. The
-  // lookup needs the chatbot ref, which only exists after the first save.
+  // Restore the session from the cookie, falling back to the user's latest
+  // session; when found, its name/config/prompt become the saved flow and its
+  // backend-issued chatbot ref is stored for later calls. The ref is sent
+  // only if we have it.
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !contactRef) return;
     const cookieId = readChatbotSessionCookie();
     if (cookieId) adoptSession(cookieId);
-    if (!chatbotRef) return;
 
     let cancelled = false;
     getLatestChatbotSession(contactRef, chatbotRef, apiKey).then((summary) => {
       if (cancelled || !summary) return;
+      if (cookieId && cookieId !== summary.session_id) return;
       if (!cookieId) {
         writeChatbotSessionCookie(summary.session_id);
         adoptSession(summary.session_id);
       }
-      if (!cookieId || cookieId === summary.session_id) {
-        setSessionName(summary.name || DEFAULT_CHATBOT_NAME);
-        setStatus(summary.status);
-        setCompletionStatus(summary.completion_status);
-      }
+      const name = summary.name || DEFAULT_CHATBOT_NAME;
+      setChatbotRef(summary.chatbot_ref);
+      setSavedFlow({
+        label: name,
+        configId: summary.config_id,
+        configVersion: summary.config_version ?? undefined,
+        systemPrompt:
+          summary.system_prompt ??
+          useChatbotStore.getState().savedFlow?.systemPrompt ??
+          "",
+      });
+      setSessionName(name);
+      setStatus(summary.status);
+      setCompletionStatus(summary.completion_status);
     });
     return () => {
       cancelled = true;
@@ -99,6 +109,8 @@ export function useChatbotSession() {
     chatbotRef,
     apiKey,
     adoptSession,
+    setChatbotRef,
+    setSavedFlow,
   ]);
 
   const handleEvent = useCallback(
@@ -142,6 +154,7 @@ export function useChatbotSession() {
         const created = await createChatbotSession(
           {
             name,
+            // Backend issues the ref on the first save; resend it afterwards.
             chatbot_ref: chatbotRef ?? undefined,
             config_id: data.configId,
             config_version: data.configVersion,
@@ -167,15 +180,7 @@ export function useChatbotSession() {
         setIsCreating(false);
       }
     },
-    [
-      adoptSession,
-      apiKey,
-      chatbotRef,
-      clearPending,
-      contactRef,
-      setChatbotRef,
-      toast,
-    ],
+    [adoptSession, apiKey, clearPending, contactRef, setChatbotRef, toast],
   );
 
   /** Queues a turn; omit `message` to get the greeting on a fresh session. */
@@ -206,6 +211,7 @@ export function useChatbotSession() {
     [
       appendMessage,
       apiKey,
+      chatbotRef,
       clearPending,
       removeMessage,
       sessionId,

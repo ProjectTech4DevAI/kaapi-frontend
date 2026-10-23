@@ -55,6 +55,7 @@ export interface ChatbotSessionSummary {
   collected_fields: ChatbotCollectedFields;
   config_id: string;
   config_version: number | null;
+  system_prompt: string;
   inserted_at: string;
   updated_at: string;
 }

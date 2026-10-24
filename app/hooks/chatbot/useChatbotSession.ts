@@ -30,9 +30,7 @@ import {
   ChatbotSessionStatus,
 } from "@/app/lib/types/chatbot";
 
-// Backend error: greeting asked on a session that already started.
 const ALREADY_STARTED_RE = /required once the session has started/i;
-// Backend error: session was replaced by a newer one.
 const INACTIVE_RE = /session is inactive/i;
 
 /**
@@ -164,7 +162,6 @@ export function useChatbotSession({
         const created = await createChatbotSession(
           {
             name,
-            // Empty on first save; backend creates it.
             chatbot_ref: chatbotRef ?? undefined,
             config_id: data.configId,
             config_version: data.configVersion,

@@ -18,7 +18,6 @@ export type ChatbotFlowNode = ChatbotLlmNode | ChatbotTerminalNode;
 
 export type ChatbotSessionStatus = "active" | "inactive";
 
-/** `complete` once every field the system prompt asks for is collected. */
 export type ChatbotCompletionStatus = "in_progress" | "complete" | "abandoned";
 
 export type ChatbotCollectedFields = Record<string, unknown>;
@@ -31,7 +30,6 @@ export interface ChatbotChatMessage {
 
 export interface CreateChatbotSessionRequest {
   name: string;
-  /** Omit for a new chatbot (backend generates one); resend it for the same chatbot. */
   chatbot_ref?: string;
   config_id: string;
   config_version?: number;
@@ -72,12 +70,10 @@ export interface SendChatbotSessionMessageResponse {
   error?: string | null;
 }
 
-/** Body Kaapi POSTs to our webhook once a session turn completes. */
 export interface ChatbotWebhookPayload {
   success: boolean;
   data?: {
     session_id: string;
-    /** Present on success payloads only. */
     chatbot_ref?: string;
     reply?: string;
     status?: ChatbotSessionStatus;

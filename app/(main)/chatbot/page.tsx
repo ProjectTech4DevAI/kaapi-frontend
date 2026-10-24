@@ -22,7 +22,6 @@ export default function ChatbotPage() {
   const { sidebarCollapsed } = useApp();
   const toast = useToast();
   const flow = useChatbotFlow();
-  // The canvas only creates sessions; chatting happens on /chatbot/chat.
   const session = useChatbotSession({ listen: false });
 
   const createSessionFor = useCallback(

@@ -30,6 +30,8 @@ export interface EvaluationsTabProps {
   setActiveTab: (tab: Tab) => void;
   runMode: RunMode;
   setRunMode: (mode: RunMode) => void;
+  duplicationFactor: string;
+  setDuplicationFactor: (value: string) => void;
   nameError?: string;
   submitError?: string;
 }
@@ -50,6 +52,8 @@ export default function EvaluationsTab({
   setActiveTab,
   runMode,
   setRunMode,
+  duplicationFactor,
+  setDuplicationFactor,
   nameError,
   submitError,
 }: EvaluationsTabProps) {
@@ -160,6 +164,8 @@ export default function EvaluationsTab({
     setActiveTab,
     runMode,
     setRunMode,
+    duplicationFactor,
+    setDuplicationFactor,
     nameError,
     submitError,
   };

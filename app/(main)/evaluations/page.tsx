@@ -63,6 +63,7 @@ function SimplifiedEvalContent() {
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [runMode, setRunMode] = useState<RunMode>("batch");
+  const [runDuplicationFactor, setRunDuplicationFactor] = useState<string>("");
   const [nameError, setNameError] = useState<string>("");
   const [submitError, setSubmitError] = useState<string>("");
 
@@ -90,6 +91,15 @@ function SimplifiedEvalContent() {
     if (isAuthenticated) loadStoredDatasets();
     else setIsDatasetsLoading(false);
   }, [isAuthenticated, loadStoredDatasets]);
+
+  useEffect(() => {
+    const dataset = storedDatasets.find(
+      (d) => d.dataset_id.toString() === selectedDatasetId,
+    );
+    if (dataset) {
+      setRunDuplicationFactor(String(dataset.duplication_factor));
+    }
+  }, [selectedDatasetId, storedDatasets]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -221,10 +231,32 @@ function SimplifiedEvalContent() {
       return;
     }
 
+    const selectedRunDataset = storedDatasets.find(
+      (d) => d.dataset_id.toString() === selectedDatasetId,
+    );
+
+    const trimmedDuplicationFactor = runDuplicationFactor.trim();
+    let duplicationFactorOverride: number | undefined;
+    if (trimmedDuplicationFactor) {
+      if (!/^[1-9]\d*$/.test(trimmedDuplicationFactor)) {
+        toast.error("Duplication factor must be a whole number of 1 or more");
+        return;
+      }
+      const parsedDuplicationFactor = parseInt(trimmedDuplicationFactor, 10);
+      if (
+        !selectedRunDataset ||
+        parsedDuplicationFactor !== selectedRunDataset.duplication_factor
+      ) {
+        duplicationFactorOverride = parsedDuplicationFactor;
+      }
+    }
+
     setIsEvaluating(true);
     try {
       // `run_mode` is only sent when "fast" — omitting it means the backend
       // defaults to batch, which is the safe behaviour for older clients too.
+      // Likewise, `duplication_factor` is only sent when the user overrides
+      // the dataset's stored value.
       const payload: Record<string, unknown> = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
@@ -232,6 +264,9 @@ function SimplifiedEvalContent() {
         config_version: selectedConfigVersion,
         run_mode: runMode === "fast" ? "fast" : "batch",
       };
+      if (duplicationFactorOverride !== undefined) {
+        payload.duplication_factor = duplicationFactorOverride;
+      }
 
       await apiFetch("/api/evaluations", apiKey, {
         method: "POST",
@@ -244,6 +279,7 @@ function SimplifiedEvalContent() {
       setSelectedConfigId("");
       setSelectedConfigVersion(0);
       setRunMode("batch");
+      setRunDuplicationFactor("");
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
@@ -351,6 +387,8 @@ function SimplifiedEvalContent() {
               setActiveTab={setActiveTab}
               runMode={runMode}
               setRunMode={setRunMode}
+              duplicationFactor={runDuplicationFactor}
+              setDuplicationFactor={setRunDuplicationFactor}
               nameError={nameError}
               submitError={submitError}
             />

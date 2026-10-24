@@ -58,17 +58,6 @@ export const useChatbotStore = create<ChatbotState & ChatbotActions>()(
         chatbotRef: state.chatbotRef,
         sessionId: state.sessionId,
       }),
-      // v1 also stored the transcript; keep only the shared fields.
-      migrate: (persisted) => {
-        const old = (persisted ?? {}) as Partial<
-          PersistedChatbotState & { messagesSessionId: string | null }
-        >;
-        return {
-          savedFlow: old.savedFlow ?? null,
-          chatbotRef: old.chatbotRef ?? null,
-          sessionId: old.sessionId ?? old.messagesSessionId ?? null,
-        };
-      },
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

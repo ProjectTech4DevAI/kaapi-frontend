@@ -17,7 +17,6 @@ function toSessionEvent(
     reply: data.reply ?? null,
     status: data.status ?? null,
     completionStatus: data.completion_status ?? null,
-    collectedFields: data.collected_fields ?? null,
     error: body.error ?? null,
   };
 }

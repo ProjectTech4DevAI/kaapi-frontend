@@ -2,10 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/**
- * Tracks "waiting for the bot's reply" for webhook-delivered turns, giving up
- * after `timeoutMs` so the UI never spins forever.
- */
 export function useChatbotPendingReply(
   timeoutMs: number,
   onTimeout: () => void,

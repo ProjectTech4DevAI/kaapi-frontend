@@ -11,7 +11,7 @@ export const ChatbotFlowContext = createContext<ChatbotFlowContextValue | null>(
   null,
 );
 
-/** Lets custom nodes edit their own data inline on the canvas. */
+/** custom nodes edit their own data inline on the canvas. */
 export function useChatbotFlowContext(): ChatbotFlowContextValue {
   const ctx = useContext(ChatbotFlowContext);
   if (!ctx) {

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useToast } from "@/app/hooks/useToast";
-import { useChatbotReplyStream } from "@/app/hooks/useChatbotReplyStream";
-import { useChatbotPendingReply } from "@/app/hooks/useChatbotPendingReply";
+import { useChatbotReplyStream } from "@/app/hooks/chatbot/useChatbotReplyStream";
+import { useChatbotPendingReply } from "@/app/hooks/chatbot/useChatbotPendingReply";
 import {
   useChatbotStore,
   useChatbotStoreHydration,
@@ -30,17 +30,14 @@ import {
   ChatbotSessionStatus,
 } from "@/app/lib/types/chatbot";
 
-// Backend 422 when the greeting is requested on a session that already has turns.
+// Backend error: greeting asked on a session that already started.
 const ALREADY_STARTED_RE = /required once the session has started/i;
-// Backend 409 once a newer session of the same chatbot superseded this one.
+// Backend error: session was replaced by a newer one.
 const INACTIVE_RE = /session is inactive/i;
 
 /**
- * Owns the server-side chatbot session: creating it on Save (id kept in a
- * cookie and the shared store), sending turns, and applying replies that
- * arrive asynchronously through the webhook stream. The transcript is kept
- * in this hook's state only. Pages that don't chat (the flow canvas) pass
- * `listen: false` to skip opening the reply stream.
+ * Manages the chatbot session: create it, send messages, show bot replies.
+ * Pass `listen: false` on pages that don't chat (e.g. the canvas).
  */
 export function useChatbotSession({
   listen = true,
@@ -71,7 +68,7 @@ export function useChatbotSession({
 
   const contactRef = currentUser?.id ? `kaapi-user-${currentUser.id}` : null;
 
-  // A different session (new Save, another tab, restore) starts a new transcript.
+  // New session = fresh chat.
   useEffect(() => {
     setMessages([]);
     lastEventSeqRef.current = 0;
@@ -85,10 +82,7 @@ export function useChatbotSession({
     [setSessionId],
   );
 
-  // Restore the session from the cookie, falling back to the user's latest
-  // session; when found, its name/config/prompt become the saved flow and its
-  // backend-issued chatbot ref is stored for later calls. The ref is sent
-  // only if we have it.
+  // On load: pick up the last session (cookie, else backend) and fill the flow from it.
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated || !contactRef) return;
     const cookieId = readChatbotSessionCookie();
@@ -129,9 +123,10 @@ export function useChatbotSession({
     setSavedFlow,
   ]);
 
+  // Bot reply arrived (via webhook stream).
   const handleEvent = useCallback(
     (event: ChatbotSessionEvent) => {
-      if (event.seq <= lastEventSeqRef.current) return;
+      if (event.seq <= lastEventSeqRef.current) return; // already shown
       lastEventSeqRef.current = event.seq;
       clearPending();
       if (!event.success) {
@@ -151,17 +146,9 @@ export function useChatbotSession({
     [clearPending, toast],
   );
 
-  useChatbotReplyStream(
-    hasHydrated && listen ? sessionId : null,
-    () => lastEventSeqRef.current,
-    handleEvent,
-  );
+  useChatbotReplyStream(hasHydrated && listen ? sessionId : null, handleEvent);
 
-  /**
-   * Creates a new session for the flow and makes it the active one.
-   * Resolves to the new session id, or null when creation failed.
-   * `keepPending` leaves the "bot is typing" state on while a turn is retried.
-   */
+  /** Creates a new session and makes it active. Returns its id, or null on failure. */
   const startSession = useCallback(
     async (
       data: ChatbotNodeData,
@@ -177,7 +164,7 @@ export function useChatbotSession({
         const created = await createChatbotSession(
           {
             name,
-            // Backend issues the ref on the first save; resend it afterwards.
+            // Empty on first save; backend creates it.
             chatbot_ref: chatbotRef ?? undefined,
             config_id: data.configId,
             config_version: data.configVersion,
@@ -187,7 +174,7 @@ export function useChatbotSession({
           apiKey,
         );
         setChatbotRef(created.chatbotRef);
-        if (!keepPending) clearPending();
+        if (!keepPending) clearPending(); // keepPending: keep typing dots during a retry
         activateSession(created.sessionId);
         setSessionName(name);
         setStatus("active");
@@ -213,10 +200,7 @@ export function useChatbotSession({
     ],
   );
 
-  /**
-   * Queues one turn on `id`; on failure rolls back the optimistic message and
-   * rethrows. The pending state is left to the caller, which may retry.
-   */
+  /** Sends one message (shown right away); removes it again if sending fails. */
   const queueTurn = useCallback(
     async (id: string, message?: string): Promise<void> => {
       const optimisticId = message ? crypto.randomUUID() : null;
@@ -240,9 +224,8 @@ export function useChatbotSession({
   );
 
   /**
-   * Sends a turn; omit `message` to get the greeting. "Start chat" always
-   * opens a conversation: if this session already has turns this tab never
-   * saw (e.g. after a reload), a fresh session of the saved flow is started.
+   * Sends a user message, or no message to get the bot's greeting.
+   * If the session already started elsewhere, starts a fresh one instead.
    */
   const send = useCallback(
     async (message?: string): Promise<boolean> => {
@@ -264,7 +247,7 @@ export function useChatbotSession({
           return false;
         }
       }
-      // Keep the typing dots up through the retry so "Start chat" doesn't flash.
+      // Retry on a fresh session (typing dots stay on, so no flicker).
       const freshId = await startSession(savedFlow, { keepPending: true });
       if (!freshId) {
         clearPending();

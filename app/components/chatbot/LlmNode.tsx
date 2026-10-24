@@ -1,8 +1,3 @@
-/**
- * LlmNode - Editable LLM step on the chatbot canvas: config and prompt are
- * edited inline; Save turns them into a chatbot session.
- */
-
 "use client";
 
 import { Handle, NodeProps, Position } from "@xyflow/react";
@@ -23,7 +18,6 @@ export default function LlmNode({
   selected,
 }: NodeProps<ChatbotLlmNode>) {
   const { updateNodeData } = useChatbotFlowContext();
-  // Shown only once the backend has generated it on the first save.
   const chatbotRef = useChatbotStore((s) => s.chatbotRef);
   const update = (patch: Partial<ChatbotNodeData>) => updateNodeData(id, patch);
 

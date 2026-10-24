@@ -94,7 +94,6 @@ export interface ChatbotSessionEvent {
   reply: string | null;
   status: ChatbotSessionStatus | null;
   completionStatus: ChatbotCompletionStatus | null;
-  collectedFields: ChatbotCollectedFields | null;
   error: string | null;
 }
 

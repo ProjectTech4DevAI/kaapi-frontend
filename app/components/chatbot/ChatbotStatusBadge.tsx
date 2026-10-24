@@ -12,7 +12,6 @@ function badgeFor(
   completionStatus: ChatbotCompletionStatus | null,
 ): { label: string; className: string } | null {
   if (!status) return null;
-  // Inactive = superseded by a newer session of the same chatbot.
   if (status === "inactive") return { label: "Closed", className: NEUTRAL };
   switch (completionStatus) {
     case "complete":
@@ -26,7 +25,7 @@ function badgeFor(
   }
 }
 
-export function ChatbotStatusBadge({
+export default function ChatbotStatusBadge({
   status,
   completionStatus,
 }: {

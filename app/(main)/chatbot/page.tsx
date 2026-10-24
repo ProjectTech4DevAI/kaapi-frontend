@@ -8,8 +8,8 @@ import { PlayIcon } from "@/app/components/icons";
 import { ChatbotFlowCanvas } from "@/app/components/chatbot";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useToast } from "@/app/hooks/useToast";
-import { useChatbotFlow } from "@/app/hooks/useChatbotFlow";
-import { useChatbotSession } from "@/app/hooks/useChatbotSession";
+import { useChatbotFlow } from "@/app/hooks/chatbot/useChatbotFlow";
+import { useChatbotSession } from "@/app/hooks/chatbot/useChatbotSession";
 import { ChatbotNodeData } from "@/app/lib/types/chatbot";
 
 function validateFlow(data: ChatbotNodeData): string | null {
@@ -46,8 +46,6 @@ export default function ChatbotPage() {
     }
   };
 
-  // The chat runs on the saved session, so unsaved edits wouldn't be tested.
-  // It opens in a new tab so the canvas stays as it is.
   const handlePlay = () => {
     if (flow.isDirty) {
       toast.error("Save your changes before testing the chatbot.");
@@ -93,8 +91,6 @@ export default function ChatbotPage() {
               nodes={flow.nodes}
               edges={flow.edges}
               onNodesChange={flow.onNodesChange}
-              onEdgesChange={flow.onEdgesChange}
-              onConnect={flow.onConnect}
               updateNodeData={flow.updateNodeData}
             />
             <Button

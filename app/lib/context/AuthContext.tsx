@@ -147,7 +147,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
     clearAllStorage();
     useChatStore.getState().reset();
-    // Chatbot session + transcript belong to this user; never leak them to the next login.
     useChatbotStore.getState().reset();
     clearChatbotSessionCookie();
     setApiKeys([]);

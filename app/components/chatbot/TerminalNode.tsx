@@ -1,7 +1,3 @@
-/**
- * TerminalNode - Fixed "Input" / "Output" pill marking where the flow starts and ends.
- */
-
 "use client";
 
 import { Handle, NodeProps, Position } from "@xyflow/react";

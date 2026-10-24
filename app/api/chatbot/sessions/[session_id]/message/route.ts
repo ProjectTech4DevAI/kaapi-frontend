@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { proxyErrorResponse, proxyJsonResponse } from "@/app/api/_routeProxy";
 import { buildWebhookCallbackUrl } from "@/app/lib/webhookCallback";
 
-/**
- * Queues one chatbot turn. The browser only sends `message`; the webhook URL
- * (with its secret) is added here so it never reaches the client.
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ session_id: string }> },

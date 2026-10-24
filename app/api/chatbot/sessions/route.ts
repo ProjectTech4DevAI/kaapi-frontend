@@ -5,7 +5,6 @@ import {
   withQueryParams,
 } from "@/app/api/_routeProxy";
 
-/** Creates a chatbot session (stores the prompt + config pin server-side). */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -18,7 +17,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Latest session for a `contact_ref`. */
 export async function GET(request: NextRequest) {
   try {
     return await proxyJsonResponse(

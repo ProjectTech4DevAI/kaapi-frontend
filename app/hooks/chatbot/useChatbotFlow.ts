@@ -1,13 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  addEdge,
-  Connection,
-  Edge,
-  useEdgesState,
-  useNodesState,
-} from "@xyflow/react";
+import { Edge, useNodesState } from "@xyflow/react";
 import { DEFAULT_CHATBOT_NAME } from "@/app/lib/constants";
 import { useChatbotStore } from "@/app/lib/store/chatbot";
 import {
@@ -18,7 +12,6 @@ import {
 
 const INPUT_ID = "input";
 const OUTPUT_ID = "output";
-// Fixed so server and client render the same id (avoids hydration mismatch).
 const LLM_ID = "LLMResponseWithPrompt-1";
 
 const DEFAULT_NODE_DATA: ChatbotNodeData = {
@@ -82,7 +75,8 @@ export function useChatbotFlow() {
   const [nodes, setNodes, onNodesChange] = useNodesState<ChatbotFlowNode>(
     initial.nodes,
   );
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(initial.edges);
+  // The graph is fixed (Input → LLM → Output), so edges never change.
+  const edges = initial.edges;
 
   const savedFlow = useChatbotStore((s) => s.savedFlow);
   const hasHydrated = useChatbotStore((s) => s.hasHydrated);
@@ -112,11 +106,6 @@ export function useChatbotFlow() {
     if (untouched) replaceNodeData(savedFlow);
   }, [hasHydrated, savedFlow, replaceNodeData]);
 
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
-  );
-
   const updateNodeData = useCallback(
     (id: string, patch: Partial<ChatbotNodeData>) => {
       setNodes((prev) =>
@@ -144,8 +133,6 @@ export function useChatbotFlow() {
     nodes,
     edges,
     onNodesChange,
-    onEdgesChange,
-    onConnect,
     updateNodeData,
     llmNode,
     isDirty,

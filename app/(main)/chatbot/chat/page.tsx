@@ -11,7 +11,7 @@ import {
 } from "@/app/components/chatbot";
 import { useApp } from "@/app/lib/context/AppContext";
 import { useToast } from "@/app/hooks/useToast";
-import { useChatbotSession } from "@/app/hooks/useChatbotSession";
+import { useChatbotSession } from "@/app/hooks/chatbot/useChatbotSession";
 import { useChatbotStore } from "@/app/lib/store/chatbot";
 
 export default function ChatbotChatPage() {

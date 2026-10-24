@@ -16,25 +16,16 @@ function parseSeq(value: string | null): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/**
- * SSE stream of webhook replies for one chatbot session. Each event carries
- * its `seq` as the SSE id, so a reconnecting EventSource resumes via
- * `Last-Event-ID`; `after` lets a fresh page load skip replies it already
- * has, and `after=latest` skips the whole backlog (a client with no local
- * transcript must not get old bot replies without the user turns between).
- */
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("session_id");
   if (!sessionId) {
     return new Response("session_id_required", { status: 400 });
   }
-  const afterParam = request.nextUrl.searchParams.get("after");
-  const afterSeq = Math.max(
-    afterParam === "latest"
-      ? getLatestSessionSeq(sessionId)
-      : parseSeq(afterParam),
-    parseSeq(request.headers.get("last-event-id")),
-  );
+  // Reconnects resume after the last delivered reply; a fresh connection
+  // skips the backlog (old bot replies without the user turns around them).
+  const afterSeq =
+    parseSeq(request.headers.get("last-event-id")) ||
+    getLatestSessionSeq(sessionId);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -51,7 +42,6 @@ export async function GET(request: NextRequest) {
         }
       };
 
-      // Subscribe before replaying so nothing slips in between.
       const unsubscribe = subscribeSessionEvents(sessionId, push);
       getSessionEventsAfter(sessionId, afterSeq).forEach(push);
 

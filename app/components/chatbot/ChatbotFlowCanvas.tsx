@@ -4,10 +4,8 @@ import { useMemo } from "react";
 import {
   Background,
   BackgroundVariant,
-  Connection,
   Controls,
   Edge,
-  EdgeChange,
   NodeChange,
   ReactFlow,
 } from "@xyflow/react";
@@ -29,8 +27,6 @@ interface ChatbotFlowCanvasProps {
   nodes: ChatbotFlowNode[];
   edges: Edge[];
   onNodesChange: (changes: NodeChange<ChatbotFlowNode>[]) => void;
-  onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
-  onConnect: (connection: Connection) => void;
   updateNodeData: (id: string, patch: Partial<ChatbotNodeData>) => void;
 }
 
@@ -38,8 +34,6 @@ export default function ChatbotFlowCanvas({
   nodes,
   edges,
   onNodesChange,
-  onEdgesChange,
-  onConnect,
   updateNodeData,
 }: ChatbotFlowCanvasProps) {
   const contextValue = useMemo(() => ({ updateNodeData }), [updateNodeData]);
@@ -52,8 +46,8 @@ export default function ChatbotFlowCanvas({
         nodeTypes={NODE_TYPES}
         defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
         onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        nodesConnectable={false}
+        edgesFocusable={false}
         fitView
         fitViewOptions={{ maxZoom: 1, padding: 0.2 }}
         proOptions={{ hideAttribution: true }}

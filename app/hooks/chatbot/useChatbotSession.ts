@@ -121,10 +121,9 @@ export function useChatbotSession({
     setSavedFlow,
   ]);
 
-  // Bot reply arrived (via webhook stream).
   const handleEvent = useCallback(
     (event: ChatbotSessionEvent) => {
-      if (event.seq <= lastEventSeqRef.current) return; // already shown
+      if (event.seq <= lastEventSeqRef.current) return;
       lastEventSeqRef.current = event.seq;
       clearPending();
       if (!event.success) {
@@ -146,7 +145,6 @@ export function useChatbotSession({
 
   useChatbotReplyStream(hasHydrated && listen ? sessionId : null, handleEvent);
 
-  /** Creates a new session and makes it active. Returns its id, or null on failure. */
   const startSession = useCallback(
     async (
       data: ChatbotNodeData,

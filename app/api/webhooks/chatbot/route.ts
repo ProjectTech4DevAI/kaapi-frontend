@@ -21,7 +21,6 @@ function toSessionEvent(
   };
 }
 
-/** Receives a completed chatbot turn from Kaapi and hands it to open streams. */
 export async function POST(request: NextRequest) {
   try {
     if (!isWebhookAuthorized(request)) {

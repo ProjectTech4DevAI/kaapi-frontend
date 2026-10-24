@@ -67,7 +67,6 @@ export function getLatestSessionSeq(sessionId: string): number {
   return events?.[events.length - 1]?.seq ?? 0;
 }
 
-/** Events newer than `afterSeq`, oldest first. */
 export function getSessionEventsAfter(
   sessionId: string,
   afterSeq: number,

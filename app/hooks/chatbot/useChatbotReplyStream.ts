@@ -13,7 +13,6 @@ export function useChatbotReplyStream(
   sessionId: string | null,
   onEvent: (event: ChatbotSessionEvent) => void,
 ) {
-  // Latest callback without reopening the stream on every render.
   const onEventRef = useRef(onEvent);
   useEffect(() => {
     onEventRef.current = onEvent;

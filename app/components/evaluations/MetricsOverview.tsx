@@ -3,6 +3,7 @@
 import type { EvalJob, SummaryScore } from "@/app/lib/types/evaluation";
 import { Button } from "@/app/components/ui";
 import { RefreshIcon, WarningTriangleIcon } from "@/app/components/icons";
+import VerdictBadge from "./VerdictBadge";
 
 interface MetricsOverviewProps {
   job: EvalJob;
@@ -57,8 +58,15 @@ export default function MetricsOverview({
                 key={summary.name}
                 className="rounded-lg px-6 py-5 text-center flex-1 min-w-[180px] relative bg-bg-primary shadow-sm"
               >
-                <div className="text-xs font-medium mb-2 text-text-secondary">
-                  {summary.name}
+                <div className="flex items-center justify-center gap-1.5 mb-2">
+                  <span className="text-xs font-medium text-text-secondary">
+                    {summary.name}
+                  </span>
+                  <VerdictBadge
+                    name={summary.name}
+                    value={summary.avg}
+                    dataType={summary.data_type}
+                  />
                 </div>
                 <div className="text-2xl font-bold text-text-primary">
                   {summary.avg !== undefined ? summary.avg.toFixed(3) : "N/A"}

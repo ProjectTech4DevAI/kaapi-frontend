@@ -6,12 +6,15 @@
 
 import { Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
+import { isCosineScoreName } from "@/app/lib/utils/evaluation";
 import { formatScoreValue } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
 export default function GroupedResultsTable({
   traces,
+  isJudgeRun,
 }: {
   traces: GroupedTraceItem[];
+  isJudgeRun?: boolean;
 }) {
   if (!traces || traces.length === 0) {
     return (
@@ -171,8 +174,13 @@ export default function GroupedResultsTable({
                   <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
 
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
-                    const answerScores: TraceScore[] =
+                    const rawAnswerScores: TraceScore[] =
                       group.scores?.[answerIndex] || [];
+                    const answerScores = isJudgeRun
+                      ? rawAnswerScores.filter(
+                          (s) => !isCosineScoreName(s.name),
+                        )
+                      : rawAnswerScores;
                     const answer = group.llm_answers[answerIndex];
 
                     return (

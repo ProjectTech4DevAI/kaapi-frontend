@@ -1,6 +1,7 @@
 "use client";
 
 import type { EvalJob, SummaryScore } from "@/app/lib/types/evaluation";
+import { isCosineScoreName } from "@/app/lib/utils/evaluation";
 import { Button } from "@/app/components/ui";
 import { RefreshIcon, WarningTriangleIcon } from "@/app/components/icons";
 
@@ -14,11 +15,15 @@ interface MetricsOverviewProps {
 
 export default function MetricsOverview({
   job,
-  summaryScores,
+  summaryScores: allSummaryScores,
   isJobInProgress,
   isResyncing,
   onResync,
 }: MetricsOverviewProps) {
+  const isJudgeRun = job.is_judge_run;
+  const summaryScores = isJudgeRun
+    ? allSummaryScores.filter((s) => !isCosineScoreName(s.name))
+    : allSummaryScores;
   const showPartialNotice =
     summaryScores.some(
       (s) => job.total_items && s.total_pairs < job.total_items,
@@ -38,15 +43,17 @@ export default function MetricsOverview({
         <h3 className="text-sm font-semibold text-text-secondary">
           Metrics Overview
         </h3>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onResync}
-          disabled={isResyncing}
-        >
-          <RefreshIcon className={isResyncing ? "animate-spin" : ""} />
-          {isResyncing ? "Resyncing..." : "Resync"}
-        </Button>
+        {!isJudgeRun && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onResync}
+            disabled={isResyncing}
+          >
+            <RefreshIcon className={isResyncing ? "animate-spin" : ""} />
+            {isResyncing ? "Resyncing..." : "Resync"}
+          </Button>
+        )}
       </div>
       {summaryScores.length > 0 ? (
         <div className="flex gap-4 flex-wrap">

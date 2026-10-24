@@ -399,7 +399,10 @@ export default function EvaluationReport() {
                     onResync={handleResync}
                   />
                   {categoryMetrics.length > 0 && (
-                    <CategoryMetricsTable categoryMetrics={categoryMetrics} />
+                    <CategoryMetricsTable
+                      categoryMetrics={categoryMetrics}
+                      isJudgeRun={job.is_judge_run}
+                    />
                   )}
                 </>
               ) : (

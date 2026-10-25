@@ -21,19 +21,44 @@ const eyebrow =
 
 const VIEWPORT_GUTTER_PX = 8;
 const DROPDOWN_MIN_WIDTH_PX = 220;
+const DROPDOWN_MAX_HEIGHT_PX = 208;
+const CARET_LINE_OFFSET_PX = 26;
+
+interface DropdownPlacement {
+  left: number;
+  top?: number;
+  bottom?: number;
+  maxHeight: number;
+}
 
 function viewportPosition(
   anchor: HTMLElement | null,
   position: { top: number; left: number },
-): { top: number; left: number } {
+): DropdownPlacement {
   const origin = anchor?.getBoundingClientRect() ?? { top: 0, left: 0 };
-  const left = Math.min(
-    origin.left + position.left,
-    window.innerWidth - DROPDOWN_MIN_WIDTH_PX - VIEWPORT_GUTTER_PX,
+  const left = Math.max(
+    Math.min(
+      origin.left + position.left,
+      window.innerWidth - DROPDOWN_MIN_WIDTH_PX - VIEWPORT_GUTTER_PX,
+    ),
+    VIEWPORT_GUTTER_PX,
   );
+  const below = origin.top + position.top;
+  const caretTop = below - CARET_LINE_OFFSET_PX;
+  const spaceBelow = window.innerHeight - below - VIEWPORT_GUTTER_PX;
+  const spaceAbove = caretTop - VIEWPORT_GUTTER_PX;
+
+  if (spaceBelow >= DROPDOWN_MAX_HEIGHT_PX || spaceBelow >= spaceAbove) {
+    return {
+      left,
+      top: below,
+      maxHeight: Math.min(DROPDOWN_MAX_HEIGHT_PX, spaceBelow),
+    };
+  }
   return {
-    top: origin.top + position.top,
-    left: Math.max(left, VIEWPORT_GUTTER_PX),
+    left,
+    bottom: window.innerHeight - caretTop,
+    maxHeight: Math.min(DROPDOWN_MAX_HEIGHT_PX, spaceAbove),
   };
 }
 
@@ -53,12 +78,22 @@ export default function MentionDropdown({
   onMouseEnter,
   onMouseLeave,
 }: MentionDropdownProps) {
-  const [fixed, setFixed] = useState<{ top: number; left: number } | null>(
-    null,
-  );
+  const [fixed, setFixed] = useState<DropdownPlacement | null>(null);
 
   useLayoutEffect(() => {
-    setFixed(position ? viewportPosition(anchorRef.current, position) : null);
+    if (!position) {
+      setFixed(null);
+      return;
+    }
+    const update = () =>
+      setFixed(viewportPosition(anchorRef.current, position));
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
   }, [anchorRef, position]);
 
   if (!fixed || typeof document === "undefined") return null;
@@ -68,8 +103,8 @@ export default function MentionDropdown({
       ref={dropdownRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ top: fixed.top, left: fixed.left }}
-      className="fixed z-50 max-h-52 min-w-[220px] overflow-y-auto rounded-xl border border-border bg-bg-primary shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
+      style={{ ...fixed }}
+      className="fixed z-50 min-w-[220px] overflow-y-auto rounded-xl border border-border bg-bg-primary shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
     >
       {stage === "type" && (
         <>

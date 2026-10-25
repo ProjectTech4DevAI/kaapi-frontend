@@ -2,17 +2,19 @@
 
 import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { DocumentFileIcon, ImageIcon } from "@/app/components/icons";
+import FieldTypeIcon from "./FieldTypeIcon";
 import type {
   MentionDropdownProps,
   PromptFieldType,
 } from "@/app/lib/types/assessment";
 
-const TYPE_ICONS: Record<PromptFieldType, React.ReactNode> = {
-  text: <span className="font-sans text-[11px] font-semibold">Aa</span>,
-  image: <ImageIcon className="h-3.5 w-3.5" />,
-  pdf: <DocumentFileIcon className="h-3.5 w-3.5" />,
-};
+function typeBadge(type: PromptFieldType): React.ReactNode {
+  return type === "text" ? (
+    <span className="font-sans text-[11px] font-semibold">Aa</span>
+  ) : (
+    <FieldTypeIcon type={type} className="h-3.5 w-3.5" />
+  );
+}
 
 const rowBase =
   "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm";
@@ -78,7 +80,7 @@ export default function MentionDropdown({
             <OptionRow
               key={option.type}
               active={index === activeIndex}
-              badge={TYPE_ICONS[option.type]}
+              badge={typeBadge(option.type)}
               label={option.label}
               isCurrent={option.isCurrent}
               onPick={() => onPickType(option.type)}

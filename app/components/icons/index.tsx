@@ -23,6 +23,7 @@ export { default as ErrorCircleIcon } from "./common/ErrorCircleIcon";
 export { default as DownloadIcon } from "./common/DownloadIcon";
 export { default as HomeIcon } from "./common/HomeIcon";
 export { default as ImageIcon } from "./common/ImageIcon";
+export { default as VideoIcon } from "./common/VideoIcon";
 export { default as LockClosedIcon } from "./common/LockClosedIcon";
 
 // Evaluations Icons

@@ -1,10 +1,7 @@
 "use client";
 
-import {
-  DocumentFileIcon,
-  ImageIcon,
-  LockClosedIcon,
-} from "@/app/components/icons";
+import { LockClosedIcon } from "@/app/components/icons";
+import FieldTypeIcon from "./FieldTypeIcon";
 import {
   buildPreviewBlocks,
   fieldTypeOf,
@@ -115,14 +112,12 @@ function SegmentView({
   if (segment.kind === "plain") return <>{segment.text}</>;
 
   if (segment.kind === "attachment" && segment.name) {
-    const isImage = fieldTypeOf(fieldTypes, segment.name) === "image";
     return (
       <span className="mx-0.5 inline-flex items-center gap-1 rounded-md border border-status-warning-border bg-status-warning-bg px-2 py-px align-baseline text-xs font-medium text-status-warning-text">
-        {isImage ? (
-          <ImageIcon className="h-3 w-3" />
-        ) : (
-          <DocumentFileIcon className="h-3 w-3" />
-        )}
+        <FieldTypeIcon
+          type={fieldTypeOf(fieldTypes, segment.name)}
+          className="h-3 w-3"
+        />
         {segment.name}
       </span>
     );

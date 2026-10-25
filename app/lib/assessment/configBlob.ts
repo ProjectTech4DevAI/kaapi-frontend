@@ -62,7 +62,7 @@ function attachmentsFrom(
     .filter(([, column]) => column.type !== "text")
     .map(([name, column]) => ({
       column: name,
-      type: column.type as "image" | "pdf",
+      type: column.type as Exclude<PromptFieldType, "text">,
       format: column.format ?? "url",
     }));
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Modal } from "@/app/components/ui";
-import { DocumentFileIcon, ImageIcon } from "@/app/components/icons";
+import FieldTypeIcon from "@/app/components/assessment/editor/FieldTypeIcon";
 import {
   fieldTypeOf,
   TOKEN_RE,
@@ -63,10 +63,8 @@ export default function ReviewSaveModal({
                 >
                   {type === "text" ? (
                     "@"
-                  ) : type === "image" ? (
-                    <ImageIcon className="h-3 w-3" />
                   ) : (
-                    <DocumentFileIcon className="h-3 w-3" />
+                    <FieldTypeIcon type={type} className="h-3 w-3" />
                   )}
                   {column}
                   <span className="font-sans text-[10px] text-text-secondary">

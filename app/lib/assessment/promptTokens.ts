@@ -13,6 +13,7 @@ export const PROMPT_FIELD_TYPE_LABELS: Record<PromptFieldType, string> = {
   text: "Text",
   image: "Image (link)",
   pdf: "PDF (link)",
+  video: "Video (link)",
 };
 
 export function tokenName(raw: string): string {

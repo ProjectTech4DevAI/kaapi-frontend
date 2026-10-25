@@ -126,7 +126,7 @@ export interface AssessmentResultsPayload {
 
 export interface Attachment {
   column: string;
-  type: "image" | "pdf" | "mixed";
+  type: "image" | "pdf" | "video" | "mixed";
   format: "url" | "base64";
   type_column?: string | null;
   type_value_map?: Record<string, string> | null;

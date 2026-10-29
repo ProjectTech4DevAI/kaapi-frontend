@@ -3,8 +3,8 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { readWebhookSecret } from "@/app/lib/webhookSecret";
 
-function getAppBaseUrl(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL;
+function getWebhookBaseUrl(request: NextRequest): string {
+  const configured = process.env.WEBHOOK_URL ?? process.env.NEXT_PUBLIC_APP_URL;
   if (configured) {
     return configured.replace(/\/$/, "");
   }
@@ -25,7 +25,7 @@ export function buildWebhookCallbackUrl(
   if (!secretResult.ok || !secretResult.secret) {
     throw new Error(secretResult.reason ?? "webhook_secret_missing");
   }
-  const base = getAppBaseUrl(request);
+  const base = getWebhookBaseUrl(request);
   return `${base}${path}?secret_value=${encodeURIComponent(secretResult.secret)}`;
 }
 

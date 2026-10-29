@@ -1,4 +1,3 @@
-/** One message on an event channel; `seq` doubles as the SSE event id. */
 export interface ChannelEvent<T> {
   seq: number;
   data: T;

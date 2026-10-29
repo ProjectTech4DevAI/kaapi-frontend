@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { openEventStream } from "@/app/lib/eventStream";
 import { ChatbotSessionEvent } from "@/app/lib/types/chatbot";
 
 /**
- * Keeps an SSE connection to the webhook stream for one chatbot session and
- * calls `onEvent` for every reply Kaapi delivers. A new connection only gets
- * replies from then on; EventSource reconnects on its own and resumes via
- * `Last-Event-ID`.
+ * Listens to live bot replies for one session. `onEvent` gets each reply and
+ * its `seq` (used to skip duplicates after a reconnect).
  */
 export function useChatbotReplyStream(
   sessionId: string | null,
-  onEvent: (event: ChatbotSessionEvent) => void,
+  onEvent: (event: ChatbotSessionEvent, seq: number) => void,
 ) {
   const onEventRef = useRef(onEvent);
   useEffect(() => {
@@ -19,18 +18,12 @@ export function useChatbotReplyStream(
   });
 
   useEffect(() => {
-    if (!sessionId || typeof EventSource === "undefined") return;
+    if (!sessionId) return;
     const params = new URLSearchParams({ session_id: sessionId });
-    const source = new EventSource(`/api/webhooks/chatbot/stream?${params}`);
-    source.addEventListener("reply", (e) => {
-      try {
-        onEventRef.current(
-          JSON.parse((e as MessageEvent).data) as ChatbotSessionEvent,
-        );
-      } catch (err) {
-        console.error("chatbot SSE parse error:", err);
-      }
-    });
-    return () => source.close();
+    return openEventStream<ChatbotSessionEvent>(
+      `/api/webhooks/chatbot/stream?${params}`,
+      "reply",
+      (event, id) => onEventRef.current(event, Number(id)),
+    );
   }, [sessionId]);
 }

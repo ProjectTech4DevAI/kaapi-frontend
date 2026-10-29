@@ -122,9 +122,9 @@ export function useChatbotSession({
   ]);
 
   const handleEvent = useCallback(
-    (event: ChatbotSessionEvent) => {
-      if (event.seq <= lastEventSeqRef.current) return;
-      lastEventSeqRef.current = event.seq;
+    (event: ChatbotSessionEvent, seq: number) => {
+      if (seq <= lastEventSeqRef.current) return;
+      lastEventSeqRef.current = seq;
       clearPending();
       if (!event.success) {
         toast.error(event.error || "The chatbot couldn't reply.");

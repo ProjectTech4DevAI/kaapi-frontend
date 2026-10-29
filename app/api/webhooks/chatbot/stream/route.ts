@@ -1,78 +1,29 @@
 import { NextRequest } from "next/server";
-import {
-  getLatestSessionSeq,
-  getSessionEventsAfter,
-  subscribeSessionEvents,
-} from "@/app/lib/store/chatbotSessionStore";
+import { createSseResponse } from "@/app/api/_sse";
+import { chatbotReplyChannel } from "@/app/lib/store/chatbotSessionStore";
+import type { ChannelEvent } from "@/app/lib/types/eventChannel";
 import type { ChatbotSessionEvent } from "@/app/lib/types/chatbot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const HEARTBEAT_MS = 20_000;
-
-function parseSeq(value: string | null): number {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-}
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("session_id");
   if (!sessionId) {
     return new Response("session_id_required", { status: 400 });
   }
-  // Reconnects resume after the last delivered reply; a fresh connection
-  // skips the backlog (old bot replies without the user turns around them).
-  const afterSeq =
-    parseSeq(request.headers.get("last-event-id")) ||
-    getLatestSessionSeq(sessionId);
 
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    start(controller) {
-      const push = (event: ChatbotSessionEvent) => {
-        try {
-          controller.enqueue(
-            encoder.encode(
-              `id: ${event.seq}\nevent: reply\ndata: ${JSON.stringify(event)}\n\n`,
-            ),
-          );
-        } catch {
-          // stream closed
-        }
-      };
+  return createSseResponse(request, (send) => {
+    const sendReply = ({ seq, data }: ChannelEvent<ChatbotSessionEvent>) =>
+      send("reply", data, seq);
 
-      const unsubscribe = subscribeSessionEvents(sessionId, push);
-      getSessionEventsAfter(sessionId, afterSeq).forEach(push);
+    const unsubscribe = chatbotReplyChannel.subscribe(sessionId, sendReply);
 
-      const heartbeat = setInterval(() => {
-        try {
-          controller.enqueue(encoder.encode(`: ping\n\n`));
-        } catch {
-          finish();
-        }
-      }, HEARTBEAT_MS);
-
-      function finish() {
-        clearInterval(heartbeat);
-        unsubscribe();
-        try {
-          controller.close();
-        } catch {
-          // already closed
-        }
-      }
-
-      request.signal.addEventListener("abort", finish);
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
+    // On reconnect, the browser sends the last id it got; resend what it missed.
+    const lastSeenId = Number(request.headers.get("last-event-id"));
+    if (lastSeenId) {
+      chatbotReplyChannel.after(sessionId, lastSeenId).forEach(sendReply);
+    }
+    return unsubscribe;
   });
 }

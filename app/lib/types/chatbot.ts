@@ -84,19 +84,9 @@ export interface ChatbotWebhookPayload {
 }
 
 export interface ChatbotSessionEvent {
-  seq: number;
-  sessionId: string;
   success: boolean;
   reply: string | null;
   status: ChatbotSessionStatus | null;
   completionStatus: ChatbotCompletionStatus | null;
   error: string | null;
-}
-
-export type ChatbotSessionEventListener = (event: ChatbotSessionEvent) => void;
-
-export interface ChatbotSessionStoreShape {
-  events: Map<string, ChatbotSessionEvent[]>;
-  listeners: Map<string, Set<ChatbotSessionEventListener>>;
-  lastSeq: number;
 }

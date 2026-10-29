@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveSessionEvent } from "@/app/lib/store/chatbotSessionStore";
+import { chatbotReplyChannel } from "@/app/lib/store/chatbotSessionStore";
 import { isWebhookAuthorized } from "@/app/lib/webhookCallback";
 import type {
   ChatbotSessionEvent,
   ChatbotWebhookPayload,
 } from "@/app/lib/types/chatbot";
 
-function toSessionEvent(
-  body: ChatbotWebhookPayload,
-): Omit<ChatbotSessionEvent, "seq"> | null {
-  const data = body.data;
-  if (!data?.session_id) return null;
+function toSessionEvent(body: ChatbotWebhookPayload): ChatbotSessionEvent {
   return {
-    sessionId: data.session_id,
     success: body.success === true,
-    reply: data.reply ?? null,
-    status: data.status ?? null,
-    completionStatus: data.completion_status ?? null,
+    reply: body.data?.reply ?? null,
+    status: body.data?.status ?? null,
+    completionStatus: body.data?.completion_status ?? null,
     error: body.error ?? null,
   };
 }
@@ -29,16 +24,15 @@ export async function POST(request: NextRequest) {
         { status: 401 },
       );
     }
-    const event = toSessionEvent(
-      (await request.json()) as ChatbotWebhookPayload,
-    );
-    if (!event) {
+    const body = (await request.json()) as ChatbotWebhookPayload;
+    const sessionId = body.data?.session_id;
+    if (!sessionId) {
       return NextResponse.json(
         { success: false, error: "invalid_payload" },
         { status: 400 },
       );
     }
-    saveSessionEvent(event);
+    chatbotReplyChannel.publish(sessionId, toSessionEvent(body));
     return NextResponse.json({ success: true, data: { received: true } });
   } catch (error) {
     console.error("chatbot webhook error:", error);

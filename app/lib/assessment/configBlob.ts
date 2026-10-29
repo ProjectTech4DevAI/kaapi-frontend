@@ -62,7 +62,7 @@ function attachmentsFrom(
     .filter(([, column]) => column.type !== "text")
     .map(([name, column]) => ({
       column: name,
-      type: column.type as Exclude<PromptFieldType, "text">,
+      type: column.type,
       format: column.format ?? "url",
     }));
 }
@@ -156,7 +156,7 @@ function inputSchema(
     names.map((name) => {
       const attachment = byColumn.get(name);
       const column: AssessmentBlobInputColumn =
-        attachment && attachment.type !== "mixed"
+        attachment && attachment.type !== "text"
           ? { type: attachment.type, format: attachment.format ?? "url" }
           : { type: "text", format: null };
       return [name, strict.has(name) ? { ...column, strict: true } : column];

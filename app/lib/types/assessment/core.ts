@@ -1,4 +1,5 @@
 import type { ChangeEvent, DragEvent, RefObject } from "react";
+import type { PromptFieldType } from "./prompt";
 
 export type ValueSetter<T> = (value: T) => void;
 export type SampleRow = Record<string, string>;
@@ -126,7 +127,7 @@ export interface AssessmentResultsPayload {
 
 export interface Attachment {
   column: string;
-  type: "image" | "pdf" | "video" | "mixed";
+  type: PromptFieldType;
   format: "url" | "base64";
   type_column?: string | null;
   type_value_map?: Record<string, string> | null;

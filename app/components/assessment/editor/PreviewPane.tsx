@@ -1,7 +1,7 @@
 "use client";
 
 import { LockClosedIcon } from "@/app/components/icons";
-import FieldTypeIcon from "./FieldTypeIcon";
+import RenderFieldType from "./RenderFieldType";
 import {
   buildPreviewBlocks,
   fieldTypeOf,
@@ -114,7 +114,7 @@ function SegmentView({
   if (segment.kind === "attachment" && segment.name) {
     return (
       <span className="mx-0.5 inline-flex items-center gap-1 rounded-md border border-status-warning-border bg-status-warning-bg px-2 py-px align-baseline text-xs font-medium text-status-warning-text">
-        <FieldTypeIcon
+        <RenderFieldType
           type={fieldTypeOf(fieldTypes, segment.name)}
           className="h-3 w-3"
         />

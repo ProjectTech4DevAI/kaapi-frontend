@@ -11,6 +11,7 @@ export const APP_NAME = "Kaapi Konsole";
 
 export const FeatureFlag = {
   ASSESSMENT: ASSESSMENT_FEATURE_FLAG,
+  CHATBOT: "CHATBOT",
 } as const;
 
 export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
@@ -213,3 +214,7 @@ export const PAGER_BUTTON_IDLE =
   "border-border bg-bg-primary text-text-secondary hover:border-accent-muted hover:text-text-primary";
 export const PAGER_BUTTON_CURRENT =
   "border-accent-primary bg-accent-primary text-white font-semibold";
+
+export const CHATBOT_REPLY_TIMEOUT_MS = 90_000;
+export const CHATBOT_NAME_MAX_LENGTH = 255;
+export const DEFAULT_CHATBOT_NAME = "Untitled Chatbot";

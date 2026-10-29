@@ -1,116 +1,96 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Edge, useNodesState } from "@xyflow/react";
-import { DEFAULT_CHATBOT_NAME } from "@/app/lib/constants";
-import { useChatbotStore } from "@/app/lib/store/chatbot";
+import { useAuth } from "@/app/lib/context/AuthContext";
+import { useToast } from "@/app/hooks/useToast";
 import {
+  getChatbotFlow,
+  publishChatbotFlow,
+  saveChatbotFlow,
+} from "@/app/lib/chatbotClient";
+import {
+  createDefaultFlow,
+  flowSignature,
+  toFlowPayload,
+} from "@/app/lib/utils/chatbotFlow";
+import {
+  ChatbotFlowGraph,
   ChatbotFlowNode,
-  ChatbotLlmNode,
-  ChatbotNodeData,
+  OnboardingNodeData,
 } from "@/app/lib/types/chatbot";
 
-const INPUT_ID = "input";
-const OUTPUT_ID = "output";
-const LLM_ID = "LLMResponseWithPrompt-1";
-
-const DEFAULT_NODE_DATA: ChatbotNodeData = {
-  label: DEFAULT_CHATBOT_NAME,
-  systemPrompt: "",
-  configId: "",
-  configVersion: undefined,
-};
-
-function createInitialFlow(): { nodes: ChatbotFlowNode[]; edges: Edge[] } {
-  return {
-    nodes: [
-      {
-        id: INPUT_ID,
-        type: "flowInput",
-        position: { x: 0, y: 55 },
-        data: { label: "Input" },
-        deletable: false,
-      },
-      {
-        id: LLM_ID,
-        type: "llm",
-        position: { x: 260, y: 0 },
-        data: DEFAULT_NODE_DATA,
-        deletable: false,
-      },
-      {
-        id: OUTPUT_ID,
-        type: "flowOutput",
-        position: { x: 640, y: 230 },
-        data: { label: "Output" },
-        deletable: false,
-      },
-    ],
-    edges: [
-      { id: `${INPUT_ID}->${LLM_ID}`, source: INPUT_ID, target: LLM_ID },
-      { id: `${LLM_ID}->${OUTPUT_ID}`, source: LLM_ID, target: OUTPUT_ID },
-    ],
-  };
+interface FlowVersion {
+  version: number;
+  isLive: boolean;
 }
 
-function isLlmNode(node: ChatbotFlowNode): node is ChatbotLlmNode {
-  return node.type === "llm";
-}
+export function useChatbotFlow(chatbotId: string) {
+  const { activeKey, isAuthenticated, isHydrated } = useAuth();
+  const apiKey = activeKey?.key ?? "";
+  const toast = useToast();
 
-function isSameData(a: ChatbotNodeData, b: ChatbotNodeData): boolean {
-  return (
-    a.label === b.label &&
-    a.systemPrompt === b.systemPrompt &&
-    a.configId === b.configId &&
-    (a.configVersion ?? null) === (b.configVersion ?? null)
-  );
-}
+  const [nodes, setNodes, onNodesChange] = useNodesState<ChatbotFlowNode>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [saved, setSaved] = useState<ChatbotFlowGraph | null>(null);
+  const [flowVersion, setFlowVersion] = useState<FlowVersion | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
-/**
- * Owns the canvas graph (Input → LLM → Output) and tracks the LLM node's
- * edits against the last saved version, for the Save / Discard buttons.
- */
-export function useChatbotFlow() {
-  const [initial] = useState(createInitialFlow);
-  const [nodes, setNodes, onNodesChange] = useNodesState<ChatbotFlowNode>(
-    initial.nodes,
-  );
-  // The graph is fixed (Input → LLM → Output), so edges never change.
-  const edges = initial.edges;
-
-  const savedFlow = useChatbotStore((s) => s.savedFlow);
-  const hasHydrated = useChatbotStore((s) => s.hasHydrated);
-  const setSavedFlow = useChatbotStore((s) => s.setSavedFlow);
-
-  const llmNode = nodes.find(isLlmNode) ?? null;
-  const baseline = savedFlow ?? DEFAULT_NODE_DATA;
-  const isDirty = !!llmNode && !isSameData(llmNode.data, baseline);
-
-  const replaceNodeData = useCallback(
-    (data: ChatbotNodeData) => {
-      setNodes((prev) =>
-        prev.map((n) => (isLlmNode(n) ? { ...n, data: { ...data } } : n)),
-      );
+  // Nodes are fixed (no add/delete), so lock them on the canvas.
+  const showFlow = useCallback(
+    (flow: ChatbotFlowGraph) => {
+      setNodes(flow.nodes.map((n) => ({ ...n, deletable: false })));
+      setEdges(flow.edges);
+      setSaved(flow);
     },
     [setNodes],
   );
 
-  // Mirror the saved flow into the node whenever it changes (localStorage
-  // rehydration, or the latest session restored from the backend), unless the
-  // user has unsaved edits against the previously applied version.
-  const appliedRef = useRef<ChatbotNodeData>(DEFAULT_NODE_DATA);
+  // Load: saved flow, or a fresh default canvas when nothing is saved yet.
   useEffect(() => {
-    if (!hasHydrated || !savedFlow || !llmNode) return;
-    const untouched = isSameData(llmNode.data, appliedRef.current);
-    appliedRef.current = savedFlow;
-    if (untouched) replaceNodeData(savedFlow);
-  }, [hasHydrated, savedFlow, replaceNodeData]);
+    if (!isHydrated || !isAuthenticated) return;
+    let cancelled = false;
+    setIsLoading(true);
+    getChatbotFlow(chatbotId, apiKey)
+      .then((flow) => {
+        if (cancelled) return;
+        if (flow) {
+          showFlow({ nodes: flow.nodes, edges: flow.edges });
+          setFlowVersion({ version: flow.version, isLive: flow.is_live });
+        } else {
+          showFlow(createDefaultFlow());
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toast.error(
+            err instanceof Error ? err.message : "Failed to load the flow.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [chatbotId, apiKey, isAuthenticated, isHydrated, showFlow]);
+
+  const savedSignature = useMemo(
+    () => (saved ? flowSignature(saved) : null),
+    [saved],
+  );
+  const isDirty =
+    savedSignature !== null &&
+    flowSignature({ nodes, edges }) !== savedSignature;
 
   const updateNodeData = useCallback(
-    (id: string, patch: Partial<ChatbotNodeData>) => {
+    (id: string, patch: Partial<OnboardingNodeData>) => {
       setNodes((prev) =>
         prev.map((n) =>
-          n.id === id && isLlmNode(n)
+          n.id === id && n.type === "onboarding"
             ? { ...n, data: { ...n.data, ...patch } }
             : n,
         ),
@@ -119,24 +99,64 @@ export function useChatbotFlow() {
     [setNodes],
   );
 
-  const discard = useCallback(
-    () => replaceNodeData(baseline),
-    [baseline, replaceNodeData],
-  );
+  /**
+   * Saves the canvas. The first save goes live directly (and is fully
+   * validated, so it may fail with 422); later saves are drafts.
+   */
+  const save = useCallback(async (): Promise<boolean> => {
+    const payload = toFlowPayload(nodes, edges);
+    setIsSaving(true);
+    try {
+      const flow = await saveChatbotFlow(chatbotId, payload, apiKey);
+      setSaved(payload);
+      setFlowVersion({ version: flow.version, isLive: flow.is_live });
+      toast.success(
+        flow.is_live
+          ? `Saved and live (version ${flow.version}).`
+          : `Draft saved (version ${flow.version}). Publish to make it live.`,
+      );
+      return true;
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to save the flow.",
+      );
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [apiKey, chatbotId, edges, nodes, toast]);
 
-  const markSaved = useCallback(
-    (data: ChatbotNodeData) => setSavedFlow({ ...data }),
-    [setSavedFlow],
-  );
+  const publish = useCallback(async (): Promise<void> => {
+    setIsPublishing(true);
+    try {
+      const flow = await publishChatbotFlow(chatbotId, apiKey);
+      setFlowVersion({ version: flow.version, isLive: flow.is_live });
+      toast.success(`Published version ${flow.version}.`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to publish the flow.",
+      );
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [apiKey, chatbotId, toast]);
+
+  const discard = useCallback(() => {
+    if (saved) showFlow(saved);
+  }, [saved, showFlow]);
 
   return {
     nodes,
     edges,
     onNodesChange,
     updateNodeData,
-    llmNode,
+    isLoading,
     isDirty,
+    isSaving,
+    isPublishing,
+    flowVersion,
+    save,
+    publish,
     discard,
-    markSaved,
   };
 }

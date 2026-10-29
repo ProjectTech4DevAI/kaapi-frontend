@@ -2,9 +2,10 @@
 
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { ChatConfigPicker } from "@/app/components/chat";
-import { CHATBOT_NAME_MAX_LENGTH } from "@/app/lib/constants";
-import { useChatbotStore } from "@/app/lib/store/chatbot";
-import { ChatbotLlmNode, ChatbotNodeData } from "@/app/lib/types/chatbot";
+import {
+  ChatbotOnboardingNode,
+  OnboardingNodeData,
+} from "@/app/lib/types/chatbot";
 import { useChatbotFlowContext } from "@/app/components/chatbot/ChatbotFlowContext";
 import { FLOW_HANDLE_STYLE } from "@/app/components/chatbot/flowHandleStyle";
 import NodeFieldLabel from "@/app/components/chatbot/NodeFieldLabel";
@@ -12,14 +13,14 @@ import LlmNodePromptField from "@/app/components/chatbot/LlmNodePromptField";
 
 const PORT_LABEL_CLASS = "text-sm font-semibold font-mono text-text-primary";
 
-export default function LlmNode({
+export default function OnboardingNode({
   id,
   data,
   selected,
-}: NodeProps<ChatbotLlmNode>) {
+}: NodeProps<ChatbotOnboardingNode>) {
   const { updateNodeData } = useChatbotFlowContext();
-  const chatbotRef = useChatbotStore((s) => s.chatbotRef);
-  const update = (patch: Partial<ChatbotNodeData>) => updateNodeData(id, patch);
+  const update = (patch: Partial<OnboardingNodeData>) =>
+    updateNodeData(id, patch);
 
   return (
     <div
@@ -29,19 +30,9 @@ export default function LlmNode({
           : "border-border"
       }`}
     >
-      <div className="relative px-4 pt-3 pb-1 text-center">
-        <input
-          value={data.label}
-          onChange={(e) => update({ label: e.target.value })}
-          maxLength={CHATBOT_NAME_MAX_LENGTH}
-          placeholder="Untitled step"
-          className="nodrag w-full px-6 text-center text-base font-semibold text-text-primary bg-transparent focus:outline-none"
-        />
-        {chatbotRef && (
-          <p className="text-[11px] text-text-secondary truncate">
-            {chatbotRef}
-          </p>
-        )}
+      <div className="px-4 pt-3 pb-1 text-center">
+        <p className="text-base font-semibold text-text-primary">Onboarding</p>
+        <p className="text-[11px] text-text-secondary truncate">{id}</p>
       </div>
 
       <div className="relative px-4 py-1">
@@ -60,18 +51,18 @@ export default function LlmNode({
             hint="Saved config and version used to call the model."
           />
           <ChatConfigPicker
-            configId={data.configId}
-            version={data.configVersion ?? 0}
-            onSelect={(configId, configVersion) =>
-              update({ configId, configVersion })
+            configId={data.config_id ?? ""}
+            version={data.config_version ?? 0}
+            onSelect={(config_id, config_version) =>
+              update({ config_id, config_version })
             }
             alignLeft
           />
         </div>
 
         <LlmNodePromptField
-          value={data.systemPrompt}
-          onChange={(systemPrompt) => update({ systemPrompt })}
+          value={data.prompt ?? ""}
+          onChange={(prompt) => update({ prompt })}
         />
       </div>
 

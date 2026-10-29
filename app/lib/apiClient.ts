@@ -102,7 +102,7 @@ function stringifyValidationDetail(value: unknown): string {
     .join("; ");
 }
 
-function extractErrorMessage(
+export function extractErrorMessage(
   body: Record<string, unknown>,
   fallback: string,
 ): string {

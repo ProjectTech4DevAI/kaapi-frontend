@@ -10,15 +10,15 @@ import {
   ReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import LlmNode from "@/app/components/chatbot/LlmNode";
+import OnboardingNode from "@/app/components/chatbot/OnboardingNode";
 import TerminalNode from "@/app/components/chatbot/TerminalNode";
 import { ChatbotFlowContext } from "@/app/components/chatbot/ChatbotFlowContext";
-import { ChatbotFlowNode, ChatbotNodeData } from "@/app/lib/types/chatbot";
+import { ChatbotFlowNode, OnboardingNodeData } from "@/app/lib/types/chatbot";
 
 const NODE_TYPES = {
-  llm: LlmNode,
-  flowInput: TerminalNode,
-  flowOutput: TerminalNode,
+  input: TerminalNode,
+  output: TerminalNode,
+  onboarding: OnboardingNode,
 };
 
 const DEFAULT_EDGE_OPTIONS = { style: { stroke: "#a3a3a3", strokeWidth: 1 } };
@@ -27,7 +27,7 @@ interface ChatbotFlowCanvasProps {
   nodes: ChatbotFlowNode[];
   edges: Edge[];
   onNodesChange: (changes: NodeChange<ChatbotFlowNode>[]) => void;
-  updateNodeData: (id: string, patch: Partial<ChatbotNodeData>) => void;
+  updateNodeData: (id: string, patch: Partial<OnboardingNodeData>) => void;
 }
 
 export default function ChatbotFlowCanvas({
@@ -41,6 +41,7 @@ export default function ChatbotFlowCanvas({
   return (
     <ChatbotFlowContext.Provider value={contextValue}>
       <ReactFlow
+        className="chatbot-flow"
         nodes={nodes}
         edges={edges}
         nodeTypes={NODE_TYPES}

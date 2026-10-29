@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Button } from "@/app/components/ui";
 import { AssistantAvatar, ThinkingDots } from "@/app/components/chat";
@@ -12,11 +11,11 @@ import {
 } from "@/app/lib/types/chatbot";
 
 interface ChatbotChatWindowProps {
-  hasSession: boolean;
   status: ChatbotSessionStatus | null;
   messages: ChatbotChatMessage[];
   isPending: boolean;
-  onSend: (message?: string) => Promise<boolean>;
+  onStart: () => void;
+  onSend: (message: string) => Promise<boolean>;
 }
 
 function inputPlaceholder(isEnded: boolean, hasStarted: boolean): string {
@@ -25,28 +24,11 @@ function inputPlaceholder(isEnded: boolean, hasStarted: boolean): string {
   return "Type your message…";
 }
 
-function NoSession() {
-  return (
-    <div className="h-full flex flex-col items-center justify-center text-center gap-3">
-      <p className="text-sm text-text-secondary max-w-[320px]">
-        No chatbot session yet. Pick a configuration, write a prompt and save
-        the flow first.
-      </p>
-      <Link
-        href="/chatbot"
-        className="text-sm font-medium text-accent-primary hover:underline"
-      >
-        Go to the flow
-      </Link>
-    </div>
-  );
-}
-
 export default function ChatbotChatWindow({
-  hasSession,
   status,
   messages,
   isPending,
+  onStart,
   onSend,
 }: ChatbotChatWindowProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -58,8 +40,6 @@ export default function ChatbotChatWindow({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, isPending]);
 
-  if (!hasSession) return <NoSession />;
-
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -68,7 +48,7 @@ export default function ChatbotChatWindow({
             <p className="text-sm text-text-secondary">
               The bot will send the first message.
             </p>
-            <Button size="sm" onClick={() => onSend()}>
+            <Button size="sm" onClick={onStart}>
               Start chat
             </Button>
           </div>

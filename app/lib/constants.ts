@@ -23,7 +23,6 @@ export const STORAGE_KEYS = {
   DOCUMENT_SIZES: "document_file_sizes",
   SIDEBAR_MENUS: "sidebar-expanded-menus",
   CHAT_STATE: "kaapi_chat_state",
-  CHATBOT_STATE: "kaapi_chatbot_state",
 } as const;
 
 export const COOKIE_KEYS = {
@@ -31,7 +30,6 @@ export const COOKIE_KEYS = {
   FEATURES: "kaapi_features",
   API_KEY: "kaapi_api_key",
   API_KEY_META: "kaapi_api_key_meta",
-  CHATBOT_SESSION: "kaapi_chatbot_session",
 } as const;
 
 export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;

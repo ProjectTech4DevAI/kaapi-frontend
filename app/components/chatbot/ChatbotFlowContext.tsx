@@ -1,10 +1,10 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { ChatbotNodeData } from "@/app/lib/types/chatbot";
+import { OnboardingNodeData } from "@/app/lib/types/chatbot";
 
 interface ChatbotFlowContextValue {
-  updateNodeData: (id: string, patch: Partial<ChatbotNodeData>) => void;
+  updateNodeData: (id: string, patch: Partial<OnboardingNodeData>) => void;
 }
 
 export const ChatbotFlowContext = createContext<ChatbotFlowContextValue | null>(

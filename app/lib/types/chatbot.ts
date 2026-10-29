@@ -1,26 +1,54 @@
-import type { Node } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
+import type { APIResponse } from "@/app/lib/types/configs";
 
-export type ChatbotNodeData = {
-  label: string;
-  systemPrompt: string;
-  configId: string;
-  configVersion?: number;
+export interface Chatbot {
+  id: string;
+  name: string;
+  organization_id: number;
+  project_id: number;
+  inserted_at: string;
+  updated_at: string;
+}
+
+export type OnboardingNodeData = {
+  config_id?: string;
+  config_version?: number;
+  prompt?: string;
 };
 
-export type ChatbotLlmNode = Node<ChatbotNodeData, "llm">;
+export type ChatbotOnboardingNode = Node<OnboardingNodeData, "onboarding">;
 
 export type ChatbotTerminalNode = Node<
-  { label: string },
-  "flowInput" | "flowOutput"
+  Record<string, unknown>,
+  "input" | "output"
 >;
 
-export type ChatbotFlowNode = ChatbotLlmNode | ChatbotTerminalNode;
+export type ChatbotFlowNode = ChatbotOnboardingNode | ChatbotTerminalNode;
+
+export interface ChatbotFlowGraph {
+  nodes: ChatbotFlowNode[];
+  edges: Edge[];
+}
+
+export interface ChatbotFlow extends ChatbotFlowGraph {
+  id: string;
+  chatbot_id: string;
+  version: number;
+  is_live: boolean;
+  inserted_at: string;
+  updated_at: string;
+}
+
+export interface ChatbotSessionCreated {
+  session_id: string;
+  chatbot_id: string;
+  flow_version: number;
+  active_node_id: string;
+}
 
 export type ChatbotSessionStatus = "active" | "inactive";
 
 export type ChatbotCompletionStatus = "in_progress" | "complete" | "abandoned";
-
-export type ChatbotCollectedFields = Record<string, unknown>;
 
 export interface ChatbotChatMessage {
   id: string;
@@ -28,57 +56,22 @@ export interface ChatbotChatMessage {
   content: string;
 }
 
-export interface CreateChatbotSessionRequest {
-  name: string;
-  chatbot_ref?: string;
-  config_id: string;
-  config_version?: number;
-  contact_ref: string;
-  system_prompt: string;
-}
-
-export interface CreateChatbotSessionResponse {
-  success: boolean;
-  data?: { session_id: string; chatbot_ref: string } | null;
-  error?: string | null;
-}
-
-export interface ChatbotSessionSummary {
-  session_id: string;
-  name: string;
-  contact_ref: string;
-  chatbot_ref: string;
-  status: ChatbotSessionStatus;
-  completion_status: ChatbotCompletionStatus;
-  collected_fields: ChatbotCollectedFields;
-  config_id: string;
-  config_version: number | null;
-  system_prompt: string;
-  inserted_at: string;
-  updated_at: string;
-}
-
-export interface ChatbotSessionSummaryResponse {
-  success: boolean;
-  data?: ChatbotSessionSummary | null;
-  error?: string | null;
-}
-
-export interface SendChatbotSessionMessageResponse {
-  success: boolean;
-  data?: { status: string } | null;
-  error?: string | null;
-}
+export type ChatbotResponse = APIResponse<Chatbot>;
+export type ChatbotListResponse = APIResponse<Chatbot[]>;
+export type ChatbotFlowResponse = APIResponse<ChatbotFlow>;
+export type ChatbotSessionCreatedResponse = APIResponse<ChatbotSessionCreated>;
+export type SendChatbotMessageResponse = APIResponse<{ status: string }>;
 
 export interface ChatbotWebhookPayload {
   success: boolean;
   data?: {
     session_id: string;
-    chatbot_ref?: string;
+    chatbot_id?: string;
+    node_id?: string;
     reply?: string;
     status?: ChatbotSessionStatus;
     completion_status?: ChatbotCompletionStatus;
-    collected_fields?: ChatbotCollectedFields;
+    collected_fields?: Record<string, unknown>;
   } | null;
   error?: string | null;
 }

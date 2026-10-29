@@ -17,7 +17,7 @@ import type {
   UsePromptMentionsResult,
 } from "@/app/lib/types/assessment";
 
-const TYPE_ORDER: PromptFieldType[] = ["text", "image", "pdf"];
+const TYPE_ORDER: PromptFieldType[] = ["text", "image", "pdf", "video"];
 
 const HOVER_CLOSE_DELAY_MS = 200;
 

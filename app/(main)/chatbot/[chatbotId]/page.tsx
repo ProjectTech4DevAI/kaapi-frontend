@@ -15,7 +15,6 @@ import { useToast } from "@/app/hooks/useToast";
 import { useChatbot } from "@/app/hooks/chatbot/useChatbot";
 import { useChatbotFlow } from "@/app/hooks/chatbot/useChatbotFlow";
 
-/** Flow editor of one chatbot: edit, save a draft, publish, and test. */
 export default function ChatbotEditorPage() {
   const { chatbotId } = useParams<{ chatbotId: string }>();
   const { sidebarCollapsed } = useApp();
@@ -59,7 +58,6 @@ export default function ChatbotEditorPage() {
                 >
                   {flow.isSaving ? "Saving…" : "Save"}
                 </Button>
-                {/* Only a draft (newer than live) can be published. */}
                 {flowVersion && !flowVersion.isLive && (
                   <Button
                     size="sm"

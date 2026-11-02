@@ -276,3 +276,16 @@ html {
   scrollbar-color: color-mix(in srgb, var(--color-accent-primary) 50%, white)
     transparent;
 }
+
+.chatbot-flow {
+  --xy-node-border: none;
+  --xy-node-background-color: transparent;
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+}
+
+.chatbot-flow .react-flow__node-input,
+.chatbot-flow .react-flow__node-output {
+  padding: 0;
+  width: auto;
+}

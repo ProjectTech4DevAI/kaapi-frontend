@@ -268,7 +268,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
         console.error(`Failed to load version list for config ${config_id}`);
       }
     },
-    [apiKey],
+    [apiKey, isAuthenticated],
   );
 
   /**
@@ -354,7 +354,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       pendingSingleVersionLoads.set(key, loadPromise);
       return loadPromise;
     },
-    [configs],
+    [configs, apiKey, isAuthenticated],
   );
 
   /**
@@ -426,7 +426,7 @@ export function useConfigs(options?: { pageSize?: number }): UseConfigsResult {
       console.error("Failed to load more configs");
       setIsLoadingMore(false);
     }
-  }, [configs, pageSize]);
+  }, [configs, pageSize, activeKey, isAuthenticated]);
 
   useEffect(() => {
     fetchConfigs();

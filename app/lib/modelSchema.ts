@@ -23,6 +23,7 @@ export const SUPPORTED_PROVIDERS = [
   "openai",
   "google",
   "google-aistudio",
+  "anthropic",
 ] as const;
 
 export const SUPPORTED_PARAMS = new Set([
@@ -85,6 +86,7 @@ export const PARAM_VALUE_LABELS: Record<string, Record<string, string>> = {
     medium: "Medium",
     high: "High",
     xhigh: "Extra High",
+    max: "Max",
   },
 };
 

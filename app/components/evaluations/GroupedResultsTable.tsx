@@ -8,6 +8,7 @@ import { Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
 import { formatScoreValue } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
+import VerdictBadge from "./VerdictBadge";
 export default function GroupedResultsTable({
   traces,
 }: {
@@ -206,6 +207,11 @@ export default function GroupedResultsTable({
                                       >
                                         {value}
                                       </div>
+                                      <VerdictBadge
+                                        name={score.name}
+                                        value={score.value}
+                                        dataType={score.data_type}
+                                      />
                                       {score?.comment && (
                                         <InfoTooltip text={score.comment} />
                                       )}

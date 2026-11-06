@@ -7,6 +7,7 @@
 
 import type { ScoreObject } from "@/app/lib/types/evaluation";
 import { hasSummaryScores } from "@/app/lib/utils/evaluation";
+import VerdictBadge from "./VerdictBadge";
 
 interface ScoreDisplayProps {
   score: ScoreObject | null;
@@ -75,6 +76,11 @@ export default function ScoreDisplay({
               <span>{summary.name}:</span>
               <span className="font-semibold text-[#171717]">{value}</span>
               {std !== null && <span>±{std}</span>}
+              <VerdictBadge
+                name={summary.name}
+                value={summary.avg}
+                dataType={summary.data_type}
+              />
             </span>
           );
         })}

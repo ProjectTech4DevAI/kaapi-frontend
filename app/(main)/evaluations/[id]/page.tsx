@@ -20,6 +20,8 @@ import {
   hasSummaryScores,
   isNewScoreObjectV2,
   getScoreObject,
+  getOverallScore,
+  getAiSummary,
   normalizeToIndividualScores,
   isGroupedFormat,
 } from "@/app/lib/utils/evaluation";
@@ -29,9 +31,11 @@ import {
 } from "@/app/lib/utils/evaluationExport";
 import Sidebar from "@/app/components/Sidebar";
 import {
+  AiSummaryNote,
   CategoryMetricsTable,
   DetailedResultsTable,
   MetricsOverview,
+  OverallScoreCard,
   RunModeBadge,
 } from "@/app/components/evaluations";
 import {
@@ -266,6 +270,8 @@ export default function EvaluationReport() {
     scoreObject && isNewScoreObjectV2(scoreObject)
       ? (scoreObject.category_metrics ?? [])
       : [];
+  const overallScore = getOverallScore(scoreObject);
+  const aiSummary = getAiSummary(scoreObject);
 
   const isJobInProgress =
     job.status.toLowerCase() !== "completed" &&
@@ -391,6 +397,7 @@ export default function EvaluationReport() {
             <div className="mx-auto space-y-6">
               {hasScore && isNewFormat ? (
                 <>
+                  {overallScore && <OverallScoreCard overall={overallScore} />}
                   <MetricsOverview
                     job={job}
                     summaryScores={summaryScores}
@@ -414,6 +421,11 @@ export default function EvaluationReport() {
 
               {hasScore && (
                 <div>
+                  {aiSummary && !isFormatSwitching && (
+                    <div className="mb-3">
+                      <AiSummaryNote summary={aiSummary} />
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-3">
                     <h3 className="text-sm font-semibold text-text-secondary">
                       Detailed Results

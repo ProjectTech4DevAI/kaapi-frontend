@@ -60,10 +60,26 @@ export interface SummaryScore {
   distribution?: Record<string, number>; // For categorical data
 }
 
+export interface ScoreBreakdownItem {
+  name: string;
+  score: number;
+  weight: number;
+  delta?: number | null;
+  verdict: string;
+}
+
+export interface OverallScore {
+  overall_score: number;
+  verdict: string;
+  breakdown: ScoreBreakdownItem[];
+}
+
 export interface NewScoreObjectV2 {
   summary_scores: SummaryScore[];
   traces: TraceItem[] | GroupedTraceItem[];
   category_metrics?: CategoryMetric[];
+  overall?: OverallScore | null;
+  ai_summary?: string | null;
 }
 
 export interface PerItemScore {

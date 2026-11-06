@@ -25,6 +25,7 @@ export default function EvalRunCard({
   const isCompleted = job.status?.toLowerCase() === "completed";
   const scoreObj = getScoreObject(job);
   const statusColor = getStatusColor(job.status || "");
+  const isJudgeRun = job.is_judge_run;
 
   return (
     <div
@@ -59,7 +60,11 @@ export default function EvalRunCard({
 
         {scoreObj && (
           <div className="mt-3">
-            <ScoreDisplay score={scoreObj} errorMessage={job.error_message} />
+            <ScoreDisplay
+              score={scoreObj}
+              errorMessage={job.error_message}
+              isJudgeRun={isJudgeRun}
+            />
           </div>
         )}
 
@@ -91,7 +96,7 @@ export default function EvalRunCard({
                           </span>
                         </>
                       )}
-                      {job.cost.embedding && (
+                      {job.cost.embedding && !isJudgeRun && (
                         <>
                           <span>Cosine similarity calculation</span>
                           <span className="text-left">

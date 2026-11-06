@@ -1,17 +1,11 @@
 "use client";
 
 import { Dataset } from "@/app/lib/types/dataset";
-import {
-  Button,
-  Field,
-  InfoTooltip,
-  RadioGroup,
-  Select,
-} from "@/app/components/ui";
+import { Button, Field, Select } from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
 import ConfigSelector from "@/app/components/ConfigSelector";
 import EvalDatasetDescription from "./EvalDatasetDescription";
-import { RunMode, Tab } from "@/app/lib/types/evaluation";
+import { Tab } from "@/app/lib/types/evaluation";
 import { MAX_NAME_LENGTH } from "@/app/lib/constants";
 
 interface RunEvaluationFormProps {
@@ -28,8 +22,6 @@ interface RunEvaluationFormProps {
   canRun: boolean;
   onRun: () => void;
   setActiveTab: (tab: Tab) => void;
-  runMode: RunMode;
-  setRunMode: (mode: RunMode) => void;
   nameError?: string;
   submitError?: string;
 }
@@ -48,12 +40,10 @@ export default function RunEvaluationForm({
   canRun,
   onRun,
   setActiveTab,
-  runMode,
-  setRunMode,
   nameError,
   submitError,
 }: RunEvaluationFormProps) {
-  const fastEligible = selectedDataset?.eligible_for_fast !== false;
+  const datasetEligible = selectedDataset?.eligible_for_fast !== false;
 
   return (
     <div className="flex-1 overflow-auto p-4 space-y-4">
@@ -140,48 +130,11 @@ export default function RunEvaluationForm({
         </div>
       )}
 
-      <div>
-        <label className="inline-flex items-center text-xs font-medium mb-1.5 text-text-secondary">
-          Run Mode
-          <InfoTooltip
-            text={
-              <>
-                <strong>Batch</strong> — the standard mode. Runs every item in
-                the dataset and produces full metrics.
-                <br />
-                <br />
-                <strong>Fast</strong> — short-loop mode for quick iteration.
-                Only works on small datasets (≤10 unique rows / ≤50 items) and
-                text-evaluation configs.
-              </>
-            }
-          />
-        </label>
-        <RadioGroup<RunMode>
-          ariaLabel="Run mode"
-          className="ml-4"
-          value={runMode}
-          onChange={setRunMode}
-          disabled={isEvaluating}
-          options={[
-            { value: "batch", label: "Batch" },
-            {
-              value: "fast",
-              label: "Fast",
-              title:
-                selectedDataset && !fastEligible
-                  ? "This dataset is too large for Fast mode — pick a smaller one"
-                  : undefined,
-            },
-          ]}
-        />
-        {selectedDataset && !fastEligible && (
-          <p className="text-xs mt-1.5 text-status-error-text">
-            Fast mode isn&apos;t available for this dataset — pick a smaller one
-            or stay on Batch.
-          </p>
-        )}
-      </div>
+      {selectedDataset && !datasetEligible && (
+        <p className="text-xs text-status-error-text">
+          This dataset exceeds the evaluation size limit — pick a smaller one.
+        </p>
+      )}
 
       {submitError && (
         <div className="rounded-lg px-3 py-2 bg-status-error-bg border border-status-error-border">

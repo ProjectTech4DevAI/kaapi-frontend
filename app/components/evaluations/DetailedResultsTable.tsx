@@ -13,7 +13,11 @@ import {
   isNewScoreObjectV2,
   isGroupedFormat,
 } from "@/app/lib/utils/evaluation";
-import { formatScoreValue, getScoreByName } from "@/app/lib/utils";
+import {
+  formatScoreValue,
+  getScoreByName,
+  getScoreNote,
+} from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
 import { GroupedResultsTable } from "@/app/components/evaluations";
 import { MarkdownContent } from "@/app/components/chat";
@@ -186,6 +190,7 @@ export default function DetailedResultsTable({
                   {scoreNames.map((scoreName) => {
                     const score = getScoreByName(item.trace_scores, scoreName);
                     const { value, color, bg } = formatScoreValue(score);
+                    const note = getScoreNote(score);
 
                     return (
                       <td
@@ -202,9 +207,7 @@ export default function DetailedResultsTable({
                           >
                             {value}
                           </div>
-                          {score?.comment && (
-                            <InfoTooltip text={score.comment} />
-                          )}
+                          {note && <InfoTooltip text={note} />}
                         </div>
                       </td>
                     );

@@ -10,24 +10,33 @@ export interface Chatbot {
   updated_at: string;
 }
 
-export type OnboardingNodeData = {
+export type AgentNodeType = "coordinator" | "onboarding" | "rag";
+
+export type AgentNodeData = {
   config_id?: string;
   config_version?: number;
   prompt?: string;
 };
 
-export type ChatbotOnboardingNode = Node<OnboardingNodeData, "onboarding">;
+export type ChatbotAgentNode = Node<AgentNodeData, AgentNodeType>;
 
 export type ChatbotTerminalNode = Node<
   Record<string, unknown>,
   "input" | "output"
 >;
 
-export type ChatbotFlowNode = ChatbotOnboardingNode | ChatbotTerminalNode;
+export type ChatbotFlowNode = ChatbotAgentNode | ChatbotTerminalNode;
+
+export type RouteEdgeData = {
+  intent?: string;
+  description?: string;
+};
+
+export type ChatbotFlowEdge = Edge<RouteEdgeData>;
 
 export interface ChatbotFlowGraph {
   nodes: ChatbotFlowNode[];
-  edges: Edge[];
+  edges: ChatbotFlowEdge[];
 }
 
 export interface ChatbotFlow extends ChatbotFlowGraph {

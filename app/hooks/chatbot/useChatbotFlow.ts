@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Edge, useNodesState } from "@xyflow/react";
+import { useNodesState } from "@xyflow/react";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { useToast } from "@/app/hooks/useToast";
 import {
@@ -12,12 +12,16 @@ import {
 import {
   createDefaultFlow,
   flowSignature,
+  isAgentType,
   toFlowPayload,
+  withRouteEdges,
 } from "@/app/lib/utils/chatbotFlow";
 import {
+  AgentNodeData,
+  ChatbotFlowEdge,
   ChatbotFlowGraph,
   ChatbotFlowNode,
-  OnboardingNodeData,
+  RouteEdgeData,
 } from "@/app/lib/types/chatbot";
 
 interface FlowVersion {
@@ -31,7 +35,7 @@ export function useChatbotFlow(chatbotId: string) {
   const toast = useToast();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<ChatbotFlowNode>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [edges, setEdges] = useState<ChatbotFlowEdge[]>([]);
   const [saved, setSaved] = useState<ChatbotFlowGraph | null>(null);
   const [flowVersion, setFlowVersion] = useState<FlowVersion | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,8 +45,9 @@ export function useChatbotFlow(chatbotId: string) {
   // Nodes are fixed (no add/delete), so lock them on the canvas.
   const showFlow = useCallback(
     (flow: ChatbotFlowGraph) => {
-      setNodes(flow.nodes.map((n) => ({ ...n, deletable: false })));
-      setEdges(flow.edges);
+      const shown = withRouteEdges(flow);
+      setNodes(shown.nodes.map((n) => ({ ...n, deletable: false })));
+      setEdges(shown.edges);
       setSaved(flow);
     },
     [setNodes],
@@ -87,16 +92,27 @@ export function useChatbotFlow(chatbotId: string) {
     flowSignature({ nodes, edges }) !== savedSignature;
 
   const updateNodeData = useCallback(
-    (id: string, patch: Partial<OnboardingNodeData>) => {
+    (id: string, patch: Partial<AgentNodeData>) => {
       setNodes((prev) =>
         prev.map((n) =>
-          n.id === id && n.type === "onboarding"
+          n.id === id && isAgentType(n.type)
             ? { ...n, data: { ...n.data, ...patch } }
             : n,
         ),
       );
     },
     [setNodes],
+  );
+
+  const updateEdgeData = useCallback(
+    (id: string, patch: Partial<RouteEdgeData>) => {
+      setEdges((prev) =>
+        prev.map((e) =>
+          e.id === id ? { ...e, data: { ...e.data, ...patch } } : e,
+        ),
+      );
+    },
+    [],
   );
 
   /**
@@ -150,6 +166,7 @@ export function useChatbotFlow(chatbotId: string) {
     edges,
     onNodesChange,
     updateNodeData,
+    updateEdgeData,
     isLoading,
     isDirty,
     isSaving,

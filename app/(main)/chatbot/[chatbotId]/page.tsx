@@ -89,6 +89,7 @@ export default function ChatbotEditorPage() {
                   edges={flow.edges}
                   onNodesChange={flow.onNodesChange}
                   updateNodeData={flow.updateNodeData}
+                  updateEdgeData={flow.updateEdgeData}
                 />
                 <Button
                   size="icon"

@@ -53,7 +53,6 @@ export default function RouteEdge({
           }}
         >
           <p className="text-[11px] font-semibold text-text-secondary">Route</p>
-          {/* Intent is a fixed route label; only the description is editable. */}
           <input
             value={data?.intent ?? ""}
             disabled

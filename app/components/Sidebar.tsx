@@ -1,9 +1,5 @@
-/**
- * Sidebar  - Navigation sidebar with collapse/expand functionality
- * Provides hierarchical navigation with expandable submenus
- */
-
 "use client";
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -20,6 +16,7 @@ import {
   ShieldCheckIcon,
   SlidersIcon,
   ChatIcon,
+  FlowIcon,
   ChartBarIcon,
   WarningTriangleIcon,
 } from "@/app/components/icons";
@@ -122,6 +119,7 @@ export default function Sidebar({
 
   const iconMap: Record<string, React.ReactNode> = {
     chat: <ChatIcon />,
+    flow: <FlowIcon />,
     clipboard: <ClipboardIcon />,
     document: <DocumentFileIcon />,
     book: <BookOpenIcon />,

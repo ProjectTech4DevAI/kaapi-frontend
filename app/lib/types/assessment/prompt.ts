@@ -3,7 +3,7 @@ import type { ProviderType } from "@/app/lib/types/configs";
 import type { SchemaProperty } from "./core";
 import type { AssessorModelSelection, AssessorVersionDetail } from "./assessor";
 
-export type PromptFieldType = "text" | "image" | "pdf";
+export type PromptFieldType = "text" | "image" | "pdf" | "video";
 
 export type PromptZoneId = "instructions" | "submission";
 

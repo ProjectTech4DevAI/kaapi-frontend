@@ -49,6 +49,13 @@ export const NAV_ITEMS: NavItemConfig[] = [
       "Log in to chat with your assistants and keep conversation history.",
   },
   {
+    name: "Chatbot",
+    route: "/chatbot",
+    icon: "flow",
+    featureFlag: FeatureFlag.CHATBOT,
+    gateDescription: "Log in to build and test chatbot flows.",
+  },
+  {
     name: "Evaluations",
     icon: "clipboard",
     submenu: [

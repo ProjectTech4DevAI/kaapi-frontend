@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Modal } from "@/app/components/ui";
-import { DocumentFileIcon, ImageIcon } from "@/app/components/icons";
+import RenderFieldType from "@/app/components/assessment/editor/RenderFieldType";
 import {
   fieldTypeOf,
   TOKEN_RE,
@@ -61,13 +61,11 @@ export default function ReviewSaveModal({
                   key={column}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border bg-bg-secondary px-2.5 py-1 font-mono text-[11px] text-text-primary"
                 >
-                  {type === "text" ? (
-                    "@"
-                  ) : type === "image" ? (
-                    <ImageIcon className="h-3 w-3" />
-                  ) : (
-                    <DocumentFileIcon className="h-3 w-3" />
-                  )}
+                  <RenderFieldType
+                    type={type}
+                    className="h-3 w-3"
+                    textLabel="@"
+                  />
                   {column}
                   <span className="font-sans text-[10px] text-text-secondary">
                     {type}

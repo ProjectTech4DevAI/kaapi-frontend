@@ -19,7 +19,10 @@ const PUBLIC_ROUTES = new Set<string>([
 const FEATURE_GATED_PREFIXES: Array<{
   prefix: string;
   flag: FeatureFlagKey;
-}> = [{ prefix: "/assessment", flag: FeatureFlag.ASSESSMENT }];
+}> = [
+  { prefix: "/assessment", flag: FeatureFlag.ASSESSMENT },
+  { prefix: "/chatbot", flag: FeatureFlag.CHATBOT },
+];
 
 // Temporarily disabled while backend changes are being synced; keep in sync with `disabledReason` in navConfig.
 const DISABLED_PREFIXES = ["/guardrails"];

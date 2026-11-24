@@ -13,6 +13,7 @@ export const PROMPT_FIELD_TYPE_LABELS: Record<PromptFieldType, string> = {
   text: "Text",
   image: "Image (link)",
   pdf: "PDF (link)",
+  video: "Video (link)",
 };
 
 export function tokenName(raw: string): string {
@@ -165,7 +166,7 @@ export function fromWireTemplate(
   return template.replace(TOKEN_RE, (raw) => {
     const name = tokenName(raw);
     const type = byColumn.get(name);
-    return type && type !== "mixed" ? `<${name}>` : `@${name}`;
+    return type && type !== "text" ? `<${name}>` : `@${name}`;
   });
 }
 
@@ -174,7 +175,7 @@ export function fieldTypesFromAttachments(
 ): Record<string, PromptFieldType> {
   return Object.fromEntries(
     attachments
-      .filter((item) => item.type !== "mixed")
-      .map((item) => [item.column, item.type as PromptFieldType]),
+      .filter((item) => item.type !== "text")
+      .map((item) => [item.column, item.type]),
   );
 }

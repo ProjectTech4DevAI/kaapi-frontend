@@ -119,6 +119,7 @@ export interface EvalCostEntry {
 
 export interface EvalCost {
   response?: EvalCostEntry;
+  judge?: EvalCostEntry;
   embedding?: EvalCostEntry;
   total_cost_usd: number;
 }

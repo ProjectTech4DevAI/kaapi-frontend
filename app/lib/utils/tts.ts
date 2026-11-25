@@ -15,7 +15,6 @@ export const formatSize = (b: number) =>
     ? `${(b / 1024).toFixed(1)} KB`
     : `${(b / (1024 * 1024)).toFixed(1)} MB`;
 
-// Each provider's own unit: tokens (Gemini), characters (Sarvam), credits (ElevenLabs).
 export function formatUsage(usage: TTSUsage | null | undefined): string | null {
   if (!usage) return null;
   if (usage.unit === "tokens") {
@@ -30,7 +29,6 @@ export function formatUsage(usage: TTSUsage | null | undefined): string | null {
   return `${compact.format(usage.characters)} chars`;
 }
 
-// Hover detail behind a usage label: the provider's own breakdown.
 export function usageDetail(usage: TTSUsage): string {
   if (usage.unit === "tokens") {
     return `Gemini tokens · input ${usage.input_tokens ?? "?"} · output (audio) ${usage.output_tokens ?? "?"}`;

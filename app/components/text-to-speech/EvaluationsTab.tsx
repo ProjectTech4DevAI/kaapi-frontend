@@ -85,9 +85,6 @@ export default function EvaluationsTab({
           body: JSON.stringify(payload),
         },
       );
-
-      // UI state is updated optimistically by the table; re-applying this payload
-      // here could overwrite a newer edit when responses arrive out of order.
     } catch (error) {
       console.error("Failed to update feedback:", error);
       toast.error("Failed to update feedback");

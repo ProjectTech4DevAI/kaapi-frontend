@@ -9,7 +9,7 @@ import {
 import { ResultsTableSkeleton } from "@/app/components";
 import TTSResultRow from "./TTSResultRow";
 import TTSReviewPanel from "./TTSReviewPanel";
-import { formatUsage, totalUsage } from "./ttsFormat";
+import { formatUsage, totalUsage } from "@/app/lib/utils/tts";
 
 interface TTSResultsTableProps {
   results: TTSResult[];
@@ -18,7 +18,6 @@ interface TTSResultsTableProps {
   onUpdateFeedback: (resultId: number, payload: TTSFeedbackPayload) => void;
 }
 
-// Mirrors the API: score merges per key and a null value clears that key.
 function mergeScore(prev: TTSScore | null, patch: TTSScore): TTSScore | null {
   const next: TTSScore = { ...prev };
   for (const [k, v] of Object.entries(patch)) {
@@ -41,8 +40,7 @@ export default function TTSResultsTable({
   } | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // One row per sample, one column per model. Rows are keyed by text plus the
-  // occurrence index so repeated texts in a dataset don't collapse into one row.
+  // Occurrence index in the row key keeps repeated sample texts as separate rows.
   const { models, rows } = useMemo(() => {
     const models: string[] = [];
     const seen: Record<string, number> = {};
@@ -62,7 +60,6 @@ export default function TTSResultsTable({
     : undefined;
   const playingUrl = results.find((r) => r.id === playingResultId)?.signedUrl;
 
-  // A single <audio> element so a cell and the panel never play over each other.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;

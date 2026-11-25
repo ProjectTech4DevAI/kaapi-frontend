@@ -1,13 +1,13 @@
 "use client";
 
 import { TTSResult } from "@/app/lib/types/textToSpeech";
-import { formatDuration, formatUsage, usageDetail } from "./ttsFormat";
+import { PauseIcon, PlayIcon } from "@/app/components/icons";
+import { formatDuration, formatUsage, usageDetail } from "@/app/lib/utils/tts";
 
 interface TTSResultRowProps {
   sampleText: string;
   index: number;
   models: string[];
-  // result per model for this sample (a model may be missing)
   resultsByModel: Record<string, TTSResult | undefined>;
   playingResultId: number | null;
   selectedResultId: number | null;
@@ -21,7 +21,6 @@ const RATING_TONE: Record<string, string> = {
   low: "bg-red-500/15 text-status-error",
 };
 
-// Queued (PENDING) or claimed by a worker (PROCESSING): not a failure yet.
 const IN_PROGRESS = ["PENDING", "PROCESSING"];
 
 function RatingPill({ label, value }: { label: string; value: unknown }) {
@@ -44,6 +43,7 @@ function PlayButton({
   isPlaying: boolean;
   onClick: (e: React.MouseEvent) => void;
 }) {
+  const Icon = isPlaying ? PauseIcon : PlayIcon;
   return (
     <button
       type="button"
@@ -51,54 +51,50 @@ function PlayButton({
       onClick={onClick}
       className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full border-2 border-accent-primary text-accent-primary cursor-pointer"
     >
-      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
-        {isPlaying ? (
-          <path d="M7 5h3v14H7zM14 5h3v14h-3z" />
-        ) : (
-          <path d="M8 5v14l11-7z" />
-        )}
-      </svg>
+      <Icon className="w-2.5! h-2.5!" />
     </button>
   );
 }
 
 function ResultCell({
-  r,
+  result,
   isSelected,
   isPlaying,
   onPlayToggle,
   onSelect,
 }: {
-  r: TTSResult;
+  result: TTSResult;
   isSelected: boolean;
   isPlaying: boolean;
   onPlayToggle: (resultId: number) => void;
   onSelect: (resultId: number) => void;
 }) {
-  const issueCount = r.issues?.length ?? 0;
+  const issueCount = result.issues?.length ?? 0;
   const failure =
-    r.status === "SUCCESS" ? "No audio" : (r.error_message ?? r.status);
+    result.status === "SUCCESS"
+      ? "No audio"
+      : (result.error_message ?? result.status);
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => onSelect(r.id)}
-      onKeyDown={(e) => e.key === "Enter" && onSelect(r.id)}
+      onClick={() => onSelect(result.id)}
+      onKeyDown={(e) => e.key === "Enter" && onSelect(result.id)}
       className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer border ${
         isSelected
           ? "border-accent-primary bg-accent-primary/5"
           : "border-transparent hover:bg-bg-secondary"
       }`}
     >
-      {r.signedUrl ? (
+      {result.signedUrl ? (
         <PlayButton
           isPlaying={isPlaying}
           onClick={(e) => {
             e.stopPropagation();
-            onPlayToggle(r.id);
+            onPlayToggle(result.id);
           }}
         />
-      ) : IN_PROGRESS.includes(r.status) ? (
+      ) : IN_PROGRESS.includes(result.status) ? (
         <span className="flex items-center gap-1.5 text-xs text-text-secondary">
           <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
           Generating…
@@ -111,41 +107,47 @@ function ResultCell({
           {failure}
         </span>
       )}
-      {r.duration_seconds != null && (
+      {result.duration_seconds != null && (
         <span className="text-[11px] tabular-nums text-text-secondary">
-          {formatDuration(r.duration_seconds)}
+          {formatDuration(result.duration_seconds)}
         </span>
       )}
-      {r.usage && (
+      {result.usage && (
         <span
           className="px-1.5 py-0.5 rounded bg-accent-primary/10 text-[11px] font-medium tabular-nums text-accent-primary whitespace-nowrap"
-          title={usageDetail(r.usage)}
+          title={usageDetail(result.usage)}
         >
-          {formatUsage(r.usage)}
+          {formatUsage(result.usage)}
         </span>
       )}
       <span className="flex items-center gap-1 ml-auto shrink-0 whitespace-nowrap">
         <RatingPill
           label="Naturalness"
-          value={r.score?.["Speech Naturalness"] ?? r.score?.speech_naturalness}
+          value={
+            result.score?.["Speech Naturalness"] ??
+            result.score?.speech_naturalness
+          }
         />
         <RatingPill
           label="Pronunciation"
           value={
-            r.score?.["Pronunciation Accuracy"] ??
-            r.score?.pronunciation_accuracy
+            result.score?.["Pronunciation Accuracy"] ??
+            result.score?.pronunciation_accuracy
           }
         />
         {issueCount > 0 && (
           <span
             className="text-[10px] font-medium text-status-error"
-            title={r.issues?.join(", ")}
+            title={result.issues?.join(", ")}
           >
             {issueCount} issue{issueCount > 1 ? "s" : ""}
           </span>
         )}
-        {r.comment && (
-          <span className="text-[10px] text-text-secondary" title={r.comment}>
+        {result.comment && (
+          <span
+            className="text-[10px] text-text-secondary"
+            title={result.comment}
+          >
             ✎
           </span>
         )}
@@ -177,13 +179,13 @@ export default function TTSResultRow({
         </div>
       </td>
       {models.map((model) => {
-        const r = resultsByModel[model];
-        return r ? (
+        const result = resultsByModel[model];
+        return result ? (
           <td key={model} className="px-2 py-1.5 align-middle">
             <ResultCell
-              r={r}
-              isSelected={selectedResultId === r.id}
-              isPlaying={playingResultId === r.id}
+              result={result}
+              isSelected={selectedResultId === result.id}
+              isPlaying={playingResultId === result.id}
               onPlayToggle={onPlayToggle}
               onSelect={onSelect}
             />

@@ -8,6 +8,7 @@ export { default as MicIcon } from "./common/MicIcon";
 export { default as SpeakerIcon } from "./common/SpeakerIcon";
 export { default as MusicNoteIcon } from "./common/MusicNoteIcon";
 export { default as PlayIcon } from "./common/PlayIcon";
+export { default as PauseIcon } from "./common/PauseIcon";
 export { default as CopyIcon } from "./common/CopyIcon";
 export { default as EyeIcon } from "./common/EyeIcon";
 export { default as EyeOffIcon } from "./common/EyeOffIcon";

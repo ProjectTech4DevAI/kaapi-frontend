@@ -7,8 +7,15 @@ import {
   TTSIssue,
   TTSResult,
 } from "@/app/lib/types/textToSpeech";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  PauseIcon,
+  PlayIcon,
+} from "@/app/components/icons";
 import TTSMetricControls from "./TTSMetricControls";
-import { formatDuration, formatSize, formatUsage } from "./ttsFormat";
+import { formatDuration, formatSize, formatUsage } from "@/app/lib/utils/tts";
 
 interface TTSReviewPanelProps {
   result: TTSResult;
@@ -34,7 +41,6 @@ export default function TTSReviewPanel({
   onClose,
 }: TTSReviewPanelProps) {
   const [note, setNote] = useState(result.comment ?? "");
-  // Reset the draft when moving to another audio.
   useEffect(() => setNote(result.comment ?? ""), [result.id, result.comment]);
 
   const canReview = result.status === "SUCCESS";
@@ -66,9 +72,9 @@ export default function TTSReviewPanel({
         </div>
         <div className="flex items-center gap-1">
           {[
-            { label: "Previous sample", d: -1, path: "M15 18l-6-6 6-6" },
-            { label: "Next sample", d: 1, path: "M9 18l6-6-6-6" },
-          ].map(({ label, d, path }) => (
+            { label: "Previous sample", d: -1, Icon: ChevronLeftIcon },
+            { label: "Next sample", d: 1, Icon: ChevronRightIcon },
+          ].map(({ label, d, Icon }) => (
             <button
               key={label}
               type="button"
@@ -76,15 +82,7 @@ export default function TTSReviewPanel({
               onClick={() => onNavigate(d, 0)}
               className="p-1 rounded text-text-secondary hover:bg-bg-secondary cursor-pointer"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path d={path} />
-              </svg>
+              <Icon className="w-4! h-4!" />
             </button>
           ))}
           <button
@@ -93,15 +91,7 @@ export default function TTSReviewPanel({
             onClick={onClose}
             className="p-1 rounded text-text-secondary hover:bg-bg-secondary cursor-pointer"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
+            <CloseIcon className="w-4! h-4!" />
           </button>
         </div>
       </div>
@@ -119,17 +109,11 @@ export default function TTSReviewPanel({
               className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-accent-primary text-white cursor-pointer"
               aria-label={isPlaying ? "Pause" : "Play"}
             >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                {isPlaying ? (
-                  <path d="M7 5h3v14H7zM14 5h3v14h-3z" />
-                ) : (
-                  <path d="M8 5v14l11-7z" />
-                )}
-              </svg>
+              {isPlaying ? (
+                <PauseIcon className="w-3.5! h-3.5!" />
+              ) : (
+                <PlayIcon className="w-3.5! h-3.5!" />
+              )}
             </button>
           ) : null}
           <div className="text-xs text-text-secondary tabular-nums space-y-0.5">

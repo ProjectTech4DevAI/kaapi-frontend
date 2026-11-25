@@ -120,6 +120,11 @@ export interface TTSFeedbackPayload {
   issues?: TTSIssue[];
 }
 
+export interface TTSMetricControlsProps {
+  result: TTSResult;
+  onChange: (payload: TTSFeedbackPayload) => void;
+}
+
 // Each provider reports usage in its own unit; they are never converted into one another.
 export type TTSUsage =
   | {

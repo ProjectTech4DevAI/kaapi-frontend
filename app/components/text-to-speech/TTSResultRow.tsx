@@ -21,6 +21,9 @@ const RATING_TONE: Record<string, string> = {
   low: "bg-red-500/15 text-status-error",
 };
 
+// Queued (PENDING) or claimed by a worker (PROCESSING): not a failure yet.
+const IN_PROGRESS = ["PENDING", "PROCESSING"];
+
 function RatingPill({ label, value }: { label: string; value: unknown }) {
   if (typeof value !== "string" || !value) return null;
   const tone = RATING_TONE[value.toLowerCase()] ?? "bg-bg-secondary";
@@ -95,7 +98,7 @@ function ResultCell({
             onPlayToggle(r.id);
           }}
         />
-      ) : r.status === "PENDING" ? (
+      ) : IN_PROGRESS.includes(r.status) ? (
         <span className="flex items-center gap-1.5 text-xs text-text-secondary">
           <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
           Generating…

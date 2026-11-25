@@ -2,6 +2,7 @@
 
 import { TTSResult } from "@/app/lib/types/textToSpeech";
 import { PauseIcon, PlayIcon } from "@/app/components/icons";
+import { InfoTooltip } from "@/app/components/ui";
 import { formatDuration, formatUsage, usageDetail } from "@/app/lib/utils/tts";
 
 interface TTSResultRowProps {
@@ -27,12 +28,11 @@ function RatingPill({ label, value }: { label: string; value: unknown }) {
   if (typeof value !== "string" || !value) return null;
   const tone = RATING_TONE[value.toLowerCase()] ?? "bg-bg-secondary";
   return (
-    <span
-      className={`px-1 rounded text-[10px] font-medium ${tone}`}
-      title={`${label}: ${value}`}
-    >
-      {label[0]}·{value[0].toUpperCase()}
-    </span>
+    <InfoTooltip
+      text={`${label}: ${value}`}
+      triggerClassName={`px-1 rounded text-[10px] font-medium cursor-default ${tone}`}
+      icon={`${label[0]}·${value[0].toUpperCase()}`}
+    />
   );
 }
 
@@ -100,12 +100,11 @@ function ResultCell({
           Generating…
         </span>
       ) : (
-        <span
-          className="text-xs text-status-error truncate max-w-[8rem]"
-          title={failure}
-        >
-          {failure}
-        </span>
+        <InfoTooltip
+          text={failure}
+          triggerClassName="text-xs text-status-error truncate max-w-[8rem] cursor-default"
+          icon={failure}
+        />
       )}
       {result.duration_seconds != null && (
         <span className="text-[11px] tabular-nums text-text-secondary">
@@ -113,12 +112,11 @@ function ResultCell({
         </span>
       )}
       {result.usage && (
-        <span
-          className="px-1.5 py-0.5 rounded bg-accent-primary/10 text-[11px] font-medium tabular-nums text-accent-primary whitespace-nowrap"
-          title={usageDetail(result.usage)}
-        >
-          {formatUsage(result.usage)}
-        </span>
+        <InfoTooltip
+          text={usageDetail(result.usage)}
+          triggerClassName="px-1.5 py-0.5 rounded bg-accent-primary/10 text-[11px] font-medium tabular-nums text-accent-primary whitespace-nowrap cursor-default"
+          icon={formatUsage(result.usage)}
+        />
       )}
       <span className="flex items-center gap-1 ml-auto shrink-0 whitespace-nowrap">
         <RatingPill
@@ -136,20 +134,18 @@ function ResultCell({
           }
         />
         {issueCount > 0 && (
-          <span
-            className="text-[10px] font-medium text-status-error"
-            title={result.issues?.join(", ")}
-          >
-            {issueCount} issue{issueCount > 1 ? "s" : ""}
-          </span>
+          <InfoTooltip
+            text={result.issues?.join(", ")}
+            triggerClassName="text-[10px] font-medium text-status-error cursor-default"
+            icon={`${issueCount} issue${issueCount > 1 ? "s" : ""}`}
+          />
         )}
         {result.comment && (
-          <span
-            className="text-[10px] text-text-secondary"
-            title={result.comment}
-          >
-            ✎
-          </span>
+          <InfoTooltip
+            text={result.comment}
+            triggerClassName="text-[10px] text-text-secondary cursor-default"
+            icon="✎"
+          />
         )}
       </span>
     </div>

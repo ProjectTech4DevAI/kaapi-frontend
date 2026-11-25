@@ -7,7 +7,7 @@
 
 "use client";
 
-import { DEFAULT_TTS_MODEL } from "@/app/lib/data/ttsModels";
+import { TTS_MODELS } from "@/app/lib/data/ttsModels";
 import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
@@ -59,7 +59,7 @@ export default function TextToSpeechPage() {
     null,
   );
   const [selectedModels, setSelectedModels] = useState<TTSModelVoice[]>([
-    { model: DEFAULT_TTS_MODEL, voice: "Kore" },
+    { model: TTS_MODELS[0].model, voice: TTS_MODELS[0].defaultVoice },
   ]);
   const [isRunning, setIsRunning] = useState(false);
   const [runs, setRuns] = useState<TTSRun[]>([]);

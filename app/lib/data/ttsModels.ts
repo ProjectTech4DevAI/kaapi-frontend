@@ -91,5 +91,3 @@ export const TTS_MODELS: {
   { model: "eleven_v4", voices: ELEVENLABS_VOICES, defaultVoice: "Rahul" },
   { model: "eleven_v3", voices: ELEVENLABS_VOICES, defaultVoice: "Rahul" },
 ];
-
-export const DEFAULT_TTS_MODEL = "gemini-3.8-flash-tts";

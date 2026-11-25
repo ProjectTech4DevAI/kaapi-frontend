@@ -13,9 +13,15 @@ import { TooltipIcon } from "@/app/components/icons";
 interface InfoTooltipProps {
   text: ReactNode;
   icon?: ReactNode;
+  // Replaces the default 16px icon-button styling, e.g. when `icon` is a pill.
+  triggerClassName?: string;
 }
 
-export default function InfoTooltip({ text, icon }: InfoTooltipProps) {
+export default function InfoTooltip({
+  text,
+  icon,
+  triggerClassName,
+}: InfoTooltipProps) {
   const [visible, setVisible] = useState(false);
   const [positioned, setPositioned] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -56,7 +62,9 @@ export default function InfoTooltip({ text, icon }: InfoTooltipProps) {
   }, [visible, updatePosition]);
 
   return (
-    <span className="inline-flex items-center ml-1 align-text-bottom">
+    <span
+      className={`inline-flex items-center align-text-bottom ${triggerClassName ? "" : "ml-1"}`}
+    >
       <button
         ref={triggerRef}
         type="button"
@@ -64,7 +72,10 @@ export default function InfoTooltip({ text, icon }: InfoTooltipProps) {
         onMouseLeave={() => setVisible(false)}
         onFocus={() => setVisible(true)}
         onBlur={() => setVisible(false)}
-        className="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none cursor-pointer"
+        className={
+          triggerClassName ??
+          "w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center leading-none select-none cursor-pointer"
+        }
       >
         {icon ?? <TooltipIcon className="w-4 h-4 text-[#99B3C1]" />}
       </button>
@@ -78,7 +89,7 @@ export default function InfoTooltip({ text, icon }: InfoTooltipProps) {
               left: position.left,
               visibility: positioned ? "visible" : "hidden",
             }}
-            className="fixed z-9999 w-64 text-xs rounded-lg p-3 shadow-lg bg-neutral-900 text-neutral-100 leading-relaxed pointer-events-none"
+            className="fixed z-9999 w-max max-w-64 text-xs rounded-lg p-3 shadow-lg bg-neutral-900 text-neutral-100 leading-relaxed pointer-events-none"
           >
             {text}
           </div>,

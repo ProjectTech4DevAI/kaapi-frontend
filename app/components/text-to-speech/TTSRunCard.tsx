@@ -16,10 +16,10 @@ export default function TTSRunCard({
   loadingRunId,
   onLoadResults,
 }: TTSRunCardProps) {
-  const isCompleted = run.status.toLowerCase() === "completed";
   const statusColor = getStatusColor(run.status);
   const isLoading = loadingRunId === run.id;
-  const disabled = !isCompleted || loadingRunId !== null;
+  // Results are viewable while a run is still processing; cells fill in as models finish.
+  const disabled = loadingRunId !== null;
 
   return (
     <div
@@ -59,9 +59,7 @@ export default function TTSRunCard({
           <Button
             variant="outline"
             size="sm"
-            onClick={
-              isCompleted && loadingRunId === null ? onLoadResults : undefined
-            }
+            onClick={disabled ? undefined : onLoadResults}
             disabled={disabled}
             className="shrink-0"
           >

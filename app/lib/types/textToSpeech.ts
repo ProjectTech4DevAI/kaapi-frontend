@@ -62,10 +62,13 @@ export interface TTSResultRaw {
   duration_seconds: number | null;
   size_bytes: number | null;
   provider: string;
+  voice?: string | null;
   status: string;
   score: TTSScore | null;
   is_correct: boolean | null;
   comment: string | null;
+  issues?: TTSIssue[] | null;
+  usage?: TTSUsage | null;
   error_message: string | null;
   evaluation_run_id: number;
   organization_id: number;
@@ -114,10 +117,47 @@ export interface TTSFeedbackPayload {
   is_correct?: boolean | null;
   comment?: string;
   score?: TTSScore;
+  issues?: TTSIssue[];
 }
+
+// Each provider reports usage in its own unit; they are never converted into one another.
+export type TTSUsage =
+  | {
+      unit: "tokens";
+      input_tokens?: number | null;
+      output_tokens?: number | null;
+      total_tokens?: number | null;
+    }
+  | { unit: "characters"; characters: number }
+  | {
+      unit: "credits";
+      characters: number;
+      credits: number | null;
+      credit_multiplier?: number | null;
+    };
+
+export const TTS_ISSUES = [
+  { value: "mispronunciation", label: "Mispronunciation" },
+  { value: "robotic", label: "Robotic" },
+  { value: "wrong_language", label: "Wrong language" },
+  { value: "cut_off", label: "Cut off" },
+  { value: "long_pause", label: "Long pause" },
+  { value: "background_noise", label: "Noise" },
+] as const;
+
+export type TTSIssue = (typeof TTS_ISSUES)[number]["value"];
 
 export interface TTSViewDatasetModalData {
   name: string;
   headers: string[];
   rows: string[][];
+}
+
+export interface TTSModelVoice {
+  model: string;
+  voice: string;
+}
+
+export interface LoadOptions {
+  silent?: boolean;
 }

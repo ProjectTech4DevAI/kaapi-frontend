@@ -1,222 +1,196 @@
 "use client";
 
-import { TTSResult, TTSScore } from "@/app/lib/types/textToSpeech";
-import AudioPlayerFromUrl from "./AudioPlayerFromUrl";
+import { TTSResult } from "@/app/lib/types/textToSpeech";
+import { formatDuration, formatUsage, usageDetail } from "./ttsFormat";
 
 interface TTSResultRowProps {
-  result: TTSResult;
+  sampleText: string;
   index: number;
-  isPlaying: boolean;
-  onPlayToggle: () => void;
-  onUpdateLocalScore: (score: TTSScore) => void;
-  onUpdateLocalCorrect: (value: boolean | null) => void;
-  onUpdateLocalComment: (value: string) => void;
-  onCommitFeedback: (
-    isCorrect: boolean | null | undefined,
-    comment?: string,
-    score?: TTSScore,
-  ) => void;
+  models: string[];
+  // result per model for this sample (a model may be missing)
+  resultsByModel: Record<string, TTSResult | undefined>;
+  playingResultId: number | null;
+  selectedResultId: number | null;
+  onPlayToggle: (resultId: number) => void;
+  onSelect: (resultId: number) => void;
 }
 
-const ratingClass = (
-  rating: string,
-): { bg: string; border: string; text: string } => {
-  if (!rating) {
-    return {
-      bg: "bg-bg-primary",
-      border: "border-border",
-      text: "text-text-primary",
-    };
-  }
-  if (rating === "High") {
-    return {
-      bg: "bg-green-600/10",
-      border: "border-status-success",
-      text: "text-status-success",
-    };
-  }
-  if (rating === "Medium") {
-    return {
-      bg: "bg-yellow-500/10",
-      border: "border-yellow-500",
-      text: "text-yellow-600",
-    };
-  }
-  return {
-    bg: "bg-red-500/10",
-    border: "border-status-error",
-    text: "text-status-error",
-  };
+const RATING_TONE: Record<string, string> = {
+  high: "bg-green-600/15 text-status-success",
+  medium: "bg-yellow-500/15 text-yellow-600",
+  low: "bg-red-500/15 text-status-error",
 };
 
-const correctnessClass = (
-  value: boolean | null,
-): { bg: string; border: string; text: string } => {
-  if (value === null) {
-    return {
-      bg: "bg-bg-primary",
-      border: "border-border",
-      text: "text-text-primary",
-    };
-  }
-  if (value) {
-    return {
-      bg: "bg-green-600/10",
-      border: "border-status-success",
-      text: "text-status-success",
-    };
-  }
-  return {
-    bg: "bg-red-500/10",
-    border: "border-status-error",
-    text: "text-status-error",
-  };
-};
+function RatingPill({ label, value }: { label: string; value: unknown }) {
+  if (typeof value !== "string" || !value) return null;
+  const tone = RATING_TONE[value.toLowerCase()] ?? "bg-bg-secondary";
+  return (
+    <span
+      className={`px-1 rounded text-[10px] font-medium ${tone}`}
+      title={`${label}: ${value}`}
+    >
+      {label[0]}·{value[0].toUpperCase()}
+    </span>
+  );
+}
 
-export default function TTSResultRow({
-  result,
-  index,
+function PlayButton({
+  isPlaying,
+  onClick,
+}: {
+  isPlaying: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={isPlaying ? "Pause" : "Play"}
+      onClick={onClick}
+      className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full border-2 border-accent-primary text-accent-primary cursor-pointer"
+    >
+      <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+        {isPlaying ? (
+          <path d="M7 5h3v14H7zM14 5h3v14h-3z" />
+        ) : (
+          <path d="M8 5v14l11-7z" />
+        )}
+      </svg>
+    </button>
+  );
+}
+
+function ResultCell({
+  r,
+  isSelected,
   isPlaying,
   onPlayToggle,
-  onUpdateLocalScore,
-  onUpdateLocalCorrect,
-  onUpdateLocalComment,
-  onCommitFeedback,
-}: TTSResultRowProps) {
-  const isSuccess = result.status === "SUCCESS";
-
-  const snVal =
-    result.score?.["Speech Naturalness"] ||
-    result.score?.speech_naturalness ||
-    "";
-  const normalizedSn = snVal
-    ? snVal.charAt(0).toUpperCase() + snVal.slice(1).toLowerCase()
-    : "";
-
-  const paVal =
-    result.score?.["Pronunciation Accuracy"] ||
-    result.score?.pronunciation_accuracy ||
-    "";
-  const normalizedPa = paVal
-    ? paVal.charAt(0).toUpperCase() + paVal.slice(1).toLowerCase()
-    : "";
-
-  const isCorrectValue =
-    result.is_correct === null ? "" : result.is_correct ? "true" : "false";
-
-  const snStyles = ratingClass(normalizedSn);
-  const paStyles = ratingClass(normalizedPa);
-  const correctStyles = correctnessClass(result.is_correct);
-
-  const disabledClass = isSuccess
-    ? "cursor-pointer opacity-100"
-    : "cursor-not-allowed opacity-50";
-
+  onSelect,
+}: {
+  r: TTSResult;
+  isSelected: boolean;
+  isPlaying: boolean;
+  onPlayToggle: (resultId: number) => void;
+  onSelect: (resultId: number) => void;
+}) {
+  const issueCount = r.issues?.length ?? 0;
+  const failure =
+    r.status === "SUCCESS" ? "No audio" : (r.error_message ?? r.status);
   return (
-    <tr className="border-b border-border">
-      <td className="px-4 py-3 text-sm align-top text-text-primary">
-        <div className="overflow-y-auto max-h-20 leading-relaxed">
-          {result.sample_text || "-"}
-        </div>
-      </td>
-      <td className="px-4 py-3 text-sm align-top">
-        {result.signedUrl ? (
-          <AudioPlayerFromUrl
-            signedUrl={result.signedUrl}
-            isPlaying={isPlaying}
-            onPlayToggle={onPlayToggle}
-            sampleLabel={`Sample ${index + 1}`}
-            durationSeconds={result.duration_seconds}
-            sizeBytes={result.size_bytes}
-          />
-        ) : (
-          <span className="text-xs text-text-secondary">
-            {result.status === "SUCCESS" ? "No audio available" : "-"}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(r.id)}
+      onKeyDown={(e) => e.key === "Enter" && onSelect(r.id)}
+      className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer border ${
+        isSelected
+          ? "border-accent-primary bg-accent-primary/5"
+          : "border-transparent hover:bg-bg-secondary"
+      }`}
+    >
+      {r.signedUrl ? (
+        <PlayButton
+          isPlaying={isPlaying}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlayToggle(r.id);
+          }}
+        />
+      ) : r.status === "PENDING" ? (
+        <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
+          Generating…
+        </span>
+      ) : (
+        <span
+          className="text-xs text-status-error truncate max-w-[8rem]"
+          title={failure}
+        >
+          {failure}
+        </span>
+      )}
+      {r.duration_seconds != null && (
+        <span className="text-[11px] tabular-nums text-text-secondary">
+          {formatDuration(r.duration_seconds)}
+        </span>
+      )}
+      {r.usage && (
+        <span
+          className="px-1.5 py-0.5 rounded bg-accent-primary/10 text-[11px] font-medium tabular-nums text-accent-primary whitespace-nowrap"
+          title={usageDetail(r.usage)}
+        >
+          {formatUsage(r.usage)}
+        </span>
+      )}
+      <span className="flex items-center gap-1 ml-auto shrink-0 whitespace-nowrap">
+        <RatingPill
+          label="Naturalness"
+          value={r.score?.["Speech Naturalness"] ?? r.score?.speech_naturalness}
+        />
+        <RatingPill
+          label="Pronunciation"
+          value={
+            r.score?.["Pronunciation Accuracy"] ??
+            r.score?.pronunciation_accuracy
+          }
+        />
+        {issueCount > 0 && (
+          <span
+            className="text-[10px] font-medium text-status-error"
+            title={r.issues?.join(", ")}
+          >
+            {issueCount} issue{issueCount > 1 ? "s" : ""}
           </span>
         )}
+        {r.comment && (
+          <span className="text-[10px] text-text-secondary" title={r.comment}>
+            ✎
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+export default function TTSResultRow({
+  sampleText,
+  index,
+  models,
+  resultsByModel,
+  playingResultId,
+  selectedResultId,
+  onPlayToggle,
+  onSelect,
+}: TTSResultRowProps) {
+  return (
+    <tr className="border-b border-border">
+      <td className="px-4 py-2.5 text-sm align-middle text-text-primary">
+        <div className="flex gap-2">
+          <span className="text-xs tabular-nums text-text-secondary pt-0.5">
+            {index + 1}
+          </span>
+          <p className="line-clamp-2 leading-snug" title={sampleText}>
+            {sampleText || "-"}
+          </p>
+        </div>
       </td>
-      <td className="px-3 py-3 text-sm align-top">
-        <select
-          value={normalizedSn}
-          onChange={(e) => {
-            const value = e.target.value || null;
-            const newScore: TTSScore = {
-              ...(result.score || {}),
-              "Speech Naturalness": value,
-            };
-            onUpdateLocalScore(newScore);
-            onCommitFeedback(result.is_correct, undefined, {
-              "Speech Naturalness": value,
-            });
-          }}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs font-medium ${snStyles.bg} ${snStyles.border} ${snStyles.text} ${disabledClass}`}
-        >
-          <option value="">-</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </td>
-      <td className="px-3 py-3 text-sm align-top">
-        <select
-          value={normalizedPa}
-          onChange={(e) => {
-            const value = e.target.value || null;
-            const newScore: TTSScore = {
-              ...(result.score || {}),
-              "Pronunciation Accuracy": value,
-            };
-            onUpdateLocalScore(newScore);
-            onCommitFeedback(result.is_correct, undefined, {
-              "Pronunciation Accuracy": value,
-            });
-          }}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs font-medium ${paStyles.bg} ${paStyles.border} ${paStyles.text} ${disabledClass}`}
-        >
-          <option value="">-</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </td>
-      <td className="px-3 py-3 text-sm align-top">
-        <select
-          value={isCorrectValue}
-          onChange={(e) => {
-            const value = e.target.value;
-            const next = value === "" ? null : value === "true";
-            onUpdateLocalCorrect(next);
-            onCommitFeedback(next);
-          }}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs font-medium ${correctStyles.bg} ${correctStyles.border} ${correctStyles.text} ${disabledClass}`}
-        >
-          <option value="">-</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
-      </td>
-      <td className="px-4 py-3 text-sm align-top">
-        <textarea
-          value={result.comment || ""}
-          onChange={(e) => onUpdateLocalComment(e.target.value)}
-          onBlur={(e) => {
-            if (isSuccess) {
-              onCommitFeedback(result.is_correct, e.target.value);
-            }
-          }}
-          placeholder="Add comment..."
-          rows={2}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs resize-y bg-bg-primary border-border text-text-primary ${
-            isSuccess
-              ? "opacity-100 cursor-text"
-              : "opacity-50 cursor-not-allowed"
-          }`}
-        />
-      </td>
+      {models.map((model) => {
+        const r = resultsByModel[model];
+        return r ? (
+          <td key={model} className="px-2 py-1.5 align-middle">
+            <ResultCell
+              r={r}
+              isSelected={selectedResultId === r.id}
+              isPlaying={playingResultId === r.id}
+              onPlayToggle={onPlayToggle}
+              onSelect={onSelect}
+            />
+          </td>
+        ) : (
+          <td key={model} className="px-4 py-2.5 text-xs text-text-secondary">
+            -
+          </td>
+        );
+      })}
     </tr>
   );
 }

@@ -1,222 +1,197 @@
 "use client";
 
-import { TTSResult, TTSScore } from "@/app/lib/types/textToSpeech";
-import AudioPlayerFromUrl from "./AudioPlayerFromUrl";
+import { TTSResult } from "@/app/lib/types/textToSpeech";
+import { PauseIcon, PlayIcon } from "@/app/components/icons";
+import { InfoTooltip } from "@/app/components/ui";
+import { formatDuration, formatUsage, usageDetail } from "@/app/lib/utils/tts";
 
 interface TTSResultRowProps {
-  result: TTSResult;
+  sampleText: string;
   index: number;
-  isPlaying: boolean;
-  onPlayToggle: () => void;
-  onUpdateLocalScore: (score: TTSScore) => void;
-  onUpdateLocalCorrect: (value: boolean | null) => void;
-  onUpdateLocalComment: (value: string) => void;
-  onCommitFeedback: (
-    isCorrect: boolean | null | undefined,
-    comment?: string,
-    score?: TTSScore,
-  ) => void;
+  models: string[];
+  resultsByModel: Record<string, TTSResult | undefined>;
+  playingResultId: number | null;
+  selectedResultId: number | null;
+  onPlayToggle: (resultId: number) => void;
+  onSelect: (resultId: number) => void;
 }
 
-const ratingClass = (
-  rating: string,
-): { bg: string; border: string; text: string } => {
-  if (!rating) {
-    return {
-      bg: "bg-bg-primary",
-      border: "border-border",
-      text: "text-text-primary",
-    };
-  }
-  if (rating === "High") {
-    return {
-      bg: "bg-green-600/10",
-      border: "border-status-success",
-      text: "text-status-success",
-    };
-  }
-  if (rating === "Medium") {
-    return {
-      bg: "bg-yellow-500/10",
-      border: "border-yellow-500",
-      text: "text-yellow-600",
-    };
-  }
-  return {
-    bg: "bg-red-500/10",
-    border: "border-status-error",
-    text: "text-status-error",
-  };
+const RATING_TONE: Record<string, string> = {
+  high: "bg-green-600/15 text-status-success",
+  medium: "bg-yellow-500/15 text-yellow-600",
+  low: "bg-red-500/15 text-status-error",
 };
 
-const correctnessClass = (
-  value: boolean | null,
-): { bg: string; border: string; text: string } => {
-  if (value === null) {
-    return {
-      bg: "bg-bg-primary",
-      border: "border-border",
-      text: "text-text-primary",
-    };
-  }
-  if (value) {
-    return {
-      bg: "bg-green-600/10",
-      border: "border-status-success",
-      text: "text-status-success",
-    };
-  }
-  return {
-    bg: "bg-red-500/10",
-    border: "border-status-error",
-    text: "text-status-error",
-  };
-};
+const IN_PROGRESS = ["PENDING", "PROCESSING"];
 
-export default function TTSResultRow({
+function RatingPill({ label, value }: { label: string; value: unknown }) {
+  if (typeof value !== "string" || !value) return null;
+  const tone = RATING_TONE[value.toLowerCase()] ?? "bg-bg-secondary";
+  return (
+    <InfoTooltip
+      text={`${label}: ${value}`}
+      triggerClassName={`px-1 rounded text-[10px] font-medium cursor-default ${tone}`}
+      icon={`${label[0]}·${value[0].toUpperCase()}`}
+    />
+  );
+}
+
+function PlayButton({
+  isPlaying,
+  onClick,
+}: {
+  isPlaying: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const Icon = isPlaying ? PauseIcon : PlayIcon;
+  return (
+    <button
+      type="button"
+      aria-label={isPlaying ? "Pause" : "Play"}
+      onClick={onClick}
+      className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full border-2 border-accent-primary text-accent-primary cursor-pointer"
+    >
+      <Icon className="w-2.5! h-2.5!" />
+    </button>
+  );
+}
+
+function ResultCell({
   result,
-  index,
+  isSelected,
   isPlaying,
   onPlayToggle,
-  onUpdateLocalScore,
-  onUpdateLocalCorrect,
-  onUpdateLocalComment,
-  onCommitFeedback,
+  onSelect,
+}: {
+  result: TTSResult;
+  isSelected: boolean;
+  isPlaying: boolean;
+  onPlayToggle: (resultId: number) => void;
+  onSelect: (resultId: number) => void;
+}) {
+  const issueCount = result.issues?.length ?? 0;
+  const failure =
+    result.status === "SUCCESS"
+      ? "No audio"
+      : (result.error_message ?? result.status);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect(result.id)}
+      onKeyDown={(e) => e.key === "Enter" && onSelect(result.id)}
+      className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer border ${
+        isSelected
+          ? "border-accent-primary bg-accent-primary/5"
+          : "border-transparent hover:bg-bg-secondary"
+      }`}
+    >
+      {result.signedUrl ? (
+        <PlayButton
+          isPlaying={isPlaying}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlayToggle(result.id);
+          }}
+        />
+      ) : IN_PROGRESS.includes(result.status) ? (
+        <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
+          Generating…
+        </span>
+      ) : (
+        <InfoTooltip
+          text={failure}
+          triggerClassName="text-xs text-status-error truncate max-w-[8rem] cursor-default"
+          icon={failure}
+        />
+      )}
+      {result.duration_seconds != null && (
+        <span className="text-[11px] tabular-nums text-text-secondary">
+          {formatDuration(result.duration_seconds)}
+        </span>
+      )}
+      {result.usage && (
+        <InfoTooltip
+          text={usageDetail(result.usage)}
+          triggerClassName="px-1.5 py-0.5 rounded bg-accent-primary/10 text-[11px] font-medium tabular-nums text-accent-primary whitespace-nowrap cursor-default"
+          icon={formatUsage(result.usage)}
+        />
+      )}
+      <span className="flex items-center gap-1 ml-auto shrink-0 whitespace-nowrap">
+        <RatingPill
+          label="Naturalness"
+          value={
+            result.score?.["Speech Naturalness"] ??
+            result.score?.speech_naturalness
+          }
+        />
+        <RatingPill
+          label="Pronunciation"
+          value={
+            result.score?.["Pronunciation Accuracy"] ??
+            result.score?.pronunciation_accuracy
+          }
+        />
+        {issueCount > 0 && (
+          <InfoTooltip
+            text={result.issues?.join(", ")}
+            triggerClassName="text-[10px] font-medium text-status-error cursor-default"
+            icon={`${issueCount} issue${issueCount > 1 ? "s" : ""}`}
+          />
+        )}
+        {result.comment && (
+          <InfoTooltip
+            text={result.comment}
+            triggerClassName="text-[10px] text-text-secondary cursor-default"
+            icon="✎"
+          />
+        )}
+      </span>
+    </div>
+  );
+}
+
+export default function TTSResultRow({
+  sampleText,
+  index,
+  models,
+  resultsByModel,
+  playingResultId,
+  selectedResultId,
+  onPlayToggle,
+  onSelect,
 }: TTSResultRowProps) {
-  const isSuccess = result.status === "SUCCESS";
-
-  const snVal =
-    result.score?.["Speech Naturalness"] ||
-    result.score?.speech_naturalness ||
-    "";
-  const normalizedSn = snVal
-    ? snVal.charAt(0).toUpperCase() + snVal.slice(1).toLowerCase()
-    : "";
-
-  const paVal =
-    result.score?.["Pronunciation Accuracy"] ||
-    result.score?.pronunciation_accuracy ||
-    "";
-  const normalizedPa = paVal
-    ? paVal.charAt(0).toUpperCase() + paVal.slice(1).toLowerCase()
-    : "";
-
-  const isCorrectValue =
-    result.is_correct === null ? "" : result.is_correct ? "true" : "false";
-
-  const snStyles = ratingClass(normalizedSn);
-  const paStyles = ratingClass(normalizedPa);
-  const correctStyles = correctnessClass(result.is_correct);
-
-  const disabledClass = isSuccess
-    ? "cursor-pointer opacity-100"
-    : "cursor-not-allowed opacity-50";
-
   return (
     <tr className="border-b border-border">
-      <td className="px-4 py-3 text-sm align-top text-text-primary">
-        <div className="overflow-y-auto max-h-20 leading-relaxed">
-          {result.sample_text || "-"}
+      <td className="px-4 py-2.5 text-sm align-middle text-text-primary">
+        <div className="flex gap-2">
+          <span className="text-xs tabular-nums text-text-secondary pt-0.5">
+            {index + 1}
+          </span>
+          <p className="line-clamp-2 leading-snug" title={sampleText}>
+            {sampleText || "-"}
+          </p>
         </div>
       </td>
-      <td className="px-4 py-3 text-sm align-top">
-        {result.signedUrl ? (
-          <AudioPlayerFromUrl
-            signedUrl={result.signedUrl}
-            isPlaying={isPlaying}
-            onPlayToggle={onPlayToggle}
-            sampleLabel={`Sample ${index + 1}`}
-            durationSeconds={result.duration_seconds}
-            sizeBytes={result.size_bytes}
-          />
+      {models.map((model) => {
+        const result = resultsByModel[model];
+        return result ? (
+          <td key={model} className="px-2 py-1.5 align-middle">
+            <ResultCell
+              result={result}
+              isSelected={selectedResultId === result.id}
+              isPlaying={playingResultId === result.id}
+              onPlayToggle={onPlayToggle}
+              onSelect={onSelect}
+            />
+          </td>
         ) : (
-          <span className="text-xs text-text-secondary">
-            {result.status === "SUCCESS" ? "No audio available" : "-"}
-          </span>
-        )}
-      </td>
-      <td className="px-3 py-3 text-sm align-top">
-        <select
-          value={normalizedSn}
-          onChange={(e) => {
-            const value = e.target.value || null;
-            const newScore: TTSScore = {
-              ...(result.score || {}),
-              "Speech Naturalness": value,
-            };
-            onUpdateLocalScore(newScore);
-            onCommitFeedback(result.is_correct, undefined, {
-              "Speech Naturalness": value,
-            });
-          }}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs font-medium ${snStyles.bg} ${snStyles.border} ${snStyles.text} ${disabledClass}`}
-        >
-          <option value="">-</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </td>
-      <td className="px-3 py-3 text-sm align-top">
-        <select
-          value={normalizedPa}
-          onChange={(e) => {
-            const value = e.target.value || null;
-            const newScore: TTSScore = {
-              ...(result.score || {}),
-              "Pronunciation Accuracy": value,
-            };
-            onUpdateLocalScore(newScore);
-            onCommitFeedback(result.is_correct, undefined, {
-              "Pronunciation Accuracy": value,
-            });
-          }}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs font-medium ${paStyles.bg} ${paStyles.border} ${paStyles.text} ${disabledClass}`}
-        >
-          <option value="">-</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </td>
-      <td className="px-3 py-3 text-sm align-top">
-        <select
-          value={isCorrectValue}
-          onChange={(e) => {
-            const value = e.target.value;
-            const next = value === "" ? null : value === "true";
-            onUpdateLocalCorrect(next);
-            onCommitFeedback(next);
-          }}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs font-medium ${correctStyles.bg} ${correctStyles.border} ${correctStyles.text} ${disabledClass}`}
-        >
-          <option value="">-</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
-      </td>
-      <td className="px-4 py-3 text-sm align-top">
-        <textarea
-          value={result.comment || ""}
-          onChange={(e) => onUpdateLocalComment(e.target.value)}
-          onBlur={(e) => {
-            if (isSuccess) {
-              onCommitFeedback(result.is_correct, e.target.value);
-            }
-          }}
-          placeholder="Add comment..."
-          rows={2}
-          disabled={!isSuccess}
-          className={`w-full px-2 py-1.5 border rounded text-xs resize-y bg-bg-primary border-border text-text-primary ${
-            isSuccess
-              ? "opacity-100 cursor-text"
-              : "opacity-50 cursor-not-allowed"
-          }`}
-        />
-      </td>
+          <td key={model} className="px-4 py-2.5 text-xs text-text-secondary">
+            -
+          </td>
+        );
+      })}
     </tr>
   );
 }

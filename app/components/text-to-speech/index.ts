@@ -7,6 +7,7 @@ export { default as RunTTSEvaluationForm } from "./RunTTSEvaluationForm";
 export { default as TTSDatasetCard } from "./TTSDatasetCard";
 export { default as TTSResultRow } from "./TTSResultRow";
 export { default as TTSResultsTable } from "./TTSResultsTable";
+export { default as TTSReviewPanel } from "./TTSReviewPanel";
 export { default as TTSRunCard } from "./TTSRunCard";
 export { default as TTSRunsList } from "./TTSRunsList";
 export { default as TTSScoreInfoTooltip } from "./TTSScoreInfoTooltip";

@@ -8,7 +8,7 @@ interface TooltipContent {
   low: string;
 }
 
-const CONTENT: Record<string, TooltipContent> = {
+export const CONTENT: Record<string, TooltipContent> = {
   speech_naturalness: {
     title: "Speech Naturalness",
     description: "Assesses how human-like the generated speech sounds.",

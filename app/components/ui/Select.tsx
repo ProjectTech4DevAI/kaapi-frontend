@@ -1,16 +1,11 @@
 "use client";
 
-import { SelectHTMLAttributes } from "react";
-import { SelectOption } from "@/app/lib/types/ui";
-
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  options: SelectOption[];
-  placeholder?: string;
-}
+import type { SelectOption, SelectProps } from "@/app/lib/types/ui";
 
 export default function Select({
   options,
   placeholder,
+  className = "",
   ...props
 }: SelectProps) {
   const isGrouped = options.some((o) => o.group !== undefined);
@@ -31,7 +26,7 @@ export default function Select({
 
   return (
     <select
-      className="w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-accent-primary/20 focus:border-accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+      className={`w-full text-sm rounded-md border border-border bg-bg-primary text-text-primary px-2.5 py-1.5 outline-none focus:ring-1 focus:ring-accent-primary/20 focus:border-accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {placeholder && <option value="">{placeholder}</option>}

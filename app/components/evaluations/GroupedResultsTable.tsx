@@ -6,13 +6,16 @@
 
 import { Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
-import { formatScoreValue } from "@/app/lib/utils";
+import { isCosineScoreName } from "@/app/lib/utils/evaluation";
+import { formatScoreValue, getScoreNote } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
 import VerdictBadge from "./VerdictBadge";
 export default function GroupedResultsTable({
   traces,
+  isJudgeRun,
 }: {
   traces: GroupedTraceItem[];
+  isJudgeRun?: boolean;
 }) {
   if (!traces || traces.length === 0) {
     return (
@@ -172,8 +175,13 @@ export default function GroupedResultsTable({
                   <td className="px-4 pt-1 pb-3 bg-accent-subtle/50" />
 
                   {Array.from({ length: maxAnswers }, (_, answerIndex) => {
-                    const answerScores: TraceScore[] =
+                    const rawAnswerScores: TraceScore[] =
                       group.scores?.[answerIndex] || [];
+                    const answerScores = isJudgeRun
+                      ? rawAnswerScores.filter(
+                          (s) => !isCosineScoreName(s.name),
+                        )
+                      : rawAnswerScores;
                     const answer = group.llm_answers[answerIndex];
 
                     return (
@@ -188,6 +196,7 @@ export default function GroupedResultsTable({
                                 if (!score) return null;
                                 const { value, color, bg } =
                                   formatScoreValue(score);
+                                const note = getScoreNote(score);
                                 return (
                                   <div
                                     key={score.name || scoreIdx}
@@ -212,9 +221,7 @@ export default function GroupedResultsTable({
                                         value={score.value}
                                         dataType={score.data_type}
                                       />
-                                      {score?.comment && (
-                                        <InfoTooltip text={score.comment} />
-                                      )}
+                                      {note && <InfoTooltip text={note} />}
                                     </div>
                                   </div>
                                 );

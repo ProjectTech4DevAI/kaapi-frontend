@@ -8,6 +8,7 @@ export { default as MicIcon } from "./common/MicIcon";
 export { default as SpeakerIcon } from "./common/SpeakerIcon";
 export { default as MusicNoteIcon } from "./common/MusicNoteIcon";
 export { default as PlayIcon } from "./common/PlayIcon";
+export { default as PauseIcon } from "./common/PauseIcon";
 export { default as CopyIcon } from "./common/CopyIcon";
 export { default as EyeIcon } from "./common/EyeIcon";
 export { default as EyeOffIcon } from "./common/EyeOffIcon";
@@ -21,6 +22,10 @@ export { default as SidebarToggleIcon } from "./common/SidebarToggleIcon";
 export { default as MailIcon } from "./common/MailIcon";
 export { default as ErrorCircleIcon } from "./common/ErrorCircleIcon";
 export { default as DownloadIcon } from "./common/DownloadIcon";
+export { default as HomeIcon } from "./common/HomeIcon";
+export { default as ImageIcon } from "./common/ImageIcon";
+export { default as VideoIcon } from "./common/VideoIcon";
+export { default as LockClosedIcon } from "./common/LockClosedIcon";
 
 // Evaluations Icons
 export { default as ChevronUpIcon } from "./evaluations/ChevronUpIcon";
@@ -29,6 +34,7 @@ export { default as EditIcon } from "./evaluations/EditIcon";
 export { default as MenuIcon } from "./evaluations/MenuIcon";
 export { default as DatabaseIcon } from "./evaluations/DatabaseIcon";
 export { default as GroupIcon } from "./evaluations/GroupIcon";
+export { default as ExternalLinkIcon } from "./evaluations/ExternalLinkIcon";
 
 // Document Icons
 export { default as DocumentFileIcon } from "./document/DocumentFileIcon";
@@ -50,6 +56,7 @@ export { default as ShieldCheckIcon } from "./sidebar/ShieldCheckIcon";
 export { default as LogoutIcon } from "./sidebar/LogoutIcon";
 export { default as AssessmentIcon } from "./sidebar/AssessmentIcon";
 export { default as ChatIcon } from "./sidebar/ChatIcon";
+export { default as FlowIcon } from "./sidebar/FlowIcon";
 export { default as SendIcon } from "./sidebar/SendIcon";
 export { default as ChartBarIcon } from "./sidebar/ChartBarIcon";
 

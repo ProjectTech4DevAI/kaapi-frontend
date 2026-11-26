@@ -5,6 +5,8 @@ export interface TraceScore {
   value: number | string;
   data_type: "NUMERIC" | "CATEGORICAL";
   comment?: string;
+  /** Judge model's explanation for the score (v2 judge metrics, e.g. Adherence to Ground Truth/Prompt/Knowledge Base, 0-5 scale). */
+  reasoning?: string;
 }
 
 export interface TraceItem {
@@ -15,6 +17,7 @@ export interface TraceItem {
   question_id?: number;
   category?: string;
   scores: TraceScore[];
+  score_trace_url?: string;
 }
 
 export interface GroupedTraceItem {
@@ -42,6 +45,7 @@ export interface IndividualScore {
     response_id?: string;
   };
   trace_scores: TraceScore[];
+  score_trace_url?: string;
 }
 
 export interface CategoryMetric {
@@ -60,10 +64,26 @@ export interface SummaryScore {
   distribution?: Record<string, number>; // For categorical data
 }
 
+export interface ScoreBreakdownItem {
+  name: string;
+  score: number;
+  weight: number;
+  delta?: number | null;
+  verdict: string;
+}
+
+export interface OverallScore {
+  overall_score: number;
+  verdict: string;
+  breakdown: ScoreBreakdownItem[];
+}
+
 export interface NewScoreObjectV2 {
   summary_scores: SummaryScore[];
   traces: TraceItem[] | GroupedTraceItem[];
   category_metrics?: CategoryMetric[];
+  overall?: OverallScore | null;
+  ai_summary?: string | null;
 }
 
 export interface PerItemScore {
@@ -119,6 +139,7 @@ export interface EvalCostEntry {
 
 export interface EvalCost {
   response?: EvalCostEntry;
+  judge?: EvalCostEntry;
   embedding?: EvalCostEntry;
   total_cost_usd: number;
 }
@@ -129,6 +150,7 @@ export interface EvalJob {
   id: number;
   run_name: string;
   run_mode?: RunMode;
+  is_judge_run?: boolean;
   dataset_name: string;
   dataset_id: number;
   batch_job_id: number;

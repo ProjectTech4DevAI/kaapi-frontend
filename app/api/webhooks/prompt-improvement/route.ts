@@ -3,19 +3,12 @@ import {
   getJobSnapshot,
   saveJobSnapshot,
 } from "@/app/lib/store/promptImprovementStore";
-import { readWebhookSecret } from "@/app/lib/webhookSecret";
-import type { PromptImprovementJobPublic } from "@/app/lib/types/promptImprovement";
-
-function isAuthorized(request: NextRequest): boolean {
-  const secretResult = readWebhookSecret();
-  if (!secretResult.ok || !secretResult.secret) return false;
-  const provided = request.nextUrl.searchParams.get("secret_value");
-  return provided === secretResult.secret;
-}
+import { isWebhookAuthorized } from "@/app/lib/webhookCallback";
+import type { PromptRecommendationJobPublic } from "@/app/lib/types/promptImprovement";
 
 export async function POST(request: NextRequest) {
   try {
-    if (!isAuthorized(request)) {
+    if (!isWebhookAuthorized(request)) {
       return NextResponse.json(
         { success: false, error: "unauthorized" },
         { status: 401 },
@@ -23,10 +16,14 @@ export async function POST(request: NextRequest) {
     }
     const body = (await request.json()) as {
       success?: boolean;
-      data?: PromptImprovementJobPublic;
+      data?: PromptRecommendationJobPublic;
       error?: string | null;
     };
-    if (!body.data || !body.data.job_id) {
+    if (
+      !body.data ||
+      !body.data.job_id ||
+      body.data.recommendation_type !== "prompt"
+    ) {
       return NextResponse.json(
         { success: false, error: "invalid_payload" },
         { status: 400 },

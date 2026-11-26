@@ -5,6 +5,7 @@ import VerdictBadge from "./VerdictBadge";
 
 interface CategoryMetricsTableProps {
   categoryMetrics: CategoryMetric[];
+  isJudgeRun?: boolean;
 }
 
 function formatScore(value: number | null): string {
@@ -14,6 +15,7 @@ function formatScore(value: number | null): string {
 
 export default function CategoryMetricsTable({
   categoryMetrics,
+  isJudgeRun,
 }: CategoryMetricsTableProps) {
   if (!categoryMetrics || categoryMetrics.length === 0) return null;
 
@@ -37,9 +39,11 @@ export default function CategoryMetricsTable({
               <th className="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
                 Total Questions
               </th>
-              <th className="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-                Avg Cosine
-              </th>
+              {!isJudgeRun && (
+                <th className="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+                  Avg Cosine
+                </th>
+              )}
               <th className="px-5 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
                 Avg Correctness
               </th>
@@ -57,9 +61,11 @@ export default function CategoryMetricsTable({
                 <td className="px-5 py-2.5 text-sm text-right tabular-nums text-text-primary">
                   {row.total_evals}
                 </td>
-                <td className="px-5 py-2.5 text-sm text-right tabular-nums text-text-primary">
-                  {formatScore(row.avg_cosine)}
-                </td>
+                {!isJudgeRun && (
+                  <td className="px-5 py-2.5 text-sm text-right tabular-nums text-text-primary">
+                    {formatScore(row.avg_cosine)}
+                  </td>
+                )}
                 <td className="px-5 py-2.5 text-sm text-right tabular-nums text-text-primary">
                   <span className="inline-flex items-center gap-1.5">
                     {formatScore(row.avg_correctness)}

@@ -48,7 +48,7 @@ export default function UploadDatasetModal({
         <div className="border-2 border-dashed rounded-lg p-12 text-center transition-colors border-border">
           <div className="space-y-4">
             <div className="text-text-secondary">
-              <CloudUploadIcon className="mx-auto" />
+              <CloudUploadIcon className="mx-auto h-12 w-12" />
             </div>
             <input
               ref={fileInputRef}

@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TTSRun, TTSResult, TTSScore } from "@/app/lib/types/textToSpeech";
+import {
+  LoadOptions,
+  TTSFeedbackPayload,
+  TTSRun,
+  TTSResult,
+} from "@/app/lib/types/textToSpeech";
 import {
   ChevronLeftIcon,
   ClipboardIcon,
@@ -11,22 +16,20 @@ import { RunsListSkeleton } from "@/app/components";
 import TTSRunCard from "./TTSRunCard";
 import TTSResultsTable from "./TTSResultsTable";
 
+const ACTIVE_STATUSES = ["pending", "processing"];
+const LIVE_REFRESH_MS = 10_000;
+
 interface TTSRunsListProps {
   runs: TTSRun[];
   isLoadingRuns: boolean;
-  loadRuns: () => void;
+  loadRuns: (opts?: LoadOptions) => void;
   selectedRunId: number | null;
   setSelectedRunId: (id: number | null) => void;
   results: TTSResult[];
   setResults: React.Dispatch<React.SetStateAction<TTSResult[]>>;
   isLoadingResults: boolean;
-  loadResults: (runId: number) => void;
-  onUpdateFeedback: (
-    resultId: number,
-    isCorrect: boolean | null | undefined,
-    comment?: string,
-    score?: TTSScore,
-  ) => void;
+  loadResults: (runId: number, opts?: LoadOptions) => void;
+  onUpdateFeedback: (resultId: number, payload: TTSFeedbackPayload) => void;
 }
 
 export default function TTSRunsList({
@@ -49,6 +52,19 @@ export default function TTSRunsList({
   }, [selectedRunId]);
 
   const selectedRun = runs.find((r) => r.id === selectedRunId);
+  const selectedRunActive = ACTIVE_STATUSES.includes(
+    selectedRun?.status.toLowerCase() ?? "",
+  );
+
+  // Rows fill in as each model finishes; poll until the run reaches a final status.
+  useEffect(() => {
+    if (selectedRunId === null || !selectedRunActive) return;
+    const timer = setInterval(() => {
+      loadRuns({ silent: true });
+      loadResults(selectedRunId, { silent: true });
+    }, LIVE_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [selectedRunId, selectedRunActive, loadRuns, loadResults]);
 
   const filteredRuns =
     statusFilter === "all"
@@ -75,6 +91,12 @@ export default function TTSRunsList({
                 <h2 className="text-base font-semibold text-text-primary">
                   {selectedRun?.run_name}
                 </h2>
+                {selectedRunActive && (
+                  <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
+                    {selectedRun?.status.toLowerCase()} · updating live
+                  </span>
+                )}
               </div>
             ) : (
               <h2 className="text-base font-semibold text-text-primary">
@@ -96,7 +118,7 @@ export default function TTSRunsList({
                 <option value="failed">Failed</option>
               </select>
               <button
-                onClick={loadRuns}
+                onClick={() => loadRuns()}
                 disabled={isLoadingRuns}
                 className="p-1.5 rounded text-text-secondary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Refresh runs"

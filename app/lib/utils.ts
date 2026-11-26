@@ -1,4 +1,9 @@
-import { Credential, ProviderDef } from "@/app/lib/types/credentials";
+import {
+  Credential,
+  CredentialPayloadResult,
+  FieldDef,
+  ProviderDef,
+} from "@/app/lib/types/credentials";
 import { formatDistanceToNow } from "date-fns";
 import { clearConfigCache } from "@/app/lib/store/config";
 import {
@@ -8,6 +13,7 @@ import {
   Tool,
 } from "@/app/lib/types/configs";
 import { SavedConfig, ConfigGroup } from "./types/configs";
+import type { CreateResponse } from "@/app/lib/types/assessment";
 import {
   SUPPORTED_PARAMS,
   getModelSchema,
@@ -31,6 +37,114 @@ export function getExistingForProvider(
   creds: Credential[],
 ): Credential | null {
   return creds.find((c) => c.provider === provider.credentialKey) || null;
+}
+
+export function isMaskedCredentialValue(value: string): boolean {
+  return value.includes("*");
+}
+
+export function populateCredentialForm(
+  provider: ProviderDef,
+  existing: Credential | null,
+): Record<string, string> {
+  const values: Record<string, string> = {};
+  provider.fields.forEach((field) => {
+    const stored = existing?.credential?.[field.key];
+    if (stored === undefined || stored === null) {
+      values[field.key] = "";
+    } else if (typeof stored === "string") {
+      values[field.key] = stored;
+    } else {
+      values[field.key] = JSON.stringify(stored, null, 2);
+    }
+  });
+  return values;
+}
+
+function repairPemNewlines(value: Record<string, unknown>) {
+  for (const [key, entry] of Object.entries(value)) {
+    if (
+      typeof entry === "string" &&
+      entry.includes("-----BEGIN") &&
+      entry.includes("\\n") &&
+      !entry.includes("\n")
+    ) {
+      value[key] = entry.replace(/\\n/g, "\n");
+    }
+  }
+}
+
+function parseJsonField(
+  field: FieldDef,
+  raw: string,
+): { value?: Record<string, unknown>; error?: string } {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { error: `${field.label} must be valid JSON` };
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return { error: `${field.label} must be a JSON object` };
+  }
+
+  const value = parsed as Record<string, unknown>;
+  repairPemNewlines(value);
+
+  const missing = (field.jsonRequiredKeys ?? []).filter((key) => !value[key]);
+  if (missing.length > 0) {
+    return { error: `${field.label} is missing: ${missing.join(", ")}` };
+  }
+
+  return { value };
+}
+
+export function buildCredentialPayload(
+  provider: ProviderDef,
+  formValues: Record<string, string>,
+): CredentialPayloadResult {
+  const payload: Record<string, unknown> = {};
+
+  for (const field of provider.fields) {
+    const raw = (formValues[field.key] ?? "").trim();
+    if (!raw || isMaskedCredentialValue(raw)) continue;
+
+    if (field.json) {
+      const parsed = parseJsonField(field, raw);
+      if (parsed.error) return { payload, error: parsed.error };
+      payload[field.key] = parsed.value;
+    } else {
+      payload[field.key] = raw;
+    }
+  }
+
+  return { payload, error: null };
+}
+
+export function missingCredentialFields(
+  provider: ProviderDef,
+  formValues: Record<string, string>,
+): FieldDef[] {
+  return provider.fields.filter(
+    (field) => field.required && !formValues[field.key]?.trim(),
+  );
+}
+
+export function hasCredentialChanges(
+  provider: ProviderDef,
+  formValues: Record<string, string>,
+  existing: Credential | null,
+  isActive: boolean,
+): boolean {
+  if (!existing) {
+    return provider.fields.some((field) => !!formValues[field.key]?.trim());
+  }
+  if (isActive !== existing.is_active) return true;
+  return provider.fields.some(
+    (field) =>
+      (formValues[field.key] || "") !== (existing.credential[field.key] || ""),
+  );
 }
 
 export const formatRelativeTime = (timestamp: string | number): string => {
@@ -190,45 +304,64 @@ export const sanitizeCSVCell = (
   return `"${sanitized}"`;
 };
 
-export const formatScoreValue = (score: TraceScore | undefined) => {
-  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
+// v2 judge metrics score 0-5 (integers) instead of the legacy 0-1 cosine/correctness scale.
+const FIVE_POINT_SCORE_NAMES = new Set([
+  "adherence to ground truth",
+  "adherence to prompt",
+  "adherence to knowledge base",
+]);
 
-  if (score.data_type === "CATEGORICAL") {
-    const catValue = String(score.value);
-    let color = "#171717";
-    let bg = "#fafafa";
+const isFivePointScore = (name?: string): boolean =>
+  !!name && FIVE_POINT_SCORE_NAMES.has(name.toLowerCase());
 
-    if (catValue === "CORRECT") {
-      color = "#15803d";
-      bg = "#dcfce7";
-    } else if (catValue === "PARTIAL") {
-      color = "#92400e";
-      bg = "#fef3c7";
-    } else if (catValue === "INCORRECT") {
-      color = "#dc2626";
-      bg = "#fee2e2";
-    }
-
-    return { value: catValue, color, bg };
-  }
-
-  const numValue = Number(score.value);
-  const formattedValue = numValue.toFixed(2);
+const formatCategoricalScore = (value: number | string) => {
+  const catValue = String(value);
   let color = "#171717";
-  let bg = "transparent";
+  let bg = "#fafafa";
 
-  if (numValue >= 0.7) {
+  if (catValue === "CORRECT") {
     color = "#15803d";
     bg = "#dcfce7";
-  } else if (numValue >= 0.5) {
+  } else if (catValue === "PARTIAL") {
     color = "#92400e";
     bg = "#fef3c7";
-  } else {
+  } else if (catValue === "INCORRECT") {
     color = "#dc2626";
     bg = "#fee2e2";
   }
 
-  return { value: formattedValue, color, bg };
+  return { value: catValue, color, bg };
+};
+
+// Traffic light thresholds for v2 judge metrics: 0-1 needs improvement, 2-3 could improve, 4-5 good.
+const formatFivePointScore = (numValue: number) => {
+  if (numValue >= 4)
+    return { value: String(numValue), color: "#15803d", bg: "#dcfce7" };
+  if (numValue >= 2)
+    return { value: String(numValue), color: "#92400e", bg: "#fef3c7" };
+  return { value: String(numValue), color: "#dc2626", bg: "#fee2e2" };
+};
+
+// Legacy thresholds for cosine similarity / correctness on a 0-1 scale.
+const formatUnitScaleScore = (numValue: number) => {
+  const value = numValue.toFixed(2);
+  if (numValue >= 0.7) return { value, color: "#15803d", bg: "#dcfce7" };
+  if (numValue >= 0.5) return { value, color: "#92400e", bg: "#fef3c7" };
+  return { value, color: "#dc2626", bg: "#fee2e2" };
+};
+
+export const formatScoreValue = (score: TraceScore | undefined) => {
+  if (!score) return { value: "N/A", color: "#737373", bg: "transparent" };
+
+  if (score.data_type === "CATEGORICAL") {
+    return formatCategoricalScore(score.value);
+  }
+
+  const numValue = Number(score.value);
+
+  return isFivePointScore(score.name)
+    ? formatFivePointScore(numValue)
+    : formatUnitScaleScore(numValue);
 };
 
 export const getScoreByName = (
@@ -238,6 +371,14 @@ export const getScoreByName = (
   if (!scores || !Array.isArray(scores)) return undefined;
   return scores.find((s) => s?.name === name);
 };
+
+/**
+ * Returns the judge's explanation for a score, preferring the v2 `reasoning`
+ * field over the legacy `comment` field.
+ */
+export const getScoreNote = (
+  score: TraceScore | undefined,
+): string | undefined => score?.reasoning || score?.comment;
 
 /**
  * Formats a USD cost value for display
@@ -310,3 +451,13 @@ export const formatModelParamValue = (key: string, value: unknown): string => {
   }
   return getParamValueLabel(key, value);
 };
+
+export const isPlainObject = (
+  value: unknown,
+): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+export const unwrapResponse = <T>(
+  response: CreateResponse<T>,
+  fallback: T,
+): T => (response as { data?: T })?.data ?? (response as T) ?? fallback;

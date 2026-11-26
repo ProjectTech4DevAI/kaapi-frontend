@@ -38,6 +38,8 @@ export const NAV_ITEMS: NavItemConfig[] = [
     route: "/guardrails",
     icon: "shield",
     gateDescription: "Log in to manage guardrails and validators.",
+    disabledReason:
+      "Guardrails is temporarily disabled. We're making significant backend changes and things aren't in sync yet — it will be re-enabled once everything is aligned. To explore Guardrails, please contact the Kaapi team.",
   },
   {
     name: "Chat",
@@ -45,6 +47,13 @@ export const NAV_ITEMS: NavItemConfig[] = [
     icon: "chat",
     gateDescription:
       "Log in to chat with your assistants and keep conversation history.",
+  },
+  {
+    name: "Chatbot",
+    route: "/chatbot",
+    icon: "flow",
+    featureFlag: FeatureFlag.CHATBOT,
+    gateDescription: "Log in to build and test chatbot flows.",
   },
   {
     name: "Evaluations",

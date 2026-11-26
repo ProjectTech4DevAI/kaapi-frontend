@@ -7,6 +7,7 @@
 
 "use client";
 
+import { TTS_MODELS } from "@/app/lib/data/ttsModels";
 import { useState, useEffect } from "react";
 import Sidebar from "@/app/components/Sidebar";
 import PageHeader from "@/app/components/PageHeader";
@@ -28,6 +29,8 @@ import {
   TTSRunDetailResponse,
   TTSCreateDatasetResponse,
   TTSCreateRunResponse,
+  TTSModelVoice,
+  LoadOptions,
 } from "@/app/lib/types/textToSpeech";
 import {
   Language,
@@ -55,9 +58,9 @@ export default function TextToSpeechPage() {
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(
     null,
   );
-  const [selectedModel, setSelectedModel] = useState(
-    "gemini-2.5-pro-preview-tts",
-  );
+  const [selectedModels, setSelectedModels] = useState<TTSModelVoice[]>([
+    { model: TTS_MODELS[0].model, voice: TTS_MODELS[0].defaultVoice },
+  ]);
   const [isRunning, setIsRunning] = useState(false);
   const [runs, setRuns] = useState<TTSRun[]>([]);
   const [isLoadingRuns, setIsLoadingRuns] = useState(true);
@@ -143,10 +146,11 @@ export default function TextToSpeechPage() {
   };
 
   // Load evaluation runs
-  const loadRuns = async () => {
+  // `silent` refreshes in the background: no loading state, and a failed poll keeps what's shown.
+  const loadRuns = async ({ silent = false }: LoadOptions = {}) => {
     if (!isAuthenticated) return;
 
-    setIsLoadingRuns(true);
+    if (!silent) setIsLoadingRuns(true);
     try {
       const data = await apiFetch<TTSRun[] | TTSRunsResponse>(
         "/api/evaluations/tts/runs",
@@ -165,10 +169,11 @@ export default function TextToSpeechPage() {
       setRuns(runsList);
     } catch (error) {
       console.error("Failed to load runs:", error);
+      if (silent) return;
       toast.error("Failed to load evaluation runs");
       setRuns([]);
     } finally {
-      setIsLoadingRuns(false);
+      if (!silent) setIsLoadingRuns(false);
     }
   };
 
@@ -282,7 +287,7 @@ export default function TextToSpeechPage() {
           body: JSON.stringify({
             run_name: evaluationName.trim(),
             dataset_id: selectedDatasetId,
-            models: [selectedModel],
+            models: selectedModels,
           }),
         },
       );
@@ -304,10 +309,13 @@ export default function TextToSpeechPage() {
     }
   };
 
-  const loadResults = async (runId: number) => {
+  const loadResults = async (
+    runId: number,
+    { silent = false }: LoadOptions = {},
+  ) => {
     if (!isAuthenticated) return;
 
-    setIsLoadingResults(true);
+    if (!silent) setIsLoadingResults(true);
     try {
       const runData = await apiFetch<TTSResultRaw[] | TTSRunDetailResponse>(
         `/api/evaluations/tts/runs/${runId}?include_results=true&include_signed_url=true`,
@@ -344,10 +352,11 @@ export default function TextToSpeechPage() {
       setSelectedRunId(runId);
     } catch (error) {
       console.error("Failed to load results:", error);
+      if (silent) return;
       toast.error("Failed to load evaluation results");
       setResults([]);
     } finally {
-      setIsLoadingResults(false);
+      if (!silent) setIsLoadingResults(false);
     }
   };
 
@@ -416,8 +425,8 @@ export default function TextToSpeechPage() {
               selectedDatasetId={selectedDatasetId}
               setSelectedDatasetId={setSelectedDatasetId}
               selectedDataset={selectedDataset}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
+              selectedModels={selectedModels}
+              setSelectedModels={setSelectedModels}
               isRunning={isRunning}
               handleRunEvaluation={handleRunEvaluation}
               runs={runs}

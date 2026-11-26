@@ -12,6 +12,7 @@ import {
   hasSummaryScores,
   isNewScoreObjectV2,
   isGroupedFormat,
+  isCosineScoreName,
 } from "@/app/lib/utils/evaluation";
 import {
   formatScoreValue,
@@ -21,6 +22,7 @@ import {
 import { InfoTooltip } from "@/app/components/ui";
 import { GroupedResultsTable } from "@/app/components/evaluations";
 import { MarkdownContent } from "@/app/components/chat";
+import { ExternalLinkIcon } from "@/app/components/icons";
 
 interface DetailedResultsTableProps {
   job: EvalJob;
@@ -30,6 +32,7 @@ export default function DetailedResultsTable({
   job,
 }: DetailedResultsTableProps) {
   const scoreObject = getScoreObject(job);
+  const isJudgeRun = job.is_judge_run;
 
   if (!scoreObject || !hasSummaryScores(scoreObject)) {
     return (
@@ -46,6 +49,7 @@ export default function DetailedResultsTable({
       return (
         <GroupedResultsTable
           traces={scoreObject.traces as GroupedTraceItem[]}
+          isJudgeRun={isJudgeRun}
         />
       );
     }
@@ -65,12 +69,16 @@ export default function DetailedResultsTable({
   }
 
   // Get all unique score names from the first item
-  const scoreNames =
+  const allScoreNames =
     individual_scores[0]?.trace_scores?.map((s) => s.name) || [];
+  const scoreNames = isJudgeRun
+    ? allScoreNames.filter((name) => !isCosineScoreName(name))
+    : allScoreNames;
 
   const hasAnyCategory = individual_scores.some(
     (s) => (s.category ?? "").trim().length > 0,
   );
+  const hasAnyTraceUrl = individual_scores.some((s) => s.score_trace_url);
 
   const COLUMN_WIDTHS = {
     index: 50,
@@ -79,6 +87,7 @@ export default function DetailedResultsTable({
     groundTruth: 250,
     answer: 250,
     score: 160,
+    trace: 90,
   };
   const tableMinWidth =
     COLUMN_WIDTHS.index +
@@ -86,7 +95,8 @@ export default function DetailedResultsTable({
     COLUMN_WIDTHS.question +
     COLUMN_WIDTHS.groundTruth +
     COLUMN_WIDTHS.answer +
-    scoreNames.length * COLUMN_WIDTHS.score;
+    scoreNames.length * COLUMN_WIDTHS.score +
+    (hasAnyTraceUrl ? COLUMN_WIDTHS.trace : 0);
 
   return (
     <div className="border rounded-lg overflow-hidden bg-white border-gray-200">
@@ -136,6 +146,14 @@ export default function DetailedResultsTable({
                   {scoreName}
                 </th>
               ))}
+              {hasAnyTraceUrl && (
+                <th
+                  className="px-4 py-3 text-center text-xs font-semibold uppercase text-bg-primary"
+                  style={{ width: `${COLUMN_WIDTHS.trace}px` }}
+                >
+                  Trace
+                </th>
+              )}
             </tr>
           </thead>
 
@@ -212,6 +230,23 @@ export default function DetailedResultsTable({
                       </td>
                     );
                   })}
+
+                  {hasAnyTraceUrl && (
+                    <td className="px-4 py-3 text-center align-top">
+                      {item.score_trace_url && (
+                        <a
+                          href={item.score_trace_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center text-accent-primary hover:opacity-75 transition-opacity"
+                          aria-label="View trace"
+                          title="View trace"
+                        >
+                          <ExternalLinkIcon className="w-4 h-4" />
+                        </a>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

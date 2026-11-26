@@ -27,6 +27,10 @@ export function getScoreObject(job: EvalJob): ScoreObject | null {
   return job.scores || job.score || null;
 }
 
+export function isCosineScoreName(name: string): boolean {
+  return /cosine/i.test(name);
+}
+
 export function isGroupedFormat(
   traces: TraceItem[] | GroupedTraceItem[],
 ): traces is GroupedTraceItem[] {
@@ -111,6 +115,7 @@ export function normalizeToIndividualScores(
         output: { answer: trace.llm_answer },
         metadata: { ground_truth: trace.ground_truth_answer },
         trace_scores: trace.scores,
+        score_trace_url: trace.score_trace_url,
       };
     }
     return { trace_id: "", trace_scores: [] };

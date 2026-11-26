@@ -9,6 +9,7 @@ import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
 import { isCosineScoreName } from "@/app/lib/utils/evaluation";
 import { formatScoreValue, getScoreNote } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
+import VerdictBadge from "./VerdictBadge";
 export default function GroupedResultsTable({
   traces,
   isJudgeRun,
@@ -215,6 +216,11 @@ export default function GroupedResultsTable({
                                       >
                                         {value}
                                       </div>
+                                      <VerdictBadge
+                                        name={score.name}
+                                        value={score.value}
+                                        dataType={score.data_type}
+                                      />
                                       {note && <InfoTooltip text={note} />}
                                     </div>
                                   </div>

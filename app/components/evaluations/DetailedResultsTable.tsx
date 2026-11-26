@@ -20,7 +20,10 @@ import {
   getScoreNote,
 } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
-import { GroupedResultsTable } from "@/app/components/evaluations";
+import {
+  GroupedResultsTable,
+  VerdictBadge,
+} from "@/app/components/evaluations";
 import { MarkdownContent } from "@/app/components/chat";
 import { ExternalLinkIcon } from "@/app/components/icons";
 
@@ -225,6 +228,11 @@ export default function DetailedResultsTable({
                           >
                             {value}
                           </div>
+                          <VerdictBadge
+                            name={score?.name}
+                            value={score?.value}
+                            dataType={score?.data_type}
+                          />
                           {note && <InfoTooltip text={note} />}
                         </div>
                       </td>

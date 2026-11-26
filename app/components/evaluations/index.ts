@@ -15,4 +15,5 @@ export { default as OverallScoreCard } from "./OverallScoreCard";
 export { default as RunEvaluationForm } from "./RunEvaluationForm";
 export { default as RunModeBadge } from "./RunModeBadge";
 export { default as ScoreDisplay } from "./ScoreDisplay";
+export { default as VerdictBadge } from "./VerdictBadge";
 export { default as ViewDatasetModal } from "./ViewDatasetModal";

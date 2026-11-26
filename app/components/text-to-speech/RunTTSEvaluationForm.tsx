@@ -1,8 +1,15 @@
 "use client";
 
-import { TTSDataset } from "@/app/lib/types/textToSpeech";
-import { Button, Field, LoaderBox, Select } from "@/app/components/ui";
+import { TTSDataset, TTSModelVoice } from "@/app/lib/types/textToSpeech";
+import {
+  Button,
+  Checkbox,
+  Field,
+  LoaderBox,
+  Select,
+} from "@/app/components/ui";
 import { CheckCircleIcon, PlayIcon } from "@/app/components/icons";
+import { TTS_MODELS } from "@/app/lib/data/ttsModels";
 
 interface RunTTSEvaluationFormProps {
   evaluationName: string;
@@ -12,8 +19,8 @@ interface RunTTSEvaluationFormProps {
   selectedDatasetId: number | null;
   setSelectedDatasetId: (id: number | null) => void;
   selectedDataset: TTSDataset | undefined;
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
+  selectedModels: TTSModelVoice[];
+  setSelectedModels: (models: TTSModelVoice[]) => void;
   isRunning: boolean;
   handleRunEvaluation: () => void;
 }
@@ -26,13 +33,28 @@ export default function RunTTSEvaluationForm({
   selectedDatasetId,
   setSelectedDatasetId,
   selectedDataset,
-  selectedModel,
-  setSelectedModel,
+  selectedModels,
+  setSelectedModels,
   isRunning,
   handleRunEvaluation,
 }: RunTTSEvaluationFormProps) {
   const isRunDisabled =
-    isRunning || !evaluationName.trim() || !selectedDatasetId;
+    isRunning ||
+    !evaluationName.trim() ||
+    !selectedDatasetId ||
+    selectedModels.length === 0;
+
+  const toggleModel = (model: string, defaultVoice: string, on: boolean) =>
+    setSelectedModels(
+      on
+        ? [...selectedModels, { model, voice: defaultVoice }]
+        : selectedModels.filter((m) => m.model !== model),
+    );
+
+  const setVoice = (model: string, voice: string) =>
+    setSelectedModels(
+      selectedModels.map((m) => (m.model === model ? { ...m, voice } : m)),
+    );
 
   return (
     <div className="flex-1 overflow-auto p-4 space-y-4">
@@ -54,18 +76,34 @@ export default function RunTTSEvaluationForm({
 
       <div>
         <label className="block text-xs font-medium mb-1.5 text-text-secondary">
-          Model *
+          Models * (select one or more to compare)
         </label>
-        <Select
-          value={selectedModel}
-          onChange={(e) => setSelectedModel(e.target.value)}
-          options={[
-            {
-              value: "gemini-2.5-pro-preview-tts",
-              label: "gemini-2.5-pro-preview-tts",
-            },
-          ]}
-        />
+        <div className="space-y-2">
+          {TTS_MODELS.map(({ model, voices, defaultVoice }) => {
+            const selected = selectedModels.find((m) => m.model === model);
+            return (
+              <div
+                key={model}
+                className="flex items-center justify-between gap-3 border rounded-md px-3 py-2 border-border"
+              >
+                <Checkbox
+                  checked={!!selected}
+                  onChange={(on) => toggleModel(model, defaultVoice, on)}
+                  label={model}
+                />
+                {selected && (
+                  <div className="w-40 shrink-0">
+                    <Select
+                      value={selected.voice}
+                      onChange={(e) => setVoice(model, e.target.value)}
+                      options={voices.map((v) => ({ value: v, label: v }))}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="pt-2">

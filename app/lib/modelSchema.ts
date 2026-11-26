@@ -23,6 +23,7 @@ export const SUPPORTED_PROVIDERS = [
   "openai",
   "google",
   "google-aistudio",
+  "anthropic",
 ] as const;
 
 export const SUPPORTED_PARAMS = new Set([
@@ -61,6 +62,8 @@ export const PROVIDER_LABELS: Record<string, string> = {
   openai: "OpenAI",
   google: "Google",
   "google-aistudio": "Google AI Studio",
+  "google-gcp": "Google Vertex AI",
+  anthropic: "Anthropic",
 };
 
 export function getProviderLabel(provider: string): string {
@@ -83,6 +86,7 @@ export const PARAM_VALUE_LABELS: Record<string, Record<string, string>> = {
     medium: "Medium",
     high: "High",
     xhigh: "Extra High",
+    max: "Max",
   },
 };
 

@@ -4,6 +4,7 @@ export type ProviderType =
   | "openai"
   | "google"
   | "google-aistudio"
+  | "google-gcp"
   | "anthropic";
 
 export interface SavedConfig {

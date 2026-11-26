@@ -14,6 +14,7 @@ export interface NavItemConfig {
   gateDescription?: string;
   superuserOnly?: boolean;
   featureFlag?: FeatureFlagKey;
+  disabledReason?: string;
 }
 
 export interface SubMenuItem {
@@ -30,6 +31,7 @@ export interface MenuItem {
   submenu?: SubMenuItem[];
   gateDescription?: string;
   featureFlag?: FeatureFlagKey;
+  disabledReason?: string;
 }
 
 export interface SidebarProps {

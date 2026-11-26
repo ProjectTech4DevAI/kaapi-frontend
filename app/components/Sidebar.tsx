@@ -1,9 +1,5 @@
-/**
- * Sidebar  - Navigation sidebar with collapse/expand functionality
- * Provides hierarchical navigation with expandable submenus
- */
-
 "use client";
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -20,8 +16,11 @@ import {
   ShieldCheckIcon,
   SlidersIcon,
   ChatIcon,
+  FlowIcon,
   ChartBarIcon,
+  WarningTriangleIcon,
 } from "@/app/components/icons";
+import { InfoTooltip } from "@/app/components/ui";
 import { MenuItem, SidebarProps } from "@/app/lib/types/nav";
 import { LoginModal } from "@/app/components/auth";
 import { Branding, UserMenuPopover } from "@/app/components/user-menu";
@@ -120,6 +119,7 @@ export default function Sidebar({
 
   const iconMap: Record<string, React.ReactNode> = {
     chat: <ChatIcon />,
+    flow: <FlowIcon />,
     clipboard: <ClipboardIcon />,
     document: <DocumentFileIcon />,
     book: <BookOpenIcon />,
@@ -144,6 +144,7 @@ export default function Sidebar({
     submenu: item.submenu,
     gateDescription: item.gateDescription,
     featureFlag: item.featureFlag,
+    disabledReason: item.disabledReason,
   }));
 
   const getGateDescription = (name: string): string => {
@@ -182,7 +183,8 @@ export default function Sidebar({
           const hasSubmenu = item.submenu && item.submenu.length > 0;
           const isExpanded = expandedMenus[item.name];
           const isActive = activeRoute === item.route;
-          const gated = isItemGated(item);
+          const isDisabled = !!item.disabledReason;
+          const gated = !isDisabled && isItemGated(item);
 
           const hasActiveChild =
             hasSubmenu &&
@@ -194,8 +196,9 @@ export default function Sidebar({
             );
 
           return (
-            <div key={item.name}>
+            <div key={item.name} className="relative">
               <button
+                disabled={isDisabled}
                 onMouseEnter={(e) =>
                   gated && handleGateEnter(item.name, e.currentTarget)
                 }
@@ -208,13 +211,15 @@ export default function Sidebar({
                     router.push(item.route);
                   }
                 }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border cursor-pointer ${
-                  isActive
-                    ? "bg-accent-primary/15 text-accent-primary font-semibold border-transparent"
-                    : hasActiveChild
-                      ? "bg-transparent text-accent-primary font-semibold border-transparent"
-                      : "bg-transparent text-text-secondary font-medium border-transparent hover:bg-neutral-100 hover:text-text-primary"
-                }`}
+                className={`w-full text-left px-3 py-2 rounded-lg text-[14px] flex items-center gap-2.5 transition-all duration-150 border ${
+                  isDisabled
+                    ? "bg-transparent text-text-secondary font-medium border-transparent opacity-50 cursor-not-allowed"
+                    : isActive
+                      ? "bg-accent-primary/15 text-accent-primary font-semibold border-transparent"
+                      : hasActiveChild
+                        ? "bg-transparent text-accent-primary font-semibold border-transparent"
+                        : "bg-transparent text-text-secondary font-medium border-transparent hover:bg-neutral-100 hover:text-text-primary"
+                } ${isDisabled ? "" : "cursor-pointer"}`}
               >
                 <span
                   className={
@@ -232,6 +237,16 @@ export default function Sidebar({
                   />
                 )}
               </button>
+              {isDisabled && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <InfoTooltip
+                    text={item.disabledReason}
+                    icon={
+                      <WarningTriangleIcon className="w-4 h-4 text-amber-500" />
+                    }
+                  />
+                </span>
+              )}
 
               {hasSubmenu && isExpanded && !gated && (
                 <div className="ml-5 mt-1 space-y-0.5 overflow-hidden border-l-2 border-border pl-3 animate-[slideDown_0.15s_ease-out]">

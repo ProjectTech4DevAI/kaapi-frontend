@@ -7,7 +7,7 @@
 import { Fragment } from "react";
 import { TraceScore, GroupedTraceItem } from "@/app/lib/types/evaluation";
 import { isCosineScoreName } from "@/app/lib/utils/evaluation";
-import { formatScoreValue } from "@/app/lib/utils";
+import { formatScoreValue, getScoreNote } from "@/app/lib/utils";
 import { InfoTooltip } from "@/app/components/ui";
 export default function GroupedResultsTable({
   traces,
@@ -195,6 +195,7 @@ export default function GroupedResultsTable({
                                 if (!score) return null;
                                 const { value, color, bg } =
                                   formatScoreValue(score);
+                                const note = getScoreNote(score);
                                 return (
                                   <div
                                     key={score.name || scoreIdx}
@@ -214,9 +215,7 @@ export default function GroupedResultsTable({
                                       >
                                         {value}
                                       </div>
-                                      {score?.comment && (
-                                        <InfoTooltip text={score.comment} />
-                                      )}
+                                      {note && <InfoTooltip text={note} />}
                                     </div>
                                   </div>
                                 );

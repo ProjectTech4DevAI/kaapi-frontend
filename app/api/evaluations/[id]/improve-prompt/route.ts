@@ -1,27 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiClient } from "@/app/lib/apiClient";
 import { markJobPending } from "@/app/lib/store/promptImprovementStore";
-import { readWebhookSecret } from "@/app/lib/webhookSecret";
+import { buildWebhookCallbackUrl } from "@/app/lib/webhookCallback";
 import type { LLMJobImmediatePublic } from "@/app/lib/types/promptImprovement";
-
-function resolveCallbackUrl(request: NextRequest): string {
-  const secretResult = readWebhookSecret();
-  if (!secretResult.ok || !secretResult.secret) {
-    throw new Error(
-      secretResult.reason ?? "prompt_improvement_webhook_secret_missing",
-    );
-  }
-  const configured =
-    process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? null;
-  const base = configured
-    ? configured.replace(/\/$/, "")
-    : `${request.headers.get("x-forwarded-proto") ?? "https"}://${
-        request.headers.get("x-forwarded-host") ??
-        request.headers.get("host") ??
-        request.nextUrl.host
-      }`;
-  return `${base}/api/webhooks/prompt-improvement?secret_value=${encodeURIComponent(secretResult.secret)}`;
-}
 
 export async function POST(
   request: NextRequest,
@@ -30,24 +11,16 @@ export async function POST(
   try {
     const { id } = await params;
 
-    let userBody: Record<string, unknown> = {};
-    try {
-      const parsed = await request.json();
-      if (parsed && typeof parsed === "object") {
-        userBody = parsed as Record<string, unknown>;
-      }
-    } catch {
-      userBody = {};
-    }
-
     const payload = {
-      ...userBody,
-      callback_url: userBody.callback_url ?? resolveCallbackUrl(request),
+      callback_url: buildWebhookCallbackUrl(
+        request,
+        "/api/webhooks/prompt-improvement",
+      ),
     };
 
     const { status, data } = await apiClient(
       request,
-      `/api/v1/evaluations/${id}/improve-prompt`,
+      `/api/v2/evaluations/${id}/improve-prompt`,
       {
         method: "POST",
         body: JSON.stringify(payload),

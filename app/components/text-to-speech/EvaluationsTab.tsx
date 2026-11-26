@@ -5,8 +5,9 @@ import {
   TTSDataset,
   TTSRun,
   TTSResult,
-  TTSScore,
   TTSFeedbackPayload,
+  TTSModelVoice,
+  LoadOptions,
 } from "@/app/lib/types/textToSpeech";
 import { APIKey } from "@/app/lib/types/credentials";
 import { useAuth } from "@/app/lib/context/AuthContext";
@@ -24,19 +25,19 @@ export interface EvaluationsTabProps {
   selectedDatasetId: number | null;
   setSelectedDatasetId: (id: number | null) => void;
   selectedDataset: TTSDataset | undefined;
-  selectedModel: string;
-  setSelectedModel: (model: string) => void;
+  selectedModels: TTSModelVoice[];
+  setSelectedModels: (models: TTSModelVoice[]) => void;
   isRunning: boolean;
   handleRunEvaluation: () => void;
   runs: TTSRun[];
   isLoadingRuns: boolean;
-  loadRuns: () => void;
+  loadRuns: (opts?: LoadOptions) => void;
   selectedRunId: number | null;
   setSelectedRunId: (id: number | null) => void;
   results: TTSResult[];
   setResults: React.Dispatch<React.SetStateAction<TTSResult[]>>;
   isLoadingResults: boolean;
-  loadResults: (runId: number) => void;
+  loadResults: (runId: number, opts?: LoadOptions) => void;
   apiKeys: APIKey[];
   toast: ReturnType<typeof useToast>;
   setActiveTab: (tab: TTSTab) => void;
@@ -51,8 +52,8 @@ export default function EvaluationsTab({
   selectedDatasetId,
   setSelectedDatasetId,
   selectedDataset,
-  selectedModel,
-  setSelectedModel,
+  selectedModels,
+  setSelectedModels,
   isRunning,
   handleRunEvaluation,
   runs,
@@ -71,18 +72,11 @@ export default function EvaluationsTab({
 
   const updateFeedback = async (
     resultId: number,
-    isCorrect: boolean | null | undefined,
-    comment?: string,
-    score?: TTSScore,
+    payload: TTSFeedbackPayload,
   ) => {
     if (!isAuthenticated) return;
 
     try {
-      const payload: TTSFeedbackPayload = {};
-      if (isCorrect !== undefined) payload.is_correct = isCorrect;
-      if (comment !== undefined) payload.comment = comment;
-      if (score !== undefined) payload.score = score;
-
       await apiFetch<TTSResult>(
         `/api/evaluations/tts/results/${resultId}`,
         apiKeys[0]?.key ?? "",
@@ -90,21 +84,6 @@ export default function EvaluationsTab({
           method: "PATCH",
           body: JSON.stringify(payload),
         },
-      );
-
-      setResults((prev) =>
-        prev.map((r) =>
-          r.id === resultId
-            ? {
-                ...r,
-                ...(isCorrect !== undefined ? { is_correct: isCorrect } : {}),
-                ...(comment !== undefined && { comment }),
-                ...(score !== undefined && {
-                  score: { ...(r.score || {}), ...score },
-                }),
-              }
-            : r,
-        ),
       );
     } catch (error) {
       console.error("Failed to update feedback:", error);
@@ -140,8 +119,8 @@ export default function EvaluationsTab({
             selectedDatasetId={selectedDatasetId}
             setSelectedDatasetId={setSelectedDatasetId}
             selectedDataset={selectedDataset}
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
+            selectedModels={selectedModels}
+            setSelectedModels={setSelectedModels}
             isRunning={isRunning}
             handleRunEvaluation={handleRunEvaluation}
           />

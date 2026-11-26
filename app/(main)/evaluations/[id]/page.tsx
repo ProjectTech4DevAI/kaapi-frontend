@@ -20,6 +20,8 @@ import {
   hasSummaryScores,
   isNewScoreObjectV2,
   getScoreObject,
+  getOverallScore,
+  getAiSummary,
   normalizeToIndividualScores,
   isGroupedFormat,
 } from "@/app/lib/utils/evaluation";
@@ -29,9 +31,11 @@ import {
 } from "@/app/lib/utils/evaluationExport";
 import Sidebar from "@/app/components/Sidebar";
 import {
+  AiSummaryNote,
   CategoryMetricsTable,
   DetailedResultsTable,
   MetricsOverview,
+  OverallScoreCard,
   RunModeBadge,
 } from "@/app/components/evaluations";
 import {
@@ -266,10 +270,16 @@ export default function EvaluationReport() {
     scoreObject && isNewScoreObjectV2(scoreObject)
       ? (scoreObject.category_metrics ?? [])
       : [];
+  const overallScore = getOverallScore(scoreObject);
+  const aiSummary = getAiSummary(scoreObject);
 
   const isJobInProgress =
     job.status.toLowerCase() !== "completed" &&
     job.status.toLowerCase() !== "failed";
+
+  // v2 prompt recommendations require judge-scored traces; v1 runs only
+  // have cosine similarity and can't be iterated on.
+  const isJudgedRun = !!scoreObject && isNewScoreObjectV2(scoreObject);
 
   return (
     <div className="w-full h-screen flex flex-col bg-bg-secondary">
@@ -356,6 +366,7 @@ export default function EvaluationReport() {
                 onClick={handleIteratePrompt}
                 disabled={
                   job.status.toLowerCase() !== "completed" ||
+                  !isJudgedRun ||
                   isImprovingPrompt ||
                   isFormatSwitching ||
                   isResyncing
@@ -363,7 +374,9 @@ export default function EvaluationReport() {
                 title={
                   job.status.toLowerCase() !== "completed"
                     ? "Only available for completed evaluations"
-                    : undefined
+                    : !isJudgedRun
+                      ? "Prompt iteration requires a judged evaluation run"
+                      : undefined
                 }
               >
                 {isImprovingPrompt && <Loader size="sm" />}
@@ -391,6 +404,7 @@ export default function EvaluationReport() {
             <div className="mx-auto space-y-6">
               {hasScore && isNewFormat ? (
                 <>
+                  {overallScore && <OverallScoreCard overall={overallScore} />}
                   <MetricsOverview
                     job={job}
                     summaryScores={summaryScores}
@@ -417,6 +431,11 @@ export default function EvaluationReport() {
 
               {hasScore && (
                 <div>
+                  {aiSummary && !isFormatSwitching && (
+                    <div className="mb-3">
+                      <AiSummaryNote summary={aiSummary} />
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-3">
                     <h3 className="text-sm font-semibold text-text-secondary">
                       Detailed Results

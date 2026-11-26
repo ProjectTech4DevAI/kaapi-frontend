@@ -4,7 +4,7 @@ import {
   saveJobSnapshot,
 } from "@/app/lib/store/promptImprovementStore";
 import { isWebhookAuthorized } from "@/app/lib/webhookCallback";
-import type { PromptImprovementJobPublic } from "@/app/lib/types/promptImprovement";
+import type { PromptRecommendationJobPublic } from "@/app/lib/types/promptImprovement";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,10 +16,14 @@ export async function POST(request: NextRequest) {
     }
     const body = (await request.json()) as {
       success?: boolean;
-      data?: PromptImprovementJobPublic;
+      data?: PromptRecommendationJobPublic;
       error?: string | null;
     };
-    if (!body.data || !body.data.job_id) {
+    if (
+      !body.data ||
+      !body.data.job_id ||
+      body.data.recommendation_type !== "prompt"
+    ) {
       return NextResponse.json(
         { success: false, error: "invalid_payload" },
         { status: 400 },

@@ -6,9 +6,9 @@
  */
 
 import type {
-  PromptImprovementJobPublic,
   PromptImprovementJobSnapshot,
   PromptImprovementStoreShape,
+  PromptRecommendationJobPublic,
   SnapshotListener,
 } from "@/app/lib/types/promptImprovement";
 
@@ -74,7 +74,7 @@ function prune(): void {
   }
 }
 
-export function saveJobSnapshot(job: PromptImprovementJobPublic): void {
+export function saveJobSnapshot(job: PromptRecommendationJobPublic): void {
   const snapshot: PromptImprovementJobSnapshot = {
     ...job,
     updated_at: new Date().toISOString(),
@@ -89,6 +89,7 @@ export function markJobPending(jobId: string): void {
   const snapshot: PromptImprovementJobSnapshot = {
     job_id: jobId,
     status: "PENDING",
+    recommendation_type: "prompt",
     config_version: null,
     error_message: null,
     updated_at: new Date().toISOString(),

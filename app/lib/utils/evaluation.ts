@@ -4,6 +4,7 @@ import type {
   IndividualScore,
   NewScoreObjectV2,
   BasicScoreObject,
+  OverallScore,
   ScoreObject,
   TraceItem,
 } from "@/app/lib/types/evaluation";
@@ -31,6 +32,69 @@ export function isGroupedFormat(
 ): traces is GroupedTraceItem[] {
   if (!traces || traces.length === 0) return false;
   return "llm_answers" in traces[0] && Array.isArray(traces[0].llm_answers);
+}
+
+export function getOverallScore(
+  score: ScoreObject | null | undefined,
+): OverallScore | null {
+  if (!score || !isNewScoreObjectV2(score)) return null;
+  return score.overall ?? null;
+}
+
+export function getAiSummary(
+  score: ScoreObject | null | undefined,
+): string | null {
+  if (!score || !isNewScoreObjectV2(score)) return null;
+  return score.ai_summary ?? null;
+}
+
+type VerdictTone = "success" | "warning" | "error" | "default";
+
+const VERDICT_TONE_MAP: Record<string, VerdictTone> = {
+  pass: "success",
+  passed: "success",
+  excellent: "success",
+  good: "success",
+  warning: "warning",
+  moderate: "warning",
+  fail: "error",
+  failed: "error",
+  poor: "error",
+  critical: "error",
+};
+
+export function getVerdictColor(verdict: string): {
+  bg: string;
+  border: string;
+  text: string;
+} {
+  const tone = VERDICT_TONE_MAP[verdict.toLowerCase()] ?? "default";
+  switch (tone) {
+    case "success":
+      return {
+        bg: "bg-status-success-bg",
+        border: "border-status-success-border",
+        text: "text-status-success-text",
+      };
+    case "warning":
+      return {
+        bg: "bg-status-warning-bg",
+        border: "border-status-warning-border",
+        text: "text-status-warning-text",
+      };
+    case "error":
+      return {
+        bg: "bg-status-error-bg",
+        border: "border-status-error-border",
+        text: "text-status-error-text",
+      };
+    default:
+      return {
+        bg: "bg-status-default-bg",
+        border: "border-status-default-border",
+        text: "text-status-default-text",
+      };
+  }
 }
 
 export function normalizeToIndividualScores(

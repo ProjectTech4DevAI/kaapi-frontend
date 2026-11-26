@@ -19,7 +19,13 @@ const PUBLIC_ROUTES = new Set<string>([
 const FEATURE_GATED_PREFIXES: Array<{
   prefix: string;
   flag: FeatureFlagKey;
-}> = [{ prefix: "/assessment", flag: FeatureFlag.ASSESSMENT }];
+}> = [
+  { prefix: "/assessment", flag: FeatureFlag.ASSESSMENT },
+  { prefix: "/chatbot", flag: FeatureFlag.CHATBOT },
+];
+
+// Temporarily disabled while backend changes are being synced; keep in sync with `disabledReason` in navConfig.
+const DISABLED_PREFIXES = ["/guardrails"];
 
 const GUEST_ONLY_ROUTES = new Set<string>(["/keystore"]);
 
@@ -56,6 +62,14 @@ export function middleware(request: NextRequest) {
   const hasApiKey = !!request.cookies.get(COOKIE_KEYS.API_KEY)?.value;
   const isAuthenticated = hasApiKey || role === "superuser" || role === "user";
   const isSuperuser = role === "superuser";
+
+  if (
+    DISABLED_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  ) {
+    return redirectHome(request);
+  }
 
   if (GUEST_ONLY_ROUTES.has(pathname)) {
     if (isAuthenticated) {

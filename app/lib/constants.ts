@@ -11,6 +11,7 @@ export const APP_NAME = "Kaapi Konsole";
 
 export const FeatureFlag = {
   ASSESSMENT: ASSESSMENT_FEATURE_FLAG,
+  CHATBOT: "CHATBOT",
 } as const;
 
 export type FeatureFlagKey = (typeof FeatureFlag)[keyof typeof FeatureFlag];
@@ -205,3 +206,15 @@ export const STATUS_TABS = [
   { id: "active", label: "Active" },
   { id: "inactive", label: "Inactive" },
 ];
+
+export const PAGER_WINDOW_SIZE = 3;
+export const PAGER_BUTTON_BASE =
+  "min-w-7 h-7 inline-flex items-center justify-center rounded-lg border text-xs font-medium transition-colors cursor-pointer disabled:cursor-default disabled:opacity-35";
+export const PAGER_BUTTON_IDLE =
+  "border-border bg-bg-primary text-text-secondary hover:border-accent-muted hover:text-text-primary";
+export const PAGER_BUTTON_CURRENT =
+  "border-accent-primary bg-accent-primary text-white font-semibold";
+
+export const CHATBOT_REPLY_TIMEOUT_MS = 90_000;
+export const CHATBOT_NAME_MAX_LENGTH = 255;
+export const DEFAULT_CHATBOT_NAME = "Untitled Chatbot";

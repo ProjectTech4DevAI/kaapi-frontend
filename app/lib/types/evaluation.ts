@@ -5,6 +5,8 @@ export interface TraceScore {
   value: number | string;
   data_type: "NUMERIC" | "CATEGORICAL";
   comment?: string;
+  /** Judge model's explanation for the score (v2 judge metrics, e.g. Adherence to Ground Truth/Prompt/Knowledge Base, 0-5 scale). */
+  reasoning?: string;
 }
 
 export interface TraceItem {
@@ -135,6 +137,7 @@ export interface EvalCostEntry {
 
 export interface EvalCost {
   response?: EvalCostEntry;
+  judge?: EvalCostEntry;
   embedding?: EvalCostEntry;
   total_cost_usd: number;
 }

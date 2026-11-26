@@ -23,6 +23,8 @@ export interface EvaluationsTabProps {
   isEvaluating: boolean;
   handleRunEvaluation: () => Promise<boolean>;
   setActiveTab: (tab: Tab) => void;
+  duplicationFactor: string;
+  setDuplicationFactor: (value: string) => void;
   nameError?: string;
   submitError?: string;
 }
@@ -41,6 +43,8 @@ export default function EvaluationsTab({
   isEvaluating,
   handleRunEvaluation,
   setActiveTab,
+  duplicationFactor,
+  setDuplicationFactor,
   nameError,
   submitError,
 }: EvaluationsTabProps) {
@@ -148,6 +152,8 @@ export default function EvaluationsTab({
     canRun,
     onRun: handleRun,
     setActiveTab,
+    duplicationFactor,
+    setDuplicationFactor,
     nameError,
     submitError,
   };

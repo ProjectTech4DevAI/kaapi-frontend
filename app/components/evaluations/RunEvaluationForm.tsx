@@ -22,6 +22,8 @@ interface RunEvaluationFormProps {
   canRun: boolean;
   onRun: () => void;
   setActiveTab: (tab: Tab) => void;
+  duplicationFactor: string;
+  setDuplicationFactor: (value: string) => void;
   nameError?: string;
   submitError?: string;
 }
@@ -40,6 +42,8 @@ export default function RunEvaluationForm({
   canRun,
   onRun,
   setActiveTab,
+  duplicationFactor,
+  setDuplicationFactor,
   nameError,
   submitError,
 }: RunEvaluationFormProps) {
@@ -127,6 +131,22 @@ export default function RunEvaluationForm({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {selectedDataset && (
+        <div>
+          <Field
+            label="Duplication Factor (Optional)"
+            type="number"
+            value={duplicationFactor}
+            onChange={setDuplicationFactor}
+            disabled={isEvaluating}
+          />
+          <p className="text-xs mt-1 text-text-secondary">
+            Overrides the dataset&apos;s stored duplication factor for this run
+            only. Defaults to {selectedDataset.duplication_factor}.
+          </p>
         </div>
       )}
 

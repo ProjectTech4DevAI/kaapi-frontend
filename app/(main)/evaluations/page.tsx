@@ -62,6 +62,7 @@ function SimplifiedEvalContent() {
     },
   );
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [runDuplicationFactor, setRunDuplicationFactor] = useState<string>("");
   const [nameError, setNameError] = useState<string>("");
   const [submitError, setSubmitError] = useState<string>("");
 
@@ -89,6 +90,15 @@ function SimplifiedEvalContent() {
     if (isAuthenticated) loadStoredDatasets();
     else setIsDatasetsLoading(false);
   }, [isAuthenticated, loadStoredDatasets]);
+
+  useEffect(() => {
+    const dataset = storedDatasets.find(
+      (d) => d.dataset_id.toString() === selectedDatasetId,
+    );
+    if (dataset) {
+      setRunDuplicationFactor(String(dataset.duplication_factor));
+    }
+  }, [selectedDatasetId, storedDatasets]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -220,14 +230,39 @@ function SimplifiedEvalContent() {
       return;
     }
 
+    const selectedRunDataset = storedDatasets.find(
+      (d) => d.dataset_id.toString() === selectedDatasetId,
+    );
+
+    const trimmedDuplicationFactor = runDuplicationFactor.trim();
+    let duplicationFactorOverride: number | undefined;
+    if (trimmedDuplicationFactor) {
+      if (!/^[1-9]\d*$/.test(trimmedDuplicationFactor)) {
+        toast.error("Duplication factor must be a whole number of 1 or more");
+        return;
+      }
+      const parsedDuplicationFactor = parseInt(trimmedDuplicationFactor, 10);
+      if (
+        !selectedRunDataset ||
+        parsedDuplicationFactor !== selectedRunDataset.duplication_factor
+      ) {
+        duplicationFactorOverride = parsedDuplicationFactor;
+      }
+    }
+
     setIsEvaluating(true);
     try {
+      // `duplication_factor` is only sent when the user overrides
+      // the dataset's stored value.
       const payload: Record<string, unknown> = {
         dataset_id: parseInt(selectedDatasetId),
         experiment_name: experimentName.trim(),
         config_id: selectedConfigId,
         config_version: selectedConfigVersion,
       };
+      if (duplicationFactorOverride !== undefined) {
+        payload.duplication_factor = duplicationFactorOverride;
+      }
 
       await apiFetch("/api/evaluations", apiKey, {
         method: "POST",
@@ -239,6 +274,7 @@ function SimplifiedEvalContent() {
       setSelectedDatasetId("");
       setSelectedConfigId("");
       setSelectedConfigVersion(0);
+      setRunDuplicationFactor("");
       toast.success(`Evaluation created!`);
       return true;
     } catch (error: unknown) {
@@ -344,6 +380,8 @@ function SimplifiedEvalContent() {
               isEvaluating={isEvaluating}
               handleRunEvaluation={handleRunEvaluation}
               setActiveTab={setActiveTab}
+              duplicationFactor={runDuplicationFactor}
+              setDuplicationFactor={setRunDuplicationFactor}
               nameError={nameError}
               submitError={submitError}
             />

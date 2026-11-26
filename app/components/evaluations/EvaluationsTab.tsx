@@ -3,12 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { apiFetch } from "@/app/lib/apiClient";
 import { Dataset } from "@/app/lib/types/dataset";
-import {
-  AssistantConfig,
-  EvalJob,
-  RunMode,
-  Tab,
-} from "@/app/lib/types/evaluation";
+import { AssistantConfig, EvalJob, Tab } from "@/app/lib/types/evaluation";
 import { useAuth } from "@/app/lib/context/AuthContext";
 import { Modal } from "@/app/components/ui";
 import EvalRunsList from "./EvalRunsList";
@@ -28,8 +23,8 @@ export interface EvaluationsTabProps {
   isEvaluating: boolean;
   handleRunEvaluation: () => Promise<boolean>;
   setActiveTab: (tab: Tab) => void;
-  runMode: RunMode;
-  setRunMode: (mode: RunMode) => void;
+  duplicationFactor: string;
+  setDuplicationFactor: (value: string) => void;
   nameError?: string;
   submitError?: string;
 }
@@ -48,8 +43,8 @@ export default function EvaluationsTab({
   isEvaluating,
   handleRunEvaluation,
   setActiveTab,
-  runMode,
-  setRunMode,
+  duplicationFactor,
+  setDuplicationFactor,
   nameError,
   submitError,
 }: EvaluationsTabProps) {
@@ -65,15 +60,14 @@ export default function EvaluationsTab({
   const selectedDataset = storedDatasets.find(
     (d) => d.dataset_id.toString() === selectedDatasetId,
   );
-  const fastModeMismatch =
-    runMode === "fast" && selectedDataset?.eligible_for_fast === false;
+  const datasetTooLarge = selectedDataset?.eligible_for_fast === false;
   const canRun = Boolean(
     experimentName.trim() &&
     selectedDatasetId &&
     selectedConfigId &&
     selectedConfigVersion &&
     !isEvaluating &&
-    !fastModeMismatch,
+    !datasetTooLarge,
   );
 
   const { isAuthenticated } = useAuth();
@@ -158,8 +152,8 @@ export default function EvaluationsTab({
     canRun,
     onRun: handleRun,
     setActiveTab,
-    runMode,
-    setRunMode,
+    duplicationFactor,
+    setDuplicationFactor,
     nameError,
     submitError,
   };

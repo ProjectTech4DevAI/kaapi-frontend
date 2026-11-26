@@ -14,3 +14,9 @@ export interface UsePaginatedListResult<T> {
   loadMore: () => void;
   refetch: () => void;
 }
+
+export interface UsePollingOptions {
+  enabled?: boolean;
+  pauseWhenHidden?: boolean;
+  refetchOnVisible?: boolean;
+}

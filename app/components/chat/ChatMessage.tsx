@@ -10,14 +10,18 @@ import {
   ChatMessage as ChatMessageType,
 } from "@/app/lib/types/chat";
 import {
-  ChatIcon,
   CheckLineIcon,
   CopyIcon,
   DocumentFileIcon,
   MicIcon,
   SpeakerIcon,
 } from "@/app/components/icons";
-import { AttachmentPreviewModal, MarkdownContent } from "@/app/components/chat";
+import {
+  AssistantAvatar,
+  AttachmentPreviewModal,
+  MarkdownContent,
+  ThinkingDots,
+} from "@/app/components/chat";
 import { useTextToSpeech } from "@/app/hooks/useTextToSpeech";
 
 interface ChatMessageProps {
@@ -45,16 +49,6 @@ function VoiceMessageBody() {
         </span>
       </span>
     </span>
-  );
-}
-
-function ThinkingDots() {
-  return (
-    <div className="flex items-center gap-1.5 py-1">
-      <span className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-[chat-pulse_1.4s_ease-in-out_infinite]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-[chat-pulse_1.4s_ease-in-out_0.2s_infinite]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-text-secondary animate-[chat-pulse_1.4s_ease-in-out_0.4s_infinite]" />
-    </div>
   );
 }
 
@@ -143,9 +137,7 @@ function AssistantMessage({ message }: { message: ChatMessageType }) {
 
   return (
     <div className="flex gap-3 px-4 sm:px-6">
-      <div className="w-8 h-8 rounded-full bg-accent-primary text-white flex items-center justify-center shrink-0 mt-1">
-        <ChatIcon className="w-4 h-4" />
-      </div>
+      <AssistantAvatar />
       <div className="flex-1 min-w-0 pt-1">
         {isPending && !message.content && !hasAudio ? (
           <ThinkingDots />

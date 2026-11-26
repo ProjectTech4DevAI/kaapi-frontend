@@ -13,7 +13,6 @@ import type {
   UsePromptImprovementResult,
 } from "@/app/lib/types/promptImprovement";
 
-/** Map a sync validation code (from the initial 202 request) to a user-facing message. */
 function iteratePromptSyncError(code: string): string {
   switch (code) {
     case "evaluation_not_found":
